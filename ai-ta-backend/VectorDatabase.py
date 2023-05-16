@@ -11,7 +11,7 @@ CORS(app)
 
 
 # load API keys from globally-availabe .env file
-load_dotenv(dotenv_path='.env', override=True)
+load_dotenv(dotenv_path='../.env', override=True)
 
 class VectorDatabase:
     """Contains all methods for building and using vector databases.
