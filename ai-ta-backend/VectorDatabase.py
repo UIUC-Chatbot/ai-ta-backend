@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from qdrant_client import QdrantClient
+from sqlalchemy import JSON
 
 app = Flask(__name__)
 CORS(app)
@@ -17,13 +18,25 @@ class VectorDatabase:
     """
 
     @app.route('/')
-    def index(self,):
+    def index(self,test: int = 1)->JSON:
+        """_summary_
+
+        Args:
+            test (int, optional): _description_. Defaults to 1.
+
+        Returns:
+            JSON: _description_
+        """
         return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
-    @app.route('/getContexts', methods=['GET'])
+    @app.route('/getTopContexts', methods=['GET'])
     def getContexts(self,):
         """Here's a summary of the work.
 
+        ## GET arguments
+        course name (optional) str
+            A json response with TBD fields.
+            
         Returns
         -------
         JSON
@@ -34,7 +47,17 @@ class VectorDatabase:
         Exception
             Testing how exceptions are handled.
         """
-        language: str = request.args.get('language')
+        # todo: best way to handle optional arguments?
+        try:
+            language: str = request.args.get('course_name')
+        except Exception as e:
+            print("No course name provided.")
+        try:
+            language: str = request.args.get('course_name')
+        except Exception as e:
+            print("No course name provided.")
+
+        language: str = request.args.get('course_name')
         response:str = jsonify({"language": f"You said: {language}"})
         response.headers.add('Access-Control-Allow-Origin', '*')
         if language == 'error':

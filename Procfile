@@ -1,1 +1,1 @@
-web: gunicorn main:app
+web: gunicorn ai-ta-backend/VectorDatabase:app
