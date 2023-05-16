@@ -22,6 +22,13 @@ def getContexts():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+@app.route('/sayhi', methods=['GET'])
+def sayhi():
+    language = request.args.get('language')
+    response = jsonify({"language": f"Hi there: {language}"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
 
 def get_contexts():
     contexts = {'language': 'python', 'framework': 'Flask'}
