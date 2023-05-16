@@ -1,14 +1,68 @@
-site_name: "My Flask App"
+site_name: "UIUC AI Teaching Assistant"
+
+# ! Add new /docs pages here!
+nav:
+  - Home: index.md
+  - Vector Search: vector_search.md
+  - References: reference.md
+
+
 theme:
   name: "material"
+  # can't get this to work. https://squidfunk.github.io/mkdocs-material/setup/changing-the-logo-and-icons/#image
+  # favicon: assets/images/favicon.png 
+  # logo: assets/images/favicon.png
+  palette:
+    # Light/dark mode follows user's system preferences 
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep orange
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep orange
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+  features:
+    - navigation.footer
+
   shortcuts:
     help: 191    # ?
     next: 78     # n
     previous: 80 # p
     search: 83   # s
+  features:
+    - content.code.copy
+    - content.code.annotate 
+
+
 plugins:
   - search
   - mkdocstrings
-nav:
-  - Home: index.md
-  - Vector Search: vector_search.md
+
+extra:
+  generator: false
+  homepage: https://example.com
+  social:
+    - icon: fontawesome/brands/square-twitter
+      link: https://twitter.com/kastanday
+      name: Made by Kastan Day
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
