@@ -1,0 +1,14 @@
+site_name: "My Flask App"
+theme:
+  name: "material"
+  shortcuts:
+      help: 191    # ?
+      next: 78     # n
+      previous: 80 # p
+      search: 83   # s
+plugins:
+  - search
+  - mkdocstrings
+nav:
+  - Home: index.md
+  - Vector Search: vector_search.md

@@ -17,9 +17,17 @@ def index():
 
 @app.route('/getContexts', methods=['GET'])
 def getContexts():
-    language = request.args.get('language')
-    response = jsonify({"language": f"You said: {language}"})
+    """_summary_
+
+    :raises Exception: This is an error message!
+    :return: _description_
+    :rtype: _type_
+    """
+    language: str = request.args.get('language')
+    response:str = jsonify({"language": f"You said: {language}"})
     response.headers.add('Access-Control-Allow-Origin', '*')
+    if language == 'error':
+        raise Exception('This is an error message!')
     return response
 
 @app.route('/sayhi', methods=['GET'])
