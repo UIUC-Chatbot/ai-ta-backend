@@ -1,1 +1,1 @@
-web: gunicorn ai-ta-backend/main:app
+web: gunicorn ai-ta-backend:main:app
