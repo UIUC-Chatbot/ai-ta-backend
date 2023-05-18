@@ -59,7 +59,7 @@ def getContexts():
   ret = {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
   
   response:str = jsonify(ret)
-  # response.headers.add('Access-Control-Allow-Origin', '*')
+  response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
 @app.route('/sayhi', methods=['GET'])
