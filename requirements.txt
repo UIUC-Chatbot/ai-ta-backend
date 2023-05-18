@@ -11,3 +11,4 @@ qdrant-client
 mkdocs
 mkdocstrings[python]
 mkdocs-material
+sqlalchemy
