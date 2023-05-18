@@ -6,6 +6,10 @@ from flask_cors import CORS
 from qdrant_client import QdrantClient
 from sqlalchemy import JSON
 
+app = Flask(__name__)
+CORS(app)
+
+
 # load API keys from globally-availabe .env file
 load_dotenv(dotenv_path='../.env', override=True)
 
@@ -13,6 +17,7 @@ class VectorDatabase:
     """Contains all methods for building and using vector databases.
     """
 
+    @app.route('/')
     def index(self,test: int = 1)->JSON:
         """_summary_
 
@@ -24,6 +29,7 @@ class VectorDatabase:
         """
         return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
+    @app.route('/getTopContexts', methods=['GET'])
     def getContexts(self,):
         """Here's a summary of the work.
 
@@ -58,6 +64,7 @@ class VectorDatabase:
             raise Exception('This is an error message!')
         return response
 
+    @app.route('/sayhi', methods=['GET'])
     def sayhi(self, cool: str = 'cool'):
         """Here's what it does
         
@@ -91,6 +98,7 @@ class VectorDatabase:
 
 
 
+    @app.route('/getqdrant')
     def getqdrant(self,):
         qdrant_client = QdrantClient(
             url=os.environ.get("QDRANT_URL"),
@@ -99,5 +107,5 @@ class VectorDatabase:
         return 'Placeholder return'
 
 
-# if __name__ == '__main__':
-    # app.run(debug=True, port=os.getenv("PORT", default=5000))
+if __name__ == '__main__':
+    app.run(debug=True, port=os.getenv("PORT", default=5000))
