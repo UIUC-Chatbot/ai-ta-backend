@@ -44,19 +44,22 @@ def getContexts():
   """
   # todo: best way to handle optional arguments?
   try:
-    language: str = request.args.get('course_name')
+    course_name: str = request.args.get('course_name')
+    if course_name == 'error':
+      raise Exception(f'The course name `{course_name}` was invalid!')
   except Exception as e:
-    print("No course name provided.")
+    print(f"No valid course name provided. Error: {e}")
   try:
-    language: str = request.args.get('course_name')
+    course_name: str = request.args.get('course_name')
   except Exception as e:
     print("No course name provided.")
 
-  language: str = request.args.get('course_name')
-  response:str = jsonify({"language": f"You said: {language}"})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  if language == 'error':
-    raise Exception('This is an error message!')
+  course_name: str = request.args.get('course_name')
+  
+  ret = {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
+  
+  response:str = jsonify(ret)
+  # response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
 @app.route('/sayhi', methods=['GET'])
