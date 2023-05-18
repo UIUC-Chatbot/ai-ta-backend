@@ -1,1 +1,1 @@
-web: gunicorn ai-ta-backend:main:app
+web: cd ai-ta-backend && gunicorn main:app
