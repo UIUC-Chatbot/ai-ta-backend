@@ -114,6 +114,32 @@ def sayhi( ):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/test_endpoint2', methods=['GET'])
+def neha_sayhi( ):
+  """Here's what it does
+  
+  Parameters
+  ----------
+  cool : str, optional 
+
+  Returns
+  -------
+  JSON
+      A simple json response.
+  
+  Example usage
+  -------------
+  First mode, *buffer* is `None`:
+  ```python
+  sayhi(cool='cool')
+  {"language": "Hi there: cool"}
+  ```
+  """
+  language = request.args.get('language')
+  response = jsonify({"language": f"Hi there: {language}"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 def get_contexts():
   contexts = {'language': 'python', 'framework': 'Flask'}
