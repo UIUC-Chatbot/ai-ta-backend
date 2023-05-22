@@ -89,7 +89,7 @@ def sayhi( ):
   return response
 
 @app.route('/test_endpoint', methods=['GET'])
-def sayhi( ):
+def test_endpoint( ):
   """Here's what it does
   
   Parameters
