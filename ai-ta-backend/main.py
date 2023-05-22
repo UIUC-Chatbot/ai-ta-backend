@@ -88,8 +88,34 @@ def sayhi( ):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/sayhifromrohan', methods=['GET'])
+def sayhifromrohan( ):
+  """Here's what it does
+
+  Parameters
+  ----------
+  cool : str, optional
+
+  Returns
+  -------
+  JSON
+      A simple json response.
+
+  Example usage
+  -------------
+  First mode, *buffer* is `None`:
+  ```python
+  sayhi(cool='cool')
+  {"language": "Hi there: cool"}
+  ```
+  """
+  language = request.args.get('language')
+  response = jsonify({"language": f"Hi there: {language}"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 @app.route('/test_endpoint', methods=['GET'])
-def sayhi( ):
+def test_endpoint( ):
   """Here's what it does
   
   Parameters
