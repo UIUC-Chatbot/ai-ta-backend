@@ -29,21 +29,19 @@ class Ingest():
   """
   Contains all methods for building and using vector databases.
   """
-
   def __init__(self):
+
+    
     """
+    
     Initialize AWS S3, Qdrant, and Supabase.
     """
 
     # vector DB
-    self.qdrant_client = QdrantClient(
-        url=os.environ['QDRANT_URL'],
-        api_key=os.environ['QDRANT_API_KEY'],
-    )
-    # embeds = 
-    self.vectorstore = Qdrant(client=self.qdrant_client,
-                              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                              embeddings=OpenAIEmbeddings())
+    self.qdrant_client = QdrantClient(url=os.environ['QDRANT_URL'],api_key=os.environ['QDRANT_API_KEY'],)
+
+    # TRYING TO BREAK THE LINTER, DID IT WORK ??
+    self.vectorstore = Qdrant(client=self.qdrant_client,collection_name=os.environ['QDRANT_COLLECTION_NAME'],embeddings=OpenAIEmbeddings())
 
     # S3
     self.s3_client = boto3.client(
