@@ -40,7 +40,7 @@ class Ingest():
         url=os.environ['QDRANT_URL'],
         api_key=os.environ['QDRANT_API_KEY'],
     )
-    embeds = 
+    # embeds = 
     self.vectorstore = Qdrant(client=self.qdrant_client,
                               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
                               embeddings=OpenAIEmbeddings())
