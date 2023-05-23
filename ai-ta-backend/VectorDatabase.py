@@ -11,7 +11,7 @@ import supabase
 from dotenv import load_dotenv
 from flask import jsonify, request
 from flask.json import jsonify
-from langchain.document_loaders import S3DirectoryLoader
+from langchain.document_loaders import S3DirectoryLoader # type: ignore
 # from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.embeddings import OpenAIEmbeddings # type: ignore
 from langchain.schema import Document
