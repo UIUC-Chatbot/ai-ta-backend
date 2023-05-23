@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from re import L, T
 from tempfile import TemporaryFile
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 from xml.dom.minidom import Document  # PDF to text
 
 import boto3
@@ -60,7 +60,7 @@ class Ingest():
     
     return None
 
-  def read_PDF(self, pdf_tmpfile, s3_pdf_path: str) -> list[Document]:
+  def read_PDF(self, pdf_tmpfile, s3_pdf_path: str) -> List[Document]:
     """
     Both OCR the PDF, and split the text into chunks. Returns chunks as List[Document].
       LangChain `Documents` have .metadata and .page_content attributes.
@@ -93,7 +93,7 @@ class Ingest():
 
     return remove_small_contexts(texts=texts)
 
-  def ingest_PDFs(self, s3_pdf_paths: str | List[str] ):
+  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]]): # str | List[str]
     """
     Main function. Ingests single PDF into Qdrant.
     """
