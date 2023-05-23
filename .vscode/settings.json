@@ -10,5 +10,29 @@
     "tag:yaml.org,2002:python/name:pymdownx.superfences.fence_code_format"
   ],
   "python.analysis.typeCheckingMode": "basic",
-  "cSpell.words": ["callout", "Callout", "numpy", "UIUC"]
+  "cSpell.words": [
+    "availabe",
+    "boto",
+    "callout",
+    "Callout",
+    "dotenv",
+    "fitz",
+    "jsonify",
+    "langchain",
+    "metadatas",
+    "NLTK",
+    "numpy",
+    "qdrant",
+    "Qdrant",
+    "QDRANT",
+    "Spacy",
+    "sqlalchemy",
+    "supabase",
+    "Supabase",
+    "SUPABASE",
+    "tiktoken",
+    "UIUC",
+    "vectorstore",
+    "vectorstores"
+  ]
 }

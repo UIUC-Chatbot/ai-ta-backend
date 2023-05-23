@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from re import L, T
 from tempfile import TemporaryFile
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 from xml.dom.minidom import Document  # PDF to text
 
 import boto3
@@ -43,7 +43,7 @@ class Ingest():
         url=os.environ['QDRANT_URL'],
         api_key=os.environ['QDRANT_API_KEY'],
     )
-    self.vectorstore = Qdrant(client=qdrant_client,
+    self.vectorstore = Qdrant(client=self.qdrant_client,
                               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
                               embedding_function=OpenAIEmbeddings())
 
@@ -60,8 +60,10 @@ class Ingest():
     
     return None
 
-  def read_PDF(self, pdf_tmpfile, s3_pdf_path: str) -> List[Document]:
+  def _ingest_single_PDF(self, pdf_tmpfile, s3_pdf_path: str) -> Literal['Success']:
     """
+    Private method. Use ingest_PDFs() instead.
+    
     Both OCR the PDF, and split the text into chunks. Returns chunks as List[Document].
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
@@ -90,10 +92,15 @@ class Ingest():
     def remove_small_contexts(texts: List[Document]) -> List[Document]:
       # Remove TextSplit contexts with fewer than 50 chars.
       return [doc for doc in texts if len(doc.page_content) > 50]
+    
+    texts = remove_small_contexts(texts=texts)
+  
+    # upload to Qdrant
+    self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
 
-    return remove_small_contexts(texts=texts)
+    return "Success"
 
-  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]]): # str | List[str]
+  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]]) -> Literal['Error', 'Success']: # str | List[str]
     """
     Main function. Ingests single PDF into Qdrant.
     """
@@ -101,52 +108,18 @@ class Ingest():
       if isinstance(s3_pdf_paths, str):
         s3_pdf_paths = [s3_pdf_paths]
 
-
       for s3_pdf_path in s3_pdf_paths:
         with TemporaryFile() as pdf_tmpfile:
-          # download PDF from S3
+          # download from S3 into pdf_tmpfile
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_pdf_path, Fileobj=pdf_tmpfile)
-
-
-          docs = self.read_PDF(pdf_tmpfile, s3_pdf_path)
-          self.vectorstore.add_texts([doc.text for doc in docs], [doc.metadata for doc in docs])
-
-      self.vectorstore.add_texts(docs)
-
-      # for S3
-      
-
-      # Upload a file to the S3 bucket
-      file_path = 'path/to/your/local/file.txt'
-      s3_key = 'path/to/your/s3/object.txt'
-
-      with open(file_path, 'rb') as file:
-        s3_client.upload_fileobj(file, S3_BUCKET_NAME, s3_key)
-
-      # Download a file from the S3 bucket
-      destination_file_path = 'path/to/your/local/destination/file.txt'
-      s3_key_to_download = 'path/to/your/s3/object.txt'
-
-      # with open(destination_file_path, 'wb') as file:
-      # use a tempfile instead
-      with TemporaryFile() as file:
-        s3_client.download_fileobj(S3_BUCKET_NAME, s3_key_to_download, file)
-
-
-      # qdrant_vectorstore = Qdrant.from_documents(
-      #     docs,
-      #     OpenAIEmbeddings(),
-      #     os.environ['QDRANT_URL'],
-      #     prefer_grpc=True,
-      #     api_key=os.environ['QDRANT_API_KEY'],
-      #     collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-      # )
-      # self.vectorstore = qdrant_vectorstore
-
+          try: 
+            # try to ingest single PDF
+            self._ingest_single_PDF(pdf_tmpfile, s3_pdf_path)
+          except Exception as e:
+            print(e)
     except Exception as e:
       print(e)
       return "Error"
-
     return "Success"
 
 

@@ -12,3 +12,7 @@ mkdocs
 mkdocstrings[python]
 mkdocs-material
 sqlalchemy
+qdrant-client
+langchain
+openai
+supabase
