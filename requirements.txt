@@ -19,3 +19,4 @@ supabase
 SQLAlchemy
 boto3
 fitz
+PyMuPDF
