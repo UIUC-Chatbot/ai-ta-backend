@@ -13,7 +13,7 @@ from flask import Flask, jsonify, request
 from flask.json import jsonify
 from flask_cors import CORS
 from langchain import text_splitter
-from langchain.document_loaders import TextLoader
+from langchain.document_loaders import S3DirectoryLoader, TextLoader
 from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import (CharacterTextSplitter, NLTKTextSplitter,
@@ -60,6 +60,30 @@ class Ingest():
     
     return None
 
+  def bulk_ingest(self, s3_paths: List[str] | str, course_name: str) -> Literal['Success']:
+    
+    if isinstance(s3_paths, str):
+      s3_paths = [s3_paths]
+    
+    for s3_path in s3_paths:
+      if s3_path.endswith('.pdf'):
+        # todo check each return value for failures. If any fail, send emails.
+        self.ingest_PDFs(s3_path, course_name)
+      elif s3_path.endswith('.txt'):
+        # self.ingest_text(s3_path, course_name)
+        print('Not yet implemented')
+      elif s3_path.endswith('.srt'):
+        print('Not yet implemented')
+      elif s3_path.endswith('.docx'):
+        # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
+        print('Not yet implemented')
+      elif s3_path.endswith('.srt'):
+        print('Not yet implemented')
+      elif s3_path.endswith('.srt'):
+        print('Not yet implemented')
+    
+    return "Success"
+    
   def _ingest_single_PDF(self, pdf_tmpfile, s3_pdf_path: str) -> Literal['Success']:
     """
     Private method. Use ingest_PDFs() instead.
@@ -117,6 +141,20 @@ class Ingest():
             self._ingest_single_PDF(pdf_tmpfile, s3_pdf_path)
           except Exception as e:
             print(e)
+    except Exception as e:
+      print(e)
+      return "Error"
+    return "Success"
+  
+  def ingest_S3_directory(self, s3_dir_path: str) -> Literal['Error', 'Success']:
+    """
+    Ingest whole dir. Seems like many failure cases... Good rough prototype....
+    Docs: https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/aws_s3_directory.html
+    """
+    try:
+      loader = S3DirectoryLoader(os.environ['S3_BUCKET_NAME'], prefix=s3_dir_path)
+      docs = loader.load()
+      self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
     except Exception as e:
       print(e)
       return "Error"

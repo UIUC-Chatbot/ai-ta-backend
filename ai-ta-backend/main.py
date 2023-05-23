@@ -1,10 +1,12 @@
 import os
+from typing import Any, List
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
+from VectorDatabase import Ingest
 
 app = Flask(__name__)
 CORS(app)
@@ -88,6 +90,55 @@ def sayhi( ):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/S3_dir_ingest', methods=['GET'])
+def S3_dir_ingest( ):
+  """Rough ingest of whole S3 dir. Pretty handy.
+  
+  S3 path, NO BUCKET. We assume the bucket is an .env variable.
+
+  Returns:
+      str: Success or Failure message
+  """
+  
+  ingester = Ingest()
+  
+  s3_path: List[str] | str = request.args.get('s3_path')
+  # course_name: List[str] | str = request.args.get('course_name')
+  ret = ingester.ingest_S3_directory(s3_path)
+  if ret == 'success':
+    response = jsonify({"ingest_status": "success"})
+  else:
+    response = jsonify({"ingest_status": ret})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+
+@app.route('/ingest', methods=['GET'])
+def ingest( ):
+  """Ingests PDFs from S3 filepath (not RUL) into our internal systems.
+  
+  TODO: change to ingest all files, not just PDFs. 
+  
+  args:
+    s3_paths: str | List[str]
+
+  Returns:
+      _type_: _description_
+  """
+  
+  ingester = Ingest()
+  
+  s3_paths: List[str] | str = request.args.get('s3_paths')
+  course_name: List[str] | str = request.args.get('course_name')
+  ret = ingester.bulk_ingest(s3_paths, course_name)
+  if ret == 'success':
+    response = jsonify({"ingest_status": "success"})
+  else:
+    response = jsonify({"ingest_status": ret})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 @app.route('/sayhifromrohan', methods=['GET'])
 def sayhifromrohan( ):
   """Here's what it does
@@ -165,6 +216,8 @@ def neha_sayhi( ):
   response = jsonify({"language": f"Hi there: {language}"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+
 
 
 def get_contexts():
