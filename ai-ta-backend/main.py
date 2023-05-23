@@ -15,8 +15,9 @@ CORS(app)
 # load API keys from globally-availabe .env file
 load_dotenv(dotenv_path='../.env', override=True)
 
+
 @app.route('/')
-def index()->JSON:
+def index() -> JSON:
   """_summary_
 
   Args:
@@ -26,6 +27,7 @@ def index()->JSON:
       JSON: _description_
   """
   return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
+
 
 @app.route('/getTopContexts', methods=['GET'])
 def getContexts():
@@ -63,16 +65,16 @@ def getContexts():
   except Exception as e:
     print("No course name provided.")
 
-  
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query)
-  
+
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/sayhi', methods=['GET'])
-def sayhi( ):
+def sayhi():
   """Here's what it does
   
   Parameters
@@ -97,8 +99,9 @@ def sayhi( ):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/S3_dir_ingest', methods=['GET'])
-def S3_dir_ingest( ):
+def S3_dir_ingest():
   """Rough ingest of whole S3 dir. Pretty handy.
   
   S3 path, NO BUCKET. We assume the bucket is an .env variable.
@@ -106,9 +109,9 @@ def S3_dir_ingest( ):
   Returns:
       str: Success or Failure message
   """
-  
+
   ingester = Ingest()
-  
+
   s3_path: List[str] | str = request.args.get('s3_path')
   # course_name: List[str] | str = request.args.get('course_name')
   ret = ingester.ingest_S3_directory(s3_path)
@@ -120,9 +123,8 @@ def S3_dir_ingest( ):
   return response
 
 
-
 @app.route('/ingest', methods=['GET'])
-def ingest( ):
+def ingest():
   """Ingests PDFs from S3 filepath (not RUL) into our internal systems.
   
   TODO: change to ingest all files, not just PDFs. 
@@ -133,9 +135,9 @@ def ingest( ):
   Returns:
       str: Success or Failure message. Failure message if any failures. TODO: email on failure.
   """
-  
+
   ingester = Ingest()
-  
+
   s3_paths: List[str] | str = request.args.get('s3_paths')
   course_name: List[str] | str = request.args.get('course_name')
   ret = ingester.bulk_ingest(s3_paths, course_name)
@@ -146,8 +148,9 @@ def ingest( ):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/sayhifromrohan', methods=['GET'])
-def sayhifromrohan( ):
+def sayhifromrohan():
   """Here's what it does
 
   Parameters
@@ -172,8 +175,9 @@ def sayhifromrohan( ):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/test_endpoint', methods=['GET'])
-def test_endpoint( ):
+def test_endpoint():
   """Here's what it does
   
   Parameters
@@ -198,8 +202,9 @@ def test_endpoint( ):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/test_endpoint2', methods=['GET'])
-def neha_sayhi( ):
+def neha_sayhi():
   """Here's what it does
   
   Parameters
@@ -225,14 +230,10 @@ def neha_sayhi( ):
   return response
 
 
-
-
 def get_contexts():
   contexts = {'language': 'python', 'framework': 'Flask'}
   response = jsonify(contexts)
   return response
-
-
 
 
 if __name__ == '__main__':
