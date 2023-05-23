@@ -197,7 +197,6 @@ class Ingest():
       print(f"No course name provided. Error: \n{e}")
       
     found_docs = self.vectorstore.similarity_search(search_query)
-    found_docs = 'hi its kastan'
     print("found_docs:")
     print(found_docs)
     
