@@ -63,6 +63,7 @@ class Ingest():
       s3_paths = [s3_paths]
 
     for s3_path in s3_paths:
+      print(s3_path)
       if s3_path.endswith('.pdf'):
         # todo check each return value for failures. If any fail, send emails.
         self.ingest_PDFs(s3_path, course_name)
@@ -81,6 +82,16 @@ class Ingest():
 
     return "Success"
 
+  def _ingest_single_docx(self, s3_docx_path: str) -> Literal['Success']:
+    with TemporaryFile() as pdf_tmpfile:
+      # download from S3 into pdf_tmpfile
+      self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_pdf_path, Fileobj=pdf_tmpfile)
+      
+      loader = Docx2txtLoader("example_data/fake.docx")
+      data = loader.load()
+      data = [dict(text=doc, filename=Path(s3_docx_path).stem) for doc in data]
+
+
   def _ingest_single_PDF(self, pdf_tmpfile, s3_pdf_path: str) -> Literal['Success']:
     """
     Private method. Use ingest_PDFs() instead.
@@ -93,9 +104,9 @@ class Ingest():
     pdf_pages_OCRed: List[Dict] = []
     for i, page in enumerate(fitz.open(pdf_tmpfile)):
       text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
-      pdf_pages_OCRed.append(dict(text=text, page_number=i, textbook_name=Path(s3_pdf_path).name))
+      pdf_pages_OCRed.append(dict(text=text, page_number=i, filename=Path(s3_pdf_path).stem))
     print(len(pdf_pages_OCRed))
-    metadatas = [dict(page_number=page['page_number'], textbook_name=page['textbook_name']) for page in pdf_pages_OCRed]
+    metadatas = [dict(pagenumber_or_timestamp=page['page_number'], filename=page['filename'], s3_path=s3_pdf_path) for page in pdf_pages_OCRed]
     pdf_texts = [page['text'] for page in pdf_pages_OCRed]
     assert len(metadatas) == len(pdf_texts), 'must have equal number of pages and metadata objects'
 

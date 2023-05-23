@@ -38,14 +38,26 @@ def getContexts():
   ## GET arguments
   course name (optional) str
       A json response with TBD fields.
-      
+  search_query
+  top_n
+  
   Returns
   -------
   JSON
       A json response with TBD fields.
+  Metadata fileds
+  * pagenumber_or_timestamp
+  * readable_filename
+  * s3_pdf_path
+  
+  Example: 
   [
-    {'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, 
-    {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},
+    {
+      'readable_filename': 'Lumetta_notes', 
+      'pagenumber_or_timestamp': 'pg. 19', 
+      's3_pdf_path': '/courses/<course>/Lumetta_notes.pdf', 
+      'text': 'In FSM, we do this...'
+    }, 
   ]
 
   Raises
@@ -62,6 +74,10 @@ def getContexts():
     print(f"No valid course name provided. Error: {e}")
   try:
     search_query: str = request.args.get('search_query')
+  except Exception as e:
+    print("No search query provided.")
+  try:
+    search_query: str = request.args.get('top_n')
   except Exception as e:
     print("No course name provided.")
 
@@ -125,9 +141,10 @@ def S3_dir_ingest():
 
 @app.route('/ingest', methods=['GET'])
 def ingest():
-  """Ingests PDFs from S3 filepath (not RUL) into our internal systems.
+  """Recursively ingests anything from S3 filepath and below. 
+  Pass a s3_paths filepath (not URL) into our S3 bucket.
   
-  TODO: change to ingest all files, not just PDFs. 
+  Ingests all files, not just PDFs. 
   
   args:
     s3_paths: str | List[str]
