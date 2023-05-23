@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
 # from re import L, T
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile, TemporaryFile
 from typing import Any, Dict, List, Literal, Union
-from xml.dom.minidom import Document  # PDF to text
 
 import boto3
 import fitz
@@ -11,13 +10,20 @@ import supabase
 from dotenv import load_dotenv
 from flask import jsonify, request
 from flask.json import jsonify
+from langchain.docstore.document import Document
 from langchain.document_loaders import S3DirectoryLoader  # type: ignore
+from langchain.document_loaders import Docx2txtLoader, SRTLoader, srt
 from langchain.embeddings.openai import OpenAIEmbeddings
 # from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
 
+# from xml.dom.minidom import Document  # PDF to text
+
+
+# import traceback
+# import inspect
 # from regex import F
 # from sqlalchemy import JSON
 
@@ -57,42 +63,74 @@ class Ingest():
 
     return None
 
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Literal['Success']:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Literal['Success'] | str:
+    # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
+    try:
+      if isinstance(s3_paths, str):
+        s3_paths = [s3_paths]
 
-    if isinstance(s3_paths, str):
-      s3_paths = [s3_paths]
+      for s3_path in s3_paths:
+        # print("s3_path", s3_path)
+          # todo check each return value for failures. If any fail, send emails.
+        
+        if s3_path.endswith('.pdf'):
+          self.ingest_PDFs(s3_path, course_name)
+        elif s3_path.endswith('.txt'):
+          # self.ingest_text(s3_path, course_name)
+          print('Not yet implemented')
+        elif s3_path.endswith('.srt'):
+          print('SRT')
+          ret = self._ingest_single_srt(s3_path, course_name)
+          if ret != "Success":
+            print(f"TODO: Send email about failure of this file: {s3_path}")
+        elif s3_path.endswith('.docx'):
+          print('DOCX')
+          ret = self._ingest_single_docx(s3_path, course_name)
+          if ret != "Success":
+            print(f"TODO: Send email about failure of this file: {s3_path}")
 
-    for s3_path in s3_paths:
-      print(s3_path)
-      if s3_path.endswith('.pdf'):
-        # todo check each return value for failures. If any fail, send emails.
-        self.ingest_PDFs(s3_path, course_name)
-      elif s3_path.endswith('.txt'):
-        # self.ingest_text(s3_path, course_name)
-        print('Not yet implemented')
-      elif s3_path.endswith('.srt'):
-        print('Not yet implemented')
-      elif s3_path.endswith('.docx'):
-        # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
-        print('Not yet implemented')
-      elif s3_path.endswith('.srt'):
-        print('Not yet implemented')
-      elif s3_path.endswith('.srt'):
-        print('Not yet implemented')
+      return "(TODO) Success or failure unknown"
+    except Exception as e:
+      return f"Error: {e}"
+  
 
-    return "Success"
+  def _ingest_single_docx(self, s3_path: str, course_name: str) -> Literal['Success'] | str:
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        
+        loader = Docx2txtLoader(tmpfile.name)
+        documents = loader.load()
+        
+        metadatas = [dict(pagenumber_or_timestamp="", course_name=course_name, filename=Path(s3_path).stem, s3_path=s3_path) for doc in documents]
+        texts = [doc.page_content for doc in documents]
+        
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"ERROR IN DOCX {e}")
+      return f"Error: {e}"
+  
+  def _ingest_single_srt(self, s3_path: str, course_name: str) -> Literal['Success'] | str:
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        
+        loader = SRTLoader(tmpfile.name)
+        documents = loader.load()
+        
+        metadatas = [dict(pagenumber_or_timestamp="", course_name=course_name, filename=Path(s3_path).stem, s3_path=s3_path) for doc in documents]
+        texts = [doc.page_content for doc in documents]
+        
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"SRT ERROR {e}")
+      return f"Error: {e}"
 
-  def _ingest_single_docx(self, s3_docx_path: str) -> Literal['Success']:
-    with TemporaryFile() as pdf_tmpfile:
-      # download from S3 into pdf_tmpfile
-      self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_pdf_path, Fileobj=pdf_tmpfile)
-      
-      loader = Docx2txtLoader("example_data/fake.docx")
-      data = loader.load()
-      data = [dict(text=doc, filename=Path(s3_docx_path).stem) for doc in data]
-
-
-  def _ingest_single_PDF(self, pdf_tmpfile, s3_pdf_path: str) -> Literal['Success']:
+  def _ingest_single_PDF(self, pdf_tmpfile, s3_pdf_path: str, course_name: str) -> Literal['Success']:
     """
     Private method. Use ingest_PDFs() instead.
     
@@ -106,31 +144,40 @@ class Ingest():
       text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
       pdf_pages_OCRed.append(dict(text=text, page_number=i, filename=Path(s3_pdf_path).stem))
     print(len(pdf_pages_OCRed))
-    metadatas = [dict(pagenumber_or_timestamp=page['page_number'], filename=page['filename'], s3_path=s3_pdf_path) for page in pdf_pages_OCRed]
+    metadatas = [dict(pagenumber_or_timestamp=page['page_number'], course_name=course_name, filename=page['filename'], s3_path=s3_pdf_path) for page in pdf_pages_OCRed]
     pdf_texts = [page['text'] for page in pdf_pages_OCRed]
     assert len(metadatas) == len(pdf_texts), 'must have equal number of pages and metadata objects'
-
-    #### SPLIT TEXTS
-    # good examples here: https://langchain.readthedocs.io/en/latest/modules/utils/combine_docs_examples/textsplitter.html
-    text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-        chunk_size=1000,
-        chunk_overlap=150,
-        separators=". ",  # try to split on sentences... 
-    )
-    texts: List[Document] = text_splitter.create_documents(texts=pdf_texts, metadatas=metadatas)
-
-    def remove_small_contexts(texts: List[Document]) -> List[Document]:
-      # Remove TextSplit contexts with fewer than 50 chars.
-      return [doc for doc in texts if len(doc.page_content) > 50]
-
-    texts = remove_small_contexts(texts=texts)
-
-    # upload to Qdrant
-    self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
-
+    
+    self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
     return "Success"
+  
+  def split_and_upload(self, texts: List[str], metadatas: List[Dict[Any, Any]]):
+    
+    
+    try: 
+      #### SPLIT TEXTS
+      # good examples here: https://langchain.readthedocs.io/en/latest/modules/utils/combine_docs_examples/textsplitter.html
+      text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+          chunk_size=1000,
+          chunk_overlap=150,
+          separators=". ",  # try to split on sentences... 
+      )
+      documents: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
+      
+      def remove_small_contexts(documents: List[Document]) -> List[Document]:
+        # Remove TextSplit contexts with fewer than 50 chars.
+        return [doc for doc in documents if len(doc.page_content) > 50]
 
-  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]]) -> Literal['Error', 'Success']:
+      documents = remove_small_contexts(documents=documents)
+
+      # upload to Qdrant
+      self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
+      return "Success"
+    except Exception as e:
+      print(f'ERROR IN SPLIT AND UPLOAD {e}')
+      return f"Error: {e}"
+  
+  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]], course_name: str) -> Literal['Error', 'Success']:
     """
     Main function. Ingests single PDF into Qdrant.
     """
@@ -144,12 +191,12 @@ class Ingest():
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_pdf_path, Fileobj=pdf_tmpfile)
           try:
             # try to ingest single PDF
-            self._ingest_single_PDF(pdf_tmpfile, s3_pdf_path)
+            self._ingest_single_PDF(pdf_tmpfile, s3_pdf_path, course_name)
           except Exception as e:
             print(e)
     except Exception as e:
       print(e)
-      return "Error"
+      return f"Error: {e}"
     return "Success"
 
   def ingest_S3_directory(self, s3_dir_path: str) -> Literal['Error', 'Success']:
