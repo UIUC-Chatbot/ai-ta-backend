@@ -20,3 +20,6 @@ SQLAlchemy
 boto3
 fitz
 PyMuPDF
+unstructured
+tabulate
+pdf2image

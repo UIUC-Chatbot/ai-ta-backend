@@ -14,7 +14,8 @@ from flask.json import jsonify
 from flask_cors import CORS
 from langchain import text_splitter
 from langchain.document_loaders import S3DirectoryLoader, TextLoader
-from langchain.embeddings import HuggingFaceEmbeddings, OpenAIEmbeddings
+from langchain.embeddings.openai import OpenAIEmbeddings
+# from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import (CharacterTextSplitter, NLTKTextSplitter,
                                      RecursiveCharacterTextSplitter,
@@ -43,9 +44,10 @@ class Ingest():
         url=os.environ['QDRANT_URL'],
         api_key=os.environ['QDRANT_API_KEY'],
     )
+    # embeds = 
     self.vectorstore = Qdrant(client=self.qdrant_client,
                               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                              embedding_function=OpenAIEmbeddings())
+                              embeddings=OpenAIEmbeddings())
 
     # S3
     self.s3_client = boto3.client(
@@ -56,7 +58,7 @@ class Ingest():
       )
 
     # Create a Supabase client
-    self.supabase_client = supabase.create_client(os.environ.get('SUPABASE_URL'), os.environ.get('SUPABASE_KEY'))
+    # self.supabase_client = supabase.create_client(supabase_url=os.environ.get('SUPABASE_URL'), supabase_key=os.environ.get('SUPABASE_API_KEY'))
     
     return None
 
@@ -148,13 +150,30 @@ class Ingest():
   
   def ingest_S3_directory(self, s3_dir_path: str) -> Literal['Error', 'Success']:
     """
+    BAD BECAUSE: can't have individual error messages per file (literally impossible)
+    can't do fancier things per file. So limiting.
+    
     Ingest whole dir. Seems like many failure cases... Good rough prototype....
     Docs: https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/aws_s3_directory.html
     """
     try:
+      # assert s3_dir_path.endswith('/'), 's3_dir_path must end with /'
       loader = S3DirectoryLoader(os.environ['S3_BUCKET_NAME'], prefix=s3_dir_path)
       docs = loader.load()
-      self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
+      print("--"*20)
+      print(docs[0].page_content)
+      print("--"*20)
+      print(f"Loaded {len(docs)} documents from S3")
+      
+      # self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
+      qdrant = Qdrant.from_documents(
+          docs, 
+          OpenAIEmbeddings(), 
+          url=os.environ['QDRANT_URL'], 
+          prefer_grpc=True, 
+          api_key=os.environ['QDRANT_API_KEY'], 
+          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+      )
     except Exception as e:
       print(e)
       return "Error"
