@@ -162,7 +162,7 @@ class Ingest():
 
 
   # todo
-  def getTopContexts(self,):
+  def getTopContexts(self, search_query: str) -> List[Document]:
     """Here's a summary of the work.
 
     /GET arguments
@@ -176,13 +176,15 @@ class Ingest():
     """
     # todo: best way to handle optional arguments?
     try:
-        language: str = request.args.get('course_name')
+      language: str = request.args.get('course_name')
     except Exception as e:
-        print("No course name provided.")
-    try:
-        language: str = request.args.get('course_name')
-    except Exception as e:
-        print("No course name provided.")
+      print(f"No course name provided. Error: \n{e}")
+      
+    found_docs = self.vectorstore.similarity_search(search_query)
+    print("found_docs:")
+    print(found_docs)
+    return found_docs
+
 
     language: str = request.args.get('course_name')
     response:str = jsonify({"language": f"You said: {language}"})
