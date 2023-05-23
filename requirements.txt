@@ -13,7 +13,7 @@ mkdocstrings[python]
 mkdocs-material
 sqlalchemy
 qdrant-client
-langchain==0.0.172
+langchain
 openai
 supabase
 SQLAlchemy

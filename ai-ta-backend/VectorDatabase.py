@@ -11,9 +11,8 @@ import supabase
 from dotenv import load_dotenv
 from flask import jsonify, request
 from flask.json import jsonify
-# from langchain.document_loaders import S3DirectoryLoader  # type: ignore
-# from langchain.embeddings.openai import OpenAIEmbeddings
-# from langchain.embeddings import OpenAIEmbeddings # type: ignore
+from langchain.document_loaders import S3DirectoryLoader  # type: ignore
+from langchain.embeddings.openai import OpenAIEmbeddings
 # from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
@@ -41,10 +40,10 @@ class Ingest():
         url=os.environ['QDRANT_URL'],
         api_key=os.environ['QDRANT_API_KEY'],
     )
-    # embeds = 
-    # self.vectorstore = Qdrant(client=self.qdrant_client,
-    #                           collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-    #                           embeddings=OpenAIEmbeddings())
+    embeds = 
+    self.vectorstore = Qdrant(client=self.qdrant_client,
+                              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+                              embeddings=OpenAIEmbeddings())
 
     # S3
     self.s3_client = boto3.client(
@@ -59,7 +58,7 @@ class Ingest():
     
     return None
 
-  def bulk_ingest(self, s3_paths: List[str] | str, course_name: str) -> Literal['Success']:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Literal['Success']:
     
     if isinstance(s3_paths, str):
       s3_paths = [s3_paths]
@@ -119,11 +118,11 @@ class Ingest():
     texts = remove_small_contexts(texts=texts)
   
     # upload to Qdrant
-    # self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
+    self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
 
     return "Success"
 
-  def ingest_PDFs(self, s3_pdf_paths: str | List[str]) -> Literal['Error', 'Success']:
+  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]]) -> Literal['Error', 'Success']:
     """
     Main function. Ingests single PDF into Qdrant.
     """
@@ -154,24 +153,23 @@ class Ingest():
     Docs: https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/aws_s3_directory.html
     """
     try:
+      assert s3_dir_path.endswith('/'), 's3_dir_path must end with /'
+      loader = S3DirectoryLoader(os.environ['S3_BUCKET_NAME'], prefix=s3_dir_path)
+      docs = loader.load()
       print("--"*20)
-      # assert s3_dir_path.endswith('/'), 's3_dir_path must end with /'
-      # loader = S3DirectoryLoader(os.environ['S3_BUCKET_NAME'], prefix=s3_dir_path)
-      # docs = loader.load()
-      # print("--"*20)
-      # print(docs[0].page_content)
-      # print("--"*20)
-      # print(f"Loaded {len(docs)} documents from S3")
+      print(docs[0].page_content)
+      print("--"*20)
+      print(f"Loaded {len(docs)} documents from S3")
       
-      # self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
-      # qdrant = Qdrant.from_documents(
-      #     docs, 
-      #     OpenAIEmbeddings(), 
-      #     url=os.environ['QDRANT_URL'], 
-      #     prefer_grpc=True, 
-      #     api_key=os.environ['QDRANT_API_KEY'], 
-      #     collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-      # )
+      self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
+      qdrant = Qdrant.from_documents(
+          docs, 
+          OpenAIEmbeddings(), 
+          url=os.environ['QDRANT_URL'], 
+          prefer_grpc=True, 
+          api_key=os.environ['QDRANT_API_KEY'], 
+          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+      )
     except Exception as e:
       print(e)
       return "Error"
@@ -194,21 +192,20 @@ class Ingest():
     """
     # todo: best way to handle optional arguments?
     try:
-      language: str = request.args.get('course_name')
+      course_name: str = request.args.get('course_name')
     except Exception as e:
       print(f"No course name provided. Error: \n{e}")
       
-    # found_docs = self.vectorstore.similarity_search(search_query)
+    found_docs = self.vectorstore.similarity_search(search_query)
     found_docs = 'hi its kastan'
     print("found_docs:")
     print(found_docs)
     
     # {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
-    return found_docs
-    # return self.format_for_json(found_docs)
+    return self.format_for_json(found_docs)
   
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
-    """Formatting only: e
+    """Formatting only.
       {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
 
     Args:
@@ -228,13 +225,3 @@ class Ingest():
       for doc in found_docs]
     
     return contexts
-    
-    
-
-
-    language: str = request.args.get('course_name')
-    response:str = jsonify({"language": f"You said: {language}"})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    if language == 'error':
-      raise Exception('This is an error message!')
-    return response
