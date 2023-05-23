@@ -11,16 +11,15 @@ import supabase
 from dotenv import load_dotenv
 from flask import jsonify, request
 from flask.json import jsonify
-from langchain.document_loaders import S3DirectoryLoader, TextLoader
+from langchain.document_loaders import S3DirectoryLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
-from langchain.text_splitter import (CharacterTextSplitter, NLTKTextSplitter,
-                                     RecursiveCharacterTextSplitter,
-                                     SpacyTextSplitter)
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
-from regex import F
-from sqlalchemy import JSON
+
+# from regex import F
+# from sqlalchemy import JSON
 
 # load API keys from globally-availabe .env file
 load_dotenv(dotenv_path='../.env', override=True)
@@ -189,6 +188,7 @@ class Ingest():
 
     Raises:
       Exception: Testing how exceptions are handled.
+    ret = {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
     """
     # todo: best way to handle optional arguments?
     try:
@@ -199,7 +199,28 @@ class Ingest():
     found_docs = self.vectorstore.similarity_search(search_query)
     print("found_docs:")
     print(found_docs)
+    
+    # {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
     return found_docs
+    # return self.format_for_json(found_docs)
+  
+  def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
+    """Formatting only: e
+      {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
+
+    Args:
+        found_docs (List[Document]): _description_
+
+    Raises:
+        Exception: _description_
+
+    Returns:
+        List[Dict]: _description_
+    """
+    
+    return jsonify(found_docs)
+    
+    
 
 
     language: str = request.args.get('course_name')

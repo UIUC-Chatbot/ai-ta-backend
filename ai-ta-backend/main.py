@@ -52,15 +52,18 @@ def getContexts():
   except Exception as e:
     print(f"No valid course name provided. Error: {e}")
   try:
-    course_name: str = request.args.get('course_name')
+    search_query: str = request.args.get('search_query')
   except Exception as e:
     print("No course name provided.")
 
-  course_name: str = request.args.get('course_name')
   
-  ret = {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
+  ingester = Ingest()
+  found_documents = ingester.getTopContexts(search_query)
   
-  response:str = jsonify(ret)
+  # ret = {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
+  
+  # TypeError: Object of type Document is not JSON serializable
+  response:str = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
