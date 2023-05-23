@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from qdrant_client import QdrantClient
+# from qdrant_client import QdrantClient
 from sqlalchemy import JSON
 
 app = Flask(__name__)
@@ -173,14 +173,6 @@ def get_contexts():
   return response
 
 
-
-@app.route('/getqdrant')
-def getqdrant():
-  qdrant_client = QdrantClient(
-      url=os.environ.get("QDRANT_URL"),
-      api_key=os.environ.get("QDRANT_API_KEY"),
-  )
-  return 'Placeholder return'
 
 
 if __name__ == '__main__':

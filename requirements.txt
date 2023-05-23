@@ -16,3 +16,4 @@ qdrant-client
 langchain
 openai
 supabase
+SQLAlchemy

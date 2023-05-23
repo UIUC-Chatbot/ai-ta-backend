@@ -100,7 +100,7 @@ class Ingest():
 
     return "Success"
 
-  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]]) -> Literal['Error', 'Success']: # str | List[str]
+  def ingest_PDFs(self, s3_pdf_paths: str | List[str]) -> Literal['Error', 'Success']:
     """
     Main function. Ingests single PDF into Qdrant.
     """
