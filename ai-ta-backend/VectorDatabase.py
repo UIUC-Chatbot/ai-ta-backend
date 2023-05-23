@@ -14,7 +14,7 @@ from flask.json import jsonify
 # from langchain.document_loaders import S3DirectoryLoader  # type: ignore
 # from langchain.embeddings.openai import OpenAIEmbeddings
 # from langchain.embeddings import OpenAIEmbeddings # type: ignore
-from langchain.schema import Document
+# from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
