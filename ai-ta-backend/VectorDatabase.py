@@ -11,7 +11,7 @@ import supabase
 from dotenv import load_dotenv
 from flask import jsonify, request
 from flask.json import jsonify
-from langchain.document_loaders import S3DirectoryLoader  # type: ignore
+# from langchain.document_loaders import S3DirectoryLoader  # type: ignore
 # from langchain.embeddings.openai import OpenAIEmbeddings
 # from langchain.embeddings import OpenAIEmbeddings # type: ignore
 from langchain.schema import Document
@@ -154,13 +154,14 @@ class Ingest():
     Docs: https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/aws_s3_directory.html
     """
     try:
+      print("--"*20)
       # assert s3_dir_path.endswith('/'), 's3_dir_path must end with /'
-      loader = S3DirectoryLoader(os.environ['S3_BUCKET_NAME'], prefix=s3_dir_path)
-      docs = loader.load()
-      print("--"*20)
-      print(docs[0].page_content)
-      print("--"*20)
-      print(f"Loaded {len(docs)} documents from S3")
+      # loader = S3DirectoryLoader(os.environ['S3_BUCKET_NAME'], prefix=s3_dir_path)
+      # docs = loader.load()
+      # print("--"*20)
+      # print(docs[0].page_content)
+      # print("--"*20)
+      # print(f"Loaded {len(docs)} documents from S3")
       
       # self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
       # qdrant = Qdrant.from_documents(
