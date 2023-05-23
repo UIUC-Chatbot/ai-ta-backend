@@ -201,8 +201,7 @@ class Ingest():
     print(found_docs)
     
     # {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
-    return found_docs
-    # return self.format_for_json(found_docs)
+    return self.format_for_json(found_docs)
   
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
     """Formatting only: e
@@ -218,7 +217,14 @@ class Ingest():
         List[Dict]: _description_
     """
     
-    return jsonify(found_docs)
+    # TODO fix 
+    contexts = [
+      {'source_name': doc.metadata['source'], 
+       'source_location': doc.metadata['source'], 
+       'text': doc.page_content} 
+      for doc in found_docs]
+    
+    return contexts
     
     
 

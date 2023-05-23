@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Any, List
 
 from dotenv import load_dotenv
@@ -28,7 +29,9 @@ def index()->JSON:
 
 @app.route('/getTopContexts', methods=['GET'])
 def getContexts():
-  """Here's a summary of the work.
+  """Get most relevant contexts for a given search query.
+  
+  Return value
 
   ## GET arguments
   course name (optional) str
@@ -38,6 +41,10 @@ def getContexts():
   -------
   JSON
       A json response with TBD fields.
+  [
+    {'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, 
+    {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},
+  ]
 
   Raises
   ------
@@ -60,10 +67,7 @@ def getContexts():
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query)
   
-  # ret = {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
-  
-  # TypeError: Object of type Document is not JSON serializable
-  response:str = jsonify(found_documents)
+  response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
