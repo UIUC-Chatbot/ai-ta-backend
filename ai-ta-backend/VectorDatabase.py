@@ -11,9 +11,9 @@ import supabase
 from dotenv import load_dotenv
 from flask import jsonify, request
 from flask.json import jsonify
-from langchain.document_loaders import S3DirectoryLoader # type: ignore
+from langchain.document_loaders import S3DirectoryLoader  # type: ignore
 # from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.embeddings import OpenAIEmbeddings # type: ignore
+# from langchain.embeddings import OpenAIEmbeddings # type: ignore
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
@@ -42,9 +42,9 @@ class Ingest():
         api_key=os.environ['QDRANT_API_KEY'],
     )
     # embeds = 
-    self.vectorstore = Qdrant(client=self.qdrant_client,
-                              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                              embeddings=OpenAIEmbeddings())
+    # self.vectorstore = Qdrant(client=self.qdrant_client,
+    #                           collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+    #                           embeddings=OpenAIEmbeddings())
 
     # S3
     self.s3_client = boto3.client(
@@ -119,7 +119,7 @@ class Ingest():
     texts = remove_small_contexts(texts=texts)
   
     # upload to Qdrant
-    self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
+    # self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
 
     return "Success"
 
@@ -163,14 +163,14 @@ class Ingest():
       print(f"Loaded {len(docs)} documents from S3")
       
       # self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
-      qdrant = Qdrant.from_documents(
-          docs, 
-          OpenAIEmbeddings(), 
-          url=os.environ['QDRANT_URL'], 
-          prefer_grpc=True, 
-          api_key=os.environ['QDRANT_API_KEY'], 
-          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-      )
+      # qdrant = Qdrant.from_documents(
+      #     docs, 
+      #     OpenAIEmbeddings(), 
+      #     url=os.environ['QDRANT_URL'], 
+      #     prefer_grpc=True, 
+      #     api_key=os.environ['QDRANT_API_KEY'], 
+      #     collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+      # )
     except Exception as e:
       print(e)
       return "Error"
@@ -178,7 +178,7 @@ class Ingest():
 
 
   # todo
-  def getTopContexts(self, search_query: str) -> List[Document]:
+  def getTopContexts(self, search_query: str):
     """Here's a summary of the work.
 
     /GET arguments
@@ -197,12 +197,14 @@ class Ingest():
     except Exception as e:
       print(f"No course name provided. Error: \n{e}")
       
-    found_docs = self.vectorstore.similarity_search(search_query)
+    # found_docs = self.vectorstore.similarity_search(search_query)
+    found_docs = 'hi its kastan'
     print("found_docs:")
     print(found_docs)
     
     # {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
-    return self.format_for_json(found_docs)
+    return found_docs
+    # return self.format_for_json(found_docs)
   
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
     """Formatting only: e
