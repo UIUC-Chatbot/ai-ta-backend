@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from re import L, T
+# from re import L, T
 from tempfile import TemporaryFile
 from typing import Any, Dict, List, Literal, Union
 from xml.dom.minidom import Document  # PDF to text
@@ -9,18 +9,15 @@ import boto3
 import fitz
 import supabase
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import jsonify, request
 from flask.json import jsonify
-from flask_cors import CORS
-from langchain import text_splitter
 from langchain.document_loaders import S3DirectoryLoader, TextLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
-# from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import (CharacterTextSplitter, NLTKTextSplitter,
                                      RecursiveCharacterTextSplitter,
                                      SpacyTextSplitter)
-from langchain.vectorstores import Pinecone, Qdrant
+from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
 from regex import F
 from sqlalchemy import JSON
