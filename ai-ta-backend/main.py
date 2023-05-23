@@ -131,7 +131,7 @@ def ingest( ):
     s3_paths: str | List[str]
 
   Returns:
-      _type_: _description_
+      str: Success or Failure message. Failure message if any failures. TODO: email on failure.
   """
   
   ingester = Ingest()
