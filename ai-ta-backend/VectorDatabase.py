@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 # from re import L, T
 from tempfile import NamedTemporaryFile, TemporaryFile
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Union
 
 import boto3
 import fitz
@@ -63,7 +63,7 @@ class Ingest():
 
     return None
 
-  def bulk_ingest(self, s3_paths: List[str] | str, course_name: str) -> str:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> str:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     try:
       if isinstance(s3_paths, str):
@@ -174,7 +174,7 @@ class Ingest():
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
   
-  def ingest_PDFs(self, s3_pdf_paths: str | List[str], course_name: str) -> str:
+  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]], course_name: str) -> str:
     """
     Main function. Ingests single PDF into Qdrant.
     """
