@@ -1,4 +1,8 @@
+import inspect
 import os
+# from xml.dom.minidom import Document  # PDF to text
+# from re import L, T
+import traceback
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryFile
 from typing import Any, Dict, List, Literal, Union
@@ -16,10 +20,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
 
-# from xml.dom.minidom import Document  # PDF to text
-# from re import L, T
-# import traceback
-# import inspect
 # from regex import F
 # from sqlalchemy import JSON
 
@@ -142,7 +142,7 @@ class Ingest():
     
         ### READ OCR of PDF
         pdf_pages_OCRed: List[Dict] = []
-        for i, page in enumerate(fitz.open(pdf_tmpfile)):
+        for i, page in enumerate(fitz.open(pdf_tmpfile)): # type: ignore
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, filename=Path(s3_pdf_path).stem))
         print(len(pdf_pages_OCRed))
@@ -239,7 +239,7 @@ class Ingest():
       self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
       qdrant = Qdrant.from_documents(
           docs,
-          OpenAIEmbeddings(),
+          OpenAIEmbeddings(), # type: ignore
           url=os.environ['QDRANT_URL'],
           prefer_grpc=True,
           api_key=os.environ['QDRANT_API_KEY'],
@@ -266,16 +266,18 @@ class Ingest():
     """
     # todo: best way to handle optional arguments?
     try:
-      course_name: str = request.args.get('course_name')
+      found_docs = self.vectorstore.similarity_search(search_query)
+      print("found_docs:")
+      print(found_docs)
+
+      # {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
+      return self.format_for_json(found_docs)
     except Exception as e:
-      print(f"No course name provided. Error: \n{e}")
-
-    found_docs = self.vectorstore.similarity_search(search_query)
-    print("found_docs:")
-    print(found_docs)
-
-    # {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
-    return self.format_for_json(found_docs)
+      # return full traceback to front end.
+      err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"
+      print(err)
+      return err
+    
 
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
     """Formatting only.

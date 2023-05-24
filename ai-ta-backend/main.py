@@ -30,7 +30,7 @@ def index() -> JSON:
 
 
 @app.route('/getTopContexts', methods=['GET'])
-def getContexts():
+def getTopContexts():
   """Get most relevant contexts for a given search query.
   
   Return value
@@ -77,9 +77,15 @@ def getContexts():
   except Exception as e:
     print("No search query provided.")
   try:
-    search_query: str = request.args.get('top_n')
+    top_n: str = request.args.get('top_n')
   except Exception as e:
     print("No course name provided.")
+  
+  print("In /getTopContexts: ", search_query)
+  print("search_query: ", search_query)
+  
+  if search_query is None:
+    return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
 
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query)
