@@ -65,10 +65,10 @@ class Ingest():
         s3_paths = [s3_paths]
         
       # ensure collection exists
-      self.qdrant_client.recreate_collection(
-          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-          vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
-      )
+      # self.qdrant_client.recreate_collection(
+      #     collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+      #     vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
+      # )
 
       for s3_path in s3_paths:
         # print("s3_path", s3_path)
@@ -80,12 +80,10 @@ class Ingest():
           # self.ingest_text(s3_path, course_name)
           print('Not yet implemented')
         elif s3_path.endswith('.srt'):
-          print('SRT')
           ret = self._ingest_single_srt(s3_path, course_name)
           if ret != "Success":
             print(f"TODO: Send email about failure of this file: {s3_path}")
         elif s3_path.endswith('.docx'):
-          print('DOCX')
           ret = self._ingest_single_docx(s3_path, course_name)
           if ret != "Success":
             print(f"TODO: Send email about failure of this file: {s3_path}")
@@ -156,7 +154,7 @@ class Ingest():
     
         ### READ OCR of PDF
         pdf_pages_OCRed: List[Dict] = []
-        for i, page in enumerate(fitz.open(pdf_tmpfile)): # type: ignore
+        for i, page in enumerate(fitz.open(pdf_tmpfile.name)): # type: ignore
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).stem))
 
@@ -168,9 +166,13 @@ class Ingest():
             'readable_filename': page['readable_filename'], 
           } for page in pdf_pages_OCRed]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+        print("PDF READING FUL DOCS:")
+        print(metadatas)
+        print(pdf_texts)
 
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
     except Exception as e:
+      print("ERROR IN PDF READING ")
       print(e)
       return f"Error {e}"
     return "Success"
