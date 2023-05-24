@@ -95,7 +95,11 @@ class Ingest():
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
+        print("Bucket: ", os.environ['S3_BUCKET_NAME'])
+        print("Key: ", s3_path)
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        print("GOT THE FILE")
+        print(tmpfile.name)
 
         loader = Docx2txtLoader(tmpfile.name)
         documents = loader.load()
@@ -148,7 +152,7 @@ class Ingest():
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
     try:
-      with TemporaryFile() as pdf_tmpfile:
+      with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=pdf_tmpfile)
     
