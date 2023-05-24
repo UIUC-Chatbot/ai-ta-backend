@@ -18,7 +18,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
-from qdrant_client import QdrantClient
+from qdrant_client import QdrantClient, models
 
 # from regex import F
 # from sqlalchemy import JSON
@@ -43,7 +43,7 @@ class Ingest():
     )
     self.vectorstore = Qdrant(client=self.qdrant_client,
                               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                              embeddings=OpenAIEmbeddings())
+                              embeddings=OpenAIEmbeddings()) # type: ignore
 
     # S3
     self.s3_client = boto3.client(
@@ -63,13 +63,19 @@ class Ingest():
     try:
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
+        
+      # ensure collection exists
+      self.qdrant_client.recreate_collection(
+          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+          vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
+      )
 
       for s3_path in s3_paths:
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
 
         if s3_path.endswith('.pdf'):
-          self.ingest_PDFs(s3_path, course_name)
+          self._ingest_single_pdf(s3_path, course_name)
         elif s3_path.endswith('.txt'):
           # self.ingest_text(s3_path, course_name)
           print('Not yet implemented')
@@ -96,10 +102,14 @@ class Ingest():
         loader = Docx2txtLoader(tmpfile.name)
         documents = loader.load()
 
-        metadatas = [
-            dict(pagenumber_or_timestamp="", course_name=course_name, filename=Path(s3_path).stem, s3_path=s3_path) for doc in documents
-        ]
         texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str,Any]] = [
+          {
+            'course_name': course_name, 
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).stem, 
+            'pagenumber_or_timestamp': '', 
+          } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
@@ -116,10 +126,14 @@ class Ingest():
         loader = SRTLoader(tmpfile.name)
         documents = loader.load()
 
-        metadatas = [
-            dict(pagenumber_or_timestamp="", course_name=course_name, filename=Path(s3_path).stem, s3_path=s3_path) for doc in documents
-        ]
         texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str,Any]] = [
+          {
+            'course_name': course_name, 
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).stem, 
+            'pagenumber_or_timestamp': '', 
+          } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
@@ -127,7 +141,7 @@ class Ingest():
       print(f"SRT ERROR {e}")
       return f"Error: {e}"
 
-  def _ingest_single_pdf(self, pdf_tmpfile, s3_pdf_path: str, course_name: str):
+  def _ingest_single_pdf(self, s3_path: str, course_name: str):
     """
     Private method. Use ingest_PDFs() instead.
     
@@ -138,18 +152,21 @@ class Ingest():
     try:
       with TemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_pdf_path, Fileobj=pdf_tmpfile)
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=pdf_tmpfile)
     
         ### READ OCR of PDF
         pdf_pages_OCRed: List[Dict] = []
         for i, page in enumerate(fitz.open(pdf_tmpfile)): # type: ignore
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
-          pdf_pages_OCRed.append(dict(text=text, page_number=i, filename=Path(s3_pdf_path).stem))
-        print(len(pdf_pages_OCRed))
-        metadatas = [
-            dict(pagenumber_or_timestamp=page['page_number'], course_name=course_name, filename=page['filename'], s3_path=s3_pdf_path)
-            for page in pdf_pages_OCRed
-        ]
+          pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).stem))
+
+        metadatas: List[Dict[str,Any]] = [
+          {
+            'course_name': course_name, 
+            's3_path': s3_path,
+            'pagenumber_or_timestamp': page['page_number'], 
+            'readable_filename': page['readable_filename'], 
+          } for page in pdf_pages_OCRed]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
 
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
@@ -191,66 +208,7 @@ class Ingest():
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
 
-  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]], course_name: str) -> str:
-    """Main function. Ingests single PDF into Qdrant.
-
-    Args:
-        s3_pdf_paths (Union[str, List[str]]): _description_
-        course_name (str): _description_
-
-    Returns:
-        str: _description_
-    """
-    try:
-      if isinstance(s3_pdf_paths, str):
-        s3_pdf_paths = [s3_pdf_paths]
-
-      for s3_pdf_path in s3_pdf_paths:
-        with TemporaryFile() as pdf_tmpfile:
-          # download from S3 into pdf_tmpfile
-          self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_pdf_path, Fileobj=pdf_tmpfile)
-          try:
-            # try to ingest single PDF
-            self._ingest_single_pdf(pdf_tmpfile, s3_pdf_path, course_name)
-          except Exception as e:
-            print(e)
-    except Exception as e:
-      print(e)
-      return f"Error {e}"
-    return "Success"
-
-  def DEPRICATED_ingest_S3_directory(self, s3_dir_path: str) -> Literal['Error', 'Success']:
-    """
-    BAD BECAUSE: can't have individual error messages per file (literally impossible)
-    can't do fancier things per file. So limiting.
-    
-    Ingest whole dir. Seems like many failure cases... Good rough prototype....
-    Docs: https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/aws_s3_directory.html
-    """
-    try:
-      assert s3_dir_path.endswith('/'), 's3_dir_path must end with /'
-      loader = S3DirectoryLoader(os.environ['S3_BUCKET_NAME'], prefix=s3_dir_path)
-      docs = loader.load()
-      print("--" * 20)
-      print(docs[0].page_content)
-      print("--" * 20)
-      print(f"Loaded {len(docs)} documents from S3")
-
-      self.vectorstore.add_texts([doc.page_content for doc in docs], [doc.metadata for doc in docs])
-      qdrant = Qdrant.from_documents(
-          docs,
-          OpenAIEmbeddings(), # type: ignore
-          url=os.environ['QDRANT_URL'],
-          prefer_grpc=True,
-          api_key=os.environ['QDRANT_API_KEY'],
-          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-      )
-    except Exception as e:
-      print(e)
-      return "Error"
-    return "Success"
-
-  # todo
+  
   def getTopContexts(self, search_query: str):
     """Here's a summary of the work.
 
@@ -258,23 +216,16 @@ class Ingest():
       course name (optional) str: A json response with TBD fields.
       
     Returns
-      JSON: A json response with TBD fields.
-
-    Raises:
-      Exception: Testing how exceptions are handled.
-    ret = {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
+      JSON: A json response with TBD fields. See main.py:getTopContexts docs.
+      or 
+      String: An error message with traceback.
     """
-    # todo: best way to handle optional arguments?
     try:
       found_docs = self.vectorstore.similarity_search(search_query)
-      print("found_docs:")
-      print(found_docs)
-
-      # {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
       return self.format_for_json(found_docs)
     except Exception as e:
-      # return full traceback to front end.
-      err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"
+      # return full traceback to front end
+      err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}" # type: ignore
       print(err)
       return err
     
@@ -293,10 +244,13 @@ class Ingest():
         List[Dict]: _description_
     """
 
-    contexts = [{
-        'source_name': doc.metadata['source'],
-        'source_location': doc.metadata['source'],
-        'text': doc.page_content
-    } for doc in found_docs]
+    contexts = [
+      {
+        'text': doc.page_content,
+        'readable_filename': doc.metadata['readable_filename'],
+        'course_name ': doc.metadata['course_name'],
+        's3_path': doc.metadata['s3_path'],
+        'pagenumber_or_timestamp': doc.metadata['pagenumber_or_timestamp'],
+      } for doc in found_docs]
 
     return contexts
