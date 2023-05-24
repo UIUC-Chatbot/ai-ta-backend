@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-# from re import L, T
 from tempfile import NamedTemporaryFile, TemporaryFile
 from typing import Any, Dict, List, Literal, Union
 
@@ -9,19 +8,16 @@ import fitz
 import supabase
 from dotenv import load_dotenv
 from flask import jsonify, request
-from flask.json import jsonify
-from langchain.docstore.document import Document
-from langchain.document_loaders import S3DirectoryLoader  # type: ignore
-from langchain.document_loaders import Docx2txtLoader, SRTLoader, srt
+from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
+                                        SRTLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
-# from langchain.schema import Document
+from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
 
 # from xml.dom.minidom import Document  # PDF to text
-
-
+# from re import L, T
 # import traceback
 # import inspect
 # from regex import F
@@ -29,7 +25,6 @@ from qdrant_client import QdrantClient
 
 # load API keys from globally-availabe .env file
 load_dotenv(dotenv_path='../.env', override=True)
-
 
 class Ingest():
   """
@@ -71,8 +66,8 @@ class Ingest():
 
       for s3_path in s3_paths:
         # print("s3_path", s3_path)
-          # todo check each return value for failures. If any fail, send emails.
-        
+        # todo check each return value for failures. If any fail, send emails.
+
         if s3_path.endswith('.pdf'):
           self.ingest_PDFs(s3_path, course_name)
         elif s3_path.endswith('.txt'):
@@ -91,45 +86,48 @@ class Ingest():
       return "(TODO) Success or failure unknown"
     except Exception as e:
       return f"Error: {e}"
-  
 
   def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-        
+
         loader = Docx2txtLoader(tmpfile.name)
         documents = loader.load()
-        
-        metadatas = [dict(pagenumber_or_timestamp="", course_name=course_name, filename=Path(s3_path).stem, s3_path=s3_path) for doc in documents]
+
+        metadatas = [
+            dict(pagenumber_or_timestamp="", course_name=course_name, filename=Path(s3_path).stem, s3_path=s3_path) for doc in documents
+        ]
         texts = [doc.page_content for doc in documents]
-        
+
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
       print(f"ERROR IN DOCX {e}")
       return f"Error: {e}"
-  
+
   def _ingest_single_srt(self, s3_path: str, course_name: str) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-        
+
         loader = SRTLoader(tmpfile.name)
         documents = loader.load()
-        
-        metadatas = [dict(pagenumber_or_timestamp="", course_name=course_name, filename=Path(s3_path).stem, s3_path=s3_path) for doc in documents]
+
+        metadatas = [
+            dict(pagenumber_or_timestamp="", course_name=course_name, filename=Path(s3_path).stem, s3_path=s3_path) for doc in documents
+        ]
         texts = [doc.page_content for doc in documents]
-        
+
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
       print(f"SRT ERROR {e}")
       return f"Error: {e}"
 
-  def _ingest_single_PDF(self, pdf_tmpfile, s3_pdf_path: str, course_name: str):
+  def _ingest_single_pdf(self, pdf_tmpfile, s3_pdf_path: str, course_name: str):
     """
     Private method. Use ingest_PDFs() instead.
     
@@ -137,30 +135,49 @@ class Ingest():
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
-    ### READ OCR of PDF
-    pdf_pages_OCRed: List[Dict] = []
-    for i, page in enumerate(fitz.open(pdf_tmpfile)):
-      text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
-      pdf_pages_OCRed.append(dict(text=text, page_number=i, filename=Path(s3_pdf_path).stem))
-    print(len(pdf_pages_OCRed))
-    metadatas = [dict(pagenumber_or_timestamp=page['page_number'], course_name=course_name, filename=page['filename'], s3_path=s3_pdf_path) for page in pdf_pages_OCRed]
-    pdf_texts = [page['text'] for page in pdf_pages_OCRed]
-    assert len(metadatas) == len(pdf_texts), 'must have equal number of pages and metadata objects'
+    try:
+      with TemporaryFile() as pdf_tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_pdf_path, Fileobj=pdf_tmpfile)
     
-    self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        ### READ OCR of PDF
+        pdf_pages_OCRed: List[Dict] = []
+        for i, page in enumerate(fitz.open(pdf_tmpfile)):
+          text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
+          pdf_pages_OCRed.append(dict(text=text, page_number=i, filename=Path(s3_pdf_path).stem))
+        print(len(pdf_pages_OCRed))
+        metadatas = [
+            dict(pagenumber_or_timestamp=page['page_number'], course_name=course_name, filename=page['filename'], s3_path=s3_pdf_path)
+            for page in pdf_pages_OCRed
+        ]
+        pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+
+        self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+    except Exception as e:
+      print(e)
+      return f"Error {e}"
     return "Success"
-  
-  def split_and_upload(self, texts: List[str], metadatas: List[Dict[Any, Any]]):
-    try: 
-      #### SPLIT TEXTS
-      # good examples here: https://langchain.readthedocs.io/en/latest/modules/utils/combine_docs_examples/textsplitter.html
+
+  def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
+    """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
+    Takes in Text and Metadata (from Langchain doc loaders) and splits / uploads to Qdrant.
+    
+    good examples here: https://langchain.readthedocs.io/en/latest/modules/utils/combine_docs_examples/textsplitter.html
+
+    Args:
+        texts (List[str]): _description_
+        metadatas (List[Dict[str, Any]]): _description_
+    """
+    assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
+    
+    try:
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
           separators=". ",  # try to split on sentences... 
       )
       documents: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
-      
+
       def remove_small_contexts(documents: List[Document]) -> List[Document]:
         # Remove TextSplit contexts with fewer than 50 chars.
         return [doc for doc in documents if len(doc.page_content) > 50]
@@ -173,10 +190,16 @@ class Ingest():
     except Exception as e:
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
-  
+
   def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]], course_name: str) -> str:
-    """
-    Main function. Ingests single PDF into Qdrant.
+    """Main function. Ingests single PDF into Qdrant.
+
+    Args:
+        s3_pdf_paths (Union[str, List[str]]): _description_
+        course_name (str): _description_
+
+    Returns:
+        str: _description_
     """
     try:
       if isinstance(s3_pdf_paths, str):
@@ -188,7 +211,7 @@ class Ingest():
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_pdf_path, Fileobj=pdf_tmpfile)
           try:
             # try to ingest single PDF
-            self._ingest_single_PDF(pdf_tmpfile, s3_pdf_path, course_name)
+            self._ingest_single_pdf(pdf_tmpfile, s3_pdf_path, course_name)
           except Exception as e:
             print(e)
     except Exception as e:
