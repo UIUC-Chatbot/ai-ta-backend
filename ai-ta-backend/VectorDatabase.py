@@ -174,7 +174,7 @@ class Ingest():
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
   
-  def ingest_PDFs(self, s3_pdf_paths: str | List[str], course_name: str) -> Literal['Success'] | str:
+  def ingest_PDFs(self, s3_pdf_paths: str | List[str], course_name: str) -> str:
     """
     Main function. Ingests single PDF into Qdrant.
     """
