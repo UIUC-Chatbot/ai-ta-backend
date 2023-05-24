@@ -63,7 +63,7 @@ class Ingest():
 
     return None
 
-  def bulk_ingest(self, s3_paths: List[str] | str, course_name: str) -> Literal['Success'] | str:
+  def bulk_ingest(self, s3_paths: List[str] | str, course_name: str) -> str:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     try:
       if isinstance(s3_paths, str):
@@ -93,7 +93,7 @@ class Ingest():
       return f"Error: {e}"
   
 
-  def _ingest_single_docx(self, s3_path: str, course_name: str) -> Literal['Success'] | str:
+  def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
@@ -111,7 +111,7 @@ class Ingest():
       print(f"ERROR IN DOCX {e}")
       return f"Error: {e}"
   
-  def _ingest_single_srt(self, s3_path: str, course_name: str) -> Literal['Success'] | str:
+  def _ingest_single_srt(self, s3_path: str, course_name: str) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
@@ -129,7 +129,7 @@ class Ingest():
       print(f"SRT ERROR {e}")
       return f"Error: {e}"
 
-  def _ingest_single_PDF(self, pdf_tmpfile, s3_pdf_path: str, course_name: str) -> Literal['Success']:
+  def _ingest_single_PDF(self, pdf_tmpfile, s3_pdf_path: str, course_name: str):
     """
     Private method. Use ingest_PDFs() instead.
     
@@ -151,8 +151,6 @@ class Ingest():
     return "Success"
   
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[Any, Any]]):
-    
-    
     try: 
       #### SPLIT TEXTS
       # good examples here: https://langchain.readthedocs.io/en/latest/modules/utils/combine_docs_examples/textsplitter.html
@@ -198,7 +196,7 @@ class Ingest():
       return f"Error {e}"
     return "Success"
 
-  def ingest_S3_directory(self, s3_dir_path: str) -> Literal['Error', 'Success']:
+  def DEPRICATED_ingest_S3_directory(self, s3_dir_path: str) -> Literal['Error', 'Success']:
     """
     BAD BECAUSE: can't have individual error messages per file (literally impossible)
     can't do fancier things per file. So limiting.
