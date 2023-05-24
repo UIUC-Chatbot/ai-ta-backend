@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 # from re import L, T
 from tempfile import NamedTemporaryFile, TemporaryFile
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal
 
 import boto3
 import fitz
@@ -63,7 +63,7 @@ class Ingest():
 
     return None
 
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Literal['Success'] | str:
+  def bulk_ingest(self, s3_paths: List[str] | str, course_name: str) -> Literal['Success'] | str:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     try:
       if isinstance(s3_paths, str):
@@ -88,7 +88,6 @@ class Ingest():
           ret = self._ingest_single_docx(s3_path, course_name)
           if ret != "Success":
             print(f"TODO: Send email about failure of this file: {s3_path}")
-
       return "(TODO) Success or failure unknown"
     except Exception as e:
       return f"Error: {e}"
@@ -177,7 +176,7 @@ class Ingest():
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
   
-  def ingest_PDFs(self, s3_pdf_paths: Union[str, List[str]], course_name: str) -> Literal['Error', 'Success']:
+  def ingest_PDFs(self, s3_pdf_paths: str | List[str], course_name: str) -> Literal['Success'] | str:
     """
     Main function. Ingests single PDF into Qdrant.
     """
@@ -196,7 +195,7 @@ class Ingest():
             print(e)
     except Exception as e:
       print(e)
-      return f"Error: {e}"
+      return f"Error {e}"
     return "Success"
 
   def ingest_S3_directory(self, s3_dir_path: str) -> Literal['Error', 'Success']:

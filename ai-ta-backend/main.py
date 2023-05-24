@@ -88,57 +88,6 @@ def getContexts():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-
-@app.route('/sayhi', methods=['GET'])
-def sayhi():
-  """Here's what it does
-  
-  Parameters
-  ----------
-  cool : str, optional 
-
-  Returns
-  -------
-  JSON
-      A simple json response.
-  
-  Example usage
-  -------------
-  First mode, *buffer* is `None`:
-  ```python
-  sayhi(cool='cool')
-  {"language": "Hi there: cool"}
-  ```
-  """
-  language = request.args.get('language')
-  response = jsonify({"language": f"Hi there: {language}"})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
-@app.route('/S3_dir_ingest', methods=['GET'])
-def S3_dir_ingest():
-  """Rough ingest of whole S3 dir. Pretty handy.
-  
-  S3 path, NO BUCKET. We assume the bucket is an .env variable.
-
-  Returns:
-      str: Success or Failure message
-  """
-
-  ingester = Ingest()
-
-  s3_path: List[str] | str = request.args.get('s3_path')
-  # course_name: List[str] | str = request.args.get('course_name')
-  ret = ingester.ingest_S3_directory(s3_path)
-  if ret == 'success':
-    response = jsonify({"ingest_status": "success"})
-  else:
-    response = jsonify({"ingest_status": ret})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
 @app.route('/ingest', methods=['GET'])
 def ingest():
   """Recursively ingests anything from S3 filepath and below. 
@@ -165,93 +114,27 @@ def ingest():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/DEPRICATED_S3_dir_ingest', methods=['GET'])
+def DEPRICATED_S3_dir_ingest():
+  """Rough ingest of whole S3 dir. Pretty handy.
+  
+  S3 path, NO BUCKET. We assume the bucket is an .env variable.
 
-@app.route('/sayhifromrohan', methods=['GET'])
-def sayhifromrohan():
-  """Here's what it does
-
-  Parameters
-  ----------
-  cool : str, optional
-
-  Returns
-  -------
-  JSON
-      A simple json response.
-
-  Example usage
-  -------------
-  First mode, *buffer* is `None`:
-  ```python
-  sayhi(cool='cool')
-  {"language": "Hi there: cool"}
-  ```
+  Returns:
+      str: Success or Failure message
   """
-  language = request.args.get('language')
-  response = jsonify({"language": f"Hi there: {language}"})
+
+  ingester = Ingest()
+
+  s3_path: List[str] | str = request.args.get('s3_path')
+  # course_name: List[str] | str = request.args.get('course_name')
+  ret = ingester.ingest_S3_directory(s3_path)
+  if ret == 'success':
+    response = jsonify({"ingest_status": "success"})
+  else:
+    response = jsonify({"ingest_status": ret})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
-
-
-@app.route('/test_endpoint', methods=['GET'])
-def test_endpoint():
-  """Here's what it does
-  
-  Parameters
-  ----------
-  cool : str, optional 
-
-  Returns
-  -------
-  JSON
-      A simple json response.
-  
-  Example usage
-  -------------
-  First mode, *buffer* is `None`:
-  ```python
-  sayhi(cool='cool')
-  {"language": "Hi there: cool"}
-  ```
-  """
-  language = request.args.get('language')
-  response = jsonify({"language": f"This is a test endpoint: {language}"})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
-@app.route('/test_endpoint2', methods=['GET'])
-def neha_sayhi():
-  """Here's what it does
-  
-  Parameters
-  ----------
-  cool : str, optional 
-
-  Returns
-  -------
-  JSON
-      A simple json response.
-  
-  Example usage
-  -------------
-  First mode, *buffer* is `None`:
-  ```python
-  sayhi(cool='cool')
-  {"language": "Hi there: cool"}
-  ```
-  """
-  language = request.args.get('language')
-  response = jsonify({"language": f"Hi there: {language}"})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
-def get_contexts():
-  contexts = {'language': 'python', 'framework': 'Flask'}
-  response = jsonify(contexts)
-  return response
-
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=5000))
