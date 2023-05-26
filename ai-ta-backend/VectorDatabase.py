@@ -229,7 +229,7 @@ class Ingest():
       return f"Error: {e}"
 
   
-  def getTopContexts(self, search_query: str):
+  def getTopContexts(self, search_query: str, course_name: str):
     """Here's a summary of the work.
 
     /GET arguments
@@ -241,7 +241,7 @@ class Ingest():
       String: An error message with traceback.
     """
     try:
-      found_docs = self.vectorstore.similarity_search(search_query)
+      found_docs = self.vectorstore.similarity_search(search_query, filter={'course_name': course_name})
       return self.format_for_json(found_docs)
     except Exception as e:
       # return full traceback to front end

@@ -89,7 +89,7 @@ def getTopContexts():
     return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
 
   ingester = Ingest()
-  found_documents = ingester.getTopContexts(search_query)
+  found_documents = ingester.getTopContexts(search_query, course_name)
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
