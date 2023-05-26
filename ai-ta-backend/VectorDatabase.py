@@ -58,38 +58,52 @@ class Ingest():
 
     return None
 
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> str:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
+    success_status = {
+      "success_ingest": [],
+      "failure_ingest": []
+    }
+    
     try:
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
         
-      # ensure collection exists
-      # self.qdrant_client.recreate_collection(
-      #     collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-      #     vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
-      # )
-
       for s3_path in s3_paths:
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
 
         if s3_path.endswith('.pdf'):
-          self._ingest_single_pdf(s3_path, course_name)
+          ret = self._ingest_single_pdf(s3_path, course_name)
+          if ret != "Success":
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.txt'):
           # self.ingest_text(s3_path, course_name)
           print('Not yet implemented')
+          ret = "failure"
+          if ret != "Success":
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append("TXT -- Not yet implemented: " + s3_path)
         elif s3_path.endswith('.srt'):
           ret = self._ingest_single_srt(s3_path, course_name)
           if ret != "Success":
-            print(f"TODO: Send email about failure of this file: {s3_path}")
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.docx'):
           ret = self._ingest_single_docx(s3_path, course_name)
           if ret != "Success":
-            print(f"TODO: Send email about failure of this file: {s3_path}")
-      return "(TODO) Success or failure unknown"
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append(s3_path)
+      
+      return success_status
     except Exception as e:
-      return f"Error: {e}"
+      success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e)) 
+      return success_status
 
   def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
     try:
@@ -166,7 +180,7 @@ class Ingest():
           {
             'course_name': course_name, 
             's3_path': s3_path,
-            'pagenumber_or_timestamp': page['page_number'], 
+            'pagenumber_or_timestamp': page['page_number'] + 1, # +1 for human indexing
             'readable_filename': page['readable_filename'], 
           } for page in pdf_pages_OCRed]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]

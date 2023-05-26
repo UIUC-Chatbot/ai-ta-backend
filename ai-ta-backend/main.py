@@ -1,3 +1,4 @@
+import json
 import os
 import re
 from typing import Any, List
@@ -109,14 +110,11 @@ def ingest():
   """
 
   ingester = Ingest()
-
   s3_paths: List[str] | str = request.args.get('s3_paths')
   course_name: List[str] | str = request.args.get('course_name')
-  ret = ingester.bulk_ingest(s3_paths, course_name)
-  if ret == 'success':
-    response = jsonify({"ingest_status": "success"})
-  else:
-    response = jsonify({"ingest_status": ret})
+  success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+  
+  response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
