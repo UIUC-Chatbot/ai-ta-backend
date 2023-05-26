@@ -69,27 +69,18 @@ def getTopContexts():
   # todo: best way to handle optional arguments?
   try:
     course_name: str = request.args.get('course_name')
-    if course_name == 'error':
-      raise Exception(f'The course name `{course_name}` was invalid!')
-  except Exception as e:
-    print(f"No valid course name provided. Error: {e}")
-  try:
     search_query: str = request.args.get('search_query')
-  except Exception as e:
-    print("No search query provided.")
-  try:
     top_n: str = request.args.get('top_n')
   except Exception as e:
     print("No course name provided.")
   
   print("In /getTopContexts: ", search_query)
   print("search_query: ", search_query)
-  
   if search_query is None:
     return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
 
   ingester = Ingest()
-  found_documents = ingester.getTopContexts(search_query, course_name)
+  found_documents = ingester.getTopContexts(search_query, course_name, top_n)
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
