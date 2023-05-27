@@ -229,7 +229,7 @@ class Ingest():
       return f"Error: {e}"
 
   
-  def getTopContexts(self, search_query: str, course_name: str, top_n: int = 10) -> Union[List[Dict], str]:
+  def getTopContexts(self, search_query: str, course_name: str, top_n: int = 4) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
     /GET arguments
