@@ -1,1 +1,1 @@
-web: cd ai-ta-backend && gunicorn main:app --timeout 120 
+web: cd ai-ta-backend && gunicorn main:app --timeout 108000
