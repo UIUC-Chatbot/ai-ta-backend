@@ -99,6 +99,8 @@ def ingest():
   Returns:
       str: Success or Failure message. Failure message if any failures. TODO: email on failure.
   """
+  
+  print("In /ingest")
 
   ingester = Ingest()
   s3_paths: List[str] | str = request.args.get('s3_paths')

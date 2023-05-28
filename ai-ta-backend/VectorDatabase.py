@@ -1,4 +1,5 @@
 import inspect
+import math
 import os
 # from xml.dom.minidom import Document  # PDF to text
 # from re import L, T
@@ -159,20 +160,42 @@ class Ingest():
 
   def _ingest_single_pdf(self, s3_path: str, course_name: str):
     """
-    Private method. Use ingest_PDFs() instead.
-    
-    Both OCR the PDF, and split the text into chunks. Returns chunks as List[Document].
+    Both OCR the PDF. And grab the first image as a PNG. 
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
+            # first_page_png = pix.tobytes(output='png', jpg_quality=95)
+    print("IN INGEST PDF")
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=pdf_tmpfile)
     
         ### READ OCR of PDF
+        print("Right before opening pdf")
+        doc = fitz.open(pdf_tmpfile.name)
+        
+        # improve quality of the image
+        zoom_x = 2.0  # horizontal zoom
+        zoom_y = 2.0  # vertical zoom
+        mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
+        
         pdf_pages_OCRed: List[Dict] = []
-        for i, page in enumerate(fitz.open(pdf_tmpfile.name)): # type: ignore
+        for i, page in enumerate(doc): # type: ignore
+          
+          # UPLOAD FIRST PAGE IMAGE to S3
+          if i == 0:
+              with NamedTemporaryFile(suffix=".png") as first_page_png:
+                pix = page.get_pixmap(matrix=mat)
+                pix.save(first_page_png)  # store image as a PNG
+                
+                s3_upload_path = str(Path(s3_path)).rsplit('.pdf')[0] + "-pg1-thumb.png"
+                first_page_png.seek(0)  # Seek the file pointer back to the beginning
+                with open(first_page_png.name, 'rb') as f:
+                  print("Uploading image png to S3")
+                  self.s3_client.upload_fileobj(f, os.environ['S3_BUCKET_NAME'], s3_upload_path)
+            
+          # Extract text 
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).stem))
 
@@ -184,9 +207,6 @@ class Ingest():
             'readable_filename': page['readable_filename'], 
           } for page in pdf_pages_OCRed]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
-        print("PDF READING FUL DOCS:")
-        print(metadatas)
-        print(pdf_texts)
 
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
     except Exception as e:
