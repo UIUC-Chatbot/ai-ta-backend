@@ -13,8 +13,7 @@ import fitz
 import supabase
 from dotenv import load_dotenv
 from flask import jsonify, request
-from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
-                                        SRTLoader)
+from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader, SRTLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -26,6 +25,7 @@ from qdrant_client import QdrantClient, models
 
 # load API keys from globally-availabe .env file
 load_dotenv(dotenv_path='../.env', override=True)
+
 
 class Ingest():
   """
@@ -44,7 +44,7 @@ class Ingest():
     )
     self.vectorstore = Qdrant(client=self.qdrant_client,
                               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                              embeddings=OpenAIEmbeddings()) # type: ignore
+                              embeddings=OpenAIEmbeddings())  # type: ignore
 
     # S3
     self.s3_client = boto3.client(
@@ -55,21 +55,19 @@ class Ingest():
     )
 
     # Create a Supabase client
-    # self.supabase_client = supabase.create_client(supabase_url=os.environ.get('SUPABASE_URL'), supabase_key=os.environ.get('SUPABASE_API_KEY'))
+    self.supabase_client = supabase.create_client(supabase_url=os.environ.get('SUPABASE_URL'),
+                                                  supabase_key=os.environ.get('SUPABASE_API_KEY'))
 
     return None
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
-    success_status = {
-      "success_ingest": [],
-      "failure_ingest": []
-    }
-    
+    success_status = {"success_ingest": [], "failure_ingest": []}
+
     try:
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
-        
+
       for s3_path in s3_paths:
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
@@ -100,10 +98,10 @@ class Ingest():
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
-      
+
       return success_status
     except Exception as e:
-      success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e)) 
+      success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
       return success_status
 
   def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
@@ -120,13 +118,12 @@ class Ingest():
         documents = loader.load()
 
         texts = [doc.page_content for doc in documents]
-        metadatas: List[Dict[str,Any]] = [
-          {
-            'course_name': course_name, 
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).stem, 
-            'pagenumber_or_timestamp': '', 
-          } for doc in documents]
+            'readable_filename': Path(s3_path).stem,
+            'pagenumber_or_timestamp': '',
+        } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
@@ -144,13 +141,12 @@ class Ingest():
         documents = loader.load()
 
         texts = [doc.page_content for doc in documents]
-        metadatas: List[Dict[str,Any]] = [
-          {
-            'course_name': course_name, 
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).stem, 
-            'pagenumber_or_timestamp': '', 
-          } for doc in documents]
+            'readable_filename': Path(s3_path).stem,
+            'pagenumber_or_timestamp': '',
+        } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
@@ -164,48 +160,49 @@ class Ingest():
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
-            # first_page_png = pix.tobytes(output='png', jpg_quality=95)
+    # first_page_png = pix.tobytes(output='png', jpg_quality=95)
     print("IN INGEST PDF")
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=pdf_tmpfile)
-    
+
         ### READ OCR of PDF
         print("Right before opening pdf")
         doc = fitz.open(pdf_tmpfile.name)
-        
+
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
         zoom_y = 2.0  # vertical zoom
         mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
-        
+
         pdf_pages_OCRed: List[Dict] = []
-        for i, page in enumerate(doc): # type: ignore
-          
+        for i, page in enumerate(doc):  # type: ignore
+
           # UPLOAD FIRST PAGE IMAGE to S3
           if i == 0:
-              with NamedTemporaryFile(suffix=".png") as first_page_png:
-                pix = page.get_pixmap(matrix=mat)
-                pix.save(first_page_png)  # store image as a PNG
-                
-                s3_upload_path = str(Path(s3_path)).rsplit('.pdf')[0] + "-pg1-thumb.png"
-                first_page_png.seek(0)  # Seek the file pointer back to the beginning
-                with open(first_page_png.name, 'rb') as f:
-                  print("Uploading image png to S3")
-                  self.s3_client.upload_fileobj(f, os.environ['S3_BUCKET_NAME'], s3_upload_path)
-            
-          # Extract text 
+            with NamedTemporaryFile(suffix=".png") as first_page_png:
+              pix = page.get_pixmap(matrix=mat)
+              pix.save(first_page_png)  # store image as a PNG
+
+              s3_upload_path = str(Path(s3_path)).rsplit('.pdf')[0] + "-pg1-thumb.png"
+              first_page_png.seek(0)  # Seek the file pointer back to the beginning
+              with open(first_page_png.name, 'rb') as f:
+                print("Uploading image png to S3")
+                self.s3_client.upload_fileobj(f, os.environ['S3_BUCKET_NAME'], s3_upload_path)
+
+          # Extract text
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).stem))
 
-        metadatas: List[Dict[str,Any]] = [
-          {
-            'course_name': course_name, 
-            's3_path': s3_path,
-            'pagenumber_or_timestamp': page['page_number'] + 1, # +1 for human indexing
-            'readable_filename': page['readable_filename'], 
-          } for page in pdf_pages_OCRed]
+        metadatas: List[Dict[str, Any]] = [
+            {
+                'course_name': course_name,
+                's3_path': s3_path,
+                'pagenumber_or_timestamp': page['page_number'] + 1,  # +1 for human indexing
+                'readable_filename': page['readable_filename'],
+            } for page in pdf_pages_OCRed
+        ]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
 
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
@@ -226,7 +223,7 @@ class Ingest():
         metadatas (List[Dict[str, Any]]): _description_
     """
     assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
-    
+
     try:
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
@@ -243,12 +240,14 @@ class Ingest():
 
       # upload to Qdrant
       self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
+      data = [{"content": doc.page_content, "metadata": doc.metadata} for doc in documents]
+      count = self.supabase_client.table(os.environ.get('SUPABASE_TABLE')).insert(data).execute()
+
       return "Success"
     except Exception as e:
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
 
-  
   def getTopContexts(self, search_query: str, course_name: str, top_n: int = 4) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
@@ -265,10 +264,9 @@ class Ingest():
       return self.format_for_json(found_docs)
     except Exception as e:
       # return full traceback to front end
-      err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}" # type: ignore
+      err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
-    
 
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
     """Formatting only.
@@ -284,13 +282,12 @@ class Ingest():
         List[Dict]: _description_
     """
 
-    contexts = [
-      {
+    contexts = [{
         'text': doc.page_content,
         'readable_filename': doc.metadata['readable_filename'],
         'course_name ': doc.metadata['course_name'],
         's3_path': doc.metadata['s3_path'],
         'pagenumber_or_timestamp': doc.metadata['pagenumber_or_timestamp'],
-      } for doc in found_docs]
+    } for doc in found_docs]
 
     return contexts
