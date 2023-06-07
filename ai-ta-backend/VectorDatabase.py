@@ -58,6 +58,32 @@ class Ingest():
     # self.supabase_client = supabase.create_client(supabase_url=os.environ.get('SUPABASE_URL'), supabase_key=os.environ.get('SUPABASE_API_KEY'))
 
     return None
+  
+  def get_context_stuffed_prompt(self, user_question: str, course_name: str) -> str:
+    """
+    Get a stuffed prompt for a given user question and course name.
+    
+    TODO: implement this.
+    
+    Find top 100 documents (ideally using marginal_relevancy Langchain function)
+    For each document, get GPT3.5-turbo to summarize. Use this prompt:
+    Use the following portion of a long document to see if any of the text is relevant to answer the question. 
+    ```
+    Return any relevant text verbatim.
+    {context}
+    Question: {question}
+    Relevant text, if any:
+    ```
+
+    Use LangChain map_reduce_QA to implement this in parallel.
+    Write a function that takes in a question, and returns a very long "stuffed" prompt for GPT-4 to answer on the front-end. (You only construct the prompt for GPT-4, you don't actually return the answer).
+    
+    References:
+    Example & Docs: https://python.langchain.com/en/latest/modules/chains/index_examples/question_answering.html#the-map-reduce-chain
+    Code: https://github.com/hwchase17/langchain/blob/4092fd21dcabd1de273ad902fae2186ae5347e03/langchain/chains/question_answering/map_reduce_prompt.py#L11 
+    """
+    
+    return f"TODO: Implement me! You asked for: {course_name}"
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
