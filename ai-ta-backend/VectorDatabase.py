@@ -59,7 +59,7 @@ class Ingest():
                                                   supabase_key=os.environ.get('SUPABASE_API_KEY'))
 
     return None
-  
+
   def get_context_stuffed_prompt(self, user_question: str, course_name: str) -> str:
     """
     Get a stuffed prompt for a given user question and course name.
@@ -83,7 +83,7 @@ class Ingest():
     Example & Docs: https://python.langchain.com/en/latest/modules/chains/index_examples/question_answering.html#the-map-reduce-chain
     Code: https://github.com/hwchase17/langchain/blob/4092fd21dcabd1de273ad902fae2186ae5347e03/langchain/chains/question_answering/map_reduce_prompt.py#L11 
     """
-    
+
     return f"TODO: Implement me! You asked for: {course_name}"
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
@@ -278,19 +278,23 @@ class Ingest():
       self,
       course_name: str,
   ):
-    """Get all course materials based on course name
+    """Get all course materials based on course name.
+    args : 
+        course_name (as uploaded on supabase)
+    Returns : 
+        list of dictionaries with distinct s3 path, readable_filename and course_name.
     
     """
     response = self.supabase_client.table(
         os.environ.get('SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq(
             'metadata->>course_name', course_name).execute()
 
-    data = response.data
-    unique_combinations = set()
-    distinct_dicts = []
+    data = response.data  #response is APIResponse object, we only pick the data
+    unique_combinations = set()  #set to remove duplicates
+    distinct_dicts = []  #list of dictionaries
 
     for item in data:
-      combination = (item['s3_path'], item['readable_filename'], item['course_name'])
+      combination = (item['s3_path'], item['readable_filename'], item['course_name'])  #unique combinations of all 3
       if combination not in unique_combinations:
         unique_combinations.add(combination)
         distinct_dicts.append(item)
