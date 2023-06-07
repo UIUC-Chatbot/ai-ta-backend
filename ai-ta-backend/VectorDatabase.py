@@ -248,6 +248,29 @@ class Ingest():
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
 
+  def getAll(
+      self,
+      course_name: str,
+  ):
+    """Get all course materials based on course name
+    
+    """
+    response = self.supabase_client.table(
+        os.environ.get('SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq(
+            'metadata->>course_name', course_name).execute()
+
+    data = response.data
+    unique_combinations = set()
+    distinct_dicts = []
+
+    for item in data:
+      combination = (item['s3_path'], item['readable_filename'], item['course_name'])
+      if combination not in unique_combinations:
+        unique_combinations.add(combination)
+        distinct_dicts.append(item)
+
+    return distinct_dicts
+
   def getTopContexts(self, search_query: str, course_name: str, top_n: int = 4) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
