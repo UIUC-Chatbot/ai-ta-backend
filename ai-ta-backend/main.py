@@ -73,7 +73,7 @@ def getTopContexts():
     top_n: str = request.args.get('top_n')
   except Exception as e:
     print("No course name provided.")
-  
+
   print("In /getTopContexts: ", search_query)
   print("search_query: ", search_query)
   if search_query is None:
@@ -85,6 +85,7 @@ def getTopContexts():
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/ingest', methods=['GET'])
 def ingest():
@@ -99,17 +100,34 @@ def ingest():
   Returns:
       str: Success or Failure message. Failure message if any failures. TODO: email on failure.
   """
-  
+
   print("In /ingest")
 
   ingester = Ingest()
   s3_paths: List[str] | str = request.args.get('s3_paths')
   course_name: List[str] | str = request.args.get('course_name')
   success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
-  
+
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+
+@app.route('/getAll', methods=['GET'])
+def getAll():
+  """Get all course materials based on the course_name
+  """
+
+  print("In /getAll")
+
+  ingester = Ingest()
+  course_name: List[str] | str = request.args.get('course_name')
+  distinct_dicts = ingester.getAll(course_name)
+  response = jsonify({"all_s3_paths": distinct_dicts})
+
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/DEPRICATED_S3_dir_ingest', methods=['GET'])
 def DEPRICATED_S3_dir_ingest():
@@ -132,6 +150,7 @@ def DEPRICATED_S3_dir_ingest():
     response = jsonify({"ingest_status": ret})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=5000))
