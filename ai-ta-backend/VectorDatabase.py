@@ -14,7 +14,8 @@ import supabase
 from dotenv import load_dotenv
 from flask import jsonify, request
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
-                                        SRTLoader)
+                                        SRTLoader, UnstructuredFileLoader, 
+                                        UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -43,7 +44,7 @@ class Ingest():
         api_key=os.environ['QDRANT_API_KEY'],
     )
     self.vectorstore = Qdrant(client=self.qdrant_client,
-                              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+                              collection_name=os.environ['DEV_QDRANT_COLLECTION_NAME'],
                               embeddings=OpenAIEmbeddings()) # type: ignore
 
     # S3
@@ -81,9 +82,9 @@ class Ingest():
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.txt'):
-          # self.ingest_text(s3_path, course_name)
-          print('Not yet implemented')
-          ret = "failure"
+          ret = self._ingest_single_txt(s3_path, course_name)
+          #print('Not yet implemented')
+          #ret = "failure"
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
@@ -100,12 +101,19 @@ class Ingest():
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
+        elif s3_path.endswith('.ppt') or s3_path.endswith('.pptx'):
+          ret = self._ingest_single_ppt(s3_path, course_name)
+          if ret != "Success":
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append(s3_path)
       
       return success_status
     except Exception as e:
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e)) 
       return success_status
-
+    
+  
   def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
@@ -174,6 +182,7 @@ class Ingest():
         ### READ OCR of PDF
         print("Right before opening pdf")
         doc = fitz.open(pdf_tmpfile.name)
+        print("tmp file name: ", pdf_tmpfile.name)
         
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
@@ -214,6 +223,66 @@ class Ingest():
       print(e)
       return f"Error {e}"
     return "Success"
+
+# ----- asmita's code -----  
+
+  def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        print("Bucket: ", os.environ['S3_BUCKET_NAME'])
+        print("Key: ", s3_path)
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        print("GOT THE FILE")
+        print(tmpfile.name)
+
+        loader = UnstructuredFileLoader(tmpfile.name)
+        documents = loader.load()
+
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str,Any]] = [
+          {
+            'course_name': course_name, 
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).stem, 
+            'pagenumber_or_timestamp': '', 
+          } for doc in documents]
+
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"ERROR IN TXT {e}")
+      return f"Error: {e}"
+    
+  def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        print("Bucket: ", os.environ['S3_BUCKET_NAME'])
+        print("Key: ", s3_path)
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        print("GOT THE FILE")
+        print(tmpfile.name)
+
+        loader = UnstructuredPowerPointLoader(tmpfile.name)
+        documents = loader.load()
+
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str,Any]] = [
+          {
+            'course_name': course_name, 
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).stem, 
+            'pagenumber_or_timestamp': '', 
+          } for doc in documents]
+
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"ERROR IN PPT/PPTX {e}")
+      return f"Error: {e}"
+
+# ----------------------------------- #
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
