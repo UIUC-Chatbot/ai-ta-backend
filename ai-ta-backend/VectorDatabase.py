@@ -1,9 +1,11 @@
+import datetime
 import inspect
 import math
 import os
 # from xml.dom.minidom import Document  # PDF to text
 # from re import L, T
 import traceback
+import uuid
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryFile
 from typing import Any, Dict, List, Literal, Union
@@ -11,9 +13,16 @@ from typing import Any, Dict, List, Literal, Union
 import boto3
 import fitz
 import supabase
+from arize.api import Client
+from arize.pandas.embeddings import EmbeddingGenerator, UseCases
+# from arize.utils import ModelTypes
+# from arize.utils.ModelTypes import GENERATIVE_LLM
+from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
+                               Metrics, ModelTypes, Schema)
 from dotenv import load_dotenv
 from flask import jsonify, request
-from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader, SRTLoader)
+from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
+                                        SRTLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -39,24 +48,26 @@ class Ingest():
 
     # vector DB
     self.qdrant_client = QdrantClient(
-        url=os.environ['QDRANT_URL'],
-        api_key=os.environ['QDRANT_API_KEY'],
+        url=os.getenv('QDRANT_URL'),
+        api_key=os.getenv('QDRANT_API_KEY'),
     )
     self.vectorstore = Qdrant(client=self.qdrant_client,
-                              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+                              collection_name=os.getenv('QDRANT_COLLECTION_NAME'), # type: ignore
                               embeddings=OpenAIEmbeddings())  # type: ignore
 
     # S3
     self.s3_client = boto3.client(
         's3',
-        aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
-        aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
         # aws_session_token=,  # Comment this line if not using temporary credentials
     )
 
     # Create a Supabase client
-    self.supabase_client = supabase.create_client(supabase_url=os.environ.get('SUPABASE_URL'),
-                                                  supabase_key=os.environ.get('SUPABASE_API_KEY'))
+    self.supabase_client = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
+                                                  supabase_key=os.getenv('SUPABASE_API_KEY')) # type: ignore
+    
+    self.arize_client = Client(space_key=os.getenv('ARIZE_SPACE_KEY'), api_key=os.getenv('ARIZE_API_KEY')) # type: ignore
 
     return None
   
@@ -85,6 +96,67 @@ class Ingest():
     """
     
     return f"TODO: Implement me! You asked for: {course_name}"
+  
+  def log_to_arize(self, course_name: str, user_question: str, llm_completion: str) -> str:
+    import pandas as pd
+    
+    features = {
+        'state': 'ca',
+        'city': 'berkeley',
+        'merchant_name': 'Peets Coffee',
+        'pos_approved': True,
+        'item_count': 10,
+        'merchant_type': 'coffee shop',
+        'charge_amount': 20.11,
+        }
+        
+    #example tags
+    tags = {
+        'age': 30,
+        'zip_code': '94610',
+        'device_os': 'MacOS',
+        'server_node_id': 69,
+        }
+
+    #example embeddings
+    embedding_features = {
+            # 'image_embedding': Embedding(
+            #     vector=np.array([1.0, 2, 3]), # type: ignore
+            #     link_to_data='https://my-bucket.s3.us-west-2.amazonaws.com/puppy.png',
+            # ),
+            'prompt': Embedding(
+                vector=pd.Series([6.0, 1.0, 2.0, 6.0]), # type: ignore
+                data='slightly different This is a test sentence',
+            ),
+            'completion': Embedding(
+                vector=pd.Series([15.0, 10.0, 1.0, 9.0]), # type: ignore
+                data=['slightly', 'different', 'This', 'is', 'a', 'sample', 'token', 'array'],
+            ),
+        }
+
+    #log the prediction
+    response = self.arize_client.log(
+        prediction_id=str(uuid.uuid4()),
+        prediction_label=llm_completion,
+        model_id='kas-model-1',
+        # model_type=ModelTypes.GENERATIVE_LLM, # I think this is a bug. 
+        model_type=ModelTypes.SCORE_CATEGORICAL,
+        environment=Environments.PRODUCTION,
+        model_version='v1',
+        prediction_timestamp=int(datetime.datetime.now().timestamp()),
+        features=features,
+        embedding_features=embedding_features,
+        tags=tags,
+    )
+  
+    ## Listen to response code to ensure successful delivery
+    res = response.result()
+    if res.status_code == 200:
+        print('Success sending Prediction!')
+        return "Success logging to Arize!"
+    else:
+        print(f'Log failed with response code {res.status_code}, {res.text}')
+        return f'Log failed with response code {res.status_code}, {res.text}'
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
@@ -134,9 +206,9 @@ class Ingest():
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
-        print("Bucket: ", os.environ['S3_BUCKET_NAME'])
+        print("Bucket: ", os.getenv('S3_BUCKET_NAME'))
         print("Key: ", s3_path)
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
         print("GOT THE FILE")
         print(tmpfile.name)
 
@@ -161,7 +233,7 @@ class Ingest():
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
 
         loader = SRTLoader(tmpfile.name)
         documents = loader.load()
@@ -191,11 +263,11 @@ class Ingest():
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=pdf_tmpfile)
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
 
         ### READ OCR of PDF
         print("Right before opening pdf")
-        doc = fitz.open(pdf_tmpfile.name)
+        doc = fitz.open(pdf_tmpfile.name) # type: ignore
 
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
@@ -215,7 +287,7 @@ class Ingest():
               first_page_png.seek(0)  # Seek the file pointer back to the beginning
               with open(first_page_png.name, 'rb') as f:
                 print("Uploading image png to S3")
-                self.s3_client.upload_fileobj(f, os.environ['S3_BUCKET_NAME'], s3_upload_path)
+                self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
 
           # Extract text
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
@@ -267,7 +339,7 @@ class Ingest():
       # upload to Qdrant
       self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
       data = [{"content": doc.page_content, "metadata": doc.metadata} for doc in documents]
-      count = self.supabase_client.table(os.environ.get('SUPABASE_TABLE')).insert(data).execute()
+      count = self.supabase_client.table(os.getenv('SUPABASE_TABLE')).insert(data).execute() # type: ignore
 
       return "Success"
     except Exception as e:
@@ -282,8 +354,8 @@ class Ingest():
     
     """
     response = self.supabase_client.table(
-        os.environ.get('SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq(
-            'metadata->>course_name', course_name).execute()
+        os.getenv('SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq( # type: ignore
+            'metadata->>course_name', course_name).execute() 
 
     data = response.data
     unique_combinations = set()

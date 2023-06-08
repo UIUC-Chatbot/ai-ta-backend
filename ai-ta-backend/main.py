@@ -129,6 +129,23 @@ def getAll():
   return response
 
 
+@app.route('/log', methods=['GET'])
+def log():
+  """
+  todo
+  """
+
+  print("In /log")
+
+  ingester = Ingest()
+  # course_name: List[str] | str = request.args.get('course_name')
+  success_or_failure = ingester.log_to_arize('course_name', 'test', 'completion')
+  response = jsonify({"outcome": success_or_failure})
+
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/DEPRICATED_S3_dir_ingest', methods=['GET'])
 def DEPRICATED_S3_dir_ingest():
   """Rough ingest of whole S3 dir. Pretty handy.
