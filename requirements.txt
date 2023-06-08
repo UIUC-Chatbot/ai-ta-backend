@@ -27,3 +27,4 @@ typing_extensions==4.5.0
 tiktoken
 pysrt
 docx2txt
+arize[AutoEmbeddings, LLM_Evaluation]
