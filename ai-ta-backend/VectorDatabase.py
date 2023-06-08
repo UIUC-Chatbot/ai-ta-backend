@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import inspect
 import math
@@ -101,21 +102,21 @@ class Ingest():
     import pandas as pd
     
     features = {
-        'state': 'ca',
-        'city': 'berkeley',
-        'merchant_name': 'Peets Coffee',
+        'state': 'wa',
+        'city': 'seattle',
+        'merchant_name': 'Starbucks Coffee',
         'pos_approved': True,
-        'item_count': 10,
+        'item_count': 2,
         'merchant_type': 'coffee shop',
-        'charge_amount': 20.11,
+        'charge_amount': 22.11,
         }
         
     #example tags
     tags = {
-        'age': 30,
+        'age': 21,
         'zip_code': '94610',
         'device_os': 'MacOS',
-        'server_node_id': 69,
+        'server_node_id': 120,
         }
 
     #example embeddings
@@ -434,7 +435,7 @@ class Ingest():
         distinct_dicts.append(item)
 
     return distinct_dicts
-
+  
   def getTopContexts(self, search_query: str, course_name: str, top_n: int = 4) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
@@ -447,7 +448,20 @@ class Ingest():
       String: An error message with traceback.
     """
     try:
+      import time
+      print("START get contexts")
+      start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
+      
+      # log to Supabase
+      # todo: make this async. It's .6 seconds to log to Supabase. 1 second to get contexts.
+      start_time = time.monotonic()
+      context_arr = [{"content": doc.page_content, "metadata": doc.metadata} for doc in found_docs]
+      one_user_question = {"prompt": search_query, "context": context_arr, "course_name": course_name} # "completion": 'todo'
+      self.supabase_client.table('llm-monitor').insert(one_user_question).execute() # type: ignore
+      print(f"⏰ Log to Supabase time: {(time.monotonic() - start_time):.2f} seconds")
+      print("DONE Returning contexts")
+      print(f"⏰ Overall runtime of contexts + logging to Supabase: {(time.monotonic() - start_time_overall):.2f} seconds")
       return self.format_for_json(found_docs)
     except Exception as e:
       # return full traceback to front end

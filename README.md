@@ -14,8 +14,7 @@ Automatic [API Reference](https://uiuc-chatbot.github.io/ai-ta-backend/reference
 ## 📣 Development
 
 - Install Python requirements `pip install -r requirements.txt`
-- Start the server for development `python3 main.py`
+- Start the server for development (with live reloads) `cd ai-ta-backend` then `flask --app main:app --debug run`
 
-
-Build the docs locally 
+The docs are auto-built and deployed to [our docs website](https://uiuc-chatbot.github.io/ai-ta-backend/) on every push. Or you can build the docs locally when writing:
 - `mkdocs serve`
