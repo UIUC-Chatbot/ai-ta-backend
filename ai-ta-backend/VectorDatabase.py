@@ -177,9 +177,9 @@ class Ingest():
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.txt'):
-          # self.ingest_text(s3_path, course_name)
-          print('Not yet implemented')
-          ret = "failure"
+          ret = self._ingest_single_txt(s3_path, course_name)
+          #print('Not yet implemented')
+          #ret = "failure"
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
@@ -196,7 +196,13 @@ class Ingest():
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
-
+        elif s3_path.endswith('.ppt') or s3_path.endswith('.pptx'):
+          ret = self._ingest_single_ppt(s3_path, course_name)
+          if ret != "Success":
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append(s3_path)
+      
       return success_status
     except Exception as e:
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
@@ -309,6 +315,66 @@ class Ingest():
       print(e)
       return f"Error {e}"
     return "Success"
+  
+
+  def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
+    # ----- asmita's code -----  
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        print("Bucket: ", os.environ['S3_BUCKET_NAME'])
+        print("Key: ", s3_path)
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        print("GOT THE FILE")
+        print(tmpfile.name)
+
+        loader = UnstructuredFileLoader(tmpfile.name)
+        documents = loader.load()
+
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str,Any]] = [
+          {
+            'course_name': course_name, 
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).stem, 
+            'pagenumber_or_timestamp': '', 
+          } for doc in documents]
+
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"ERROR IN TXT {e}")
+      return f"Error: {e}"
+    
+  def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
+    # ----- asmita's code -----  
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        print("Bucket: ", os.environ['S3_BUCKET_NAME'])
+        print("Key: ", s3_path)
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        print("GOT THE FILE")
+        print(tmpfile.name)
+
+        loader = UnstructuredPowerPointLoader(tmpfile.name)
+        documents = loader.load()
+
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str,Any]] = [
+          {
+            'course_name': course_name, 
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).stem, 
+            'pagenumber_or_timestamp': '', 
+          } for doc in documents]
+
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"ERROR IN PPT/PPTX {e}")
+      return f"Error: {e}"
+
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
