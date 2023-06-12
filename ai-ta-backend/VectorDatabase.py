@@ -374,11 +374,6 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-<<<<<<< HEAD
-      print(f"ERROR IN PPT/PPTX {e}")
-      return f"Error: {e}"
-
-=======
       print("ERROR IN PDF READING ")
       print(e)
       return f"Error {e}"
@@ -402,7 +397,6 @@ class Ingest():
     
     print(results)
     print("Done .. ")
->>>>>>> d694992 (adding starter for Coursera downloader)
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).

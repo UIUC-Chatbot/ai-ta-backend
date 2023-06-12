@@ -8,7 +8,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
-from VectorDatabase import Ingest
+from vectorDatabase import Ingest
 
 app = Flask(__name__)
 CORS(app)
