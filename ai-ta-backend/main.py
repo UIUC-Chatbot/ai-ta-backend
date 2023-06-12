@@ -39,7 +39,7 @@ def second_index() -> JSON:
   Returns:
       JSON: _description_
   """
-  return jsonify({"JMIN": "Hello! 🚅"})
+  return jsonify({"JMinster": "Hello! 🚅"})
 
 
 @app.route('/coursera', methods=['GET'])
