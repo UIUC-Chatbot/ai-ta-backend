@@ -19,9 +19,11 @@ import supabase
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
 # from arize.utils import ModelTypes
 # from arize.utils.ModelTypes import GENERATIVE_LLM
-# from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
-#                                Metrics, ModelTypes, Schema)
+# # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
+# #                                Metrics, ModelTypes, Schema)
 from flask import jsonify, request
+from langchain import LLMChain, OpenAI, PromptTemplate
+from langchain.chains.summarize import load_summarize_chain
 from langchain import LLMChain, OpenAI
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
                                        
@@ -34,6 +36,15 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
+
+# from regex import F
+# from sqlalchemy import JSON
+
+# load API keys from globally-availabe .env file
+
+# load_dotenv(dotenv_path='.env', override=True)
+# print(os.environ['OPENAI_API_KEY'])
+# print(os.getenv('QDRANT_URL'))
 
 class Ingest():
   """
@@ -69,6 +80,8 @@ class Ingest():
         supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
     # self.arize_client = Client(space_key=os.getenv('ARIZE_SPACE_KEY'), api_key=os.getenv('ARIZE_API_KEY'))  # type: ignore
+    self.supabase_client = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
+                                                  supabase_key=os.getenv('SUPABASE_API_KEY')) # type: ignore
 
     return None
 
@@ -84,7 +97,7 @@ class Ingest():
      """
     # MMR with metadata filtering based on course_name
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
-
+    
     requests = []
     for i, doc in enumerate(found_docs):
       dictionary = {
@@ -185,6 +198,15 @@ class Ingest():
     return stuffed_prompt
 
   # def log_to_arize(self, course_name: str, user_question: str, llm_completion: str) -> str:
+    """
+    Use LangChain map_reduce_QA to implement this in parallel.
+    Write a function that takes in a question, and returns a very long "stuffed" prompt for GPT-4 to answer on the front-end. (You only construct the prompt for GPT-4, you don't actually return the answer).
+    
+    References:
+    Example & Docs: https://python.langchain.com/en/latest/modules/chains/index_examples/question_answering.html#the-map-reduce-chain
+    Code: https://github.com/hwchase17/langchain/blob/4092fd21dcabd1de273ad902fae2186ae5347e03/langchain/chains/question_answering/map_reduce_prompt.py#L11 
+    """
+    return f"TODO: Implement me! You asked for: {course_name}"
   #   import pandas as pd
 
   #   features = {
@@ -246,7 +268,7 @@ class Ingest():
   #   else:
   #     print(f'Log failed with response code {res.status_code}, {res.text}')
   #     return f'Log failed with response code {res.status_code}, {res.text}'
-
+  
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
@@ -555,6 +577,7 @@ class Ingest():
 
     Args:
         coursera_course_name (str): The name of the coursera course.
+
         course_name (str): The name of the course in our system.
 
     Returns:
