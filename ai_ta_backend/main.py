@@ -8,7 +8,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
-from vectorDatabase import Ingest
+
+from ai_ta_backend.vector_database import Ingest
 
 app = Flask(__name__)
 CORS(app)
@@ -199,5 +200,6 @@ def DEPRICATED_S3_dir_ingest():
 
 
 if __name__ == '__main__':
+  app.run(debug=True, port=os.getenv("PORT", default=5000))
   app.run(debug=True, port=os.getenv("PORT", default=5000))
   app.run(debug=True, port=os.getenv("PORT", default=5000))
