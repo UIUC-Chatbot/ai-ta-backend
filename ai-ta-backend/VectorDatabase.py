@@ -3,6 +3,7 @@ import datetime
 import inspect
 import math
 import os
+import subprocess
 # from xml.dom.minidom import Document  # PDF to text
 # from re import L, T
 import traceback
@@ -373,9 +374,35 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
+<<<<<<< HEAD
       print(f"ERROR IN PPT/PPTX {e}")
       return f"Error: {e}"
 
+=======
+      print("ERROR IN PDF READING ")
+      print(e)
+      return f"Error {e}"
+    return "Success"
+  
+  def ingest_coursera_url(self, url: str, course_name: str):
+    """
+    1. Download the coursera url to a temp file
+    2. For each file downloaded, run it through the ingest_bulk method
+    """
+    
+    print("starting ingest_coursera_url")
+    
+    certificate = "-ca 'FVhVoDp5cb-ZaoRr5nNJLYbyjCLz8cGvaXzizqNlQEBsG5wSq7AHScZGAGfC1nI0ehXFvWy1NG8dyuIBF7DLMA.X3cXsDvHcOmSdo3Fyvg27Q.qyGfoo0GOHosTVoSMFy-gc24B-_BIxJtqblTzN5xQWT3hSntTR1DMPgPQKQmfZh_40UaV8oZKKiF15HtZBaLHWLbpEpAgTg3KiTiU1WSdUWueo92tnhz-lcLeLmCQE2y3XpijaN6G4mmgznLGVsVLXb-P3Cibzz0aVeT_lWIJNrCsXrTFh2HzFEhC4FxfTVqS6cRsKVskPpSu8D9EuCQUwJoOJHP_GvcME9-RISBhi46p-Z1IQZAC4qHPDhthIJG4bJqpq8-ZClRL3DFGqOfaiu5y415LJcH--PRRKTBnP7fNWPKhcEK2xoYQLr9RxBVL3pzVPEFyTYtGg6hFIdJcjKOU11AXAnQ-Kw-Gb_wXiHmu63veM6T8N2dEkdqygMre_xMDT5NVaP3xrPbA4eAQjl9yov4tyX4AQWMaCS5OCbGTpMTq2Y4L0Mbz93MHrblM2JL_cBYa59bq7DFK1IgzmOjFhNG266mQlC9juNcEhc'"
+    coursera_course_name = "operations-management-organization-and-analysis" 
+    always_use_flags = "-u kastanvday@gmail.com -p hSBsLaF5YM469# --ignore-formats mp4 --subtitle-language en"
+    
+    results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}", check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # capture_output=True,
+    
+    # use walkdir to find all files in the directory, send them to bulk ingest one by one.
+    
+    print(results)
+    print("Done .. ")
+>>>>>>> d694992 (adding starter for Coursera downloader)
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).

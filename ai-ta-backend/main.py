@@ -42,6 +42,23 @@ def second_index() -> JSON:
   return jsonify({"JMIN": "Hello! 🚅"})
 
 
+@app.route('/coursera', methods=['GET'])
+def coursera() -> JSON:
+  """_summary_
+
+  Args:
+      test (int, optional): _description_. Defaults to 1.
+
+  Returns:
+      JSON: _description_
+  """
+  ingester = Ingest()
+  results = ingester.ingest_coursera_url("https://www.coursera.org/learn/automata", "automata")
+  response = jsonify(results)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/getTopContexts', methods=['GET'])
 def getTopContexts():
   """Get most relevant contexts for a given search query.
@@ -182,4 +199,5 @@ def DEPRICATED_S3_dir_ingest():
 
 
 if __name__ == '__main__':
+  app.run(debug=True, port=os.getenv("PORT", default=5000))
   app.run(debug=True, port=os.getenv("PORT", default=5000))
