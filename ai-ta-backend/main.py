@@ -30,7 +30,7 @@ def index() -> JSON:
   return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
 @app.route('/josh')
-def index() -> JSON:
+def second_index() -> JSON:
   """_summary_
 
   Args:
