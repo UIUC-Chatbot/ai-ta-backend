@@ -1,3 +1,1 @@
-export PYTHONPATH="${PYTHONPATH}:$(pwd)/ai-ta-backend"
-
-web: cd ai-ta-backend && gunicorn main:app --timeout 108000
+web: export PYTHONPATH="${PYTHONPATH}:$(pwd)/ai-ta-backend" && cd ai-ta-backend && gunicorn main:app --timeout 108000
