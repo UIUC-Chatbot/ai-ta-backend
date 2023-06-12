@@ -105,7 +105,6 @@ def getTopContexts():
     print("No course name provided.")
 
   print("In /getTopContexts: ", search_query)
-  print("search_query: ", search_query)
   if search_query is None:
     return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
 
@@ -200,6 +199,4 @@ def DEPRICATED_S3_dir_ingest():
 
 
 if __name__ == '__main__':
-  app.run(debug=True, port=os.getenv("PORT", default=5000))
-  app.run(debug=True, port=os.getenv("PORT", default=5000))
   app.run(debug=True, port=os.getenv("PORT", default=5000))
