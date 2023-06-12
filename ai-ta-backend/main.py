@@ -29,6 +29,18 @@ def index() -> JSON:
   """
   return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
+@app.route('/josh')
+def index() -> JSON:
+  """_summary_
+
+  Args:
+      test (int, optional): _description_. Defaults to 1.
+
+  Returns:
+      JSON: _description_
+  """
+  return jsonify({"JMIN": "Hello! 🚅"})
+
 
 @app.route('/getTopContexts', methods=['GET'])
 def getTopContexts():
