@@ -9,7 +9,7 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
   """Uploads all files in localdir to S3 bucket.
 
   Args:
-    course_name (str): Official course name on our website.
+    course_name (str): Official course name on our website. 
     localdir (str): Local directory to upload from, coursera-dl downloads to this directory. 
 
   Returns:
