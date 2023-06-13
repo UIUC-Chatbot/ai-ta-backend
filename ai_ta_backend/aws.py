@@ -1,54 +1,53 @@
+import os
+from multiprocessing import Lock, cpu_count
+from multiprocessing.pool import ThreadPool
+from typing import List, Optional
 
-import glob 
-import boto3 
-import os 
-import sys 
-from multiprocessing.pool import ThreadPool 
-import pathlib
-
-def upload_data_files_to_s3(course_name:str, localdir:str):
-    # target location of the files on S3  
-
-    S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME') 
-    S3_FOLDER_NAME = "operations-management-organization-and-analysis"
-    # Enter your own credentials file profile name below
-
-    s3 = boto3.client(
-        's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-        # aws_session_token=,  # Comment this line if not using temporary credentials
-    )
-
-    # Source location of files on local system 
-
-    # The list of files we're uploading to S3 
-    print(localdir)
-    # filenames =  glob.glob(localdir, recursive=True) 
-
-    filenames = []
-    for root, subdirs, files in os.walk(localdir):
-      for filename in files:
-        filenames.append(os.path.join(root, filename))
-    print(filenames)
-    def upload(myfile): 
-        print("hello!!")
-        s3_file = f"{course_name}/{os.path.basename(myfile)}" 
-
-        results = s3.upload_file(myfile, S3_BUCKET_NAME, s3_file) 
-        print(results)
-
-    # Number of pool processes is a guestimate - I've set 
-    # it to twice number of files to be processed 
-
-    # pool = ThreadPool(processes=len(filenames)*2) 
-    pool = ThreadPool(processes=2) 
-    
-
-    pool.map(upload, filenames) 
-
-    
-
-    print("All Data files uploaded to S3 Ok")
+import boto3
 
 
+def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[str]]:
+  """Uploads all files in localdir to S3 bucket.
+
+  Args:
+    course_name (str): Official course name on our website. 
+    localdir (str): Local directory to upload from, coursera-dl downloads to this directory. 
+
+  Returns:
+    Optional[List[str]]: A list of S3 paths, the final resting place of uploads, or None if no files were uploaded.
+  """
+  s3 = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+  )
+
+  filenames = []
+  for root, subdirs, files in os.walk(localdir):
+    for filename in files:
+      filenames.append(os.path.join(root, filename))
+
+  if not filenames:
+      print(f"No files to upload. Not found in: {localdir}")
+      return None
+
+  print(f"Files to upload: {filenames}")
+  print("About to upload...")
+
+  s3_paths = []
+  s3_paths_lock = Lock()
+
+  def upload(myfile):
+    s3_file = f"courses/{course_name}/{os.path.basename(myfile)}"
+    s3.upload_file(myfile, os.getenv('S3_BUCKET_NAME'), s3_file)
+    with s3_paths_lock:
+      s3_paths.append(s3_file)
+
+  min_p = 6
+  max_p = cpu_count()
+  num_procs = max(min(len(filenames), max_p), min_p)
+  pool = ThreadPool(processes=num_procs)
+  pool.map(upload, filenames)
+
+  print("All data files uploaded to S3 successfully.")
+  return s3_paths  return s3_paths
