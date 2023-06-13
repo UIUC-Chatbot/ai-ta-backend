@@ -10,7 +10,7 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
 
   Args:
     course_name (str): Official course name on our website.
-    localdir (str): Local directory to upload from, coursera-dl downloads to this directory.
+    localdir (str): Local directory to upload from, coursera-dl downloads to this directory. 
 
   Returns:
     Optional[List[str]]: A list of S3 paths, the final resting place of uploads, or None if no files were uploaded.
