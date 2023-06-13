@@ -25,6 +25,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
 
+from ai_ta_backend.aws import upload_data_files_to_s3 
+
 # from regex import F
 # from sqlalchemy import JSON
 
@@ -49,7 +51,7 @@ class Ingest():
     )
     self.vectorstore = Qdrant(client=self.qdrant_client,
                               collection_name=os.getenv('QDRANT_COLLECTION_NAME'), # type: ignore
-                              embeddings=OpenAIEmbeddings())  # type: ignore
+                              embeddings=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')))  # type: ignore
 
     # S3
     self.s3_client = boto3.client(
@@ -312,6 +314,31 @@ class Ingest():
       return f"Error {e}"
     return "Success"
   
+  def list_files_recursively(self, bucket, prefix):
+        all_files = []
+        continuation_token = None
+
+        while True:
+            list_objects_kwargs = {
+                'Bucket': bucket,
+                'Prefix': prefix,
+            }
+            if continuation_token:
+                list_objects_kwargs['ContinuationToken'] = continuation_token
+
+            response = self.s3_client.list_objects_v2(**list_objects_kwargs)
+
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    all_files.append(obj['Key'])
+
+            if response['IsTruncated']:
+                continuation_token = response['NextContinuationToken']
+            else:
+                break
+
+        return all_files
+  
   def ingest_coursera_url(self, url: str, course_name: str):
     """
     1. Download the coursera url to a temp file
@@ -324,11 +351,14 @@ class Ingest():
     coursera_course_name = "operations-management-organization-and-analysis" 
     always_use_flags = "-u kastanvday@gmail.com -p hSBsLaF5YM469# --ignore-formats mp4 --subtitle-language en"
     
-    results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}", check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # capture_output=True,
-    
-    # use walkdir to find all files in the directory, send them to bulk ingest one by one.
-    
-    print(results)
+    # results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}", check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # capture_output=True,
+    upload_data_files_to_s3(course_name, f"{os.path.join(os.getcwd(), 'ai_ta_backend', coursera_course_name)}")
+
+    for files in self.list_files_recursively(os.getenv('S3_BUCKET_NAME'), f"s3://{os.getenv('S3_BUCKET_NAME')}/{course_name}/"):
+        print(files)
+        self.bulk_ingest(files, course_name)
+
+    # print(results)
     print("Done .. ")
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):

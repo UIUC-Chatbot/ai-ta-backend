@@ -57,6 +57,7 @@ def coursera() -> JSON:
   results = ingester.ingest_coursera_url("https://www.coursera.org/learn/automata", "automata")
   response = jsonify(results)
   response.headers.add('Access-Control-Allow-Origin', '*')
+
   return response
 
 
