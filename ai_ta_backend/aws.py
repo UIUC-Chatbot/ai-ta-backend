@@ -50,4 +50,4 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
   pool.map(upload, filenames)
 
   print("All data files uploaded to S3 successfully.")
-  return s3_paths  return s3_paths
+  return s3_paths
