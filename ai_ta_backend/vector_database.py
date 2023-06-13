@@ -58,7 +58,6 @@ class Ingest():
         's3',
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-        # aws_session_token=,  # Comment this line if not using temporary credentials
     )
 
     # Create a Supabase client
@@ -433,7 +432,6 @@ class Ingest():
     """
     try:
       import time
-      print("START get contexts")
       start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
       
@@ -444,7 +442,6 @@ class Ingest():
       one_user_question = {"prompt": search_query, "context": context_arr, "course_name": course_name} # "completion": 'todo'
       self.supabase_client.table('llm-monitor').insert(one_user_question).execute() # type: ignore
       print(f"⏰ Log to Supabase time: {(time.monotonic() - start_time):.2f} seconds")
-      print("DONE Returning contexts")
       print(f"⏰ Overall runtime of contexts + logging to Supabase: {(time.monotonic() - start_time_overall):.2f} seconds")
       return self.format_for_json(found_docs)
     except Exception as e:
