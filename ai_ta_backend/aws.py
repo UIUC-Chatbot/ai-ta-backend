@@ -1,9 +1,10 @@
 import os
-from multiprocessing import cpu_count
+from multiprocessing import Lock, cpu_count
 from multiprocessing.pool import ThreadPool
 from typing import List, Optional
 
 import boto3
+
 
 def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[str]]:
   """Uploads all files in localdir to S3 bucket.
@@ -34,11 +35,13 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
   print("About to upload...")
 
   s3_paths = []
+  s3_paths_lock = Lock()
 
   def upload(myfile):
     s3_file = f"courses/{course_name}/{os.path.basename(myfile)}"
     s3.upload_file(myfile, os.getenv('S3_BUCKET_NAME'), s3_file)
-    s3_paths.append(s3_file)
+    with s3_paths_lock:
+      s3_paths.append(s3_file)
 
   min_p = 6
   max_p = cpu_count()
@@ -47,4 +50,4 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
   pool.map(upload, filenames)
 
   print("All data files uploaded to S3 successfully.")
-  return s3_paths
+  return s3_paths  return s3_paths
