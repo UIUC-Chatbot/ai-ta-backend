@@ -159,6 +159,24 @@ def getAll():
   return response
 
 
+#Write api to delete s3 files for a course
+@app.route('/delete', methods=['DELETE'])
+def delete():
+    """Delete all course materials based on the course_name
+    """
+
+    print("In /delete")
+
+    ingester = Ingest()
+    course_name: List[str] | str = request.args.get('course_name')
+    s3_path: str = request.args.get('s3_path')
+    success_or_failure = ingester.delete_data(s3_path, course_name)
+    response = jsonify({"outcome": success_or_failure})
+
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+
 @app.route('/log', methods=['GET'])
 def log():
   """

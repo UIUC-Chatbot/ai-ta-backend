@@ -24,6 +24,8 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
+import requests
+import json
 
 from ai_ta_backend.aws import upload_data_files_to_s3 
 
@@ -396,6 +398,46 @@ class Ingest():
     except Exception as e:
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
+
+  def delete_points_from_qdrant(self, collection_name: str, filter_condition: Dict):
+    url = f"{os.getenv('QDRANT_URL')}/collections/{collection_name}/points/delete"
+    headers = {"Content-Type": "application/json"}
+    data = {"filter": filter_condition}
+
+    response = requests.delete(url, headers=headers, data=json.dumps(data))
+    return response.json()
+
+  # Create a method to delete file from s3, delete vector from qdrant, and delete row from supabase
+  def delete_data(self, s3_path: str, course_name: str):
+    try:
+      # Delete file from S3
+      bucket_name = os.getenv('S3_BUCKET_NAME')
+      self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
+
+      # Call Qdrant API to delete vector using s3_path in filters
+      filter_condition = {
+        "must": [
+          {
+            "key": "s3_path",
+            "match": {
+              "value": s3_path
+            }
+          }
+        ]
+      }
+      response = self.delete_points_from_qdrant(os.getenv('QDRANT_COLLECTION_NAME'), filter_condition)
+
+      # Delete s3_path from SQL using Supabase
+      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>s3_path', s3_path).eq(
+        'metadata->>course_name', course_name).execute()
+
+      print(response)
+    except:
+      print("Error deleting data")
+      return False
+
+    return True
+
 
   def getAll(
       self,
