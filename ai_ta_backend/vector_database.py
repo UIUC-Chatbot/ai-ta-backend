@@ -422,6 +422,7 @@ class Ingest():
 
   # Create a method to delete file from s3, delete vector from qdrant, and delete row from supabase
   def delete_data(self, s3_path: str, course_name: str):
+    print(f"Deleting {s3_path} from S3, Qdrant, and Supabase for course {course_name}")
     try:
       # Delete file from S3
       bucket_name = os.getenv('S3_BUCKET_NAME')
@@ -445,11 +446,12 @@ class Ingest():
         'metadata->>course_name', course_name).execute()
 
       print(response)
-    except:
-      print("Error deleting data")
-      return False
+    except Exception as e:
+      err: str = f"ERROR IN TXT INGEST: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+      return err
 
-    return True
+    return "Success"
 
 
   def getAll(
