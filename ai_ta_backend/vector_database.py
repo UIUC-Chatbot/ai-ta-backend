@@ -460,7 +460,7 @@ class Ingest():
     
     """
     response = self.supabase_client.table(
-        os.getenv('SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq( # type: ignore
+        os.getenv('MATERIALS_SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq( # type: ignore
             'metadata->>course_name', course_name).execute() 
 
     data = response.data
