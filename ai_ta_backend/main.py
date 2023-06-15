@@ -127,6 +127,31 @@ def ingest():
   return response
 
 
+@app.route('/getContextStuffedPrompt', methods=['GET'])
+def getContextStuffedPrompt():
+  """
+  Get a stuffed prompt for a given user question and course name.
+  Args : 
+    user_question (str)
+    course_name (str) : used for metadata filtering
+  Returns : str
+    a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
+  """
+  print("In /getContextStuffedPrompt")
+
+  ingester = Ingest()
+  user_question: List[str] | str = request.args.get('user_question')
+  course_name: List[str] | str = request.args.get('course_name')
+  top_n: int = request.args.get('top_n')
+  top_k_to_search: int = request.args.get('top_k_to_search')
+
+  stuffed_prompt = ingester.get_context_stuffed_prompt(user_question, course_name, top_n, top_k_to_search)
+  response = jsonify({"prompt": stuffed_prompt})
+
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/getAll', methods=['GET'])
 def getAll():
   """Get all course materials based on the course_name

@@ -13,6 +13,12 @@ from typing import Any, Dict, List, Literal, Union
 import boto3
 import fitz
 import supabase
+from arize.api import Client
+from arize.pandas.embeddings import EmbeddingGenerator, UseCases
+from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments, Metrics, ModelTypes, Schema)
+from dotenv import load_dotenv
+from flask import jsonify, request
+from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader, SRTLoader)
 from dotenv import load_dotenv
 from flask import jsonify, request
 from langchain.document_loaders import (Docx2txtLoader, SRTLoader,
@@ -21,6 +27,9 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+from langchain import PromptTemplate, OpenAI, LLMChain
+from langchain.chains.summarize import load_summarize_chain
+from qdrant_client import QdrantClient, models
 from qdrant_client import QdrantClient
 import requests
 import json
@@ -49,9 +58,11 @@ class Ingest():
         url=os.getenv('QDRANT_URL'),
         api_key=os.getenv('QDRANT_API_KEY'),
     )
-    self.vectorstore = Qdrant(client=self.qdrant_client,
-                              collection_name=os.getenv('QDRANT_COLLECTION_NAME'), # type: ignore
-                              embeddings=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')))  # type: ignore
+    
+    self.vectorstore = Qdrant(
+        client=self.qdrant_client,
+        collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+        embeddings=OpenAIEmbeddings())  # type: ignore
 
     # S3
     self.s3_client = boto3.client(
@@ -61,38 +72,127 @@ class Ingest():
     )
 
     # Create a Supabase client
-    self.supabase_client = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
-                                                  supabase_key=os.getenv('SUPABASE_API_KEY')) # type: ignore
-    
-    
+    self.supabase_client = supabase.create_client(
+        supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
+    self.arize_client = Client(space_key=os.getenv('ARIZE_SPACE_KEY'), api_key=os.getenv('ARIZE_API_KEY'))  # type: ignore
+   
     return None
-  
-  def get_context_stuffed_prompt(self, user_question: str, course_name: str) -> str:
+
+  def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
     """
     Get a stuffed prompt for a given user question and course name.
-    
-    TODO: implement this.
-    
-    Find top 100 documents (ideally using marginal_relevancy Langchain function)
-    For each document, get GPT3.5-turbo to summarize. Use this prompt:
-    Use the following portion of a long document to see if any of the text is relevant to answer the question. 
-    ```
-    Return any relevant text verbatim.
-    {context}
-    Question: {question}
-    Relevant text, if any:
-    ```
+    Args : 
+      user_question (str)
+      course_name (str) : used for metadata filtering
+    Returns : str
+      a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
+     """
+    #MMR with metadata filtering based on course_name
+    print(f"user question {user_question}")
+    print(f"course_name {course_name}")
+    print(f"top_n {top_n}")
+    print(f"top_k_to_search {top_k_to_search}")
 
-    Use LangChain map_reduce_QA to implement this in parallel.
-    Write a function that takes in a question, and returns a very long "stuffed" prompt for GPT-4 to answer on the front-end. (You only construct the prompt for GPT-4, you don't actually return the answer).
-    
-    References:
-    Example & Docs: https://python.langchain.com/en/latest/modules/chains/index_examples/question_answering.html#the-map-reduce-chain
-    Code: https://github.com/hwchase17/langchain/blob/4092fd21dcabd1de273ad902fae2186ae5347e03/langchain/chains/question_answering/map_reduce_prompt.py#L11 
+    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
+    print("MMR done")
+    prompt_template = """Provide a comprehensive summary of the given text, based on the question.
+    {text}
+    Question : {question}
+    The summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. 
+    Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. 
+    Feel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question. 
+    The length of the summary should be as short as possible, without losing relevant information.
     """
-    
-    return f"TODO: Implement me! You asked for: {course_name}"
+
+    PROMPT = PromptTemplate(template=prompt_template, input_variables=["text", "question"])
+    chain = load_summarize_chain(OpenAI(temperature=0, batch_size=20, openai_api_key=os.getenv('OPENAI_API_KEY')),
+                                 chain_type="map_reduce",
+                                 return_intermediate_steps=True,
+                                 map_prompt=PROMPT,
+                                 combine_prompt=PROMPT,
+                                 verbose=False)
+    results = chain({"input_documents": found_docs, "question": user_question}, return_only_outputs=True)  #get results
+
+    #to return long stuffed prompt
+    separator = '---'  # between each context
+    all_texts = ''
+    for doc, summary in zip(found_docs, results["intermediate_steps"]):
+      doc_text = f"Document: {doc.metadata['readable_filename']}, page number (if exists): {doc.metadata['pagenumber_or_timestamp']}\n"
+      summary_text = f"Summary: {summary}\n"
+      all_texts += doc_text + summary_text + separator + '\n'
+
+    stuffed_prompt = """Please answer the following question. 
+    Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant. 
+    It's good to quote the official course materials directly, something like 'from ABS source it says XYZ'. Feel free to say you don't know. 
+    \nHere's a few passages of high quality official course materials:\n %s 
+    \n\nNow please respond to my query: %s """ % (all_texts, user_question)
+
+    return stuffed_prompt
+
+  def log_to_arize(self, course_name: str, user_question: str, llm_completion: str) -> str:
+    import pandas as pd
+
+    features = {
+        'state': 'wa',
+        'city': 'seattle',
+        'merchant_name': 'Starbucks Coffee',
+        'pos_approved': True,
+        'item_count': 2,
+        'merchant_type': 'coffee shop',
+        'charge_amount': 22.11,
+    }
+
+    #example tags
+    tags = {
+        'age': 21,
+        'zip_code': '94610',
+        'device_os': 'MacOS',
+        'server_node_id': 120,
+    }
+
+    #example embeddings
+    embedding_features = {
+        # 'image_embedding': Embedding(
+        #     vector=np.array([1.0, 2, 3]), # type: ignore
+        #     link_to_data='https://my-bucket.s3.us-west-2.amazonaws.com/puppy.png',
+        # ),
+        'prompt':
+            Embedding(
+                vector=pd.Series([6.0, 1.0, 2.0, 6.0]),  # type: ignore
+                data='slightly different This is a test sentence',
+            ),
+        'completion':
+            Embedding(
+                vector=pd.Series([15.0, 10.0, 1.0, 9.0]),  # type: ignore
+                data=['slightly', 'different', 'This', 'is', 'a', 'sample', 'token', 'array'],
+            ),
+    }
+
+    #log the prediction
+    response = self.arize_client.log(
+        prediction_id=str(uuid.uuid4()),
+        prediction_label=llm_completion,
+        model_id='kas-model-1',
+        # model_type=ModelTypes.GENERATIVE_LLM, # I think this is a bug.
+        model_type=ModelTypes.SCORE_CATEGORICAL,
+        environment=Environments.PRODUCTION,
+        model_version='v1',
+        prediction_timestamp=int(datetime.datetime.now().timestamp()),
+        features=features,
+        embedding_features=embedding_features,
+        tags=tags,
+    )
+
+    ## Listen to response code to ensure successful delivery
+    res = response.result()
+    if res.status_code == 200:
+      print('Success sending Prediction!')
+      return "Success logging to Arize!"
+    else:
+      print(f'Log failed with response code {res.status_code}, {res.text}')
+      return f'Log failed with response code {res.status_code}, {res.text}'
   
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
@@ -138,7 +238,7 @@ class Ingest():
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
-      
+
       return success_status
     except Exception as e:
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
@@ -206,7 +306,8 @@ class Ingest():
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
 
         ### READ OCR of PDF
-        doc = fitz.open(pdf_tmpfile.name) # type: ignore
+        print("Right before opening pdf")
+        doc = fitz.open(pdf_tmpfile.name)  # type: ignore
 
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
@@ -248,7 +349,6 @@ class Ingest():
       print(e)
       return f"Error {e}"
     return "Success"
-  
 
   def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
     """Ingest a single .txt file from S3.
@@ -281,7 +381,7 @@ class Ingest():
       return err
     
   def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
-    # ----- asmita's code -----  
+    # ----- asmita's code -----
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
@@ -295,9 +395,8 @@ class Ingest():
         documents = loader.load()
 
         texts = [doc.page_content for doc in documents]
-        metadatas: List[Dict[str,Any]] = [
-          {
-            'course_name': course_name, 
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '', 
@@ -310,32 +409,7 @@ class Ingest():
       print(e)
       return f"Error {e}"
     return "Success"
-  
-  def list_files_recursively(self, bucket, prefix):
-        all_files = []
-        continuation_token = None
 
-        while True:
-            list_objects_kwargs = {
-                'Bucket': bucket,
-                'Prefix': prefix,
-            }
-            if continuation_token:
-                list_objects_kwargs['ContinuationToken'] = continuation_token
-
-            response = self.s3_client.list_objects_v2(**list_objects_kwargs)
-
-            if 'Contents' in response:
-                for obj in response['Contents']:
-                    all_files.append(obj['Key'])
-
-            if response['IsTruncated']:
-                continuation_token = response['NextContinuationToken']
-            else:
-                break
-
-        return all_files
-  
   def ingest_coursera(self, coursera_course_name: str, course_name: str) -> str:
     """ Download all the files from a coursera course and ingest them.
     
@@ -458,8 +532,11 @@ class Ingest():
       self,
       course_name: str,
   ):
-    """Get all course materials based on course name
-    
+    """Get all course materials based on course name.
+    Args : 
+        course_name (as uploaded on supabase)
+    Returns : 
+        list of dictionaries with distinct s3 path, readable_filename and course_name.
     """
     response = self.supabase_client.table(
         os.getenv('MATERIALS_SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq( # type: ignore
@@ -476,7 +553,7 @@ class Ingest():
         distinct_dicts.append(item)
 
     return distinct_dicts
-  
+
   def getTopContexts(self, search_query: str, course_name: str, top_n: int = 4) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
@@ -492,13 +569,13 @@ class Ingest():
       import time
       start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
-      
+
       # log to Supabase
       # todo: make this async. It's .6 seconds to log to Supabase. 1 second to get contexts.
       start_time = time.monotonic()
       context_arr = [{"content": doc.page_content, "metadata": doc.metadata} for doc in found_docs]
-      one_user_question = {"prompt": search_query, "context": context_arr, "course_name": course_name} # "completion": 'todo'
-      self.supabase_client.table('llm-monitor').insert(one_user_question).execute() # type: ignore
+      one_user_question = {"prompt": search_query, "context": context_arr, "course_name": course_name}  # "completion": 'todo'
+      self.supabase_client.table('llm-monitor').insert(one_user_question).execute()  # type: ignore
       print(f"⏰ Log to Supabase time: {(time.monotonic() - start_time):.2f} seconds")
       print(f"⏰ Overall runtime of contexts + logging to Supabase: {(time.monotonic() - start_time_overall):.2f} seconds")
       return self.format_for_json(found_docs)
