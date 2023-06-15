@@ -26,7 +26,8 @@ from flask import jsonify, request
 from langchain import LLMChain, OpenAI, PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
-                                        SRTLoader)
+                                        SRTLoader,
+                                        UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -40,7 +41,7 @@ from qdrant_client import QdrantClient, models
 
 # load_dotenv(dotenv_path='.env', override=True)
 # print(os.environ['OPENAI_API_KEY'])
-print(os.getenv('QDRANT_URL'))
+# print(os.getenv('QDRANT_URL'))
 
 class Ingest():
   """
@@ -88,9 +89,8 @@ class Ingest():
     Returns : str
       a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
      """
-    #MMR with metadata filtering based on course_name
+    # MMR with metadata filtering based on course_name
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
-    print("MMR done")
     prompt_template = """Provide a comprehensive summary of the given text, based on the question.
     {text}
     Question : {question}
@@ -378,11 +378,7 @@ class Ingest():
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
-        print("Bucket: ", os.environ['S3_BUCKET_NAME'])
-        print("Key: ", s3_path)
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-        print("GOT THE FILE")
-        print(tmpfile.name)
 
         loader = UnstructuredPowerPointLoader(tmpfile.name)
         documents = loader.load()
@@ -424,7 +420,6 @@ class Ingest():
     # use walkdir to find all files in the directory, send them to bulk ingest one by one.
 
     print(results)
-    print("Done .. ")
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
