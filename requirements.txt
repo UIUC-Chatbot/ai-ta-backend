@@ -14,7 +14,7 @@ mkdocstrings[python]
 mkdocs-material
 sqlalchemy
 qdrant-client
-langchain
+langchain==0.0.170
 openai
 supabase
 SQLAlchemy
@@ -28,6 +28,7 @@ typing_extensions==4.5.0
 tiktoken
 pysrt
 docx2txt
+# arize[AutoEmbeddings, LLM_Evaluation]
 coursera-dl @ git+https://github.com/raffaem/coursera-dl.git
 
 # Arize disabled for now because it's a huge import
