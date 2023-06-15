@@ -1,3 +1,7 @@
+# don't sync coursera docs
+coursera-dl/
+*parsed.json
+
 # don't expose env files
 dummy.ipynb
 .env

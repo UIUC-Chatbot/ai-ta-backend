@@ -30,19 +30,16 @@ def index() -> JSON:
   """
   return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
-
 @app.route('/coursera', methods=['GET'])
 def coursera() -> JSON:
-  """_summary_
-
-  Args:
-      test (int, optional): _description_. Defaults to 1.
-
-  Returns:
-      JSON: _description_
-  """
+  try:
+    course_name: str = request.args.get('course_name') # type: ignore
+    coursera_course_name: str = request.args.get('coursera_course_name') # type: ignore
+  except Exception as e:
+    print(f"No course name provided: {e}")
+  
   ingester = Ingest()
-  results = ingester.ingest_coursera_url("https://www.coursera.org/learn/automata", "automata")
+  results = ingester.ingest_coursera(coursera_course_name, course_name) # type: ignore
   response = jsonify(results)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -174,6 +171,24 @@ def getAll():
   return response
 
 
+#Write api to delete s3 files for a course
+@app.route('/delete', methods=['DELETE'])
+def delete():
+    """Delete all course materials based on the course_name
+    """
+
+    print("In /delete")
+
+    ingester = Ingest()
+    course_name: List[str] | str = request.args.get('course_name')
+    s3_path: str = request.args.get('s3_path')
+    success_or_failure = ingester.delete_data(s3_path, course_name)
+    response = jsonify({"outcome": success_or_failure})
+
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+
 @app.route('/log', methods=['GET'])
 def log():
   """
@@ -191,28 +206,5 @@ def log():
   return response
 
 
-@app.route('/DEPRICATED_S3_dir_ingest', methods=['GET'])
-def DEPRICATED_S3_dir_ingest():
-  """Rough ingest of whole S3 dir. Pretty handy.
-  
-  S3 path, NO BUCKET. We assume the bucket is an .env variable.
-
-  Returns:
-      str: Success or Failure message
-  """
-
-  ingester = Ingest()
-
-  s3_path: List[str] | str = request.args.get('s3_path')
-  # course_name: List[str] | str = request.args.get('course_name')
-  ret = ingester.ingest_S3_directory(s3_path)
-  if ret == 'success':
-    response = jsonify({"ingest_status": "success"})
-  else:
-    response = jsonify({"ingest_status": ret})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
 if __name__ == '__main__':
-  app.run(debug=True, port=os.getenv("PORT", default=5000))
+  app.run(debug=True, port=os.getenv("PORT", default=8000))

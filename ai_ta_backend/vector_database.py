@@ -1,13 +1,11 @@
-import asyncio
-import datetime
 import inspect
-import math
 import os
+import shutil
 import subprocess
+import time
 # from xml.dom.minidom import Document  # PDF to text
 # from re import L, T
 import traceback
-import uuid
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryFile
 from typing import Any, Dict, List, Literal, Union
@@ -33,6 +31,11 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
+from qdrant_client import QdrantClient
+import requests
+import json
+
+from ai_ta_backend.aws import upload_data_files_to_s3
 
 # from regex import F
 # from sqlalchemy import JSON
@@ -58,6 +61,7 @@ class Ingest():
         url=os.getenv('QDRANT_URL'),
         api_key=os.getenv('QDRANT_API_KEY'),
     )
+    
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
@@ -68,7 +72,6 @@ class Ingest():
         's3',
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-        # aws_session_token=,  # Comment this line if not using temporary credentials
     )
 
     # Create a Supabase client
@@ -99,6 +102,7 @@ class Ingest():
     Feel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question. 
     The length of the summary should be as short as possible, without losing relevant information.
     """
+
     PROMPT = PromptTemplate(template=prompt_template, input_variables=["text", "question"])
     chain = load_summarize_chain(OpenAI(temperature=0, batch_size=20, openai_api_key=os.getenv('OPENAI_API_KEY')),
                                  chain_type="map_reduce",
@@ -254,7 +258,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).stem,
+            'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '',
         } for doc in documents]
 
@@ -277,7 +281,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).stem,
+            'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '',
         } for doc in documents]
 
@@ -293,8 +297,6 @@ class Ingest():
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
-    # first_page_png = pix.tobytes(output='png', jpg_quality=95)
-    print("IN INGEST PDF")
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
@@ -326,7 +328,7 @@ class Ingest():
 
           # Extract text
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
-          pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).stem))
+          pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
         metadatas: List[Dict[str, Any]] = [
             {
@@ -346,33 +348,35 @@ class Ingest():
     return "Success"
 
   def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
-    # ----- asmita's code -----
+    """Ingest a single .txt file from S3.
+
+    Args:
+        s3_path (str): A path to a .txt file in S3
+        course_name (str): The name of the course
+
+    Returns:
+        str: "Success" or an error message
+    """
     try:
-      with NamedTemporaryFile() as tmpfile:
-        # download from S3 into pdf_tmpfile
-        print("Bucket: ", os.environ['S3_BUCKET_NAME'])
-        print("Key: ", s3_path)
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-        print("GOT THE FILE")
-        print(tmpfile.name)
+      # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
+      response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
+      text = response['Body'].read().decode('utf-8')
+      text = [text]
+      metadatas: List[Dict[str,Any]] = [
+        {
+          'course_name': course_name,
+          's3_path': s3_path,
+          'readable_filename': Path(s3_path).name,
+          'pagenumber_or_timestamp': '1',
+        }]
 
-        loader = UnstructuredFileLoader(tmpfile.name)
-        documents = loader.load()
-
-        texts = [doc.page_content for doc in documents]
-        metadatas: List[Dict[str, Any]] = [{
-            'course_name': course_name,
-            's3_path': s3_path,
-            'readable_filename': Path(s3_path).stem,
-            'pagenumber_or_timestamp': '',
-        } for doc in documents]
-
-        self.split_and_upload(texts=texts, metadatas=metadatas)
-        return "Success"
+      self.split_and_upload(texts=text, metadatas=metadatas)
+      return "Success"
     except Exception as e:
-      print(f"ERROR IN TXT {e}")
-      return f"Error: {e}"
-
+      err: str = f"ERROR IN TXT INGEST: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+      return err
+    
   def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
     # ----- asmita's code -----
     try:
@@ -387,9 +391,9 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).stem,
-            'pagenumber_or_timestamp': '',
-        } for doc in documents]
+            'readable_filename': Path(s3_path).name,
+            'pagenumber_or_timestamp': '', 
+          } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
@@ -399,27 +403,45 @@ class Ingest():
       return f"Error {e}"
     return "Success"
 
-  def ingest_coursera_url(self, url: str, course_name: str):
-    """
-    1. Download the coursera url to a temp file
-    2. For each file downloaded, run it through the ingest_bulk method
-    """
+  def ingest_coursera(self, coursera_course_name: str, course_name: str) -> str:
+    """ Download all the files from a coursera course and ingest them.
+    
+    1. Download the coursera content.
+    2. Upload to S3 (so users can view it)
+    3. Run everything through the ingest_bulk method.
 
-    print("starting ingest_coursera_url")
+    Args:
+        coursera_course_name (str): The name of the coursera course.
+        course_name (str): The name of the course in our system.
 
+    Returns:
+        _type_: Success or error message.
+    """
     certificate = "-ca 'FVhVoDp5cb-ZaoRr5nNJLYbyjCLz8cGvaXzizqNlQEBsG5wSq7AHScZGAGfC1nI0ehXFvWy1NG8dyuIBF7DLMA.X3cXsDvHcOmSdo3Fyvg27Q.qyGfoo0GOHosTVoSMFy-gc24B-_BIxJtqblTzN5xQWT3hSntTR1DMPgPQKQmfZh_40UaV8oZKKiF15HtZBaLHWLbpEpAgTg3KiTiU1WSdUWueo92tnhz-lcLeLmCQE2y3XpijaN6G4mmgznLGVsVLXb-P3Cibzz0aVeT_lWIJNrCsXrTFh2HzFEhC4FxfTVqS6cRsKVskPpSu8D9EuCQUwJoOJHP_GvcME9-RISBhi46p-Z1IQZAC4qHPDhthIJG4bJqpq8-ZClRL3DFGqOfaiu5y415LJcH--PRRKTBnP7fNWPKhcEK2xoYQLr9RxBVL3pzVPEFyTYtGg6hFIdJcjKOU11AXAnQ-Kw-Gb_wXiHmu63veM6T8N2dEkdqygMre_xMDT5NVaP3xrPbA4eAQjl9yov4tyX4AQWMaCS5OCbGTpMTq2Y4L0Mbz93MHrblM2JL_cBYa59bq7DFK1IgzmOjFhNG266mQlC9juNcEhc'"
-    coursera_course_name = "operations-management-organization-and-analysis"
-    always_use_flags = "-u kastanvday@gmail.com -p hSBsLaF5YM469# --ignore-formats mp4 --subtitle-language en"
+    always_use_flags = "-u kastanvday@gmail.com -p hSBsLaF5YM469# --ignore-formats mp4 --subtitle-language en --path ./coursera-dl"
+    
+    try:
+      results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}", check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # capture_output=True,
+      dl_results_path = os.path.join('coursera-dl', coursera_course_name)
+      s3_paths: List | None = upload_data_files_to_s3(course_name, dl_results_path)
 
-    results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}",
-                             check=True,
-                             shell=True,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)  # capture_output=True,
+      if s3_paths is None:
+        return "Error: No files found in the coursera-dl directory"
 
-    # use walkdir to find all files in the directory, send them to bulk ingest one by one.
+      print("starting bulk ingest")
+      start_time = time.monotonic()
+      self.bulk_ingest(s3_paths, course_name)
+      print("completed bulk ingest")
+      print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
 
-    print(results)
+      # Cleanup the coursera downloads
+      shutil.rmtree(dl_results_path)
+
+      return "Success"
+    except Exception as e:
+      err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+      return err
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
@@ -450,12 +472,54 @@ class Ingest():
       # upload to Qdrant
       self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
       data = [{"content": doc.page_content, "metadata": doc.metadata} for doc in documents]
-      count = self.supabase_client.table(os.getenv('SUPABASE_TABLE')).insert(data).execute()  # type: ignore
+      count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(data).execute() # type: ignore
 
       return "Success"
     except Exception as e:
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
+
+  def delete_points_from_qdrant(self, collection_name: str, filter_condition: Dict):
+    url = f"{os.getenv('QDRANT_URL')}/collections/{collection_name}/points/delete"
+    headers = {"Content-Type": "application/json"}
+    data = {"filter": filter_condition}
+
+    response = requests.delete(url, headers=headers, data=json.dumps(data))
+    return response.json()
+
+  # Create a method to delete file from s3, delete vector from qdrant, and delete row from supabase
+  def delete_data(self, s3_path: str, course_name: str):
+    print(f"Deleting {s3_path} from S3, Qdrant, and Supabase for course {course_name}")
+    try:
+      # Delete file from S3
+      bucket_name = os.getenv('S3_BUCKET_NAME')
+      self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
+
+      # Call Qdrant API to delete vector using s3_path in filters
+      filter_condition = {
+        "must": [
+          {
+            "key": "s3_path",
+            "match": {
+              "value": s3_path
+            }
+          }
+        ]
+      }
+      response = self.delete_points_from_qdrant(os.getenv('QDRANT_COLLECTION_NAME'), filter_condition)
+
+      # Delete s3_path from SQL using Supabase
+      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>s3_path', s3_path).eq(
+        'metadata->>course_name', course_name).execute()
+
+      print(response)
+    except Exception as e:
+      err: str = f"ERROR IN TXT INGEST: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+      return err
+
+    return "Success"
+
 
   def getAll(
       self,
@@ -468,8 +532,8 @@ class Ingest():
         list of dictionaries with distinct s3 path, readable_filename and course_name.
     """
     response = self.supabase_client.table(
-        os.getenv('SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq(  # type: ignore
-            'metadata->>course_name', course_name).execute()
+        os.getenv('MATERIALS_SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq( # type: ignore
+            'metadata->>course_name', course_name).execute() 
 
     data = response.data
     unique_combinations = set()
@@ -496,7 +560,6 @@ class Ingest():
     """
     try:
       import time
-      print("START get contexts")
       start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
 
@@ -507,7 +570,6 @@ class Ingest():
       one_user_question = {"prompt": search_query, "context": context_arr, "course_name": course_name}  # "completion": 'todo'
       self.supabase_client.table('llm-monitor').insert(one_user_question).execute()  # type: ignore
       print(f"⏰ Log to Supabase time: {(time.monotonic() - start_time):.2f} seconds")
-      print("DONE Returning contexts")
       print(f"⏰ Overall runtime of contexts + logging to Supabase: {(time.monotonic() - start_time_overall):.2f} seconds")
       return self.format_for_json(found_docs)
     except Exception as e:

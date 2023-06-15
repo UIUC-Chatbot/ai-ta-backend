@@ -4,7 +4,7 @@ site_name: "UIUC AI Teaching Assistant"
 nav:
   - Home: index.md
   - Vector Search: vector_search.md
-  - References: reference.md
+  - API Reference: api_reference.md
 
 
 theme:
