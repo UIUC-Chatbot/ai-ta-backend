@@ -66,7 +66,7 @@ class Ingest():
     
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
-        collection_name=os.getenv('DEV_QDRANT_COLLECTION_NAME'),  # type: ignore
+        collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
         embeddings=OpenAIEmbeddings())  # type: ignore
 
     # S3
