@@ -4,12 +4,13 @@ import re
 import time
 from typing import Any, List
 
-from ai_ta_backend.vector_database import Ingest
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
+
+from ai_ta_backend.vector_database import Ingest
 
 app = Flask(__name__)
 CORS(app)
@@ -132,7 +133,7 @@ def getContextStuffedPrompt():
   """
   Get a stuffed prompt for a given user question and course name.
   Args : 
-    user_question (str)
+    search_query (str)
     course_name (str) : used for metadata filtering
   Returns : str
     a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
@@ -141,13 +142,13 @@ def getContextStuffedPrompt():
   
 
   ingester = Ingest()
-  user_question: List[str] | str = request.args.get('user_question')
+  search_query: List[str] | str = request.args.get('search_query')
   course_name: List[str] | str = request.args.get('course_name')
   top_n: int = int(request.args.get('top_n'))
   top_k_to_search: int = int(request.args.get('top_k_to_search'))
 
   start_time = time.monotonic()
-  stuffed_prompt = ingester.get_context_stuffed_prompt(user_question, course_name, top_n, top_k_to_search)
+  stuffed_prompt = ingester.get_context_stuffed_prompt(search_query, course_name, top_n, top_k_to_search)
   print(f"⏰ Runtime of EXTREME prompt stuffing: {(time.monotonic() - start_time):.2f} seconds")
   response = jsonify({"prompt": stuffed_prompt})
 
