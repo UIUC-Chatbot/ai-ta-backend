@@ -26,6 +26,7 @@ from langchain import LLMChain, OpenAI
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
                                        
                                         SRTLoader,
+                                        UnstructuredPowerPointLoader,
                                         UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import OpenAIChat
@@ -81,9 +82,8 @@ class Ingest():
       a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
       a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
      """
-    #MMR with metadata filtering based on course_name
+    # MMR with metadata filtering based on course_name
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
-    print("MMR done")
 
     requests = []
     for i, doc in enumerate(found_docs):
