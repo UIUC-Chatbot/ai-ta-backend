@@ -19,24 +19,28 @@ from arize.api import Client
 from arize.pandas.embeddings import EmbeddingGenerator, UseCases
 # from arize.utils import ModelTypes
 # from arize.utils.ModelTypes import GENERATIVE_LLM
-from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments, Metrics, ModelTypes, Schema)
+from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
+                               Metrics, ModelTypes, Schema)
 from dotenv import load_dotenv
 from flask import jsonify, request
-from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader, SRTLoader)
+from langchain import LLMChain, OpenAI, PromptTemplate
+from langchain.chains.summarize import load_summarize_chain
+from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
+                                        SRTLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
-from langchain import PromptTemplate, OpenAI, LLMChain
-from langchain.chains.summarize import load_summarize_chain
 from qdrant_client import QdrantClient, models
 
 # from regex import F
 # from sqlalchemy import JSON
 
 # load API keys from globally-availabe .env file
-load_dotenv(dotenv_path='../.env', override=True)
 
+# load_dotenv(dotenv_path='.env', override=True)
+# print(os.environ['OPENAI_API_KEY'])
+print(os.getenv('QDRANT_URL'))
 
 class Ingest():
   """
@@ -85,11 +89,6 @@ class Ingest():
       a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
      """
     #MMR with metadata filtering based on course_name
-    print(f"user question {user_question}")
-    print(f"course_name {course_name}")
-    print(f"top_n {top_n}")
-    print(f"top_k_to_search {top_k_to_search}")
-
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
     print("MMR done")
     prompt_template = """Provide a comprehensive summary of the given text, based on the question.
