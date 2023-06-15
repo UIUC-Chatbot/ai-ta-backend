@@ -1,4 +1,5 @@
 import inspect
+import json
 import os
 import shutil
 import subprocess
@@ -12,6 +13,7 @@ from typing import Any, Dict, List, Literal, Union
 
 import boto3
 import fitz
+import requests
 import supabase
 # from arize.api import Client
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
@@ -31,9 +33,6 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
-from qdrant_client import QdrantClient
-import requests
-import json
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 
@@ -93,7 +92,10 @@ class Ingest():
       a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
      """
     # MMR with metadata filtering based on course_name
+    vec_start_time = time.monotonic()
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
+    print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
+    
     prompt_template = """Provide a comprehensive summary of the given text, based on the question.
     {text}
     Question : {question}
@@ -102,15 +104,18 @@ class Ingest():
     Feel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question. 
     The length of the summary should be as short as possible, without losing relevant information.
     """
-
+    
     PROMPT = PromptTemplate(template=prompt_template, input_variables=["text", "question"])
-    chain = load_summarize_chain(OpenAI(temperature=0, batch_size=20, openai_api_key=os.getenv('OPENAI_API_KEY')),
+    # Max batch size is 20 on Openai (June 2023)
+    chain = load_summarize_chain(OpenAI(temperature=0, batch_size=min(20, len(found_docs)), openai_api_key=os.getenv('OPENAI_API_KEY')),
                                  chain_type="map_reduce",
                                  return_intermediate_steps=True,
                                  map_prompt=PROMPT,
                                  combine_prompt=PROMPT,
                                  verbose=False)
+    chain_start_time = time.monotonic()
     results = chain({"input_documents": found_docs, "question": user_question}, return_only_outputs=True)  #get results
+    print(f"⏰ map_reduce chain runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
 
     #to return long stuffed prompt
     separator = '---'  # between each context
