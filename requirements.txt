@@ -28,6 +28,7 @@ typing_extensions==4.5.0
 tiktoken
 pysrt
 docx2txt
+pydub
 # arize[AutoEmbeddings, LLM_Evaluation]
 # coursera-dl @ git+https://github.com/raffaem/coursera-dl.git
 
