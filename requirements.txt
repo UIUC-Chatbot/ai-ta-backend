@@ -29,7 +29,7 @@ tiktoken
 pysrt
 docx2txt
 # arize[AutoEmbeddings, LLM_Evaluation]
-coursera-dl @ git+https://github.com/raffaem/coursera-dl.git
+# coursera-dl @ git+https://github.com/raffaem/coursera-dl.git
 
 # Arize disabled for now because it's a huge import
 # arize[AutoEmbeddings, LLM_Evaluation]
