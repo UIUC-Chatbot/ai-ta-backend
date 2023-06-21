@@ -155,7 +155,10 @@ def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
 # Download a course using its url
 def mit_course_download(url:str, save_path:str, ):
     base = "https://ocw.mit.edu"
-    url = url + "download"
+    if url.endswith("download"):
+        pass
+    else:
+        url = url + "download"
 
     r = requests.get(url)
     soup = BeautifulSoup(r.text,"html.parser")
