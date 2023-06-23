@@ -28,13 +28,16 @@ def valid_url(url):
 # Function gets titles of urls and the urls themselves
 def get_urls_dict(url:str):
 
-    site= re.match(r'https:\/\/[a-zA-Z0-9.]*[a-z]', url).group(0)
+    site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0)
+
+    # Gets rid of double slashes
+    url = re.sub(pattern=r"https:\/\/", repl="", string=url)
+    url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
+    url = "https://"+url
+
     urls= {}
 
-    # getting the request from url
-    r = requests.get(site)
-
-    # converting the text
+    r = requests.get(url)
     s = BeautifulSoup(r.text,"html.parser")
 
     for i in s.find_all("a"):
@@ -43,22 +46,20 @@ def get_urls_dict(url:str):
         text = i.text
 
         # regex to clean \n and \r from text
-
         text = re.sub(r'[\n\r]', '', text)
-
         text = text.strip()
         
         try:
-        
         # getting the href tag
             href = i.attrs['href']
         except KeyError as e:
             print("KeyError:", e, "for", i)
             continue
-
+    
         if href.startswith("http"):
             pass
-        
+            
+        # This line doesn't matter because the amount of slashes doesn't change the site, but leave it in for now
         elif href.startswith("/"):
             href = site+href
         else:
@@ -149,6 +150,14 @@ def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
             print("url:", site, "Exception:", e)
             invalid_urls.append(site)
             continue
+    
+    # Delete repeated values
+    for value in crawled.values():
+        if list(crawled.values()).count(value) > 1:
+            for key in crawled.keys():
+                if crawled[key] == value:
+                    del crawled[key]
+                    break
 
     return crawled
 
