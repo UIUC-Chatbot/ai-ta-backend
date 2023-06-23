@@ -191,3 +191,27 @@ def mit_course_download(url:str, save_path:str, ):
     except Exception as e:
         print("Error:", e, site)
     
+
+def pdf_scraper(url:str, max_urls:int=1000, max_depth:int=3):  
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text,"html.parser")
+
+    links = site_map(url, 1000, 3)
+
+    i = 0
+    for link in links:
+        i += 1
+        if valid_url(link) == True:
+            if ('.pdf' in link):
+                print("Downloading file: ", link)
+        
+                # Get response object for link
+                response = requests.get(link)
+        
+                # Write content in pdf file
+                pdf = open("pdf"+str(i)+".pdf", 'wb')
+                pdf.write(response.content)
+                pdf.close()
+                print("File ", link, " downloaded")
+        
+    print("All PDF files downloaded")
