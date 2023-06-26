@@ -31,6 +31,7 @@ docx2txt
 pydub
 ffmpeg-python
 ffprobe
+ffmpeg
 # arize[AutoEmbeddings, LLM_Evaluation]
 # coursera-dl @ git+https://github.com/raffaem/coursera-dl.git
 

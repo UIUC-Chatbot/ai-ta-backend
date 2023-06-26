@@ -68,7 +68,7 @@ class Ingest():
     
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
-        collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+        collection_name=os.getenv('DEV_QDRANT_COLLECTION_NAME'),  # type: ignore
         embeddings=OpenAIEmbeddings())  # type: ignore
 
     # S3
@@ -250,7 +250,7 @@ class Ingest():
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.mp4'):
+        elif s3_path.endswith('.mp4') or s3_path.endswith('.mov') or s3_path.endswith('.webm') or s3_path.endswith('.wav'):
           ret = self._ingest_single_video(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
@@ -399,18 +399,22 @@ class Ingest():
   
   def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
     """
-    Ingest a single .mp4 file from S3.
+    Ingest a single video file from S3.
     """
     try:
+      # check for file extension
+      file_ext = Path(s3_path).suffix
+      print(file_ext[1:])
+      
       openai.api_key = os.getenv('OPENAI_API_KEY')
       transcript_list = []
       #print(os.getcwd())
-      with NamedTemporaryFile(suffix=".mp4") as mp4_tmpfile:
-        # download from S3 into an mp4 tmpfile
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=mp4_tmpfile)
-        # extract audio from mp4 tmpfile
-        mp4_version = AudioSegment.from_file(mp4_tmpfile.name, "mp4")
-        print("MP4 file: ", mp4_tmpfile.name)
+      with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
+        # download from S3 into an video tmpfile
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
+        # extract audio from video tmpfile
+        mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
+        print("Video file: ", video_tmpfile.name)
 
       # save the extracted audio as a temporary webm file
       with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
