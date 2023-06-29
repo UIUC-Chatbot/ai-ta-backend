@@ -236,8 +236,8 @@ class OpenAIAPIProcessor:
             
           print("TASK CREATE = response: ", task)
           print("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
-            one_task_result = task.result()
-            print("one_task_result", one_task_result)
+          one_task_result = task.result()
+          print("one_task_result", one_task_result)
 
       # if all tasks are finished, break
       if status_tracker.num_tasks_in_progress == 0:
