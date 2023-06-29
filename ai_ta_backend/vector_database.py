@@ -98,7 +98,7 @@ class Ingest():
      """
     # MMR with metadata filtering based on course_name
     vec_start_time = time.monotonic()
-    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
+    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search, filter={"course_name": course_name})
     print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
     
     prompt_template = """Provide a comprehensive summary of the given text, based on the question.
