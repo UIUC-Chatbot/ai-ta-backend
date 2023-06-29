@@ -223,7 +223,7 @@ class OpenAIAPIProcessor:
 
           # call API
           # TODO: NOT SURE RESPONSE WILL WORK HERE
-          response = asyncio.create_task(
+          task = asyncio.create_task(
               next_request.call_api(
                   request_url=self.request_url,
                   request_header=request_header,
@@ -233,8 +233,11 @@ class OpenAIAPIProcessor:
               ))
           next_request = None  # reset next_request to empty
 
-          print("TASK CREATE = response: ", response)
+            
+          print("TASK CREATE = response: ", task)
           print("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
+            one_task_result = task.result()
+            print("one_task_result", one_task_result)
 
       # if all tasks are finished, break
       if status_tracker.num_tasks_in_progress == 0:
@@ -464,6 +467,8 @@ if __name__ == "__main__":
   )
   # run script
   asyncio.run(oai.process_api_requests_from_file())
+  
+  print("Results, end of main: ", oai.results)
 """
 APPENDIX
 
