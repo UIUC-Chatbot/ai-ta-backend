@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Literal, Union
 
 import boto3
 import fitz
+import openai
 import requests
 import supabase
 # from arize.api import Client
@@ -32,12 +33,10 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 
 from ai_ta_backend.aws import upload_data_files_to_s3
-
-import openai
-from pydub import AudioSegment
 
 # from regex import F
 # from sqlalchemy import JSON
@@ -96,8 +95,8 @@ class Ingest():
      """
     # MMR with metadata filtering based on course_name
     vec_start_time = time.monotonic()
-    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
-    print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
+    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search, filter={"course_name": course_name})
+    print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search} filter='course_name': {course_name}): {(time.monotonic() - vec_start_time):.2f} seconds")
     
     prompt_template = """Provide a comprehensive summary of the given text, based on the question.
     {text}
