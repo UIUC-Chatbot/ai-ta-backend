@@ -91,22 +91,24 @@ The script is structured as follows:
     - Run main()
 """
 
-# imports
-import aiohttp  # for making API calls concurrently
 import argparse  # for running script from command line
 import asyncio  # for running API calls concurrently
 import json  # for saving results to a jsonl file
 import logging  # for logging rate limit warnings and other messages
 import os  # for reading API key
 import re  # for matching endpoint from request URL
-import tiktoken  # for counting tokens
 import time  # for sleeping after rate limit is hit
-from dataclasses import dataclass, field  # for storing API inputs, outputs, and metadata
+from dataclasses import (  # for storing API inputs, outputs, and metadata
+    dataclass, field)
+
+# imports
+import aiohttp  # for making API calls concurrently
+import tiktoken  # for counting tokens
 
 
 class OpenAIAPIProcessor:
 
-  def __init__(self, requests_filepath, save_filepath, request_url, api_key, max_requests_per_minute, max_tokens_per_minute,
+  def __init__(self, input_prompts_list, requests_filepath, save_filepath, request_url, api_key, max_requests_per_minute, max_tokens_per_minute,
                token_encoding_name, max_attempts, logging_level):
     self.requests_filepath = requests_filepath
     self.save_filepath = save_filepath
@@ -118,6 +120,7 @@ class OpenAIAPIProcessor:
     self.max_attempts = max_attempts
     self.logging_level = logging_level
     self.results = []
+    self.input_prompts_list: list[dict] = []
 
   async def process_api_requests_from_file(self):
     """Processes API requests in parallel, throttling to stay under rate limits."""
@@ -151,7 +154,9 @@ class OpenAIAPIProcessor:
     # initialize file reading
     with open(self.requests_filepath) as file:
       # `requests` will provide requests one at a time
-      requests = file.__iter__()
+      # requests = file.__iter__()
+      requests = input_prompts_list.__iter__()
+      
       logging.debug(f"File opened. Entering main loop")
 
       while True:
@@ -163,7 +168,11 @@ class OpenAIAPIProcessor:
           elif file_not_finished:
             try:
               # get new request
-              request_json = json.loads(next(requests))
+              # request_json = json.loads(next(requests))
+              request_json = next(requests)
+              
+              
+              
               next_request = APIRequest(task_id=next(task_id_generator),
                                         request_json=request_json,
                                         token_consumption=num_tokens_consumed_from_request(request_json, api_endpoint,
@@ -201,6 +210,7 @@ class OpenAIAPIProcessor:
             next_request.attempts_left -= 1
 
             # call API
+            # TODO: NOT SURE RESPONSE WILL WORK HERE
             response = asyncio.create_task(
                 next_request.call_api(
                     request_url=self.request_url,
@@ -210,6 +220,9 @@ class OpenAIAPIProcessor:
                     status_tracker=status_tracker,
                 ))
             next_request = None  # reset next_request to empty
+            
+            print("TASK CREATE = response: ", response)
+            print("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
 
         # if all tasks are finished, break
         if status_tracker.num_tasks_in_progress == 0:
@@ -396,34 +409,28 @@ def task_id_generator_function():
 # run script
 
 if __name__ == "__main__":
-  # parse command line arguments
-  parser = argparse.ArgumentParser()
-  parser.add_argument("--requests_filepath")
-  parser.add_argument("--save_filepath", default=None)
-  parser.add_argument("--request_url", default="https://api.openai.com/v1/embeddings")
-  parser.add_argument("--api_key", default=os.getenv("OPENAI_API_KEY"))
-  parser.add_argument("--max_requests_per_minute", type=int, default=3_000 * 0.5)
-  parser.add_argument("--max_tokens_per_minute", type=int, default=250_000 * 0.5)
-  parser.add_argument("--token_encoding_name", default="cl100k_base")
-  parser.add_argument("--max_attempts", type=int, default=5)
-  parser.add_argument("--logging_level", default=logging.INFO)
-  args = parser.parse_args()
+  input_prompts_list: list[dict] = [
+    {
+      "model": "text-embedding-ada-002",
+      # ...
+    }
+  ]
 
-  if args.save_filepath is None:
-    args.save_filepath = args.requests_filepath.replace(".jsonl", "_results.jsonl")
-
+  oai = OpenAIAPIProcessor(
+          input_prompts_list=input_prompts_list,
+          requests_filepath='',
+          save_filepath='',
+          request_url='',
+          api_key='',
+          max_requests_per_minute='',
+          max_tokens_per_minute='',
+          token_encoding_name='',
+          max_attempts='',
+          logging_level='',
+  )
   # run script
   asyncio.run(
-      process_api_requests_from_file(
-          requests_filepath=args.requests_filepath,
-          save_filepath=args.save_filepath,
-          request_url=args.request_url,
-          api_key=args.api_key,
-          max_requests_per_minute=float(args.max_requests_per_minute),
-          max_tokens_per_minute=float(args.max_tokens_per_minute),
-          token_encoding_name=args.token_encoding_name,
-          max_attempts=int(args.max_attempts),
-          logging_level=int(args.logging_level),
+      oai.process_api_requests_from_file(
       ))
 """
 APPENDIX
