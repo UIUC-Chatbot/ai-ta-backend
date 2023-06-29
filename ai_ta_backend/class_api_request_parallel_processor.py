@@ -105,12 +105,26 @@ from dataclasses import (  # for storing API inputs, outputs, and metadata
 import aiohttp  # for making API calls concurrently
 import tiktoken  # for counting tokens
 
+from langchain.vectorstores import Qdrant
+from qdrant_client import QdrantClient, models
+from langchain.llms import OpenAI
+from langchain.embeddings.openai import OpenAIEmbeddings
+import os
+import json
+import tempfile
+import subprocess
+import asyncio
+
+qdrant_client = QdrantClient(
+    url=os.getenv('QDRANT_URL'),
+    api_key=os.getenv('QDRANT_API_KEY'),
+)
+
 
 class OpenAIAPIProcessor:
 
-  def __init__(self, input_prompts_list, requests_filepath, save_filepath, request_url, api_key, max_requests_per_minute, max_tokens_per_minute,
+  def __init__(self, input_prompts_list, save_filepath, request_url, api_key, max_requests_per_minute, max_tokens_per_minute,
                token_encoding_name, max_attempts, logging_level):
-    self.requests_filepath = requests_filepath
     self.save_filepath = save_filepath
     self.request_url = request_url
     self.api_key = api_key
@@ -120,7 +134,7 @@ class OpenAIAPIProcessor:
     self.max_attempts = max_attempts
     self.logging_level = logging_level
     self.results = []
-    self.input_prompts_list: list[dict] = []
+    self.input_prompts_list: list[dict] = input_prompts_list
 
   async def process_api_requests_from_file(self):
     """Processes API requests in parallel, throttling to stay under rate limits."""
@@ -152,103 +166,100 @@ class OpenAIAPIProcessor:
     logging.debug(f"Initialization complete.")
 
     # initialize file reading
-    with open(self.requests_filepath) as file:
-      # `requests` will provide requests one at a time
-      # requests = file.__iter__()
-      requests = input_prompts_list.__iter__()
-      
-      logging.debug(f"File opened. Entering main loop")
 
-      while True:
-        # get next request (if one is not already waiting for capacity)
-        if next_request is None:
-          if not queue_of_requests_to_retry.empty():
-            next_request = queue_of_requests_to_retry.get_nowait()
-            logging.debug(f"Retrying request {next_request.task_id}: {next_request}")
-          elif file_not_finished:
-            try:
-              # get new request
-              # request_json = json.loads(next(requests))
-              request_json = next(requests)
-              
-              
-              
-              next_request = APIRequest(task_id=next(task_id_generator),
-                                        request_json=request_json,
-                                        token_consumption=num_tokens_consumed_from_request(request_json, api_endpoint,
-                                                                                           self.token_encoding_name),
-                                        attempts_left=self.max_attempts,
-                                        metadata=request_json.pop("metadata", None))
-              status_tracker.num_tasks_started += 1
-              status_tracker.num_tasks_in_progress += 1
-              logging.debug(f"Reading request {next_request.task_id}: {next_request}")
-            except StopIteration:
-              # if file runs out, set flag to stop reading it
-              logging.debug("Read file exhausted")
-              file_not_finished = False
+    # `requests` will provide requests one at a time
+    # requests = file.__iter__()
+    requests = self.input_prompts_list.__iter__()
 
-        # update available capacity
-        current_time = time.time()
-        seconds_since_update = current_time - last_update_time
-        available_request_capacity = min(
-            available_request_capacity + self.max_requests_per_minute * seconds_since_update / 60.0,
-            self.max_requests_per_minute,
+    logging.debug(f"File opened. Entering main loop")
+
+    while True:
+      # get next request (if one is not already waiting for capacity)
+      if next_request is None:
+        if not queue_of_requests_to_retry.empty():
+          next_request = queue_of_requests_to_retry.get_nowait()
+          logging.debug(f"Retrying request {next_request.task_id}: {next_request}")
+        elif file_not_finished:
+          try:
+            # get new request
+            # request_json = json.loads(next(requests))
+            request_json = next(requests)
+
+            next_request = APIRequest(task_id=next(task_id_generator),
+                                      request_json=request_json,
+                                      token_consumption=num_tokens_consumed_from_request(request_json, api_endpoint,
+                                                                                         self.token_encoding_name),
+                                      attempts_left=self.max_attempts,
+                                      metadata=request_json.pop("metadata", None))
+            status_tracker.num_tasks_started += 1
+            status_tracker.num_tasks_in_progress += 1
+            logging.debug(f"Reading request {next_request.task_id}: {next_request}")
+          except StopIteration:
+            # if file runs out, set flag to stop reading it
+            logging.debug("Read file exhausted")
+            file_not_finished = False
+
+      # update available capacity
+      current_time = time.time()
+      seconds_since_update = current_time - last_update_time
+      available_request_capacity = min(
+          available_request_capacity + self.max_requests_per_minute * seconds_since_update / 60.0,
+          self.max_requests_per_minute,
+      )
+      available_token_capacity = min(
+          available_token_capacity + self.max_tokens_per_minute * seconds_since_update / 60.0,
+          self.max_tokens_per_minute,
+      )
+      last_update_time = current_time
+
+      # if enough capacity available, call API
+      if next_request:
+        next_request_tokens = next_request.token_consumption
+        if (available_request_capacity >= 1 and available_token_capacity >= next_request_tokens):
+          # update counters
+          available_request_capacity -= 1
+          available_token_capacity -= next_request_tokens
+          next_request.attempts_left -= 1
+
+          # call API
+          # TODO: NOT SURE RESPONSE WILL WORK HERE
+          response = asyncio.create_task(
+              next_request.call_api(
+                  request_url=self.request_url,
+                  request_header=request_header,
+                  retry_queue=queue_of_requests_to_retry,
+                  save_filepath=self.save_filepath,
+                  status_tracker=status_tracker,
+              ))
+          next_request = None  # reset next_request to empty
+
+          print("TASK CREATE = response: ", response)
+          print("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
+
+      # if all tasks are finished, break
+      if status_tracker.num_tasks_in_progress == 0:
+        break
+
+      # main loop sleeps briefly so concurrent tasks can run
+      await asyncio.sleep(seconds_to_sleep_each_loop)
+
+      # if a rate limit error was hit recently, pause to cool down
+      seconds_since_rate_limit_error = (time.time() - status_tracker.time_of_last_rate_limit_error)
+      if seconds_since_rate_limit_error < seconds_to_pause_after_rate_limit_error:
+        remaining_seconds_to_pause = (seconds_to_pause_after_rate_limit_error - seconds_since_rate_limit_error)
+        await asyncio.sleep(remaining_seconds_to_pause)
+        # ^e.g., if pause is 15 seconds and final limit was hit 5 seconds ago
+        logging.warn(
+            f"Pausing to cool down until {time.ctime(status_tracker.time_of_last_rate_limit_error + seconds_to_pause_after_rate_limit_error)}"
         )
-        available_token_capacity = min(
-            available_token_capacity + self.max_tokens_per_minute * seconds_since_update / 60.0,
-            self.max_tokens_per_minute,
-        )
-        last_update_time = current_time
 
-        # if enough capacity available, call API
-        if next_request:
-          next_request_tokens = next_request.token_consumption
-          if (available_request_capacity >= 1 and available_token_capacity >= next_request_tokens):
-            # update counters
-            available_request_capacity -= 1
-            available_token_capacity -= next_request_tokens
-            next_request.attempts_left -= 1
-
-            # call API
-            # TODO: NOT SURE RESPONSE WILL WORK HERE
-            response = asyncio.create_task(
-                next_request.call_api(
-                    request_url=self.request_url,
-                    request_header=request_header,
-                    retry_queue=queue_of_requests_to_retry,
-                    save_filepath=self.save_filepath,
-                    status_tracker=status_tracker,
-                ))
-            next_request = None  # reset next_request to empty
-            
-            print("TASK CREATE = response: ", response)
-            print("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
-
-        # if all tasks are finished, break
-        if status_tracker.num_tasks_in_progress == 0:
-          break
-
-        # main loop sleeps briefly so concurrent tasks can run
-        await asyncio.sleep(seconds_to_sleep_each_loop)
-
-        # if a rate limit error was hit recently, pause to cool down
-        seconds_since_rate_limit_error = (time.time() - status_tracker.time_of_last_rate_limit_error)
-        if seconds_since_rate_limit_error < seconds_to_pause_after_rate_limit_error:
-          remaining_seconds_to_pause = (seconds_to_pause_after_rate_limit_error - seconds_since_rate_limit_error)
-          await asyncio.sleep(remaining_seconds_to_pause)
-          # ^e.g., if pause is 15 seconds and final limit was hit 5 seconds ago
-          logging.warn(
-              f"Pausing to cool down until {time.ctime(status_tracker.time_of_last_rate_limit_error + seconds_to_pause_after_rate_limit_error)}"
-          )
-
-      # after finishing, log final status
-      logging.info(f"""Parallel processing complete. Results saved to {self.save_filepath}""")
-      if status_tracker.num_tasks_failed > 0:
-        logging.warning(
-            f"{status_tracker.num_tasks_failed} / {status_tracker.num_tasks_started} requests failed. Errors logged to {self.save_filepath}."
-        )
-      if status_tracker.num_rate_limit_errors > 0:
-        logging.warning(f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
+    # after finishing, log final status
+    logging.info(f"""Parallel processing complete. Results saved to {self.save_filepath}""")
+    if status_tracker.num_tasks_failed > 0:
+      logging.warning(
+          f"{status_tracker.num_tasks_failed} / {status_tracker.num_tasks_started} requests failed. Errors logged to {self.save_filepath}.")
+    if status_tracker.num_rate_limit_errors > 0:
+      logging.warning(f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
 
 
 # dataclasses
@@ -294,6 +305,7 @@ class APIRequest:
       async with aiohttp.ClientSession() as session:
         async with session.post(url=request_url, headers=request_header, json=self.request_json) as response:
           response = await response.json()
+          print(f"In call API #{response}")
       if "error" in response:
         logging.warning(f"Request {self.task_id} failed with error {response['error']}")
         status_tracker.num_api_errors += 1
@@ -409,29 +421,49 @@ def task_id_generator_function():
 # run script
 
 if __name__ == "__main__":
-  input_prompts_list: list[dict] = [
-    {
-      "model": "text-embedding-ada-002",
-      # ...
+
+  vectorstore = Qdrant(
+      client=qdrant_client,
+      collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+      embeddings=OpenAIEmbeddings())
+
+  user_question = "What is the significance of Six Sigma?"
+  k = 10
+  fetch_k = 200
+  found_docs = vectorstore.max_marginal_relevance_search(user_question, k=k, fetch_k=200)
+
+  requests = []
+  for i, doc in enumerate(found_docs):
+    dictionary = {
+        "model": "gpt-3.5-turbo",
+        "messages": [{
+            "role": "system",
+            "content": "You are a summarizer."
+        }, {
+            "role":
+                "user",
+            "content":
+                f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
+        }],
+        "n": 1,
+        "max_tokens": 500,
+        "metadata": doc.metadata
     }
-  ]
+    requests.append(dictionary)
 
   oai = OpenAIAPIProcessor(
-          input_prompts_list=input_prompts_list,
-          requests_filepath='',
-          save_filepath='',
-          request_url='',
-          api_key='',
-          max_requests_per_minute='',
-          max_tokens_per_minute='',
-          token_encoding_name='',
-          max_attempts='',
-          logging_level='',
+      input_prompts_list=requests,
+      save_filepath='ex1.jsonl',
+      request_url='https://api.openai.com/v1/chat/completions',
+      api_key=os.getenv("OPENAI_API_KEY"),
+      max_requests_per_minute=1500,
+      max_tokens_per_minute=90000,
+      token_encoding_name='cl100k_base',
+      max_attempts=5,
+      logging_level=20,
   )
   # run script
-  asyncio.run(
-      oai.process_api_requests_from_file(
-      ))
+  asyncio.run(oai.process_api_requests_from_file())
 """
 APPENDIX
 
