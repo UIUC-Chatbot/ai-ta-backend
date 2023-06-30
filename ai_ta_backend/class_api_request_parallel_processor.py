@@ -97,23 +97,24 @@ import json  # for saving results to a jsonl file
 import logging  # for logging rate limit warnings and other messages
 import os  # for reading API key
 import re  # for matching endpoint from request URL
+import subprocess
+import tempfile
 import time  # for sleeping after rate limit is hit
 from dataclasses import (  # for storing API inputs, outputs, and metadata
     dataclass, field)
 
+# import load_dotenv
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path='../.env', override=True)
+
 # imports
 import aiohttp  # for making API calls concurrently
 import tiktoken  # for counting tokens
-
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.llms import OpenAI
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
-from langchain.llms import OpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
-import os
-import json
-import tempfile
-import subprocess
-import asyncio
 
 qdrant_client = QdrantClient(
     url=os.getenv('QDRANT_URL'),
@@ -172,6 +173,8 @@ class OpenAIAPIProcessor:
     requests = self.input_prompts_list.__iter__()
 
     logging.debug(f"File opened. Entering main loop")
+    
+    task_list = []
 
     while True:
       # get next request (if one is not already waiting for capacity)
@@ -231,13 +234,13 @@ class OpenAIAPIProcessor:
                   save_filepath=self.save_filepath,
                   status_tracker=status_tracker,
               ))
+          task_list.append(task)
           next_request = None  # reset next_request to empty
 
             
-          print("TASK CREATE = response: ", task)
           print("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
-          one_task_result = task.result()
-          print("one_task_result", one_task_result)
+          # one_task_result = task.result()
+          # print("one_task_result", one_task_result)
 
       # if all tasks are finished, break
       if status_tracker.num_tasks_in_progress == 0:
@@ -263,10 +266,18 @@ class OpenAIAPIProcessor:
           f"{status_tracker.num_tasks_failed} / {status_tracker.num_tasks_started} requests failed. Errors logged to {self.save_filepath}.")
     if status_tracker.num_rate_limit_errors > 0:
       logging.warning(f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
+  
+    # asyncio wait for task_list
+    await asyncio.wait(task_list)
+    
+    for task in task_list:
+      openai_completion = task.result()
+      self.results.append(openai_completion)
+    
+    return self.results
 
 
 # dataclasses
-
 
 @dataclass
 class StatusTracker:
@@ -279,7 +290,7 @@ class StatusTracker:
   num_rate_limit_errors: int = 0
   num_api_errors: int = 0  # excluding rate limit errors, counted above
   num_other_errors: int = 0
-  time_of_last_rate_limit_error: int = 0  # used to cool off after hitting rate limits
+  time_of_last_rate_limit_error: float = 0  # used to cool off after hitting rate limits
 
 
 @dataclass
@@ -308,7 +319,6 @@ class APIRequest:
       async with aiohttp.ClientSession() as session:
         async with session.post(url=request_url, headers=request_header, json=self.request_json) as response:
           response = await response.json()
-          print(f"In call API #{response}")
       if "error" in response:
         logging.warning(f"Request {self.task_id} failed with error {response['error']}")
         status_tracker.num_api_errors += 1
