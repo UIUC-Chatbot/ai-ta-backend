@@ -12,6 +12,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryFile
 from typing import Any, Dict, List, Literal, Union
 
+from ai_ta_backend.class_api_request_parallel_processor import OpenAIAPIProcessor
+
 import boto3
 import fitz
 import supabase
@@ -82,7 +84,7 @@ class Ingest():
       user_question (str)
       course_name (str) : used for metadata filtering
     Returns : str
-      a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
+      a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
      """
     #MMR with metadata filtering based on course_name
     print(f"user question {user_question}")
@@ -92,30 +94,52 @@ class Ingest():
 
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
     print("MMR done")
-    prompt_template = """Provide a comprehensive summary of the given text, based on the question.
-    {text}
-    Question : {question}
-    The summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. 
-    Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. 
-    Feel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question. 
-    The length of the summary should be as short as possible, without losing relevant information.
-    """
-    PROMPT = PromptTemplate(template=prompt_template, input_variables=["text", "question"])
-    chain = load_summarize_chain(OpenAI(temperature=0, batch_size=20, openai_api_key=os.getenv('OPENAI_API_KEY')),
-                                 chain_type="map_reduce",
-                                 return_intermediate_steps=True,
-                                 map_prompt=PROMPT,
-                                 combine_prompt=PROMPT,
-                                 verbose=False)
-    results = chain({"input_documents": found_docs, "question": user_question}, return_only_outputs=True)  #get results
 
-    #to return long stuffed prompt
+    requests = []
+    for i, doc in enumerate(found_docs):
+      dictionary = {
+          "model": "gpt-3.5-turbo",
+          "messages": [{
+              "role": "system",
+              "content": "You are a summarizer who can extract all relevant information on a topic based on the texts."
+          }, {
+              "role":
+                  "user",
+              "content":
+                  f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
+          }],
+          "n": 1,
+          "max_tokens": 600,
+          "metadata": doc.metadata
+      }
+      requests.append(dictionary)
+
+    oai = OpenAIAPIProcessor(input_prompts_list=requests,
+                             save_filepath='results.jsonl',
+                             request_url='https://api.openai.com/v1/chat/completions',
+                             api_key=os.getenv("OPENAI_API_KEY"),
+                             max_requests_per_minute=1500,
+                             max_tokens_per_minute=90000,
+                             token_encoding_name='cl100k_base',
+                             max_attempts=5,
+                             logging_level=20)
+
+    asyncio.run(oai.process_api_requests_from_file())
+
+    results = oai.results
+    results = [result for result in results if result is not None]
+
+    all_texts = ""
     separator = '---'  # between each context
-    all_texts = ''
-    for doc, summary in zip(found_docs, results["intermediate_steps"]):
-      doc_text = f"Document: {doc.metadata['readable_filename']}, page number (if exists): {doc.metadata['pagenumber_or_timestamp']}\n"
-      summary_text = f"Summary: {summary}\n"
-      all_texts += doc_text + summary_text + separator + '\n'
+    for i, text in enumerate(results):
+      if text is not None:
+        filename = str(results[i][-1].get('readable_filename', ''))
+        course_name = str(results[i][-1].get('course_name', ''))
+        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))
+        s3_path = str(results[i][-1].get('s3_path', ''))
+        doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
+        summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
+        all_texts += doc + summary + separator + '\n'
 
     stuffed_prompt = """Please answer the following question. 
     Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant. 
