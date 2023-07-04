@@ -173,7 +173,7 @@ class OpenAIAPIProcessor:
     requests = self.input_prompts_list.__iter__()
 
     logging.debug(f"File opened. Entering main loop")
-    
+
     task_list = []
 
     while True:
@@ -237,7 +237,6 @@ class OpenAIAPIProcessor:
           task_list.append(task)
           next_request = None  # reset next_request to empty
 
-            
           print("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
           # one_task_result = task.result()
           # print("one_task_result", one_task_result)
@@ -266,18 +265,19 @@ class OpenAIAPIProcessor:
           f"{status_tracker.num_tasks_failed} / {status_tracker.num_tasks_started} requests failed. Errors logged to {self.save_filepath}.")
     if status_tracker.num_rate_limit_errors > 0:
       logging.warning(f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
-  
+
     # asyncio wait for task_list
     await asyncio.wait(task_list)
-    
+
     for task in task_list:
       openai_completion = task.result()
       self.results.append(openai_completion)
-    
+
     return self.results
 
 
 # dataclasses
+
 
 @dataclass
 class StatusTracker:
@@ -429,74 +429,3 @@ def task_id_generator_function():
   while True:
     yield task_id
     task_id += 1
-
-
-# run script
-
-if __name__ == "__main__":
-
-  vectorstore = Qdrant(
-      client=qdrant_client,
-      collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-      embeddings=OpenAIEmbeddings())
-
-  user_question = "What is the significance of Six Sigma?"
-  k = 10
-  fetch_k = 200
-  found_docs = vectorstore.max_marginal_relevance_search(user_question, k=k, fetch_k=200)
-
-  requests = []
-  for i, doc in enumerate(found_docs):
-    dictionary = {
-        "model": "gpt-3.5-turbo",
-        "messages": [{
-            "role": "system",
-            "content": "You are a summarizer."
-        }, {
-            "role":
-                "user",
-            "content":
-                f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
-        }],
-        "n": 1,
-        "max_tokens": 500,
-        "metadata": doc.metadata
-    }
-    requests.append(dictionary)
-
-  oai = OpenAIAPIProcessor(
-      input_prompts_list=requests,
-      save_filepath='ex1.jsonl',
-      request_url='https://api.openai.com/v1/chat/completions',
-      api_key=os.getenv("OPENAI_API_KEY"),
-      max_requests_per_minute=1500,
-      max_tokens_per_minute=90000,
-      token_encoding_name='cl100k_base',
-      max_attempts=5,
-      logging_level=20,
-  )
-  # run script
-  asyncio.run(oai.process_api_requests_from_file())
-  
-  print("Results, end of main: ", oai.results)
-"""
-APPENDIX
-
-The example requests file at openai-cookbook/examples/data/example_requests_to_parallel_process.jsonl contains 10,000 requests to text-embedding-ada-002.
-
-It was generated with the following code:
-
-```python
-import json
-
-filename = "data/example_requests_to_parallel_process.jsonl"
-n_requests = 10_000
-jobs = [{"model": "text-embedding-ada-002", "input": str(x) + "\n"} for x in range(n_requests)]
-with open(filename, "w") as f:
-    for job in jobs:
-        json_string = json.dumps(job)
-        f.write(json_string + "\n")
-```
-
-As with all jsonl files, take care that newlines in the content are properly escaped (json.dumps does this automatically).
-"""
