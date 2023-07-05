@@ -37,6 +37,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
 
+from ai_ta_backend.aws import upload_data_files_to_s3 
+
 # from regex import F
 # from sqlalchemy import JSON
 
@@ -65,7 +67,7 @@ class Ingest():
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-        embeddings=OpenAIEmbeddings())  # type: ignore
+        embeddings=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')))  # type: ignore
 
     # S3
     self.s3_client = boto3.client(
@@ -568,6 +570,31 @@ class Ingest():
       return f"Error {e}"
 
 
+  def list_files_recursively(self, bucket, prefix):
+        all_files = []
+        continuation_token = None
+
+        while True:
+            list_objects_kwargs = {
+                'Bucket': bucket,
+                'Prefix': prefix,
+            }
+            if continuation_token:
+                list_objects_kwargs['ContinuationToken'] = continuation_token
+
+            response = self.s3_client.list_objects_v2(**list_objects_kwargs)
+
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    all_files.append(obj['Key'])
+
+            if response['IsTruncated']:
+                continuation_token = response['NextContinuationToken']
+            else:
+                break
+
+        return all_files
+  
   def ingest_coursera(self, coursera_course_name: str, course_name: str) -> str:
     """ Download all the files from a coursera course and ingest them.
     
@@ -586,28 +613,12 @@ class Ingest():
     certificate = "-ca 'FVhVoDp5cb-ZaoRr5nNJLYbyjCLz8cGvaXzizqNlQEBsG5wSq7AHScZGAGfC1nI0ehXFvWy1NG8dyuIBF7DLMA.X3cXsDvHcOmSdo3Fyvg27Q.qyGfoo0GOHosTVoSMFy-gc24B-_BIxJtqblTzN5xQWT3hSntTR1DMPgPQKQmfZh_40UaV8oZKKiF15HtZBaLHWLbpEpAgTg3KiTiU1WSdUWueo92tnhz-lcLeLmCQE2y3XpijaN6G4mmgznLGVsVLXb-P3Cibzz0aVeT_lWIJNrCsXrTFh2HzFEhC4FxfTVqS6cRsKVskPpSu8D9EuCQUwJoOJHP_GvcME9-RISBhi46p-Z1IQZAC4qHPDhthIJG4bJqpq8-ZClRL3DFGqOfaiu5y415LJcH--PRRKTBnP7fNWPKhcEK2xoYQLr9RxBVL3pzVPEFyTYtGg6hFIdJcjKOU11AXAnQ-Kw-Gb_wXiHmu63veM6T8N2dEkdqygMre_xMDT5NVaP3xrPbA4eAQjl9yov4tyX4AQWMaCS5OCbGTpMTq2Y4L0Mbz93MHrblM2JL_cBYa59bq7DFK1IgzmOjFhNG266mQlC9juNcEhc'"
     always_use_flags = "-u kastanvday@gmail.com -p hSBsLaF5YM469# --ignore-formats mp4 --subtitle-language en --path ./coursera-dl"
     
-    try:
-      results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}", check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # capture_output=True,
-      dl_results_path = os.path.join('coursera-dl', coursera_course_name)
-      s3_paths: List | None = upload_data_files_to_s3(course_name, dl_results_path)
-
-      if s3_paths is None:
-        return "Error: No files found in the coursera-dl directory"
-
-      print("starting bulk ingest")
-      start_time = time.monotonic()
-      self.bulk_ingest(s3_paths, course_name)
-      print("completed bulk ingest")
-      print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
-
-      # Cleanup the coursera downloads
-      shutil.rmtree(dl_results_path)
-
-      return "Success"
-    except Exception as e:
-      err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
-      print(err)
-      return err
+    results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}", check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # capture_output=True,
+    
+    # use walkdir to find all files in the directory, send them to bulk ingest one by one.
+    
+    print(results)
+    print("Done .. ")
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
