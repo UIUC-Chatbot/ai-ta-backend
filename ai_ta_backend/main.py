@@ -212,7 +212,7 @@ def log():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@app.route('/scrape', methods=['GET'])
+@app.route('/web-scrape', methods=['GET'])
 def scrape():
   url: str = request.args.get('url')
   max_urls:int = request.args.get('max_urls')

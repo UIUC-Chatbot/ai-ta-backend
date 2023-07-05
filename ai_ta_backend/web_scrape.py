@@ -1,23 +1,19 @@
 import os
-from tempfile import NamedTemporaryFile
-from bs4 import BeautifulSoup
-import requests
 import re
 import time
-from selenium import webdriver
-from ai_ta_backend.vector_database import Ingest
-import boto3
-from pathlib import Path
+from tempfile import NamedTemporaryFile
 
+import boto3
+import requests
+from bs4 import BeautifulSoup
+
+from ai_ta_backend.vector_database import Ingest
 
 # Check if the url is valid
 # Else return the status code
 
 def valid_url(url):
-	
-	# exception block
 	try:
-	
 		# pass the url into
 		# request.hear
 		response = requests.head(url)

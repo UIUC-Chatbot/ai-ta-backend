@@ -1,10 +1,10 @@
 import inspect
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
-import re
 # from xml.dom.minidom import Document  # PDF to text
 # from re import L, T
 import traceback
@@ -219,7 +219,6 @@ class Ingest():
         # todo check each return value for failures. If any fail, send emails.
 
         if clean_text:
-          print("clean")  
           ret = self._ingest_clean(clean_text[i], s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
@@ -283,9 +282,15 @@ class Ingest():
       }]
 
       text = [data[1][0]]
+      
+      print(f"In _ingest_clean: {text}")
+      print(f"In _ingest_clean: {metadata}")
 
-      self.split_and_upload(text, metadata)
-      return "Success"
+      success_or_failure = self.split_and_upload(text, metadata)
+      print(success_or_failure)
+      print(f"In _ingest_clean -- working??: {success_or_failure}")
+      return success_or_failure
+      # return "Success"
     except Exception as e:
       print(f"ERROR IN HTML INGEST: {e}")
       return f"Error: {e}"
