@@ -107,6 +107,16 @@ class Ingest():
     print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
     
     requests = []
+    # TODO: change the "content" of the user message to this:
+    #! Important
+    # Provide a comprehensive summary of the given text, based on the question.
+    # Text: {text}
+    # Question : {question}
+    # The summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.
+    # Make use of direct quotes from the text.
+    # Feel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question. 
+    # If the text does not provide information to answer the question, please write "None" and nothing else. If it's not relevant, say "None" and nothing else.
+
     for i, doc in enumerate(found_docs):
       dictionary = {
           "model": "gpt-3.5-turbo",
@@ -488,7 +498,7 @@ class Ingest():
       # save the extracted audio as a temporary webm file
       with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
         mp4_version.export(webm_tmpfile, format="webm")
-        print("WEBM file: ", webm_tmpfile.name)
+        #print("WEBM file: ", webm_tmpfile.name)
 
       # check file size
       file_size = os.path.getsize(webm_tmpfile.name)
@@ -503,7 +513,7 @@ class Ingest():
 
         while count < file_count:
           with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
-            print("Splitting file: ", split_tmp.name)
+            #print("Splitting file: ", split_tmp.name)
             if count == file_count - 1:
                 # last segment
                 audio_chunk = full_audio[start:]
