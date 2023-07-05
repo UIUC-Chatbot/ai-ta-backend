@@ -475,30 +475,70 @@ class Ingest():
     Ingest a single .mp4 file from S3.
     """
     try:
-      with NamedTemporaryFile(suffix="mp4") as tmpfile:
-        # download from S3 into tmpfile
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+      openai.api_key = os.getenv('OPENAI_API_KEY')
+      transcript_list = []
+      #print(os.getcwd())
+      with NamedTemporaryFile(suffix=".mp4") as mp4_tmpfile:
+        # download from S3 into an mp4 tmpfile
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=mp4_tmpfile)
+        # extract audio from mp4 tmpfile
+        mp4_version = AudioSegment.from_file(mp4_tmpfile.name, "mp4")
+        print("MP4 file: ", mp4_tmpfile.name)
 
-        # extract audio from video tmpfile
-        mp4_version = AudioSegment.from_file(tmpfile.name, "mp4")
-        mp4_version.export("audio_file.webm", format="webm")
+      # save the extracted audio as a temporary webm file
+      with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
+        mp4_version.export(webm_tmpfile, format="webm")
+        print("WEBM file: ", webm_tmpfile.name)
 
-        # generate transcript
-        openai.api_key = os.getenv('OPENAI_API_KEY')
-        with open("audio_file.webm", "rb") as f:
+      # check file size
+      file_size = os.path.getsize(webm_tmpfile.name)
+      # split the audio into 25MB chunks
+      if file_size > 26214400:
+        # load the webm file into audio object
+        full_audio = AudioSegment.from_file(webm_tmpfile.name, "webm")
+        file_count = file_size // 26214400 + 1
+        split_segment = 35 * 60 * 1000
+        start = 0
+        count = 0
+
+        while count < file_count:
+          with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
+            print("Splitting file: ", split_tmp.name)
+            if count == file_count - 1:
+                # last segment
+                audio_chunk = full_audio[start:]
+            else:
+                audio_chunk = full_audio[start:split_segment]
+
+            audio_chunk.export(split_tmp.name, format="webm")
+
+            # transcribe the split file and store the text in dictionary
+            with open(split_tmp.name, "rb") as f:
+                transcript = openai.Audio.transcribe("whisper-1", f)
+            transcript_list.append(transcript['text'])
+          start += split_segment
+          split_segment += split_segment
+          count += 1
+          os.remove(split_tmp.name)
+      else:
+        # transcribe the full audio
+        with open(webm_tmpfile.name, "rb") as f:
           transcript = openai.Audio.transcribe("whisper-1", f)
-        
-        #print("transcript: ", transcript)
-        text = [transcript['text']]
-        metadatas: List[Dict[str,Any]] = [
+        transcript_list.append(transcript['text'])
+      
+      os.remove(webm_tmpfile.name)
+
+      #print("transcript: ", transcript_list)
+      text = [txt for txt in transcript_list]
+      metadatas: List[Dict[str,Any]] = [
         {
           'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': '1',
-        }]
+          'pagenumber_or_timestamp': text.index(txt),
+        } for txt in text]
         
-        self.split_and_upload(texts=text, metadatas=metadatas)
+      self.split_and_upload(texts=text, metadatas=metadatas)
       return "Success"
     except Exception as e:
       print("ERROR IN VIDEO READING ")
