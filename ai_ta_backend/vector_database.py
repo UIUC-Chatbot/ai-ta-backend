@@ -10,7 +10,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile  # TemporaryFile
 from typing import Any, Dict, List, Union  # Literal
 
-# import boto3
+import boto3
 # import requests
 import fitz
 import openai
