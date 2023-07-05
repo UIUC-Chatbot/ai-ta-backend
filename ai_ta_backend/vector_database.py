@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 # import json
 import os
@@ -6,15 +7,13 @@ import subprocess
 import time
 import traceback
 from pathlib import Path
-from tempfile import NamedTemporaryFile, # TemporaryFile
-from typing import Any, Dict, List, Union # Literal
-import asyncio
-
-from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
+from tempfile import NamedTemporaryFile  # TemporaryFile
+from typing import Any, Dict, List, Union  # Literal
 
 # import boto3
 # import requests
 import fitz
+import openai
 import requests
 import supabase
 # from arize.api import Client
@@ -26,23 +25,19 @@ import supabase
 from flask import jsonify, request
 from langchain import LLMChain, OpenAI, PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
-from langchain import LLMChain, OpenAI
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
-                                       
                                         SRTLoader,
-                                        UnstructuredPowerPointLoader,
                                         UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import OpenAIChat
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 
 from ai_ta_backend.aws import upload_data_files_to_s3
-
-import openai
-from pydub import AudioSegment
+from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 
 # from regex import F
 # from sqlalchemy import JSON
