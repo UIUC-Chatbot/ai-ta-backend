@@ -14,6 +14,7 @@ from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 # import boto3
 # import requests
 import fitz
+import requests
 import supabase
 # from arize.api import Client
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
@@ -36,8 +37,6 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
-import requests
-import json
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 
@@ -100,7 +99,9 @@ class Ingest():
       a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
      """
     # MMR with metadata filtering based on course_name
+    vec_start_time = time.monotonic()
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
+    print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
     
     requests = []
     for i, doc in enumerate(found_docs):
@@ -164,7 +165,10 @@ class Ingest():
                              max_attempts=5,
                              logging_level=20)
 
+    chain_start_time = time.monotonic()
     asyncio.run(oai.process_api_requests_from_file())
+    print(f"⏰ map_reduce chain runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+
 
     results = oai.results
     results = [result for result in results if result is not None]
