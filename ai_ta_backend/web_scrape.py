@@ -98,7 +98,9 @@ def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _in
 
   # Recursively call the function on all of the urls found in the base url
   for url in all:
-    if url.startswith(base_url):
+    # if url.startswith(base_url):
+      # _invalid_urls.append(url)
+      
       if url not in _invalid_urls:
         if valid_url(url) == True:
           if max_urls > 0:
@@ -117,8 +119,8 @@ def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _in
           continue
       else:
         continue
-    else: 
-      print(f"NOT SCRAPING URL outside our base_url.\n\tbase_url: {base_url}\n\turl:{url}")
+    # else: 
+    #   print(f"NOT SCRAPING URL outside our base_url.\n\tbase_url: {base_url}\n\turl:{url}")
 
   all = list(set(all))
 
