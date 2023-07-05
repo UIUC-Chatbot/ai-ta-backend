@@ -102,13 +102,6 @@ class Ingest():
     print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
     
     requests = []
-    # TODO: change the "content" of the user message to this:
-    #! Important
-    # Provide a comprehensive summary of the given text, based on the question.
-    # Text: {text}
-    # Question : {question}
-    # The summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write "None" and nothing else. If it's not relevant, say "None" and nothing else.
-
     for i, doc in enumerate(found_docs):
       dictionary = {
           "model": "gpt-3.5-turbo",
@@ -140,42 +133,7 @@ class Ingest():
     asyncio.run(oai.process_api_requests_from_file())
     results = oai.results
     results = [result for result in results if result is not None]
-
-    requests = []
-    for i, doc in enumerate(found_docs):
-      dictionary = {
-          "model": "gpt-3.5-turbo",
-          "messages": [{
-              "role": "system",
-              "content": "You are a summarizer who can extract all relevant information on a topic based on the texts."
-          }, {
-              "role":
-                  "user",
-              "content":
-                  f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
-          }],
-          "n": 1,
-          "max_tokens": 600,
-          "metadata": doc.metadata
-      }
-      requests.append(dictionary)
-
-    oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                             request_url='https://api.openai.com/v1/chat/completions',
-                             api_key=os.getenv("OPENAI_API_KEY"),
-                             max_requests_per_minute=1500,
-                             max_tokens_per_minute=90000,
-                             token_encoding_name='cl100k_base',
-                             max_attempts=5,
-                             logging_level=20)
-
-    chain_start_time = time.monotonic()
-    asyncio.run(oai.process_api_requests_from_file())
-    print(f"⏰ map_reduce chain runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
-
-
-    results = oai.results
-    results = [result for result in results if result is not None]
+    print(f"⏰ Extreme context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
 
     all_texts = ""
     separator = '---'  # between each context
