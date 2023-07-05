@@ -8,6 +8,7 @@ import traceback
 from pathlib import Path
 from tempfile import NamedTemporaryFile, # TemporaryFile
 from typing import Any, Dict, List, Union # Literal
+import asyncio
 
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 
@@ -99,7 +100,6 @@ class Ingest():
       course_name (str) : used for metadata filtering
     Returns : str
       a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
-      a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
      """
     # MMR with metadata filtering based on course_name
     vec_start_time = time.monotonic()
@@ -112,22 +112,19 @@ class Ingest():
     # Provide a comprehensive summary of the given text, based on the question.
     # Text: {text}
     # Question : {question}
-    # The summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.
-    # Make use of direct quotes from the text.
-    # Feel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question. 
-    # If the text does not provide information to answer the question, please write "None" and nothing else. If it's not relevant, say "None" and nothing else.
+    # The summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write "None" and nothing else. If it's not relevant, say "None" and nothing else.
 
     for i, doc in enumerate(found_docs):
       dictionary = {
           "model": "gpt-3.5-turbo",
           "messages": [{
               "role": "system",
-              "content": "You are a summarizer who can extract all relevant information on a topic based on the texts."
+              "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
           }, {
               "role":
                   "user",
               "content":
-                  f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
+                  f"Provide a comprehensive summary of the given text, based on this question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write 'None' and nothing else.",
           }],
           "n": 1,
           "max_tokens": 600,
