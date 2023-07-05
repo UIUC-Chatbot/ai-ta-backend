@@ -32,6 +32,7 @@ pydub
 ffmpeg-python
 ffprobe
 ffmpeg
+beautifulsoup4
 # arize[AutoEmbeddings, LLM_Evaluation]
 # coursera-dl @ git+https://github.com/raffaem/coursera-dl.git
 
