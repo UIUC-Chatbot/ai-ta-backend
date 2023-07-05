@@ -27,10 +27,12 @@ from dotenv import load_dotenv
 from flask import jsonify, request
 from langchain import LLMChain, OpenAI, PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
+from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
                                         SRTLoader,
                                         UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.llms import OpenAIChat
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
@@ -102,15 +104,17 @@ class Ingest():
     prompt_template = """Provide a comprehensive summary of the given text, based on the question.
     {text}
     Question : {question}
-    The summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. 
-    Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. 
+    The summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.
+    Make use of direct quotes from the text.
     Feel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question. 
-    The length of the summary should be as short as possible, without losing relevant information.
+    If the text does not provide information to answer the question, please write "None" and nothing else. If it's not relevant, say "None" and nothing else.
     """
     
     PROMPT = PromptTemplate(template=prompt_template, input_variables=["text", "question"])
     # Max batch size is 20 on Openai (June 2023)
-    chain = load_summarize_chain(OpenAI(temperature=0, batch_size=min(20, len(found_docs)), openai_api_key=os.getenv('OPENAI_API_KEY')),
+    
+    # chain = load_summarize_chain(ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"), #  batch_size=min(20, len(found_docs))
+    chain = load_summarize_chain(OpenAI(temperature=0, model_name="text-davinci-003", batch_size=min(20, len(found_docs))),
                                  chain_type="map_reduce",
                                  return_intermediate_steps=True,
                                  map_prompt=PROMPT,
@@ -122,8 +126,11 @@ class Ingest():
 
     #to return long stuffed prompt
     separator = '---'  # between each context
-    all_texts = ''
+    all_texts = '---\n'  # start with separator
     for doc, summary in zip(found_docs, results["intermediate_steps"]):
+      if summary in ['None.', 'None']:
+        print("❌ Skipping context: ", summary)
+        continue
       doc_text = f"Document: {doc.metadata['readable_filename']}, page number (if exists): {doc.metadata['pagenumber_or_timestamp']}\n"
       summary_text = f"Summary: {summary}\n"
       all_texts += doc_text + summary_text + separator + '\n'
@@ -132,7 +139,7 @@ class Ingest():
     Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant. 
     It's good to quote the official course materials directly, something like 'from ABS source it says XYZ'. Feel free to say you don't know. 
     \nHere's a few passages of high quality official course materials:\n %s 
-    \n\nNow please respond to my query: %s """ % (all_texts, user_question)
+    \nNow please respond to my query: %s """ % (all_texts, user_question)
 
     return stuffed_prompt
 
@@ -251,7 +258,7 @@ class Ingest():
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.mp4'):
+        elif s3_path.endswith('.mp4') or s3_path.endswith('.mov') or s3_path.endswith('.webm') or s3_path.endswith('.wav'):
           ret = self._ingest_single_video(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
@@ -421,23 +428,27 @@ class Ingest():
   
   def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
     """
-    Ingest a single .mp4 file from S3.
+    Ingest a single video file from S3.
     """
     try:
+      # check for file extension
+      file_ext = Path(s3_path).suffix
+      print(file_ext[1:])
+      
       openai.api_key = os.getenv('OPENAI_API_KEY')
       transcript_list = []
       #print(os.getcwd())
-      with NamedTemporaryFile(suffix=".mp4") as mp4_tmpfile:
-        # download from S3 into an mp4 tmpfile
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=mp4_tmpfile)
-        # extract audio from mp4 tmpfile
-        mp4_version = AudioSegment.from_file(mp4_tmpfile.name, "mp4")
-        print("MP4 file: ", mp4_tmpfile.name)
+      with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
+        # download from S3 into an video tmpfile
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
+        # extract audio from video tmpfile
+        mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
+        #print("Video file: ", video_tmpfile.name)
 
       # save the extracted audio as a temporary webm file
       with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
         mp4_version.export(webm_tmpfile, format="webm")
-        print("WEBM file: ", webm_tmpfile.name)
+        #print("WEBM file: ", webm_tmpfile.name)
 
       # check file size
       file_size = os.path.getsize(webm_tmpfile.name)
@@ -452,7 +463,7 @@ class Ingest():
 
         while count < file_count:
           with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
-            print("Splitting file: ", split_tmp.name)
+            #print("Splitting file: ", split_tmp.name)
             if count == file_count - 1:
                 # last segment
                 audio_chunk = full_audio[start:]
@@ -599,46 +610,39 @@ class Ingest():
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
 
-  def delete_points_from_qdrant(self, collection_name: str, filter_condition: Dict):
-    url = f"{os.getenv('QDRANT_URL')}/collections/{collection_name}/points/delete"
-    headers = {"Content-Type": "application/json"}
-    data = {"filter": filter_condition}
-
-    response = requests.delete(url, headers=headers, data=json.dumps(data))
-    return response.json()
-
   # Create a method to delete file from s3, delete vector from qdrant, and delete row from supabase
   def delete_data(self, s3_path: str, course_name: str):
+    """Delete file from S3, Qdrant, and Supabase."""
     print(f"Deleting {s3_path} from S3, Qdrant, and Supabase for course {course_name}")
     try:
       # Delete file from S3
       bucket_name = os.getenv('S3_BUCKET_NAME')
       self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
-
-      # Call Qdrant API to delete vector using s3_path in filters
-      filter_condition = {
-        "must": [
-          {
-            "key": "s3_path",
-            "match": {
-              "value": s3_path
-            }
-          }
-        ]
-      }
-      response = self.delete_points_from_qdrant(os.getenv('DEV_QDRANT_COLLECTION_NAME'), filter_condition)
-
-      # Delete s3_path from SQL using Supabase
+      
+      # Delete from Qdrant
+      # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
+      # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
+      self.qdrant_client.delete(
+          collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
+          points_selector=models.Filter(
+              must=[
+                  models.FieldCondition(
+                      key="metadata.s3_path", 
+                      match=models.MatchValue(value=s3_path),
+                  ),
+              ]
+          ),
+      )
+      
+      # Delete from Supabase
       response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>s3_path', s3_path).eq(
         'metadata->>course_name', course_name).execute()
-
-      print(response)
+      return "Success"
     except Exception as e:
       err: str = f"ERROR IN TXT INGEST: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
 
-    return "Success"
 
 
   def getAll(
@@ -682,6 +686,7 @@ class Ingest():
       import time
       start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
+      print(found_docs)
 
       # log to Supabase
       # todo: make this async. It's .6 seconds to log to Supabase. 1 second to get contexts.
