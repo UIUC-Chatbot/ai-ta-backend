@@ -2,6 +2,8 @@ click
 Flask==2.3.2
 protobuf<=3.20
 gunicorn==20.0.4
+aiohttp
+tiktoken
 itsdangerous
 Jinja2
 MarkupSafe
@@ -29,4 +31,4 @@ tiktoken
 pysrt
 docx2txt
 arize[AutoEmbeddings, LLM_Evaluation]
-coursera-dl @ git+https://github.com/raffaem/coursera-dl.git
+cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
