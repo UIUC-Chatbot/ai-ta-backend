@@ -110,7 +110,6 @@ class Ingest():
       requests.append(dictionary)
 
     oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                             save_filepath='results.jsonl',
                              request_url='https://api.openai.com/v1/chat/completions',
                              api_key=os.getenv("OPENAI_API_KEY"),
                              max_requests_per_minute=1500,

@@ -106,19 +106,13 @@ from dataclasses import (  # for storing API inputs, outputs, and metadata
 
 import aiohttp  # for making API calls concurrently
 import tiktoken  # for counting tokens
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
 
 # load API keys from globally-availabe .env file
-load_dotenv(dotenv_path='../.env', override=True)
-
-
-qdrant_client = QdrantClient(
-    url=os.getenv('QDRANT_URL'),
-    api_key=os.getenv('QDRANT_API_KEY'),
-)
+# load_dotenv(dotenv_path='../.env', override=True)
 
 
 class OpenAIAPIProcessor:
@@ -424,75 +418,79 @@ def task_id_generator_function():
 
 
 # run script
-if __name__ == "__main__":
-  vectorstore = Qdrant(
-        client=qdrant_client,
-        collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-        embeddings=OpenAIEmbeddings())  # type: ignore
+# if __name__ == "__main__":
+#   qdrant_client = QdrantClient(
+#     url=os.getenv('QDRANT_URL'),
+#     api_key=os.getenv('QDRANT_API_KEY'),
+#   )
+#   vectorstore = Qdrant(
+#         client=qdrant_client,
+#         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+#         embeddings=OpenAIEmbeddings())  # type: ignore
 
-  user_question = "What is the significance of Six Sigma?"
-  k = 4
-  fetch_k = 200
-  found_docs = vectorstore.max_marginal_relevance_search(user_question, k=k, fetch_k=200)
+#   user_question = "What is the significance of Six Sigma?"
+#   k = 4
+#   fetch_k = 200
+#   found_docs = vectorstore.max_marginal_relevance_search(user_question, k=k, fetch_k=200)
 
-  requests = []
-  for i, doc in enumerate(found_docs):
-    dictionary = {
-        "model": "gpt-3.5-turbo-0613", # 4k context
-        "messages": [{
-            "role": "system",
-            "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
-        }, {
-            "role":
-                "user",
-            "content":
-                f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
-        }],
-        "n": 1,
-        "max_tokens": 500,
-        "metadata": doc.metadata
-    }
-    requests.append(dictionary)
+#   requests = []
+#   for i, doc in enumerate(found_docs):
+#     dictionary = {
+#         "model": "gpt-3.5-turbo-0613", # 4k context
+#         "messages": [{
+#             "role": "system",
+#             "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+#         }, {
+#             "role":
+#                 "user",
+#             "content":
+#                 f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
+#         }],
+#         "n": 1,
+#         "max_tokens": 500,
+#         "metadata": doc.metadata
+#     }
+#     requests.append(dictionary)
 
-  oai = OpenAIAPIProcessor(
-      input_prompts_list=requests,
-      request_url='https://api.openai.com/v1/chat/completions',
-      api_key=os.getenv("OPENAI_API_KEY"),
-      max_requests_per_minute=1500,
-      max_tokens_per_minute=90000,
-      token_encoding_name='cl100k_base',
-      max_attempts=5,
-      logging_level=20,
-  )
-  # run script
-  asyncio.run(oai.process_api_requests_from_file())
+#   oai = OpenAIAPIProcessor(
+#       input_prompts_list=requests,
+#       request_url='https://api.openai.com/v1/chat/completions',
+#       api_key=os.getenv("OPENAI_API_KEY"),
+#       max_requests_per_minute=1500,
+#       max_tokens_per_minute=90000,
+#       token_encoding_name='cl100k_base',
+#       max_attempts=5,
+#       logging_level=20,
+#   )
+#   # run script
+#   asyncio.run(oai.process_api_requests_from_file())
   
-  assistant_contents = []
-  total_prompt_tokens = 0
-  total_completion_tokens = 0
+#   assistant_contents = []
+#   total_prompt_tokens = 0
+#   total_completion_tokens = 0
   
-  print("Results, end of main: ", oai.results)
-  print("-"*50)
+#   print("Results, end of main: ", oai.results)
+#   print("-"*50)
 
-  # jsonObject = json.loads(oai.results)
-  for element in oai.results:
-      for item in element:
-          if 'choices' in item:
-              for choice in item['choices']:
-                  if choice['message']['role'] == 'assistant':
-                      assistant_contents.append(choice['message']['content'])
-              total_prompt_tokens += item['usage']['prompt_tokens']
-              total_completion_tokens += item['usage']['completion_tokens']
+#   # jsonObject = json.loads(oai.results)
+#   for element in oai.results:
+#       for item in element:
+#           if 'choices' in item:
+#               for choice in item['choices']:
+#                   if choice['message']['role'] == 'assistant':
+#                       assistant_contents.append(choice['message']['content'])
+#               total_prompt_tokens += item['usage']['prompt_tokens']
+#               total_completion_tokens += item['usage']['completion_tokens']
 
-  print("Assistant Contents:", assistant_contents)
-  print("Total Prompt Tokens:", total_prompt_tokens)
-  print("Total Completion Tokens:", total_completion_tokens)
-  turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
-  print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
+#   print("Assistant Contents:", assistant_contents)
+#   print("Total Prompt Tokens:", total_prompt_tokens)
+#   print("Total Completion Tokens:", total_completion_tokens)
+#   turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
+#   print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
   
-  gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
-  print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
-  print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
+#   gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
+#   print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
+#   print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
   
   '''
   Pricing:
