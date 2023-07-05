@@ -40,6 +40,9 @@ from qdrant_client import QdrantClient, models
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 
+import openai
+from pydub import AudioSegment
+
 # from regex import F
 # from sqlalchemy import JSON
 
@@ -68,7 +71,7 @@ class Ingest():
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-        embeddings=OpenAIEmbeddings(openai_api_key=os.getenv('OPENAI_API_KEY')))  # type: ignore
+        embeddings=OpenAIEmbeddings())  # type: ignore
 
     # S3
     self.s3_client = boto3.client(
@@ -466,6 +469,42 @@ class Ingest():
       err: str = f"ERROR IN TXT INGEST: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
+  
+  def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
+    """
+    Ingest a single .mp4 file from S3.
+    """
+    try:
+      with NamedTemporaryFile(suffix="mp4") as tmpfile:
+        # download from S3 into tmpfile
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+
+        # extract audio from video tmpfile
+        mp4_version = AudioSegment.from_file(tmpfile.name, "mp4")
+        mp4_version.export("audio_file.webm", format="webm")
+
+        # generate transcript
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+        with open("audio_file.webm", "rb") as f:
+          transcript = openai.Audio.transcribe("whisper-1", f)
+        
+        #print("transcript: ", transcript)
+        text = [transcript['text']]
+        metadatas: List[Dict[str,Any]] = [
+        {
+          'course_name': course_name,
+          's3_path': s3_path,
+          'readable_filename': Path(s3_path).name,
+          'pagenumber_or_timestamp': '1',
+        }]
+        
+        self.split_and_upload(texts=text, metadatas=metadatas)
+      return "Success"
+    except Exception as e:
+      print("ERROR IN VIDEO READING ")
+      print(e)
+      return f"Error {e}"
+
     
   def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
     """
