@@ -241,7 +241,19 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   print(len(data))
 
   # Clean some keys for a proper file name
-  titles = [value[1][1].title.string for value in data]
+  # todo: have a default title
+    # titles = [value[1][1].title.string for value in data]
+    
+  titles = []
+  for value in data:
+    try:
+      titles.append(value[1][1].title.string)  
+    except AttributeError as e:
+      # if no title
+      placeholder_title = value[1][1].url.string
+      titles.append(placeholder_title)
+      print(f"URL is missing a title, using this title instead: {placeholder_title}")
+  
   clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles]
   path_name = []
   counter = 0
