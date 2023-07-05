@@ -144,8 +144,8 @@ class Ingest():
                              max_attempts=5,
                              logging_level=20)
 
+    chain_start_time = time.monotonic()
     asyncio.run(oai.process_api_requests_from_file())
-
     results = oai.results
     results = [result for result in results if result is not None]
 
@@ -169,7 +169,6 @@ class Ingest():
       requests.append(dictionary)
 
     oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                             save_filepath='results.jsonl',
                              request_url='https://api.openai.com/v1/chat/completions',
                              api_key=os.getenv("OPENAI_API_KEY"),
                              max_requests_per_minute=1500,
