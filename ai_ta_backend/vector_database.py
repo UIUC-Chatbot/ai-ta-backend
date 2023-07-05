@@ -1,21 +1,19 @@
 import inspect
-import json
+# import json
 import os
 import shutil
 import subprocess
 import time
 import traceback
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryFile
-from typing import Any, Dict, List, Literal, Union
+from tempfile import NamedTemporaryFile, # TemporaryFile
+from typing import Any, Dict, List, Union # Literal
 
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 
-from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
-
-import boto3
+# import boto3
+# import requests
 import fitz
-import requests
 import supabase
 # from arize.api import Client
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
@@ -24,11 +22,7 @@ import supabase
 # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
 #                                Metrics, ModelTypes, Schema)
 from flask import jsonify, request
-from langchain import LLMChain, OpenAI, PromptTemplate
-from langchain.chains.summarize import load_summarize_chain
-from langchain.chat_models import ChatOpenAI
-from langchain import LLMChain, OpenAI, PromptTemplate
-from langchain.chains.summarize import load_summarize_chain
+from langchain import LLMChain, OpenAI
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
                                        
                                         SRTLoader,

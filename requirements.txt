@@ -30,5 +30,7 @@ typing_extensions==4.5.0
 tiktoken
 pysrt
 docx2txt
-arize[AutoEmbeddings, LLM_Evaluation]
 cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
+
+# No arize for now, huge build size with these additions.
+# arize[AutoEmbeddings, LLM_Evaluation]
