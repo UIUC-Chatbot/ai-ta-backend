@@ -142,7 +142,7 @@ def getContextStuffedPrompt():
   
 
   ingester = Ingest()
-  user_question: str = str(request.args.get('search_query'))      # type: ignore
+  search_query: str = str(request.args.get('search_query'))      # type: ignore
   course_name: str = str(request.args.get('course_name'))         # type: ignore 
   top_n: int = int(request.args.get('top_n'))                     # type: ignore
   top_k_to_search: int = int(request.args.get('top_k_to_search')) # type: ignore
