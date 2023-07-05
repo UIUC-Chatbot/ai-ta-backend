@@ -140,7 +140,7 @@ def scraper(url:str):
 
 def pdf_scraper(soup:BeautifulSoup): 
     links = soup.find_all('a')
-    pdfs = []
+    pdfs = [] 
     for link in links:
         if ('.pdf' in link.get('href', [])):
 
