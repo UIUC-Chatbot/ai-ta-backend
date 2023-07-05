@@ -12,7 +12,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryFile
 from typing import Any, Dict, List, Literal, Union
 
-from ai_ta_backend.class_api_request_parallel_processor import OpenAIAPIProcessor
+from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 
 import boto3
 import fitz
@@ -21,23 +21,18 @@ from arize.api import Client
 from arize.pandas.embeddings import EmbeddingGenerator, UseCases
 # from arize.utils import ModelTypes
 # from arize.utils.ModelTypes import GENERATIVE_LLM
-from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments, Metrics, ModelTypes, Schema)
-from dotenv import load_dotenv
+from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
+                               Metrics, ModelTypes, Schema)
 from flask import jsonify, request
-from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader, SRTLoader)
+from langchain import LLMChain, OpenAI, PromptTemplate
+from langchain.chains.summarize import load_summarize_chain
+from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
+                                        SRTLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
-from langchain import PromptTemplate, OpenAI, LLMChain
-from langchain.chains.summarize import load_summarize_chain
 from qdrant_client import QdrantClient, models
-
-# from regex import F
-# from sqlalchemy import JSON
-
-# load API keys from globally-availabe .env file
-load_dotenv(dotenv_path='../.env', override=True)
 
 
 class Ingest():

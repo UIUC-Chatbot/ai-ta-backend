@@ -91,30 +91,29 @@ The script is structured as follows:
     - Run main()
 """
 
-import argparse  # for running script from command line
-import asyncio  # for running API calls concurrently
-import json  # for saving results to a jsonl file
-import logging  # for logging rate limit warnings and other messages
-import os  # for reading API key
-import re  # for matching endpoint from request URL
-import subprocess
-import tempfile
-import time  # for sleeping after rate limit is hit
+# import argparse
+# import subprocess
+# import tempfile
+# from langchain.llms import OpenAI
+import asyncio
+import json
+import logging
+import os
+import re
+import time
 from dataclasses import (  # for storing API inputs, outputs, and metadata
     dataclass, field)
 
-# import load_dotenv
-from dotenv import load_dotenv
-
-load_dotenv(dotenv_path='../.env', override=True)
-
-# imports
 import aiohttp  # for making API calls concurrently
 import tiktoken  # for counting tokens
+from dotenv import load_dotenv
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import OpenAI
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
+
+# load API keys from globally-availabe .env file
+load_dotenv(dotenv_path='../.env', override=True)
+
 
 qdrant_client = QdrantClient(
     url=os.getenv('QDRANT_URL'),
@@ -166,10 +165,6 @@ class OpenAIAPIProcessor:
     file_not_finished = True  # after file is empty, we'll skip reading it
     logging.debug(f"Initialization complete.")
 
-    # initialize file reading
-
-    # `requests` will provide requests one at a time
-    # requests = file.__iter__()
     requests = self.input_prompts_list.__iter__()
 
     logging.debug(f"File opened. Entering main loop")
@@ -429,3 +424,78 @@ def task_id_generator_function():
   while True:
     yield task_id
     task_id += 1
+
+
+# run script
+if __name__ == "__main__":
+
+  # vectorstore = Qdrant(
+  #     client=qdrant_client,
+  #     collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+  #     embeddings=OpenAIEmbeddings())
+  
+  vectorstore = Qdrant(
+        client=qdrant_client,
+        collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+        embeddings=OpenAIEmbeddings())  # type: ignore
+
+  user_question = "What is the significance of Six Sigma?"
+  k = 30
+  fetch_k = 200
+  found_docs = vectorstore.max_marginal_relevance_search(user_question, k=k, fetch_k=200)
+
+  requests = []
+  for i, doc in enumerate(found_docs):
+    dictionary = {
+        "model": "gpt-3.5-turbo",
+        "messages": [{
+            "role": "system",
+            "content": "You are a summarizer."
+        }, {
+            "role":
+                "user",
+            "content":
+                f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
+        }],
+        "n": 1,
+        "max_tokens": 500,
+        "metadata": doc.metadata
+    }
+    requests.append(dictionary)
+
+  oai = OpenAIAPIProcessor(
+      input_prompts_list=requests,
+      save_filepath='ex1.jsonl',
+      request_url='https://api.openai.com/v1/chat/completions',
+      api_key=os.getenv("OPENAI_API_KEY"),
+      max_requests_per_minute=1500,
+      max_tokens_per_minute=90000,
+      token_encoding_name='cl100k_base',
+      max_attempts=5,
+      logging_level=20,
+  )
+  # run script
+  asyncio.run(oai.process_api_requests_from_file())
+  
+  print("Results, end of main: ", oai.results)
+"""
+APPENDIX
+
+The example requests file at openai-cookbook/examples/data/example_requests_to_parallel_process.jsonl contains 10,000 requests to text-embedding-ada-002.
+
+It was generated with the following code:
+
+```python
+import json
+
+filename = "data/example_requests_to_parallel_process.jsonl"
+n_requests = 10_000
+jobs = [{"model": "text-embedding-ada-002", "input": str(x) + "\n"} for x in range(n_requests)]
+with open(filename, "w") as f:
+    for job in jobs:
+        json_string = json.dumps(job)
+        f.write(json_string + "\n")
+```
+
+As with all jsonl files, take care that newlines in the content are properly escaped (json.dumps does this automatically).
+"""
