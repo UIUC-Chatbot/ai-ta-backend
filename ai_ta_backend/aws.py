@@ -1,54 +1,50 @@
+import os
+from multiprocessing import cpu_count
+from multiprocessing.pool import ThreadPool
+from typing import List, Optional
 
-import glob 
-import boto3 
-import os 
-import sys 
-from multiprocessing.pool import ThreadPool 
-import pathlib
+import boto3
 
-def upload_data_files_to_s3(course_name:str, localdir:str):
-    # target location of the files on S3  
+def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[str]]:
+  """Uploads all files in localdir to S3 bucket.
 
-    S3_BUCKET_NAME = os.getenv('S3_BUCKET_NAME') 
-    S3_FOLDER_NAME = "operations-management-organization-and-analysis"
-    # Enter your own credentials file profile name below
+  Args:
+    course_name (str): Official course name on our website.
+    localdir (str): Local directory to upload from, coursera-dl downloads to this directory.
 
-    s3 = boto3.client(
-        's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-        # aws_session_token=,  # Comment this line if not using temporary credentials
-    )
+  Returns:
+    Optional[List[str]]: A list of S3 paths, the final resting place of uploads, or None if no files were uploaded.
+  """
+  s3 = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+  )
 
-    # Source location of files on local system 
+  filenames = []
+  for root, subdirs, files in os.walk(localdir):
+    for filename in files:
+      filenames.append(os.path.join(root, filename))
 
-    # The list of files we're uploading to S3 
-    print(localdir)
-    # filenames =  glob.glob(localdir, recursive=True) 
+  if not filenames:
+      print(f"No files to upload. Not found in: {localdir}")
+      return None
 
-    filenames = []
-    for root, subdirs, files in os.walk(localdir):
-      for filename in files:
-        filenames.append(os.path.join(root, filename))
-    print(filenames)
-    def upload(myfile): 
-        print("hello!!")
-        s3_file = f"{course_name}/{os.path.basename(myfile)}" 
+  print(f"Files to upload: {filenames}")
+  print("About to upload...")
 
-        results = s3.upload_file(myfile, S3_BUCKET_NAME, s3_file) 
-        print(results)
+  s3_paths = []
 
-    # Number of pool processes is a guestimate - I've set 
-    # it to twice number of files to be processed 
+  def upload(myfile):
+    s3_file = f"courses/{course_name}/{os.path.basename(myfile)}"
+    s3.upload_file(myfile, os.getenv('S3_BUCKET_NAME'), s3_file)
+    s3_paths.append(s3_file)
 
-    # pool = ThreadPool(processes=len(filenames)*2) 
-    pool = ThreadPool(processes=2) 
-    
+  min_p = 6
+  max_p = cpu_count()
+  num_procs = max(min(len(filenames), max_p), min_p)
+  pool = ThreadPool(processes=num_procs)
+  pool.map(upload, filenames)
 
-    pool.map(upload, filenames) 
-
-    
-
-    print("All Data files uploaded to S3 Ok")
-
-
+  print("All data files uploaded to S3 successfully.")
+  return s3_paths

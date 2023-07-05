@@ -39,7 +39,7 @@ from qdrant_client import QdrantClient, models
 import requests
 import json
 
-from ai_ta_backend.aws import upload_data_files_to_s3 
+from ai_ta_backend.aws import upload_data_files_to_s3
 
 # from regex import F
 # from sqlalchemy import JSON
@@ -390,7 +390,6 @@ class Ingest():
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
 
         ### READ OCR of PDF
-        print("Right before opening pdf")
         doc = fitz.open(pdf_tmpfile.name)  # type: ignore
 
         # improve quality of the image
@@ -451,10 +450,10 @@ class Ingest():
       text = [text]
       metadatas: List[Dict[str,Any]] = [
         {
-          'course_name': course_name,
+          'course_name': course_name, 
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': '1',
+          'pagenumber_or_timestamp': text.index(txt), 
         }]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
@@ -463,86 +462,6 @@ class Ingest():
       err: str = f"ERROR IN TXT INGEST: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
-  
-  def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
-    """
-    Ingest a single video file from S3.
-    """
-    try:
-      # check for file extension
-      file_ext = Path(s3_path).suffix
-      print(file_ext[1:])
-      
-      openai.api_key = os.getenv('OPENAI_API_KEY')
-      transcript_list = []
-      #print(os.getcwd())
-      with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
-        # download from S3 into an video tmpfile
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
-        # extract audio from video tmpfile
-        mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
-        #print("Video file: ", video_tmpfile.name)
-
-      # save the extracted audio as a temporary webm file
-      with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
-        mp4_version.export(webm_tmpfile, format="webm")
-        #print("WEBM file: ", webm_tmpfile.name)
-
-      # check file size
-      file_size = os.path.getsize(webm_tmpfile.name)
-      # split the audio into 25MB chunks
-      if file_size > 26214400:
-        # load the webm file into audio object
-        full_audio = AudioSegment.from_file(webm_tmpfile.name, "webm")
-        file_count = file_size // 26214400 + 1
-        split_segment = 35 * 60 * 1000
-        start = 0
-        count = 0
-
-        while count < file_count:
-          with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
-            #print("Splitting file: ", split_tmp.name)
-            if count == file_count - 1:
-                # last segment
-                audio_chunk = full_audio[start:]
-            else:
-                audio_chunk = full_audio[start:split_segment]
-
-            audio_chunk.export(split_tmp.name, format="webm")
-
-            # transcribe the split file and store the text in dictionary
-            with open(split_tmp.name, "rb") as f:
-                transcript = openai.Audio.transcribe("whisper-1", f)
-            transcript_list.append(transcript['text'])
-          start += split_segment
-          split_segment += split_segment
-          count += 1
-          os.remove(split_tmp.name)
-      else:
-        # transcribe the full audio
-        with open(webm_tmpfile.name, "rb") as f:
-          transcript = openai.Audio.transcribe("whisper-1", f)
-        transcript_list.append(transcript['text'])
-      
-      os.remove(webm_tmpfile.name)
-
-      #print("transcript: ", transcript_list)
-      text = [txt for txt in transcript_list]
-      metadatas: List[Dict[str,Any]] = [
-        {
-          'course_name': course_name,
-          's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': text.index(txt),
-        } for txt in text]
-        
-      self.split_and_upload(texts=text, metadatas=metadatas)
-      return "Success"
-    except Exception as e:
-      print("ERROR IN VIDEO READING ")
-      print(e)
-      return f"Error {e}"
-
     
   def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
     """
@@ -560,6 +479,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
+            'readable_filename': Path(s3_path).name,
             'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '', 
           } for doc in documents]
@@ -600,13 +520,12 @@ class Ingest():
   def ingest_coursera(self, coursera_course_name: str, course_name: str) -> str:
     """ Download all the files from a coursera course and ingest them.
     
-    1. Download the coursera content.
+    1. Download the coursera content. 
     2. Upload to S3 (so users can view it)
     3. Run everything through the ingest_bulk method.
 
     Args:
         coursera_course_name (str): The name of the coursera course.
-
         course_name (str): The name of the course in our system.
 
     Returns:
