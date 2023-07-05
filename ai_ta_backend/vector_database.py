@@ -4,12 +4,13 @@ import os
 import shutil
 import subprocess
 import time
+import re
 # from xml.dom.minidom import Document  # PDF to text
 # from re import L, T
 import traceback
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryFile
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import boto3
 import fitz
@@ -66,7 +67,7 @@ class Ingest():
     
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
-        collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+        collection_name=os.getenv('DEV_QDRANT_COLLECTION_NAME'),  # type: ignore
         embeddings=OpenAIEmbeddings())  # type: ignore
 
     # S3
@@ -199,7 +200,7 @@ class Ingest():
   #     print(f'Log failed with response code {res.status_code}, {res.text}')
   #     return f'Log failed with response code {res.status_code}, {res.text}'
 
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, clean_text: Optional[List[tuple[str, List]]]) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
 
@@ -207,11 +208,19 @@ class Ingest():
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
 
-      for s3_path in s3_paths:
+      for i, s3_path in enumerate(s3_paths):
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
 
-        if s3_path.endswith('.pdf'):
+        if clean_text:
+          print("clean")  
+          ret = self._ingest_clean(clean_text[i], s3_path, course_name)
+          if ret != "Success":
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append(s3_path)
+        elif s3_path.endswith('.pdf'):
+          print("You messed up")
           ret = self._ingest_single_pdf(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
@@ -253,6 +262,27 @@ class Ingest():
     except Exception as e:
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
       return success_status
+    
+  def _ingest_clean(self, data: tuple[str, List], s3_path: str, course_name: str) -> str:
+    try:
+      title = str(data[1][1].title.string).strip()
+      url = data[0]
+
+      metadata: List[Dict[str, Any]] = [{
+      'course_name': course_name,
+      's3_path': s3_path,
+      'readable_filename': title,
+      'url': url, 
+      'pagenumber_or_timestamp': ''
+      }]
+
+      text = [data[1][0]]
+
+      self.split_and_upload(text, metadata)
+      return "Success"
+    except Exception as e:
+      print(f"ERROR IN HTML INGEST: {e}")
+      return f"Error: {e}"
 
   def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
     try:
@@ -597,7 +627,7 @@ class Ingest():
           }
         ]
       }
-      response = self.delete_points_from_qdrant(os.getenv('QDRANT_COLLECTION_NAME'), filter_condition)
+      response = self.delete_points_from_qdrant(os.getenv('DEV_QDRANT_COLLECTION_NAME'), filter_condition)
 
       # Delete s3_path from SQL using Supabase
       response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>s3_path', s3_path).eq(
