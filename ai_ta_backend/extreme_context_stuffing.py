@@ -106,35 +106,9 @@ from dataclasses import (  # for storing API inputs, outputs, and metadata
 
 import aiohttp  # for making API calls concurrently
 import tiktoken  # for counting tokens
-<<<<<<< HEAD
-<<<<<<< HEAD
-# from dotenv import load_dotenv
-=======
-from dotenv import load_dotenv
->>>>>>> 07bb476 (removing the main, results are returned in vector_database)
-=======
-# from dotenv import load_dotenv
->>>>>>> b84625b (added cost tracking)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
-
-# load API keys from globally-availabe .env file
-<<<<<<< HEAD
-<<<<<<< HEAD
-# load_dotenv(dotenv_path='../.env', override=True)
-=======
-load_dotenv(dotenv_path='../.env', override=True)
-
-
-qdrant_client = QdrantClient(
-    url=os.getenv('QDRANT_URL'),
-    api_key=os.getenv('QDRANT_API_KEY'),
-)
->>>>>>> 07bb476 (removing the main, results are returned in vector_database)
-=======
-# load_dotenv(dotenv_path='../.env', override=True)
->>>>>>> b84625b (added cost tracking)
 
 
 class OpenAIAPIProcessor:
