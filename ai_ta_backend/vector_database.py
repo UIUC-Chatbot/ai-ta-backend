@@ -626,7 +626,7 @@ class Ingest():
       print(err)
       return err
 
-    return True
+    return "Success"
 
 
   def getAll(

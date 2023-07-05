@@ -31,10 +31,7 @@ def index() -> JSON:
   """
   return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 49b8cad (fully working coursera ingest. Must enroll in course for my certificate to work)
 @app.route('/coursera', methods=['GET'])
 def coursera() -> JSON:
   try:
@@ -137,7 +134,7 @@ def getContextStuffedPrompt():
   """
   Get a stuffed prompt for a given user question and course name.
   Args : 
-    user_question (str)
+    search_query (str)
     course_name (str) : used for metadata filtering
   Returns : str
     a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
@@ -146,13 +143,13 @@ def getContextStuffedPrompt():
   
 
   ingester = Ingest()
-  user_question: str = str(request.args.get('search_query')) # type: ignore
-  course_name: str = str(request.args.get('course_name'))    # type: ignore 
-  top_n: int = int(request.args.get('top_n'))                # type: ignore
+  user_question: str = str(request.args.get('search_query'))      # type: ignore
+  course_name: str = str(request.args.get('course_name'))         # type: ignore 
+  top_n: int = int(request.args.get('top_n'))                     # type: ignore
   top_k_to_search: int = int(request.args.get('top_k_to_search')) # type: ignore
 
   start_time = time.monotonic()
-  stuffed_prompt = ingester.get_context_stuffed_prompt(user_question, course_name, top_n, top_k_to_search)
+  stuffed_prompt = ingester.get_context_stuffed_prompt(search_query, course_name, top_n, top_k_to_search)
   print(f"⏰ Runtime of EXTREME prompt stuffing: {(time.monotonic() - start_time):.2f} seconds")
   response = jsonify({"prompt": stuffed_prompt})
 
