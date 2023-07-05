@@ -1,31 +1,30 @@
+import asyncio
 import inspect
-import json
+# import json
 import os
 import shutil
 import subprocess
 import time
-# from xml.dom.minidom import Document  # PDF to text
-# from re import L, T
 import traceback
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryFile
-from typing import Any, Dict, List, Literal, Union
+from tempfile import NamedTemporaryFile  # TemporaryFile
+from typing import Any, Dict, List, Union  # Literal
 
 import boto3
+# import requests
 import fitz
+import openai
 import requests
 import supabase
 # from arize.api import Client
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
 # from arize.utils import ModelTypes
 # from arize.utils.ModelTypes import GENERATIVE_LLM
-# from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
-#                                Metrics, ModelTypes, Schema)
-from dotenv import load_dotenv
+# # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
+# #                                Metrics, ModelTypes, Schema)
 from flask import jsonify, request
 from langchain import LLMChain, OpenAI, PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
-from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
                                         SRTLoader,
                                         UnstructuredPowerPointLoader)
@@ -34,12 +33,11 @@ from langchain.llms import OpenAIChat
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 
 from ai_ta_backend.aws import upload_data_files_to_s3
-
-import openai
-from pydub import AudioSegment
+from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 
 # from regex import F
 # from sqlalchemy import JSON
@@ -84,6 +82,8 @@ class Ingest():
         supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
     # self.arize_client = Client(space_key=os.getenv('ARIZE_SPACE_KEY'), api_key=os.getenv('ARIZE_API_KEY'))  # type: ignore
+    self.supabase_client = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
+                                                  supabase_key=os.getenv('SUPABASE_API_KEY')) # type: ignore
 
     return None
 
@@ -94,46 +94,70 @@ class Ingest():
       user_question (str)
       course_name (str) : used for metadata filtering
     Returns : str
-      a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
+      a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
      """
     # MMR with metadata filtering based on course_name
     vec_start_time = time.monotonic()
-    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search, filter={"course_name": course_name})
+    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
     print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
     
-    prompt_template = """Provide a comprehensive summary of the given text, based on the question.
-    {text}
-    Question : {question}
-    The summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.
-    Make use of direct quotes from the text.
-    Feel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question. 
-    If the text does not provide information to answer the question, please write "None" and nothing else. If it's not relevant, say "None" and nothing else.
-    """
-    
-    PROMPT = PromptTemplate(template=prompt_template, input_variables=["text", "question"])
-    # Max batch size is 20 on Openai (June 2023)
-    
-    # chain = load_summarize_chain(ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"), #  batch_size=min(20, len(found_docs))
-    chain = load_summarize_chain(OpenAI(temperature=0, model_name="text-davinci-003", batch_size=min(20, len(found_docs))),
-                                 chain_type="map_reduce",
-                                 return_intermediate_steps=True,
-                                 map_prompt=PROMPT,
-                                 combine_prompt=PROMPT,
-                                 verbose=False)
-    chain_start_time = time.monotonic()
-    results = chain({"input_documents": found_docs, "question": user_question}, return_only_outputs=True)  #get results
-    print(f"⏰ map_reduce chain runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+    requests = []
+    for i, doc in enumerate(found_docs):
+      dictionary = {
+          "model": "gpt-3.5-turbo",
+          "messages": [{
+              "role": "system",
+              "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+          }, {
+              "role":
+                  "user",
+              "content":
+                  f"Provide a comprehensive summary of the given text, based on this question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write 'None' and nothing else.",
+          }],
+          "n": 1,
+          "max_tokens": 600,
+          "metadata": doc.metadata
+      }
+      requests.append(dictionary)
 
-    #to return long stuffed prompt
+    oai = OpenAIAPIProcessor(input_prompts_list=requests,
+                             request_url='https://api.openai.com/v1/chat/completions',
+                             api_key=os.getenv("OPENAI_API_KEY"),
+                             max_requests_per_minute=1500,
+                             max_tokens_per_minute=90000,
+                             token_encoding_name='cl100k_base',
+                             max_attempts=5,
+                             logging_level=20)
+
+    chain_start_time = time.monotonic()
+    asyncio.run(oai.process_api_requests_from_file())
+    results = oai.results
+    results = [result for result in results if result is not None]
+    print(f"⏰ Extreme context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+
+    all_texts = ""
     separator = '---'  # between each context
-    all_texts = '---\n'  # start with separator
-    for doc, summary in zip(found_docs, results["intermediate_steps"]):
-      if summary in ['None.', 'None']:
-        print("❌ Skipping context: ", summary)
-        continue
-      doc_text = f"Document: {doc.metadata['readable_filename']}, page number (if exists): {doc.metadata['pagenumber_or_timestamp']}\n"
-      summary_text = f"Summary: {summary}\n"
-      all_texts += doc_text + summary_text + separator + '\n'
+    for i, text in enumerate(results):
+      if text is not None:
+        filename = str(results[i][-1].get('readable_filename', ''))
+        course_name = str(results[i][-1].get('course_name', ''))
+        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))
+        s3_path = str(results[i][-1].get('s3_path', ''))
+        doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
+        summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
+        all_texts += doc + summary + separator + '\n'
+    for i, text in enumerate(results):
+      # todo: if summary in ['None.', 'None']:
+        # print("❌ Skipping context: ", summary)
+        # continue
+      if text is not None:
+        filename = str(results[i][-1].get('readable_filename', ''))
+        course_name = str(results[i][-1].get('course_name', ''))
+        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))
+        s3_path = str(results[i][-1].get('s3_path', ''))
+        doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
+        summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
+        all_texts += doc + summary + separator + '\n'
 
     stuffed_prompt = """Please answer the following question. 
     Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant. 
@@ -144,6 +168,15 @@ class Ingest():
     return stuffed_prompt
 
   # def log_to_arize(self, course_name: str, user_question: str, llm_completion: str) -> str:
+    """
+    Use LangChain map_reduce_QA to implement this in parallel.
+    Write a function that takes in a question, and returns a very long "stuffed" prompt for GPT-4 to answer on the front-end. (You only construct the prompt for GPT-4, you don't actually return the answer).
+    
+    References:
+    Example & Docs: https://python.langchain.com/en/latest/modules/chains/index_examples/question_answering.html#the-map-reduce-chain
+    Code: https://github.com/hwchase17/langchain/blob/4092fd21dcabd1de273ad902fae2186ae5347e03/langchain/chains/question_answering/map_reduce_prompt.py#L11 
+    """
+    return f"TODO: Implement me! You asked for: {course_name}"
   #   import pandas as pd
 
   #   features = {
@@ -205,7 +238,7 @@ class Ingest():
   #   else:
   #     print(f'Log failed with response code {res.status_code}, {res.text}')
   #     return f'Log failed with response code {res.status_code}, {res.text}'
-
+  
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
@@ -323,7 +356,6 @@ class Ingest():
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
 
         ### READ OCR of PDF
-        print("Right before opening pdf")
         doc = fitz.open(pdf_tmpfile.name)  # type: ignore
 
         # improve quality of the image
@@ -384,10 +416,10 @@ class Ingest():
       text = [text]
       metadatas: List[Dict[str,Any]] = [
         {
-          'course_name': course_name,
+          'course_name': course_name, 
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': '1',
+          'pagenumber_or_timestamp': text.index(txt), 
         }]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
@@ -397,85 +429,85 @@ class Ingest():
       print(err)
       return err
   
-  def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
-    """
-    Ingest a single video file from S3.
-    """
-    try:
-      # check for file extension
-      file_ext = Path(s3_path).suffix
-      print(file_ext[1:])
-      
-      openai.api_key = os.getenv('OPENAI_API_KEY')
-      transcript_list = []
-      #print(os.getcwd())
-      with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
-        # download from S3 into an video tmpfile
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
-        # extract audio from video tmpfile
-        mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
-        #print("Video file: ", video_tmpfile.name)
-
-      # save the extracted audio as a temporary webm file
-      with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
-        mp4_version.export(webm_tmpfile, format="webm")
-        #print("WEBM file: ", webm_tmpfile.name)
-
-      # check file size
-      file_size = os.path.getsize(webm_tmpfile.name)
-      # split the audio into 25MB chunks
-      if file_size > 26214400:
-        # load the webm file into audio object
-        full_audio = AudioSegment.from_file(webm_tmpfile.name, "webm")
-        file_count = file_size // 26214400 + 1
-        split_segment = 35 * 60 * 1000
-        start = 0
-        count = 0
-
-        while count < file_count:
-          with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
-            #print("Splitting file: ", split_tmp.name)
-            if count == file_count - 1:
-                # last segment
-                audio_chunk = full_audio[start:]
-            else:
-                audio_chunk = full_audio[start:split_segment]
-
-            audio_chunk.export(split_tmp.name, format="webm")
-
-            # transcribe the split file and store the text in dictionary
-            with open(split_tmp.name, "rb") as f:
-                transcript = openai.Audio.transcribe("whisper-1", f)
-            transcript_list.append(transcript['text'])
-          start += split_segment
-          split_segment += split_segment
-          count += 1
-          os.remove(split_tmp.name)
-      else:
-        # transcribe the full audio
-        with open(webm_tmpfile.name, "rb") as f:
-          transcript = openai.Audio.transcribe("whisper-1", f)
-        transcript_list.append(transcript['text'])
-      
-      os.remove(webm_tmpfile.name)
-
-      #print("transcript: ", transcript_list)
-      text = [txt for txt in transcript_list]
-      metadatas: List[Dict[str,Any]] = [
-        {
-          'course_name': course_name,
-          's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': text.index(txt),
-        } for txt in text]
+    def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
+      """
+      Ingest a single video file from S3.
+      """
+      try:
+        # check for file extension
+        file_ext = Path(s3_path).suffix
+        print(file_ext[1:])
         
-      self.split_and_upload(texts=text, metadatas=metadatas)
-      return "Success"
-    except Exception as e:
-      print("ERROR IN VIDEO READING ")
-      print(e)
-      return f"Error {e}"
+        openai.api_key = os.getenv('OPENAI_API_KEY')
+        transcript_list = []
+        #print(os.getcwd())
+        with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
+          # download from S3 into an video tmpfile
+          self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
+          # extract audio from video tmpfile
+          mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
+          #print("Video file: ", video_tmpfile.name)
 
+        # save the extracted audio as a temporary webm file
+        with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
+          mp4_version.export(webm_tmpfile, format="webm")
+          #print("WEBM file: ", webm_tmpfile.name)
+
+        # check file size
+        file_size = os.path.getsize(webm_tmpfile.name)
+        # split the audio into 25MB chunks
+        if file_size > 26214400:
+          # load the webm file into audio object
+          full_audio = AudioSegment.from_file(webm_tmpfile.name, "webm")
+          file_count = file_size // 26214400 + 1
+          split_segment = 35 * 60 * 1000
+          start = 0
+          count = 0
+
+          while count < file_count:
+            with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
+              #print("Splitting file: ", split_tmp.name)
+              if count == file_count - 1:
+                  # last segment
+                  audio_chunk = full_audio[start:]
+              else:
+                  audio_chunk = full_audio[start:split_segment]
+
+              audio_chunk.export(split_tmp.name, format="webm")
+
+              # transcribe the split file and store the text in dictionary
+              with open(split_tmp.name, "rb") as f:
+                  transcript = openai.Audio.transcribe("whisper-1", f)
+              transcript_list.append(transcript['text'])
+            start += split_segment
+            split_segment += split_segment
+            count += 1
+            os.remove(split_tmp.name)
+        else:
+          # transcribe the full audio
+          with open(webm_tmpfile.name, "rb") as f:
+            transcript = openai.Audio.transcribe("whisper-1", f)
+          transcript_list.append(transcript['text'])
+        
+        os.remove(webm_tmpfile.name)
+
+        #print("transcript: ", transcript_list)
+        text = [txt for txt in transcript_list]
+        metadatas: List[Dict[str,Any]] = [
+          {
+            'course_name': course_name,
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).name,
+            'pagenumber_or_timestamp': text.index(txt),
+          } for txt in text]
+          
+        self.split_and_upload(texts=text, metadatas=metadatas)
+        return "Success"
+      except Exception as e:
+        print("ERROR IN VIDEO READING ")
+        print(e)
+        return f"Error {e}"
+    
     
   def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
     """
@@ -494,6 +526,7 @@ class Ingest():
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
+            'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '', 
           } for doc in documents]
 
@@ -505,10 +538,35 @@ class Ingest():
       return f"Error {e}"
 
 
+  def list_files_recursively(self, bucket, prefix):
+        all_files = []
+        continuation_token = None
+
+        while True:
+            list_objects_kwargs = {
+                'Bucket': bucket,
+                'Prefix': prefix,
+            }
+            if continuation_token:
+                list_objects_kwargs['ContinuationToken'] = continuation_token
+
+            response = self.s3_client.list_objects_v2(**list_objects_kwargs)
+
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    all_files.append(obj['Key'])
+
+            if response['IsTruncated']:
+                continuation_token = response['NextContinuationToken']
+            else:
+                break
+
+        return all_files
+  
   def ingest_coursera(self, coursera_course_name: str, course_name: str) -> str:
     """ Download all the files from a coursera course and ingest them.
     
-    1. Download the coursera content.
+    1. Download the coursera content. 
     2. Upload to S3 (so users can view it)
     3. Run everything through the ingest_bulk method.
 
@@ -614,6 +672,7 @@ class Ingest():
       print(err)
       return err
 
+    return "Success"
 
 
   def getAll(
