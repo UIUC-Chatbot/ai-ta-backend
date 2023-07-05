@@ -15,7 +15,10 @@ app = Flask(__name__)
 CORS(app)
 
 # load API keys from globally-availabe .env file
-load_dotenv(dotenv_path='../.env', override=True)
+# load_dotenv(dotenv_path='.env', override=True)
+load_dotenv()
+print("in SUPA", os.environ['SUPABASE_API_KEY'])
+print("in main", os.environ['OPENAI_API_KEY'])
 
 
 @app.route('/')
