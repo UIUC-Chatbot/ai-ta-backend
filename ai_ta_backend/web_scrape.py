@@ -71,62 +71,65 @@ def get_urls_dict(url:str):
 
 # Gathers all of the connected urls from the base url
 def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _invalid_urls:list=[]):
-    # Prints the depth of the current search
-    print("depth: ", _depth)
-    all = []
-    max_urls = int(max_urls)
-    _depth = int(_depth)
-    max_depth = int(max_depth)
-    amount = max_urls
+  # Prints the depth of the current search
+  print("depth: ", _depth)
+  all = []
+  max_urls = int(max_urls)
+  _depth = int(_depth)
+  max_depth = int(max_depth)
+  amount = max_urls
 
-    # If the base url is valid, then add it to the list of urls and get the urls from the base url
-    if valid_url(base_url) == True:
-        all.append(base_url)
-        urls = list(get_urls_dict(base_url).values())
+  # If the base url is valid, then add it to the list of urls and get the urls from the base url
+  if valid_url(base_url) == True:
+    all.append(base_url)
+    urls = list(get_urls_dict(base_url).values())
 
-        if len(urls) <= max_urls:
-            all.extend(urls)
-        else:
-            all.extend(urls[:max_urls])
+    if len(urls) <= max_urls:
+      all.extend(urls)
     else:
-        print("Invalid URL", base_url + ",", "Status Code:",valid_url(base_url))
-        _invalid_urls.append(base_url)
+      all.extend(urls[:max_urls])
+  else:
+    print("Invalid URL", base_url + ",", "Status Code:",valid_url(base_url))
+    _invalid_urls.append(base_url)
 
-    # Create the new amount of max urls for the next function call
-    all = list(set(all))
-    max_urls = max_urls - len(all)
+  # Create the new amount of max urls for the next function call
+  all = list(set(all))
+  max_urls = max_urls - len(all)
 
-    # Recursively call the function on all of the urls found in the base url
-    for url in all:
-        if url not in _invalid_urls:
-            if valid_url(url) == True:
-                if max_urls > 0:
-                    if _depth < max_depth:
-                        all.extend(site_map(url, max_urls, max_depth, _depth+1, _invalid_urls))
-                        all = list(set(all))
-                        max_urls = max_urls - len(all)
-                    else:
-                        print("Depth exceeded:", _depth+1, "out of", max_depth)
-                        break
-                else:
-                    break
+  # Recursively call the function on all of the urls found in the base url
+  for url in all:
+    if url.startswith(base_url):
+      if url not in _invalid_urls:
+        if valid_url(url) == True:
+          if max_urls > 0:
+            if _depth < max_depth:
+              all.extend(site_map(url, max_urls, max_depth, _depth+1, _invalid_urls))
+              all = list(set(all))
+              max_urls = max_urls - len(all)
             else:
-                print("Invalid URL", url + ',', "Status Code:",valid_url(url))
-                _invalid_urls.append(url)
-                continue
+              print("Depth exceeded:", _depth+1, "out of", max_depth)
+              break
+          else:
+            break
         else:
-            continue
-  
-    all = list(set(all))
+          print("Invalid URL", url + ',', "Status Code:",valid_url(url))
+          _invalid_urls.append(url)
+          continue
+      else:
+        continue
+    else: 
+      print(f"NOT SCRAPING URL outside our base_url.\n\tbase_url: {base_url}\n\turl:{url}")
 
-    if len(all) < amount and _depth == 0:
-        print("Max URLS not reached, returning all urls found:", len(all), "out of", amount)
-        return all
-    elif len(all) == amount and _depth == 0:
-        print("Max URLS reached:", len(all), "out of", amount)
-        return all
+  all = list(set(all))
 
+  if len(all) < amount and _depth == 0:
+    print("Max URLS not reached, returning all urls found:", len(all), "out of", amount)
     return all
+  elif len(all) == amount and _depth == 0:
+    print("Max URLS reached:", len(all), "out of", amount)
+    return all
+
+  return all
 
 # Function to get the text from a url
 def scraper(url:str):
