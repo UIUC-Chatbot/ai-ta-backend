@@ -10,7 +10,7 @@ import time
 import traceback
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryFile
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import boto3
 import fitz
@@ -206,7 +206,7 @@ class Ingest():
   #     print(f'Log failed with response code {res.status_code}, {res.text}')
   #     return f'Log failed with response code {res.status_code}, {res.text}'
 
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, clean_text: Optional[List[tuple[str, List]]]) -> Dict[str, List[str]]:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, clean_text: Optional[List[Tuple[str, List]]]) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
 
@@ -268,7 +268,7 @@ class Ingest():
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
       return success_status
     
-  def _ingest_clean(self, data: tuple[str, List], s3_path: str, course_name: str) -> str:
+  def _ingest_clean(self, data: Tuple[str, List], s3_path: str, course_name: str) -> str:
     try:
       title = str(data[1][1].title.string).strip()
       url = data[0]
