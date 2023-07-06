@@ -225,7 +225,6 @@ class Ingest():
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.pdf'):
-          print("You messed up")
           ret = self._ingest_single_pdf(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
