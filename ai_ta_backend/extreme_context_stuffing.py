@@ -103,7 +103,7 @@ import re
 import time
 from dataclasses import (  # for storing API inputs, outputs, and metadata
     dataclass, field)
-from typing import Any
+from typing import Any, List
 
 import aiohttp  # for making API calls concurrently
 import tiktoken  # for counting tokens
@@ -123,9 +123,9 @@ class OpenAIAPIProcessor:
     self.token_encoding_name = token_encoding_name
     self.max_attempts = max_attempts
     self.logging_level = logging_level
-    self.input_prompts_list: list[dict] = input_prompts_list
+    self.input_prompts_list: List[dict] = input_prompts_list
     self.results = []
-    self.cleaned_results: list[str] = []
+    self.cleaned_results: List[str] = []
 
   async def process_api_requests_from_file(self):
     """Processes API requests in parallel, throttling to stay under rate limits."""
@@ -258,12 +258,9 @@ class OpenAIAPIProcessor:
       openai_completion = task.result()
       self.results.append(openai_completion)
 
-    # cleaned_results: list[str] = extract_context_from_results(self.results)
-    self.cleaned_results: list[str] = extract_context_from_results(self.results)
-    # return cleaned_results
-  
+    self.cleaned_results: List[str] = extract_context_from_results(self.results)
 
-def extract_context_from_results(results: list[Any]) -> list[str]:
+def extract_context_from_results(results: List[Any]) -> List[str]:
   assistant_contents = []
   total_prompt_tokens = 0
   total_completion_tokens = 0
