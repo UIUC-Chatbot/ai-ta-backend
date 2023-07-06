@@ -10,6 +10,7 @@ from flask_cors import CORS
 from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
+from ai_ta_backend.web_scrape import main_crawler
 
 app = Flask(__name__)
 CORS(app)
