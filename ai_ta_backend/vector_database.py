@@ -206,7 +206,7 @@ class Ingest():
   #     print(f'Log failed with response code {res.status_code}, {res.text}')
   #     return f'Log failed with response code {res.status_code}, {res.text}'
 
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, clean_text: Optional[List[Tuple[str, List]]]) -> Dict[str, List[str]]:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, clean_text: Optional[List[Tuple[str, List]]] = None) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
 
