@@ -250,7 +250,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       titles.append(value[1][1].title.string)  
     except AttributeError as e:
       # if no title
-      placeholder_title = value[1][1].url.string
+      placeholder_title = re.findall(pattern=r'[a-zA-Z0-9.]*[a-z]', string=value[0])[1]
       titles.append(placeholder_title)
       print(f"URL is missing a title, using this title instead: {placeholder_title}")
   
