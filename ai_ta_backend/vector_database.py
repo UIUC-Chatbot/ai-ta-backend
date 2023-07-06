@@ -131,13 +131,12 @@ class Ingest():
 
     chain_start_time = time.monotonic()
     asyncio.run(oai.process_api_requests_from_file())
-    results = oai.results
-    results = [result for result in results if result is not None]
+    results: list[str] = oai.results
     print(f"⏰ Extreme context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
 
     all_texts = ""
     separator = '---'  # between each context
-    for i, text in enumerate(results):
+    for i, text in enumerate(oai.cleaned_results):
       if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
         # no useful text, it replied with a summary of "None"
         continue 
@@ -147,7 +146,8 @@ class Ingest():
         pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))
         s3_path = str(results[i][-1].get('s3_path', ''))
         doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
-        summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
+        # summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
+        summary = f"\nSummary: {text}"
         all_texts += doc + summary + '\n' + separator + '\n'
 
     stuffed_prompt = """Please answer the following question. 
