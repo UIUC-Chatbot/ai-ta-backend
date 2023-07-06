@@ -8,7 +8,7 @@ import time
 import traceback
 from pathlib import Path
 from tempfile import NamedTemporaryFile  # TemporaryFile
-from typing import Any, Dict, List, Union  # Literal
+from typing import Any, Dict, List, Optional, Tuple, Union  # Literal
 
 import boto3
 # import requests
@@ -87,7 +87,7 @@ class Ingest():
       course_name (str) : used for metadata filtering
     Returns : str
       a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
-     """
+    """
     # MMR with metadata filtering based on course_name
     vec_start_time = time.monotonic()
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
@@ -113,13 +113,13 @@ class Ingest():
       requests.append(dictionary)
 
     oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                             request_url='https://api.openai.com/v1/chat/completions',
-                             api_key=os.getenv("OPENAI_API_KEY"),
-                             max_requests_per_minute=1500,
-                             max_tokens_per_minute=90000,
-                             token_encoding_name='cl100k_base',
-                             max_attempts=5,
-                             logging_level=20)
+                              request_url='https://api.openai.com/v1/chat/completions',
+                              api_key=os.getenv("OPENAI_API_KEY"),
+                              max_requests_per_minute=1500,
+                              max_tokens_per_minute=90000,
+                              token_encoding_name='cl100k_base',
+                              max_attempts=5,
+                              logging_level=20)
 
     chain_start_time = time.monotonic()
     asyncio.run(oai.process_api_requests_from_file())
@@ -136,10 +136,10 @@ class Ingest():
         # no useful text, it replied with a summary of "None"
         continue 
       if text is not None:
-        filename = str(results[i][-1].get('readable_filename', ''))
-        course_name = str(results[i][-1].get('course_name', ''))
-        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))
-        s3_path = str(results[i][-1].get('s3_path', ''))
+        filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
+        course_name = str(results[i][-1].get('course_name', ''))  # type: ignore
+        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))  # type: ignore
+        s3_path = str(results[i][-1].get('s3_path', ''))  # type: ignore
         doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
         # summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
         summary = f"\nSummary: {text}"
@@ -153,79 +153,8 @@ Now please respond to my query: {user_question}"""
 
     return stuffed_prompt
 
-  # def log_to_arize(self, course_name: str, user_question: str, llm_completion: str) -> str:
-    """
-    Use LangChain map_reduce_QA to implement this in parallel.
-    Write a function that takes in a question, and returns a very long "stuffed" prompt for GPT-4 to answer on the front-end. (You only construct the prompt for GPT-4, you don't actually return the answer).
-    
-    References:
-    Example & Docs: https://python.langchain.com/en/latest/modules/chains/index_examples/question_answering.html#the-map-reduce-chain
-    Code: https://github.com/hwchase17/langchain/blob/4092fd21dcabd1de273ad902fae2186ae5347e03/langchain/chains/question_answering/map_reduce_prompt.py#L11 
-    """
-    return f"TODO: Implement me! You asked for: {course_name}"
-  #   import pandas as pd
 
-  #   features = {
-  #       'state': 'wa',
-  #       'city': 'seattle',
-  #       'merchant_name': 'Starbucks Coffee',
-  #       'pos_approved': True,
-  #       'item_count': 2,
-  #       'merchant_type': 'coffee shop',
-  #       'charge_amount': 22.11,
-  #   }
-
-  #   #example tags
-  #   tags = {
-  #       'age': 21,
-  #       'zip_code': '94610',
-  #       'device_os': 'MacOS',
-  #       'server_node_id': 120,
-  #   }
-
-  #   #example embeddings
-  #   embedding_features = {
-  #       # 'image_embedding': Embedding(
-  #       #     vector=np.array([1.0, 2, 3]), # type: ignore
-  #       #     link_to_data='https://my-bucket.s3.us-west-2.amazonaws.com/puppy.png',
-  #       # ),
-  #       'prompt':
-  #           Embedding(
-  #               vector=pd.Series([6.0, 1.0, 2.0, 6.0]),  # type: ignore
-  #               data='slightly different This is a test sentence',
-  #           ),
-  #       'completion':
-  #           Embedding(
-  #               vector=pd.Series([15.0, 10.0, 1.0, 9.0]),  # type: ignore
-  #               data=['slightly', 'different', 'This', 'is', 'a', 'sample', 'token', 'array'],
-  #           ),
-  #   }
-
-  #   #log the prediction
-  #   response = self.arize_client.log(
-  #       prediction_id=str(uuid.uuid4()),
-  #       prediction_label=llm_completion,
-  #       model_id='kas-model-1',
-  #       # model_type=ModelTypes.GENERATIVE_LLM, # I think this is a bug.
-  #       model_type=ModelTypes.SCORE_CATEGORICAL,
-  #       environment=Environments.PRODUCTION,
-  #       model_version='v1',
-  #       prediction_timestamp=int(datetime.datetime.now().timestamp()),
-  #       features=features,
-  #       embedding_features=embedding_features,
-  #       tags=tags,
-  #   )
-
-  #   ## Listen to response code to ensure successful delivery
-  #   res = response.result()
-  #   if res.status_code == 200:
-  #     print('Success sending Prediction!')
-  #     return "Success logging to Arize!"
-  #   else:
-  #     print(f'Log failed with response code {res.status_code}, {res.text}')
-  #     return f'Log failed with response code {res.status_code}, {res.text}'
-  
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, clean_text: Optional[List[Tuple[str, List]]] = None) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
 
@@ -233,11 +162,18 @@ Now please respond to my query: {user_question}"""
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
 
-      for s3_path in s3_paths:
+      for i, s3_path in enumerate(s3_paths):
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
 
-        if s3_path.endswith('.pdf'):
+        if clean_text:
+          # TODO: remove `clean_text` (it's a hack) and just ingest the actual file type, in this case HTML
+          ret = self._ingest_clean(clean_text[i], s3_path, course_name)
+          if ret != "Success":
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append(s3_path)
+        elif s3_path.endswith('.pdf'):
           ret = self._ingest_single_pdf(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
@@ -280,6 +216,29 @@ Now please respond to my query: {user_question}"""
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
       return success_status
 
+  def _ingest_clean(self, data: Tuple[str, List], s3_path: str, course_name: str) -> str:
+    try:
+      title = str(data[1][1].title.string).strip()
+      url = data[0]
+      metadata: List[Dict[str, Any]] = [{
+      'course_name': course_name,
+      's3_path': s3_path,
+      'readable_filename': title,
+      'url': url, 
+      'pagenumber_or_timestamp': ''
+      }]
+      text = [data[1][0]]
+      
+      print(f"In _ingest_clean: {text}")
+      print(f"In _ingest_clean: {metadata}")
+      success_or_failure = self.split_and_upload(text, metadata)
+      print(success_or_failure)
+      print(f"In _ingest_clean -- working??: {success_or_failure}")
+      return success_or_failure
+    except Exception as e:
+      print(f"ERROR IN HTML INGEST: {e}")
+      return f"Error: {e}"
+  
   def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
     """
     Ingest a single video file from S3.
@@ -329,7 +288,7 @@ Now please respond to my query: {user_question}"""
             # transcribe the split file and store the text in dictionary
             with open(split_tmp.name, "rb") as f:
                 transcript = openai.Audio.transcribe("whisper-1", f)
-            transcript_list.append(transcript['text'])
+            transcript_list.append(transcript['text'])  # type: ignore
           start += split_segment
           split_segment += split_segment
           count += 1
@@ -338,11 +297,10 @@ Now please respond to my query: {user_question}"""
         # transcribe the full audio
         with open(webm_tmpfile.name, "rb") as f:
           transcript = openai.Audio.transcribe("whisper-1", f)
-        transcript_list.append(transcript['text'])
+        transcript_list.append(transcript['text']) # type: ignore
       
       os.remove(webm_tmpfile.name)
 
-      #print("transcript: ", transcript_list)
       text = [txt for txt in transcript_list]
       metadatas: List[Dict[str,Any]] = [
         {
@@ -568,7 +526,7 @@ Now please respond to my query: {user_question}"""
     try:
       results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}", check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # capture_output=True,
       dl_results_path = os.path.join('coursera-dl', coursera_course_name)
-      s3_paths: List | None = upload_data_files_to_s3(course_name, dl_results_path)
+      s3_paths: Union[List, None] = upload_data_files_to_s3(course_name, dl_results_path)
 
       if s3_paths is None:
         return "Error: No files found in the coursera-dl directory"

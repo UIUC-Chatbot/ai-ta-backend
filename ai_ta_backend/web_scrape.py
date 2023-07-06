@@ -3,7 +3,7 @@ import re
 import time
 from tempfile import NamedTemporaryFile
 
-import boto3
+import boto3  # type: ignore
 import requests
 from bs4 import BeautifulSoup
 
@@ -29,7 +29,7 @@ def valid_url(url):
 # Function gets titles of urls and the urls themselves
 def get_urls_dict(url:str):
 
-    site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0)
+    site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
 
     # Gets rid of double slashes
     url = re.sub(pattern=r"https:\/\/", repl="", string=url)
@@ -254,7 +254,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       titles.append(placeholder_title)
       print(f"URL is missing a title, using this title instead: {placeholder_title}")
   
-  clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles]
+  clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles] # type: ignore
   path_name = []
   counter = 0
   for value in clean:
