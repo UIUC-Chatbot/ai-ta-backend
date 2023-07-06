@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import time
@@ -11,7 +10,6 @@ from flask_cors import CORS
 from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend.web_scrape import main_crawler
 
 app = Flask(__name__)
 CORS(app)
@@ -31,6 +29,7 @@ def index() -> JSON:
       JSON: _description_
   """
   return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
+
 
 @app.route('/coursera', methods=['GET'])
 def coursera() -> JSON:
@@ -140,21 +139,16 @@ def getContextStuffedPrompt():
     a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
   """
   print("In /getContextStuffedPrompt")
+  
 
   ingester = Ingest()
-  search_query: List[str] | str = request.args.get('search_query')
-  course_name: List[str] | str = request.args.get('course_name')
-  top_n: int = int(request.args.get('top_n'))
-  top_k_to_search: int = int(request.args.get('top_k_to_search'))
-  # print all input params
-  print(f"search_query: {search_query}")
-  print(f"course_name: {course_name}")
-  print(f"top_n: {top_n}")
-  print(f"top_k_to_search: {top_k_to_search}")
+  search_query: str = str(request.args.get('search_query'))      # type: ignore
+  course_name: str = str(request.args.get('course_name'))         # type: ignore 
+  top_n: int = int(request.args.get('top_n'))                     # type: ignore
+  top_k_to_search: int = int(request.args.get('top_k_to_search')) # type: ignore
 
   start_time = time.monotonic()
   stuffed_prompt = ingester.get_context_stuffed_prompt(search_query, course_name, top_n, top_k_to_search)
-  print("stuffed_prompt: ", stuffed_prompt)
   print(f"⏰ Runtime of EXTREME prompt stuffing: {(time.monotonic() - start_time):.2f} seconds")
   response = jsonify({"prompt": stuffed_prompt})
 
@@ -211,6 +205,7 @@ def log():
 
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/web-scrape', methods=['GET'])
 def scrape():
