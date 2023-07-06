@@ -138,6 +138,9 @@ class Ingest():
     all_texts = ""
     separator = '---'  # between each context
     for i, text in enumerate(results):
+      if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
+        # no useful text, it replied with a summary of "None"
+        continue 
       if text is not None:
         filename = str(results[i][-1].get('readable_filename', ''))
         course_name = str(results[i][-1].get('course_name', ''))
@@ -145,19 +148,7 @@ class Ingest():
         s3_path = str(results[i][-1].get('s3_path', ''))
         doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
         summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
-        all_texts += doc + summary + separator + '\n'
-    for i, text in enumerate(results):
-      # todo: if summary in ['None.', 'None']:
-        # print("❌ Skipping context: ", summary)
-        # continue
-      if text is not None:
-        filename = str(results[i][-1].get('readable_filename', ''))
-        course_name = str(results[i][-1].get('course_name', ''))
-        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))
-        s3_path = str(results[i][-1].get('s3_path', ''))
-        doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
-        summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
-        all_texts += doc + summary + separator + '\n'
+        all_texts += doc + summary + '\n' + separator + '\n'
 
     stuffed_prompt = """Please answer the following question. 
     Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant. 
