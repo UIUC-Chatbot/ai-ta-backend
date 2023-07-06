@@ -279,9 +279,9 @@ class Ingest():
       'url': url, 
       'pagenumber_or_timestamp': ''
       }]
+      chunks, chunk_size = len(data[1][0]), len(data[1][0])//2
+      text = [data[1][0][i:i+chunk_size] for i in range(0, chunks, chunk_size)]
 
-      text = [data[1][0]]
-      
       print(f"In _ingest_clean: {text}")
       print(f"In _ingest_clean: {metadata}")
 
