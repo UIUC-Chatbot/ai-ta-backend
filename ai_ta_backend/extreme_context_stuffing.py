@@ -265,10 +265,6 @@ def extract_context_from_results(results: List[Any]) -> List[str]:
   total_prompt_tokens = 0
   total_completion_tokens = 0
 
-  print("Results, end of main: ", results)
-  print("-"*50)
-
-  # jsonObject = json.loads(oai.results)
   for element in results:
     for item in element:
       if 'choices' in item:

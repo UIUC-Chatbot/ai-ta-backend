@@ -132,7 +132,10 @@ class Ingest():
     chain_start_time = time.monotonic()
     asyncio.run(oai.process_api_requests_from_file())
     results: list[str] = oai.results
-    print(f"⏰ Extreme context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+    print(f"⏰ EXTREME context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+    
+    print(f"Cleaned results: {oai.cleaned_results}")
+    
 
     all_texts = ""
     separator = '---'  # between each context
@@ -150,11 +153,11 @@ class Ingest():
         summary = f"\nSummary: {text}"
         all_texts += doc + summary + '\n' + separator + '\n'
 
-    stuffed_prompt = """Please answer the following question. 
-    Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant. 
-    It's good to quote the official course materials directly, something like 'from ABS source it says XYZ'. Feel free to say you don't know. 
-    \nHere's a few passages of high quality official course materials:\n %s 
-    \nNow please respond to my query: %s """ % (all_texts, user_question)
+    stuffed_prompt = f"""Please answer the following question.
+Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant.
+It's good to quote the official course materials directly, something like 'from ABS source it says XYZ'. Feel free to say you don't know.
+Here's a few passages of high quality official course materials:\n{all_texts}
+Now please respond to my query: {user_question}"""
 
     return stuffed_prompt
 
