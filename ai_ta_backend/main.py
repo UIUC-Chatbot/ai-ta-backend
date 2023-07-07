@@ -6,6 +6,7 @@ from typing import Any, List
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from h11 import Response
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
 
@@ -42,6 +43,20 @@ def coursera() -> JSON:
   
   ingester = Ingest()
   results = ingester.ingest_coursera(coursera_course_name, course_name) # type: ignore
+  response = jsonify(results)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/delete-entire-course', methods=['GET'])
+def delete_entire_course():
+  try:
+    course_name: str = request.args.get('course_name') # type: ignore
+    # coursera_course_name: str = request.args.get('coursera_course_name') # type: ignore
+  except Exception as e:
+    print(f"No course name provided: {e}")
+  
+  ingester = Ingest()
+  results = ingester.delete_entire_course(course_name) # type: ignore
   response = jsonify(results)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
