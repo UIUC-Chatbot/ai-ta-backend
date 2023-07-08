@@ -6,10 +6,12 @@ from typing import Any, List
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from h11 import Response
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
+from ai_ta_backend.web_scrape import main_crawler
 
 app = Flask(__name__)
 CORS(app)
@@ -41,6 +43,20 @@ def coursera() -> JSON:
   
   ingester = Ingest()
   results = ingester.ingest_coursera(coursera_course_name, course_name) # type: ignore
+  response = jsonify(results)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/delete-entire-course', methods=['GET'])
+def delete_entire_course():
+  try:
+    course_name: str = request.args.get('course_name') # type: ignore
+    # coursera_course_name: str = request.args.get('coursera_course_name') # type: ignore
+  except Exception as e:
+    print(f"No course name provided: {e}")
+  
+  ingester = Ingest()
+  results = ingester.delete_entire_course(course_name) # type: ignore
   response = jsonify(results)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -203,6 +219,27 @@ def log():
   success_or_failure = ingester.log_to_arize('course_name', 'test', 'completion')
   response = jsonify({"outcome": success_or_failure})
 
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/web-scrape', methods=['GET'])
+def scrape():
+  url: str = request.args.get('url')
+  max_urls:int = request.args.get('max_urls')
+  max_depth:int = request.args.get('max_depth')
+  timeout:int = request.args.get('timeout')
+  course_name: List[str] | str = request.args.get('course_name')
+
+  # print all input params
+  print(f"Url: {url}")
+  print(f"Max Urls: {max_urls}")
+  print(f"Max Depth: {max_depth}")
+  print(f"Timeout in Seconds ⏰: {timeout}")
+
+  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout)
+
+  response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 

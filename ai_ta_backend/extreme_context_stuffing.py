@@ -103,6 +103,7 @@ import re
 import time
 from dataclasses import (  # for storing API inputs, outputs, and metadata
     dataclass, field)
+from typing import Any, List
 
 import aiohttp  # for making API calls concurrently
 import tiktoken  # for counting tokens
@@ -122,8 +123,9 @@ class OpenAIAPIProcessor:
     self.token_encoding_name = token_encoding_name
     self.max_attempts = max_attempts
     self.logging_level = logging_level
+    self.input_prompts_list: List[dict] = input_prompts_list
     self.results = []
-    self.input_prompts_list: list[dict] = input_prompts_list
+    self.cleaned_results: List[str] = []
 
   async def process_api_requests_from_file(self):
     """Processes API requests in parallel, throttling to stay under rate limits."""
@@ -256,7 +258,32 @@ class OpenAIAPIProcessor:
       openai_completion = task.result()
       self.results.append(openai_completion)
 
-    return self.results
+    self.cleaned_results: List[str] = extract_context_from_results(self.results)
+
+def extract_context_from_results(results: List[Any]) -> List[str]:
+  assistant_contents = []
+  total_prompt_tokens = 0
+  total_completion_tokens = 0
+
+  for element in results:
+    for item in element:
+      if 'choices' in item:
+        for choice in item['choices']:
+          if choice['message']['role'] == 'assistant':
+            assistant_contents.append(choice['message']['content'])
+            total_prompt_tokens += item['usage']['prompt_tokens']
+            total_completion_tokens += item['usage']['completion_tokens']
+
+  # print("Assistant Contents:", assistant_contents)
+  print("Total Prompt Tokens:", total_prompt_tokens)
+  print("Total Completion Tokens:", total_completion_tokens)
+  turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
+  print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
+
+  gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
+  print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
+  print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
+  return assistant_contents #, total_prompt_tokens, total_completion_tokens
 
 
 # dataclasses
