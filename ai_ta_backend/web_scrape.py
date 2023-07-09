@@ -325,5 +325,5 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
 
   print("Begin Ingest")
   success_fail_dict = ingester.bulk_ingest(paths, course_name)
-
+  print("Finished Ingest")
   return success_fail_dict
