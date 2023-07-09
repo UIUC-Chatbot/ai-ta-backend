@@ -215,8 +215,7 @@ def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
                 for i in range(pdf_counts[value]-1):
                     row[3].remove(value)
                     pdf_counts[value] -= 1
-    print(pdf_counts.values())
-    print(counts.values())
+
     print("Scraped", len(crawled), "urls out of", max_urls)
 
     return crawled
