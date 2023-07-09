@@ -219,7 +219,10 @@ Now please respond to my query: {user_question}"""
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       text = response['Body'].read().decode('utf-8')
-      title = s3_path.replace("_", " ")
+      title = s3_path.replace("/courses/"+course_name, "")
+      title = title.replace(".html", "")
+      title = title.replace("_", " ")
+      
       # url = text.url.string
       text = [text]
       metadata: List[Dict[str, Any]] = [{
