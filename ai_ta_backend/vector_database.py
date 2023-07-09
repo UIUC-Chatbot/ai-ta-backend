@@ -154,7 +154,7 @@ Now please respond to my query: {user_question}"""
     return stuffed_prompt
 
 
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, clean_text: Optional[List[Tuple[str, List]]] = None) -> Dict[str, List[str]]:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
 
@@ -162,13 +162,12 @@ Now please respond to my query: {user_question}"""
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
 
-      for i, s3_path in enumerate(s3_paths):
+      for s3_path in s3_paths:
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
 
-        if clean_text:
-          # TODO: remove `clean_text` (it's a hack) and just ingest the actual file type, in this case HTML
-          ret = self._ingest_clean(clean_text[i], s3_path, course_name)
+        if s3_path.endswith('.html'):
+          ret = self._ingest_html(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
@@ -216,24 +215,26 @@ Now please respond to my query: {user_question}"""
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
       return success_status
 
-  def _ingest_clean(self, data: Tuple[str, List], s3_path: str, course_name: str) -> str:
+  def _ingest_html(self, s3_path: str, course_name: str) -> str:
     try:
-      title = str(data[1][1].title.string).strip()
-      url = data[0]
+      response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
+      text = response['Body'].read().decode('utf-8')
+      title = s3_path.replace("_", " ")
+      # url = text.url.string
+      text = [text]
       metadata: List[Dict[str, Any]] = [{
       'course_name': course_name,
       's3_path': s3_path,
       'readable_filename': title,
-      'url': url, 
+      # 'url': url, 
       'pagenumber_or_timestamp': ''
       }]
-      text = [data[1][0]]
       
-      print(f"In _ingest_clean: {text}")
-      print(f"In _ingest_clean: {metadata}")
+      # print(f"In _ingest_clean: {text}")
+      # print(f"In _ingest_clean: {metadata}")
       success_or_failure = self.split_and_upload(text, metadata)
       print(success_or_failure)
-      print(f"In _ingest_clean -- working??: {success_or_failure}")
+      # print(f"In _ingest_clean -- working??: {success_or_failure}")
       return success_or_failure
     except Exception as e:
       print(f"ERROR IN HTML INGEST: {e}")

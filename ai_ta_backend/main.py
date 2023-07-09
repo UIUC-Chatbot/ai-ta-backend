@@ -232,6 +232,7 @@ def scrape():
   course_name: List[str] | str = request.args.get('course_name')
 
   # print all input params
+  print('\n')
   print(f"Url: {url}")
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")

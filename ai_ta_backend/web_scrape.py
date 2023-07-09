@@ -6,12 +6,10 @@ from tempfile import NamedTemporaryFile
 import boto3  # type: ignore
 import requests
 from bs4 import BeautifulSoup
-
 from ai_ta_backend.vector_database import Ingest
 
 # Check if the url is valid
 # Else return the status code
-
 def valid_url(url):
 	try:
 		# pass the url into
@@ -138,57 +136,91 @@ def scraper(url:str):
     r = requests.get(url, cookies={'__hs_opt_out': 'no'})
     soup = BeautifulSoup(r.text,"html.parser")
     
-    for tag in soup(['header', 'footer', 'nav', 'aside']):
-        tag.decompose()
+    # for tag in soup(['header', 'footer', 'nav', 'aside']):
+    #     tag.decompose()
     
     return soup
 
-def pdf_scraper(soup:BeautifulSoup): 
-    links = soup.find_all('a')
-    pdfs = [] 
-    for link in links:
-        if ('.pdf' in link.get('href', [])):
 
-            # Get response object for link
-            response = requests.get(link.get('href'))
-            pdfs.append(response.content)
-    return pdfs
+def pdf_scraper(soup:BeautifulSoup): 
+  links = soup.find_all('a')
+  pdf = []
+  try:
+    for link in links:
+      if ('.pdf' in link.get('href', [])):
+        # Get response object for link
+        response = requests.get(link.get('href'))
+        content =  response.content
+        if f"<!DOCTYPE html>" not in str(content):
+          pdf.append(content)
+          print("PDF scraped:", link.get('href'))
+  except Exception as e:
+    print("PDF scrape error:", e)
+
+  return list(set(pdf))
 
 
 # Uses all of above functions to crawl a site
 def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
     all_sites = site_map(site, max_urls, max_depth)
-    crawled = {}
+    crawled = []
     invalid_urls = []
 
     for site in all_sites:
         try:
             soup = scraper(site)
-            crawled[site] = []
-            crawled[site].append(soup.get_text())
-            crawled[site].append(soup)
-            crawled[site].append(pdf_scraper(soup))
-            time.sleep(timeout)
+            site_data = []
+            site_data.append(site)
+            site_data.append(soup.get_text())
+            site_data.append(soup)
             print("Scraped:", site)
+            site_data.append(pdf_scraper(soup))
+            crawled.append(site_data)
+            time.sleep(timeout)
 
         except Exception as e:
             print("Url Not Scraped!!!", "Exception:", e)
             invalid_urls.append(site)
             continue
-    
-    # Delete repeated values
-    repeated = [value[0] for value in list(crawled.values())]
+        
+    # Delete repeated sites, with different URLs and keeping one
+    repeated = [value[2] for value in crawled]
+    counts = {value:repeated.count(value) for value in repeated}
+  
     for value in repeated:
-        if repeated.count(value) > 1:
-            for key in crawled.keys():
-                if crawled[key][0] == value:
-                    del crawled[key]
-                    repeated.remove(value)
-                    break
+        for i, row in enumerate(crawled):
+            if counts[value] > 1:
+                if row[2] == value:
+                  counts[value] -= 1
+                  del crawled[i]
+            else:
+                break
+              
+    # Delete repeated PDFs and keeping one
+    pdf_repeat = []
+    for value in crawled:
+        pdf_repeat.extend(value[3])
+    pdf_counts = {value:pdf_repeat.count(value) for value in pdf_repeat}
 
+    for value in pdf_repeat:
+        for row in crawled:
+            count = row[3].count(value)
+            if pdf_counts[value] == 1:
+                break
+            elif pdf_counts[value] > count:
+                for i in range(count):
+                    row[3].remove(value)
+                    pdf_counts[value] -= 1
+            else:
+                for i in range(pdf_counts[value]-1):
+                    row[3].remove(value)
+                    pdf_counts[value] -= 1
+    print(pdf_counts.values())
+    print(counts.values())
     print("Scraped", len(crawled), "urls out of", max_urls)
 
-    return list(crawled.items())
+    return crawled
+
 # Download a course using its url
 def mit_course_download(url:str, save_path:str, ):
     base = "https://ocw.mit.edu"
@@ -224,6 +256,7 @@ def mit_course_download(url:str, save_path:str, ):
 # GET RID OF COOKIES
 
 def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1):
+  print("\n")
   max_urls = int(max_urls)
   max_depth = int(max_depth)
   timeout = int(timeout)
@@ -238,16 +271,14 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
     )
-  print(len(data))
-
   # Clean some keys for a proper file name
   # todo: have a default title
-    # titles = [value[1][1].title.string for value in data]
-    
+  # titles = [value[1][1].title.string for value in data]
+
   titles = []
   for value in data:
     try:
-      titles.append(value[1][1].title.string)  
+      titles.append(value[2].title.string)  
     except AttributeError as e:
       # if no title
       placeholder_title = re.findall(pattern=r'[a-zA-Z0-9.]*[a-z]', string=value[0])[1]
@@ -267,12 +298,14 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       path_name.append(value)
       counter += 1
 
+
   # Upload each html to S3
   print("Uploading", len(data), "files to S3")
   paths = []
   for i, key in enumerate(data):
+
     with NamedTemporaryFile(suffix=".html") as temp_html:
-      temp_html.write(key[1][1].encode('utf-8'))
+      temp_html.write(key[2].encode('utf-8'))
       temp_html.seek(0)
       s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html"
       paths.append(s3_upload_path)
@@ -280,9 +313,9 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
         print("Uploading html to S3")
         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
 
-    if key[1][2] != []:
+    if key[3] != []:
       with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
-        for pdf in key[1][2]:
+        for pdf in key[3]:
           temp_pdf.write(pdf)
           temp_pdf.seek(0) 
           s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
@@ -292,6 +325,6 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
           ingester.bulk_ingest(s3_upload_path, course_name)
 
   print("Begin Ingest")
-  success_fail_dict = ingester.bulk_ingest(paths, course_name, clean_text=data)
+  success_fail_dict = ingester.bulk_ingest(paths, course_name)
 
   return success_fail_dict
