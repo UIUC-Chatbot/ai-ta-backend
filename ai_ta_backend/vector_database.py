@@ -40,6 +40,8 @@ from ai_ta_backend.aws import upload_data_files_to_s3
 
 import openai
 from pydub import AudioSegment
+import mimetypes
+
 
 # from regex import F
 # from sqlalchemy import JSON
@@ -218,20 +220,27 @@ class Ingest():
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
 
+        # download and check mimetype of file
+        ext = Path(s3_path).suffix
+        with NamedTemporaryFile(suffix=ext) as tmpfile:
+          self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+          mime_type = mimetypes.guess_type(tmpfile.name)[0]
+          category, subcategory = mime_type.split('/')
+
+          
         if s3_path.endswith('.pdf'):
           ret = self._ingest_single_pdf(s3_path, course_name)
+
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.txt'):
           ret = self._ingest_single_txt(s3_path, course_name)
-          #print('Not yet implemented')
-          #ret = "failure"
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
-            success_status['success_ingest'].append("TXT -- Not yet implemented: " + s3_path)
+            success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.srt'):
           ret = self._ingest_single_srt(s3_path, course_name)
           if ret != "Success":
@@ -250,7 +259,7 @@ class Ingest():
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.mp4') or s3_path.endswith('.mov') or s3_path.endswith('.webm') or s3_path.endswith('.wav'):
+        elif category == 'video':
           ret = self._ingest_single_video(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
@@ -321,7 +330,6 @@ class Ingest():
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
-
         ### READ OCR of PDF
         print("Right before opening pdf")
         doc = fitz.open(pdf_tmpfile.name)  # type: ignore
