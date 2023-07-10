@@ -38,8 +38,9 @@ def get_urls_dict(url:str):
 
     r = requests.get(url)
     s = BeautifulSoup(r.text,"html.parser")
+    body = s.find("body")
 
-    for i in s.find_all("a"):
+    for i in body.find_all("a"):
 
         # text/label inside the tag for url
         text = i.text
@@ -136,8 +137,8 @@ def scraper(url:str):
     r = requests.get(url, cookies={'__hs_opt_out': 'no'})
     soup = BeautifulSoup(r.text,"html.parser")
     
-    # for tag in soup(['header', 'footer', 'nav', 'aside']):
-    #     tag.decompose()
+    for tag in soup(['header', 'footer', 'nav', 'aside']):
+        tag.decompose()
     
     return soup
 
