@@ -563,8 +563,10 @@ Now please respond to my query: {user_question}"""
         metadatas (List[Dict[str, Any]]): _description_
     """
     print("text:", texts)
+    print("\n")
+    print("metadata:", metadatas)
     print("\n\n")
-    
+
     assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
 
     try:
