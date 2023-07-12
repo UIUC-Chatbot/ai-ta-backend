@@ -11,7 +11,7 @@ from flask_cors import CORS
 from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend.web_scrape import main_crawler
+from ai_ta_backend.web_scrape import main_crawler, mit_course_download
 
 app = Flask(__name__)
 CORS(app)
@@ -232,6 +232,15 @@ def scrape():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/mit-download', methods=['GET'])
+def mit_download_course():
+  url:str = request.args.get('url')
+  course_name:str = request.args.get('course_name')
+  local_dir:str = request.args.get('local_dir')
+
+  success_fail = mit_course_download(url, course_name,local_dir)
+
+  return success_fail
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=8000))

@@ -1,18 +1,17 @@
+import asyncio
 import inspect
-import json
+# import json
 import os
-import re
 import shutil
 import subprocess
 import time
-# from xml.dom.minidom import Document  # PDF to text
-# from re import L, T
 import traceback
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryFile
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from tempfile import NamedTemporaryFile  # TemporaryFile
+from typing import Any, Dict, List, Optional, Tuple, Union  # Literal
 
 import boto3
+# import requests
 import fitz
 import openai
 import requests
@@ -21,13 +20,11 @@ import supabase
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
 # from arize.utils import ModelTypes
 # from arize.utils.ModelTypes import GENERATIVE_LLM
-# from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
-#                                Metrics, ModelTypes, Schema)
-from dotenv import load_dotenv
+# # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
+# #                                Metrics, ModelTypes, Schema)
 from flask import jsonify, request
 from langchain import LLMChain, OpenAI, PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
-from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
                                         SRTLoader,
                                         UnstructuredPowerPointLoader)
@@ -40,15 +37,8 @@ from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 
 from ai_ta_backend.aws import upload_data_files_to_s3
+# from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 
-# from regex import F
-# from sqlalchemy import JSON
-
-# load API keys from globally-availabe .env file
-
-# load_dotenv(dotenv_path='.env', override=True)
-# print(os.environ['OPENAI_API_KEY'])
-# print(os.getenv('QDRANT_URL'))
 
 class Ingest():
   """
@@ -84,6 +74,8 @@ class Ingest():
         supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
     # self.arize_client = Client(space_key=os.getenv('ARIZE_SPACE_KEY'), api_key=os.getenv('ARIZE_API_KEY'))  # type: ignore
+    self.supabase_client = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
+                                                  supabase_key=os.getenv('SUPABASE_API_KEY')) # type: ignore
 
     return None
 
@@ -94,119 +86,75 @@ class Ingest():
       user_question (str)
       course_name (str) : used for metadata filtering
     Returns : str
-      a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
-     """
+      a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
+    """
     # MMR with metadata filtering based on course_name
     vec_start_time = time.monotonic()
-    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search, filter={"course_name": course_name})
-    print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search} filter='course_name': {course_name}): {(time.monotonic() - vec_start_time):.2f} seconds")
+    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
+    print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
     
-    prompt_template = """Provide a comprehensive summary of the given text, based on the question.
-    {text}
-    Question : {question}
-    The summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.
-    Make use of direct quotes from the text.
-    Feel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question. 
-    If the text does not provide information to answer the question, please write "None" and nothing else. If it's not relevant, say "None" and nothing else.
-    """
-    
-    PROMPT = PromptTemplate(template=prompt_template, input_variables=["text", "question"])
-    # Max batch size is 20 on Openai (June 2023)
-    
-    # chain = load_summarize_chain(ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo"), #  batch_size=min(20, len(found_docs))
-    chain = load_summarize_chain(OpenAI(temperature=0, model_name="text-davinci-003", batch_size=min(20, len(found_docs))),
-                                 chain_type="map_reduce",
-                                 return_intermediate_steps=True,
-                                 map_prompt=PROMPT,
-                                 combine_prompt=PROMPT,
-                                 verbose=False)
+    requests = []
+    for i, doc in enumerate(found_docs):
+      dictionary = {
+          "model": "gpt-3.5-turbo",
+          "messages": [{
+              "role": "system",
+              "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+          }, {
+              "role":
+                  "user",
+              "content":
+                  f"Provide a comprehensive summary of the given text, based on this question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write 'None' and nothing else.",
+          }],
+          "n": 1,
+          "max_tokens": 600,
+          "metadata": doc.metadata
+      }
+      requests.append(dictionary)
+
+    # oai = OpenAIAPIProcessor(input_prompts_list=requests,
+    #                           request_url='https://api.openai.com/v1/chat/completions',
+    #                           api_key=os.getenv("OPENAI_API_KEY"),
+    #                           max_requests_per_minute=1500,
+    #                           max_tokens_per_minute=90000,
+    #                           token_encoding_name='cl100k_base',
+    #                           max_attempts=5,
+    #                           logging_level=20)
+
     chain_start_time = time.monotonic()
-    results = chain({"input_documents": found_docs, "question": user_question}, return_only_outputs=True)  #get results
-    print(f"⏰ map_reduce chain runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+    asyncio.run(oai.process_api_requests_from_file())
+    results: list[str] = oai.results
+    print(f"⏰ EXTREME context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+    
+    print(f"Cleaned results: {oai.cleaned_results}")
+    
 
-    #to return long stuffed prompt
+    all_texts = ""
     separator = '---'  # between each context
-    all_texts = '---\n'  # start with separator
-    for doc, summary in zip(found_docs, results["intermediate_steps"]):
-      if summary in ['None.', 'None']:
-        print("❌ Skipping context: ", summary)
-        continue
-      doc_text = f"Document: {doc.metadata['readable_filename']}, page number (if exists): {doc.metadata['pagenumber_or_timestamp']}\n"
-      summary_text = f"Summary: {summary}\n"
-      all_texts += doc_text + summary_text + separator + '\n'
+    for i, text in enumerate(oai.cleaned_results):
+      if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
+        # no useful text, it replied with a summary of "None"
+        continue 
+      if text is not None:
+        filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
+        course_name = str(results[i][-1].get('course_name', ''))  # type: ignore
+        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))  # type: ignore
+        s3_path = str(results[i][-1].get('s3_path', ''))  # type: ignore
+        doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
+        # summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
+        summary = f"\nSummary: {text}"
+        all_texts += doc + summary + '\n' + separator + '\n'
 
-    stuffed_prompt = """Please answer the following question. 
-    Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant. 
-    It's good to quote the official course materials directly, something like 'from ABS source it says XYZ'. Feel free to say you don't know. 
-    \nHere's a few passages of high quality official course materials:\n %s 
-    \nNow please respond to my query: %s """ % (all_texts, user_question)
+    stuffed_prompt = f"""Please answer the following question.
+Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant.
+It's good to quote the official course materials directly, something like 'from ABS source it says XYZ'. Feel free to say you don't know.
+Here's a few passages of high quality official course materials:\n{all_texts}
+Now please respond to my query: {user_question}"""
 
     return stuffed_prompt
 
-  # def log_to_arize(self, course_name: str, user_question: str, llm_completion: str) -> str:
-  #   import pandas as pd
 
-  #   features = {
-  #       'state': 'wa',
-  #       'city': 'seattle',
-  #       'merchant_name': 'Starbucks Coffee',
-  #       'pos_approved': True,
-  #       'item_count': 2,
-  #       'merchant_type': 'coffee shop',
-  #       'charge_amount': 22.11,
-  #   }
-
-  #   #example tags
-  #   tags = {
-  #       'age': 21,
-  #       'zip_code': '94610',
-  #       'device_os': 'MacOS',
-  #       'server_node_id': 120,
-  #   }
-
-  #   #example embeddings
-  #   embedding_features = {
-  #       # 'image_embedding': Embedding(
-  #       #     vector=np.array([1.0, 2, 3]), # type: ignore
-  #       #     link_to_data='https://my-bucket.s3.us-west-2.amazonaws.com/puppy.png',
-  #       # ),
-  #       'prompt':
-  #           Embedding(
-  #               vector=pd.Series([6.0, 1.0, 2.0, 6.0]),  # type: ignore
-  #               data='slightly different This is a test sentence',
-  #           ),
-  #       'completion':
-  #           Embedding(
-  #               vector=pd.Series([15.0, 10.0, 1.0, 9.0]),  # type: ignore
-  #               data=['slightly', 'different', 'This', 'is', 'a', 'sample', 'token', 'array'],
-  #           ),
-  #   }
-
-  #   #log the prediction
-  #   response = self.arize_client.log(
-  #       prediction_id=str(uuid.uuid4()),
-  #       prediction_label=llm_completion,
-  #       model_id='kas-model-1',
-  #       # model_type=ModelTypes.GENERATIVE_LLM, # I think this is a bug.
-  #       model_type=ModelTypes.SCORE_CATEGORICAL,
-  #       environment=Environments.PRODUCTION,
-  #       model_version='v1',
-  #       prediction_timestamp=int(datetime.datetime.now().timestamp()),
-  #       features=features,
-  #       embedding_features=embedding_features,
-  #       tags=tags,
-  #   )
-
-  #   ## Listen to response code to ensure successful delivery
-  #   res = response.result()
-  #   if res.status_code == 200:
-  #     print('Success sending Prediction!')
-  #     return "Success logging to Arize!"
-  #   else:
-  #     print(f'Log failed with response code {res.status_code}, {res.text}')
-  #     return f'Log failed with response code {res.status_code}, {res.text}'
-
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, clean_text: Optional[List[Tuple[str, List]]] = None) -> Dict[str, List[str]]:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
 
@@ -214,12 +162,12 @@ class Ingest():
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
 
-      for i, s3_path in enumerate(s3_paths):
+      for s3_path in s3_paths:
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
 
-        if clean_text:
-          ret = self._ingest_clean(clean_text[i], s3_path, course_name)
+        if s3_path.endswith('.html'):
+          ret = self._ingest_html(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
@@ -266,33 +214,112 @@ class Ingest():
     except Exception as e:
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
       return success_status
-    
-  def _ingest_clean(self, data: Tuple[str, List], s3_path: str, course_name: str) -> str:
-    try:
-      title = str(data[1][1].title.string).strip()
-      url = data[0]
 
+  def _ingest_html(self, s3_path: str, course_name: str) -> str:
+    try:
+      response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
+      text = response['Body'].read().decode('utf-8')
+      title = s3_path.replace("courses/"+course_name, "")
+      title = title.replace(".html", "")
+      title = title.replace("_", " ")
+
+      # url = text.url.string
+      text = [text]
       metadata: List[Dict[str, Any]] = [{
       'course_name': course_name,
       's3_path': s3_path,
       'readable_filename': title,
-      'url': url, 
+      # 'url': url, 
       'pagenumber_or_timestamp': ''
       }]
-      chunks, chunk_size = len(data[1][0]), len(data[1][0])//2
-      text = [data[1][0][i:i+chunk_size] for i in range(0, chunks, chunk_size)]
-
-      print(f"In _ingest_clean: {text}")
-      print(f"In _ingest_clean: {metadata}")
-
+      
+      # print(f"In _ingest_clean: {text}")
+      # print(f"In _ingest_clean: {metadata}")
       success_or_failure = self.split_and_upload(text, metadata)
       print(success_or_failure)
-      print(f"In _ingest_clean -- working??: {success_or_failure}")
+      # print(f"In _ingest_clean -- working??: {success_or_failure}")
       return success_or_failure
-      # return "Success"
     except Exception as e:
       print(f"ERROR IN HTML INGEST: {e}")
       return f"Error: {e}"
+  
+  def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
+    """
+    Ingest a single video file from S3.
+    """
+    try:
+      # check for file extension
+      file_ext = Path(s3_path).suffix
+      print(file_ext[1:])
+      
+      openai.api_key = os.getenv('OPENAI_API_KEY')
+      transcript_list = []
+      #print(os.getcwd())
+      with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
+        # download from S3 into an video tmpfile
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
+        # extract audio from video tmpfile
+        mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
+        #print("Video file: ", video_tmpfile.name)
+
+      # save the extracted audio as a temporary webm file
+      with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
+        mp4_version.export(webm_tmpfile, format="webm")
+        #print("WEBM file: ", webm_tmpfile.name)
+
+      # check file size
+      file_size = os.path.getsize(webm_tmpfile.name)
+      # split the audio into 25MB chunks
+      if file_size > 26214400:
+        # load the webm file into audio object
+        full_audio = AudioSegment.from_file(webm_tmpfile.name, "webm")
+        file_count = file_size // 26214400 + 1
+        split_segment = 35 * 60 * 1000
+        start = 0
+        count = 0
+
+        while count < file_count:
+          with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
+            #print("Splitting file: ", split_tmp.name)
+            if count == file_count - 1:
+                # last segment
+                audio_chunk = full_audio[start:]
+            else:
+                audio_chunk = full_audio[start:split_segment]
+
+            audio_chunk.export(split_tmp.name, format="webm")
+
+            # transcribe the split file and store the text in dictionary
+            with open(split_tmp.name, "rb") as f:
+                transcript = openai.Audio.transcribe("whisper-1", f)
+            transcript_list.append(transcript['text'])  # type: ignore
+          start += split_segment
+          split_segment += split_segment
+          count += 1
+          os.remove(split_tmp.name)
+      else:
+        # transcribe the full audio
+        with open(webm_tmpfile.name, "rb") as f:
+          transcript = openai.Audio.transcribe("whisper-1", f)
+        transcript_list.append(transcript['text']) # type: ignore
+      
+      os.remove(webm_tmpfile.name)
+
+      text = [txt for txt in transcript_list]
+      metadatas: List[Dict[str,Any]] = [
+        {
+          'course_name': course_name,
+          's3_path': s3_path,
+          'readable_filename': Path(s3_path).name,
+          'pagenumber_or_timestamp': text.index(txt),
+        } for txt in text]
+        
+      self.split_and_upload(texts=text, metadatas=metadatas)
+      return "Success"
+    except Exception as e:
+      print("ERROR IN VIDEO READING ")
+      print(e)
+      return f"Error {e}"
 
   def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
     try:
@@ -356,7 +383,6 @@ class Ingest():
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
 
         ### READ OCR of PDF
-        print("Right before opening pdf")
         doc = fitz.open(pdf_tmpfile.name)  # type: ignore
 
         # improve quality of the image
@@ -417,10 +443,10 @@ class Ingest():
       text = [text]
       metadatas: List[Dict[str,Any]] = [
         {
-          'course_name': course_name,
+          'course_name': course_name, 
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': '1',
+          'pagenumber_or_timestamp': text.index(text), # TODO: does this even work??
         }]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
@@ -430,86 +456,6 @@ class Ingest():
       print(err)
       return err
   
-  def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
-    """
-    Ingest a single video file from S3.
-    """
-    try:
-      # check for file extension
-      file_ext = Path(s3_path).suffix
-      print(file_ext[1:])
-      
-      openai.api_key = os.getenv('OPENAI_API_KEY')
-      transcript_list = []
-      #print(os.getcwd())
-      with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
-        # download from S3 into an video tmpfile
-        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
-        # extract audio from video tmpfile
-        mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
-        #print("Video file: ", video_tmpfile.name)
-
-      # save the extracted audio as a temporary webm file
-      with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
-        mp4_version.export(webm_tmpfile, format="webm")
-        #print("WEBM file: ", webm_tmpfile.name)
-
-      # check file size
-      file_size = os.path.getsize(webm_tmpfile.name)
-      # split the audio into 25MB chunks
-      if file_size > 26214400:
-        # load the webm file into audio object
-        full_audio = AudioSegment.from_file(webm_tmpfile.name, "webm")
-        file_count = file_size // 26214400 + 1
-        split_segment = 35 * 60 * 1000
-        start = 0
-        count = 0
-
-        while count < file_count:
-          with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
-            #print("Splitting file: ", split_tmp.name)
-            if count == file_count - 1:
-                # last segment
-                audio_chunk = full_audio[start:]
-            else:
-                audio_chunk = full_audio[start:split_segment]
-
-            audio_chunk.export(split_tmp.name, format="webm")
-
-            # transcribe the split file and store the text in dictionary
-            with open(split_tmp.name, "rb") as f:
-                transcript = openai.Audio.transcribe("whisper-1", f)
-            transcript_list.append(transcript['text'])
-          start += split_segment
-          split_segment += split_segment
-          count += 1
-          os.remove(split_tmp.name)
-      else:
-        # transcribe the full audio
-        with open(webm_tmpfile.name, "rb") as f:
-          transcript = openai.Audio.transcribe("whisper-1", f)
-        transcript_list.append(transcript['text'])
-      
-      os.remove(webm_tmpfile.name)
-
-      #print("transcript: ", transcript_list)
-      text = [txt for txt in transcript_list]
-      metadatas: List[Dict[str,Any]] = [
-        {
-          'course_name': course_name,
-          's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': text.index(txt),
-        } for txt in text]
-        
-      self.split_and_upload(texts=text, metadatas=metadatas)
-      return "Success"
-    except Exception as e:
-      print("ERROR IN VIDEO READING ")
-      print(e)
-      return f"Error {e}"
-
-    
   def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
     """
     Ingest a single .ppt or .pptx file from S3.
@@ -527,6 +473,7 @@ class Ingest():
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
+            'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '', 
           } for doc in documents]
 
@@ -538,10 +485,35 @@ class Ingest():
       return f"Error {e}"
 
 
+  def list_files_recursively(self, bucket, prefix):
+        all_files = []
+        continuation_token = None
+
+        while True:
+            list_objects_kwargs = {
+                'Bucket': bucket,
+                'Prefix': prefix,
+            }
+            if continuation_token:
+                list_objects_kwargs['ContinuationToken'] = continuation_token
+
+            response = self.s3_client.list_objects_v2(**list_objects_kwargs)
+
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    all_files.append(obj['Key'])
+
+            if response['IsTruncated']:
+                continuation_token = response['NextContinuationToken']
+            else:
+                break
+
+        return all_files
+  
   def ingest_coursera(self, coursera_course_name: str, course_name: str) -> str:
     """ Download all the files from a coursera course and ingest them.
     
-    1. Download the coursera content.
+    1. Download the coursera content. 
     2. Upload to S3 (so users can view it)
     3. Run everything through the ingest_bulk method.
 
@@ -558,7 +530,7 @@ class Ingest():
     try:
       results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}", check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # capture_output=True,
       dl_results_path = os.path.join('coursera-dl', coursera_course_name)
-      s3_paths: List | None = upload_data_files_to_s3(course_name, dl_results_path)
+      s3_paths: Union[List, None] = upload_data_files_to_s3(course_name, dl_results_path)
 
       if s3_paths is None:
         return "Error: No files found in the coursera-dl directory"
@@ -613,6 +585,45 @@ class Ingest():
     except Exception as e:
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
+    
+  def delete_entire_course(self, course_name: str):
+    """Delete entire course.
+    
+    Delete materials from S3, Supabase SQL, Vercel KV, and QDrant vector DB
+
+    Args:
+        course_name (str): _description_
+    """
+    print(f"Deleting entire course: {course_name}")
+    try:
+      # Delete file from S3
+      objects_to_delete = self.s3_client.list_objects(Bucket=os.getenv('S3_BUCKET_NAME'), Prefix=f'courses/{course_name}/')
+      for object in objects_to_delete['Contents']:
+        self.s3_client.delete_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=object['Key'])
+      
+      # Delete from Qdrant
+      # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
+      # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
+      self.qdrant_client.delete(
+          collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
+          points_selector=models.Filter(
+              must=[
+                  models.FieldCondition(
+                      key="metadata.course_name", 
+                      match=models.MatchValue(value=course_name),
+                  ),
+              ]
+          ),
+      )
+      
+      # Delete from Supabase
+      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>course_name', course_name).execute()
+      print("supabase response: ", response)
+      return "Success"
+    except Exception as e:
+      err: str = f"ERROR IN delete_entire_course(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+      return err
 
   # Create a method to delete file from s3, delete vector from qdrant, and delete row from supabase
   def delete_data(self, s3_path: str, course_name: str):
@@ -643,11 +654,9 @@ class Ingest():
         'metadata->>course_name', course_name).execute()
       return "Success"
     except Exception as e:
-      err: str = f"ERROR IN TXT INGEST: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
-
-
 
   def getAll(
       self,

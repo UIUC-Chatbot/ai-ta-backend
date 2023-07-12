@@ -3,15 +3,17 @@ import re
 import time
 from tempfile import NamedTemporaryFile
 
-import boto3
+import boto3  # type: ignore
 import requests
 from bs4 import BeautifulSoup
-
 from ai_ta_backend.vector_database import Ingest
+from ai_ta_backend.aws import upload_data_files_to_s3
+from zipfile import ZipFile
+import shutil
+
 
 # Check if the url is valid
 # Else return the status code
-
 def valid_url(url):
 	try:
 		# pass the url into
@@ -27,29 +29,32 @@ def valid_url(url):
 		return e
 
 # Function gets titles of urls and the urls themselves
-def get_urls_dict(url:str):
+def get_urls_list(url:str):
 
-    site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0)
+    site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
 
     # Gets rid of double slashes
     url = re.sub(pattern=r"https:\/\/", repl="", string=url)
     url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
     url = "https://"+url
 
-    urls= {}
+    urls= set()
 
     r = requests.get(url)
     s = BeautifulSoup(r.text,"html.parser")
-
-    for i in s.find_all("a"):
-
-        # text/label inside the tag for url
-        text = i.text
-
-        # regex to clean \n and \r from text
-        text = re.sub(r'[\n\r]', '', text)
-        text = text.strip()
-        
+    body = s.find("body")
+    header = s.find("head") 
+    try:
+        if s.title.string == "403 Forbidden": # type: ignore
+            print("403 Forbidden")
+        else:
+            pass
+    except Exception as e:
+        print("Error:", e)
+        pass 
+    
+    # header = s.find("head")
+    for i in body.find_all("a"): # type: ignore
         try:
         # getting the href tag
             href = i.attrs['href']
@@ -65,8 +70,27 @@ def get_urls_dict(url:str):
             href = site+href
         else:
             href = site+'/'+href
-        urls[text] = href    
-    return urls
+        urls.add(href)
+
+    for i in header.find_all("a"): # type: ignore
+        try:
+        # getting the href tag
+            href = i.attrs['href']
+        except KeyError as e:
+            print("KeyError:", e, "for", i)
+            continue
+    
+        if href.startswith("http"):
+            pass
+            
+        # This line doesn't matter because the amount of slashes doesn't change the site, but leave it in for now
+        elif href.startswith("/"):
+            href = site+href
+        else:
+            href = site+'/'+href
+        urls.add(href)
+
+    return list(urls)
 
 
 # Gathers all of the connected urls from the base url
@@ -82,7 +106,7 @@ def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _in
   # If the base url is valid, then add it to the list of urls and get the urls from the base url
   if valid_url(base_url) == True:
     all.append(base_url)
-    urls = list(get_urls_dict(base_url).values())
+    urls = get_urls_list(base_url)
 
     if len(urls) <= max_urls:
       all.extend(urls)
@@ -143,54 +167,88 @@ def scraper(url:str):
     
     return soup
 
-def pdf_scraper(soup:BeautifulSoup): 
-    links = soup.find_all('a')
-    pdfs = [] 
-    for link in links:
-        if ('.pdf' in link.get('href', [])):
 
-            # Get response object for link
-            response = requests.get(link.get('href'))
-            pdfs.append(response.content)
-    return pdfs
+def pdf_scraper(soup:BeautifulSoup): 
+  links = soup.find_all('a')
+  pdf = []
+  try:
+    for link in links:
+      if ('.pdf' in link.get('href', [])):
+        # Get response object for link
+        response = requests.get(link.get('href'))
+        content =  response.content
+        if f"<!DOCTYPE html>" not in str(content):
+          pdf.append(content)
+          print("PDF scraped:", link.get('href'))
+  except Exception as e:
+    print("PDF scrape error:", e)
+
+  return list(set(pdf))
 
 
 # Uses all of above functions to crawl a site
 def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
     all_sites = site_map(site, max_urls, max_depth)
-    crawled = {}
+    crawled = []
     invalid_urls = []
 
     for site in all_sites:
         try:
             soup = scraper(site)
-            crawled[site] = []
-            crawled[site].append(soup.get_text())
-            crawled[site].append(soup)
-            crawled[site].append(pdf_scraper(soup))
-            time.sleep(timeout)
+            site_data = []
+            site_data.append(site)
+            site_data.append(soup.get_text())
+            site_data.append(soup)
             print("Scraped:", site)
+            site_data.append(pdf_scraper(soup))
+            crawled.append(site_data)
+            time.sleep(timeout)
 
         except Exception as e:
             print("Url Not Scraped!!!", "Exception:", e)
             invalid_urls.append(site)
             continue
-    
-    # Delete repeated values
-    repeated = [value[0] for value in list(crawled.values())]
+        
+    # Delete repeated sites, with different URLs and keeping one
+    repeated = [value[2] for value in crawled]
+    counts = {value:repeated.count(value) for value in repeated}
+  
     for value in repeated:
-        if repeated.count(value) > 1:
-            for key in crawled.keys():
-                if crawled[key][0] == value:
-                    del crawled[key]
-                    repeated.remove(value)
-                    break
+        for i, row in enumerate(crawled):
+            if counts[value] > 1:
+                if row[2] == value:
+                  counts[value] -= 1
+                  del crawled[i]
+            else:
+                break
+              
+    # Delete repeated PDFs and keeping one
+    pdf_repeat = []
+    for value in crawled:
+        pdf_repeat.extend(value[3])
+    pdf_counts = {value:pdf_repeat.count(value) for value in pdf_repeat}
+
+    for value in pdf_repeat:
+        for row in crawled:
+            count = row[3].count(value)
+            if pdf_counts[value] == 1:
+                break
+            elif pdf_counts[value] > count:
+                for i in range(count):
+                    row[3].remove(value)
+                    pdf_counts[value] -= 1
+            else:
+                for i in range(pdf_counts[value]-1):
+                    row[3].remove(value)
+                    pdf_counts[value] -= 1
 
     print("Scraped", len(crawled), "urls out of", max_urls)
 
-    return list(crawled.items())
+    return crawled
+
 # Download a course using its url
-def mit_course_download(url:str, save_path:str, ):
+def mit_course_download(url:str, course_name:str, local_dir:str):
+    ingester = Ingest()
     base = "https://ocw.mit.edu"
     if url.endswith("download"):
         pass
@@ -209,21 +267,33 @@ def mit_course_download(url:str, save_path:str, ):
     print('site', site)
     r = requests.get(url=site, stream=True)
 
+    save_path = local_dir + ".zip"
+
     try:
         with open(save_path, 'wb') as fd:
             for chunk in r.iter_content(chunk_size=128):
                 fd.write(chunk)
-    
         print("course downloaded!")
-    
     except Exception as e:
         print("Error:", e, site)
+
+    with ZipFile(save_path, 'r') as zObject:
+      zObject.extractall(
+        path=course_name)
+
+    s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
+    success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
+    shutil.rmtree(local_dir)
+    shutil.rmtree(save_path)
+    
+    return success_fail
 
 # FIX BUGS - NO NEED BABY
 # TODO LIST
 # GET RID OF COOKIES
 
 def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1):
+  print("\n")
   max_urls = int(max_urls)
   max_depth = int(max_depth)
   timeout = int(timeout)
@@ -238,23 +308,21 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
     )
-  print(len(data))
-
   # Clean some keys for a proper file name
   # todo: have a default title
-    # titles = [value[1][1].title.string for value in data]
-    
+  # titles = [value[1][1].title.string for value in data]
+
   titles = []
   for value in data:
     try:
-      titles.append(value[1][1].title.string)  
+      titles.append(value[2].title.string)  
     except AttributeError as e:
       # if no title
       placeholder_title = re.findall(pattern=r'[a-zA-Z0-9.]*[a-z]', string=value[0])[1]
       titles.append(placeholder_title)
       print(f"URL is missing a title, using this title instead: {placeholder_title}")
   
-  clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles]
+  clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles] # type: ignore
   path_name = []
   counter = 0
   for value in clean:
@@ -267,12 +335,14 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       path_name.append(value)
       counter += 1
 
+
   # Upload each html to S3
   print("Uploading", len(data), "files to S3")
   paths = []
   for i, key in enumerate(data):
+
     with NamedTemporaryFile(suffix=".html") as temp_html:
-      temp_html.write(key[1][1].encode('utf-8'))
+      temp_html.write(key[2].encode('utf-8'))
       temp_html.seek(0)
       s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html"
       paths.append(s3_upload_path)
@@ -280,18 +350,18 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
         print("Uploading html to S3")
         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
 
-    if key[1][2] != []:
+    if key[3] != []:
       with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
-        for pdf in key[1][2]:
+        for pdf in key[3]:
           temp_pdf.write(pdf)
           temp_pdf.seek(0) 
           s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
+          paths.append(s3_upload_path)
           with open(temp_pdf.name, 'rb') as f:
             print("Uploading PDF to S3")
             s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-          ingester.bulk_ingest(s3_upload_path, course_name)
 
   print("Begin Ingest")
-  success_fail_dict = ingester.bulk_ingest(paths, course_name, clean_text=data)
-
+  success_fail_dict = ingester.bulk_ingest(paths, course_name)
+  print("Finished Ingest")
   return success_fail_dict
