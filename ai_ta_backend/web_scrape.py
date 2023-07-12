@@ -267,25 +267,25 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
     print('site', site)
     r = requests.get(url=site, stream=True)
 
-    save_path = local_dir + ".zip"
+    zip_file = local_dir + ".zip"
 
     try:
-        with open(save_path, 'wb') as fd:
+        with open(zip_file, 'wb') as fd:
             for chunk in r.iter_content(chunk_size=128):
                 fd.write(chunk)
         print("course downloaded!")
     except Exception as e:
         print("Error:", e, site)
 
-    with ZipFile(save_path, 'r') as zObject:
+    with ZipFile(zip_file, 'r') as zObject:
       zObject.extractall(
         path=local_dir)
 
     s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
     success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
+    shutil.move(zip_file, local_dir)
     shutil.rmtree(local_dir)
-    shutil.rmtree(save_path)
-    
+        
     return success_fail
 
 # FIX BUGS - NO NEED BABY
