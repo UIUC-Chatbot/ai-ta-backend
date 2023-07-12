@@ -279,7 +279,7 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
 
     with ZipFile(save_path, 'r') as zObject:
       zObject.extractall(
-        path=course_name)
+        path=local_dir)
 
     s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
     success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
