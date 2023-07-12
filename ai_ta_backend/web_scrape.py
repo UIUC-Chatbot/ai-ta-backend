@@ -349,6 +349,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       with open(temp_html.name, 'rb') as f:
         print("Uploading html to S3")
         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+        ingester.bulk_ingest(s3_upload_path, course_name)
 
     if key[3] != []:
       with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
@@ -360,8 +361,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
           with open(temp_pdf.name, 'rb') as f:
             print("Uploading PDF to S3")
             s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+            ingester.bulk_ingest(s3_upload_path, course_name)
 
   print("Begin Ingest")
-  success_fail_dict = ingester.bulk_ingest(paths, course_name)
   print("Finished Ingest")
-  return success_fail_dict

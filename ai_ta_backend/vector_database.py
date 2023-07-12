@@ -222,6 +222,8 @@ Now please respond to my query: {user_question}"""
       title = s3_path.replace("courses/"+course_name, "")
       title = title.replace(".html", "")
       title = title.replace("_", " ")
+      title = title.replace("/", " ")
+      title = title.strip()
 
       # url = text.url.string
       text = [text]
