@@ -114,8 +114,8 @@ from qdrant_client import QdrantClient, models
 
 class OpenAIAPIProcessor:
 
-  def __init__(self, input_prompts_list, request_url, api_key, max_requests_per_minute, max_tokens_per_minute,
-               token_encoding_name, max_attempts, logging_level):
+  def __init__(self, input_prompts_list, request_url, api_key, max_requests_per_minute, max_tokens_per_minute, token_encoding_name,
+               max_attempts, logging_level):
     self.request_url = request_url
     self.api_key = api_key
     self.max_requests_per_minute = max_requests_per_minute
@@ -177,7 +177,7 @@ class OpenAIAPIProcessor:
             next_request = APIRequest(task_id=next(task_id_generator),
                                       request_json=request_json,
                                       token_consumption=num_tokens_consumed_from_request(request_json, api_endpoint,
-                                                                                          self.token_encoding_name),
+                                                                                         self.token_encoding_name),
                                       attempts_left=self.max_attempts,
                                       metadata=request_json.pop("metadata", None))
             status_tracker.num_tasks_started += 1
@@ -246,8 +246,7 @@ class OpenAIAPIProcessor:
     # after finishing, log final status
     logging.info(f"""Parallel processing complete. About to return.""")
     if status_tracker.num_tasks_failed > 0:
-      logging.warning(
-          f"{status_tracker.num_tasks_failed} / {status_tracker.num_tasks_started} requests failed.")
+      logging.warning(f"{status_tracker.num_tasks_failed} / {status_tracker.num_tasks_started} requests failed.")
     if status_tracker.num_rate_limit_errors > 0:
       logging.warning(f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
 
@@ -260,30 +259,34 @@ class OpenAIAPIProcessor:
 
     self.cleaned_results: List[str] = extract_context_from_results(self.results)
 
+
 def extract_context_from_results(results: List[Any]) -> List[str]:
   assistant_contents = []
   total_prompt_tokens = 0
   total_completion_tokens = 0
 
   for element in results:
-    for item in element:
-      if 'choices' in item:
-        for choice in item['choices']:
-          if choice['message']['role'] == 'assistant':
-            assistant_contents.append(choice['message']['content'])
-            total_prompt_tokens += item['usage']['prompt_tokens']
-            total_completion_tokens += item['usage']['completion_tokens']
+    if element is not None:
+      for item in element:
+        if 'choices' in item:
+          for choice in item['choices']:
+            if choice['message']['role'] == 'assistant':
+              assistant_contents.append(choice['message']['content'])
+              total_prompt_tokens += item['usage']['prompt_tokens']
+              total_completion_tokens += item['usage']['completion_tokens']
 
   # print("Assistant Contents:", assistant_contents)
   print("Total Prompt Tokens:", total_prompt_tokens)
   print("Total Completion Tokens:", total_completion_tokens)
   turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
-  print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
+  print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ",
+        turbo_total_cost)
 
   gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
-  print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
+  print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ",
+        gpt4_total_cost)
   print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
-  return assistant_contents #, total_prompt_tokens, total_completion_tokens
+  return assistant_contents  #, total_prompt_tokens, total_completion_tokens
 
 
 # dataclasses
@@ -354,7 +357,7 @@ class APIRequest:
         status_tracker.num_tasks_failed += 1
         return data
     else:
-      data = ([self.request_json, response, self.metadata] if self.metadata else [self.request_json, response]) # type: ignore
+      data = ([self.request_json, response, self.metadata] if self.metadata else [self.request_json, response])  # type: ignore
       #append_to_jsonl(data, save_filepath)
       status_tracker.num_tasks_in_progress -= 1
       status_tracker.num_tasks_succeeded += 1
@@ -369,7 +372,7 @@ class APIRequest:
 def api_endpoint_from_url(request_url: str):
   """Extract the API endpoint from the request URL."""
   match = re.search('^https://[^/]+/v\\d+/(.+)$', request_url)
-  return match[1] # type: ignore
+  return match[1]  # type: ignore
 
 
 def append_to_jsonl(data, filename: str) -> None:
@@ -487,11 +490,11 @@ def task_id_generator_function():
 #   )
 #   # run script
 #   asyncio.run(oai.process_api_requests_from_file())
-  
+
 #   assistant_contents = []
 #   total_prompt_tokens = 0
 #   total_completion_tokens = 0
-  
+
 #   print("Results, end of main: ", oai.results)
 #   print("-"*50)
 
@@ -510,10 +513,10 @@ def task_id_generator_function():
 #   print("Total Completion Tokens:", total_completion_tokens)
 #   turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
 #   print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
-  
+
 #   gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
 #   print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
-#   print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")  
+#   print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
   '''
   Pricing:
   GPT4: 

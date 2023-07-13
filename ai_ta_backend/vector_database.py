@@ -25,9 +25,7 @@ import supabase
 from flask import jsonify, request
 from langchain import LLMChain, OpenAI, PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
-from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
-                                        SRTLoader,
-                                        UnstructuredPowerPointLoader)
+from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader, SRTLoader, UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import OpenAIChat
 from langchain.schema import Document
@@ -38,6 +36,7 @@ from qdrant_client import QdrantClient, models
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
+from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 
 
 class Ingest():
@@ -55,7 +54,7 @@ class Ingest():
         url=os.getenv('QDRANT_URL'),
         api_key=os.getenv('QDRANT_API_KEY'),
     )
-    
+
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
@@ -74,8 +73,9 @@ class Ingest():
         supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
     # self.arize_client = Client(space_key=os.getenv('ARIZE_SPACE_KEY'), api_key=os.getenv('ARIZE_API_KEY'))  # type: ignore
-    self.supabase_client = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
-                                                  supabase_key=os.getenv('SUPABASE_API_KEY')) # type: ignore
+    self.supabase_client = supabase.create_client(
+        supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
     return None
 
@@ -91,15 +91,19 @@ class Ingest():
     # MMR with metadata filtering based on course_name
     vec_start_time = time.monotonic()
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
-    print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
-    
+    print(
+        f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds"
+    )
+
     requests = []
     for i, doc in enumerate(found_docs):
       dictionary = {
           "model": "gpt-3.5-turbo",
           "messages": [{
-              "role": "system",
-              "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+              "role":
+                  "system",
+              "content":
+                  "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
           }, {
               "role":
                   "user",
@@ -113,29 +117,35 @@ class Ingest():
       requests.append(dictionary)
 
     oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                              request_url='https://api.openai.com/v1/chat/completions',
-                              api_key=os.getenv("OPENAI_API_KEY"),
-                              max_requests_per_minute=1500,
-                              max_tokens_per_minute=90000,
-                              token_encoding_name='cl100k_base',
-                              max_attempts=5,
-                              logging_level=20)
+                             request_url='https://api.openai.com/v1/chat/completions',
+                             api_key=os.getenv("OPENAI_API_KEY"),
+                             max_requests_per_minute=1500,
+                             max_tokens_per_minute=90000,
+                             token_encoding_name='cl100k_base',
+                             max_attempts=5,
+                             logging_level=20)
 
     chain_start_time = time.monotonic()
     asyncio.run(oai.process_api_requests_from_file())
     results: list[str] = oai.results
     print(f"⏰ EXTREME context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
-    
+
     print(f"Cleaned results: {oai.cleaned_results}")
-    
 
     all_texts = ""
     separator = '---'  # between each context
+    token_counter = 0  #keeps track of tokens in each summarization
+    max_tokens = 8000  #limit, will keep adding text to string until 8000 tokens reached.
     for i, text in enumerate(oai.cleaned_results):
       if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
         # no useful text, it replied with a summary of "None"
-        continue 
+        continue
       if text is not None:
+        num_tokens, prompt_cost = count_tokens_and_cost(text)
+        if token_counter + num_tokens > max_tokens:
+          print(f"Total tokens yet in loop {i} is {num_tokens}")
+          break  # Stop building the string if it exceeds the maximum number of tokens
+        token_counter += num_tokens
         filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
         course_name = str(results[i][-1].get('course_name', ''))  # type: ignore
         pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))  # type: ignore
@@ -152,7 +162,6 @@ Here's a few passages of high quality official course materials:\n{all_texts}
 Now please respond to my query: {user_question}"""
 
     return stuffed_prompt
-
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
@@ -209,7 +218,7 @@ Now please respond to my query: {user_question}"""
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
-            success_status['success_ingest'].append(s3_path)  
+            success_status['success_ingest'].append(s3_path)
       return success_status
     except Exception as e:
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
@@ -219,20 +228,20 @@ Now please respond to my query: {user_question}"""
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       text = response['Body'].read().decode('utf-8')
-      title = s3_path.replace("courses/"+course_name, "")
+      title = s3_path.replace("courses/" + course_name, "")
       title = title.replace(".html", "")
       title = title.replace("_", " ")
 
       # url = text.url.string
       text = [text]
       metadata: List[Dict[str, Any]] = [{
-      'course_name': course_name,
-      's3_path': s3_path,
-      'readable_filename': title,
-      # 'url': url, 
-      'pagenumber_or_timestamp': ''
+          'course_name': course_name,
+          's3_path': s3_path,
+          'readable_filename': title,
+          # 'url': url,
+          'pagenumber_or_timestamp': ''
       }]
-      
+
       # print(f"In _ingest_clean: {text}")
       # print(f"In _ingest_clean: {metadata}")
       success_or_failure = self.split_and_upload(text, metadata)
@@ -242,7 +251,7 @@ Now please respond to my query: {user_question}"""
     except Exception as e:
       print(f"ERROR IN HTML INGEST: {e}")
       return f"Error: {e}"
-  
+
   def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
     """
     Ingest a single video file from S3.
@@ -251,7 +260,7 @@ Now please respond to my query: {user_question}"""
       # check for file extension
       file_ext = Path(s3_path).suffix
       print(file_ext[1:])
-      
+
       openai.api_key = os.getenv('OPENAI_API_KEY')
       transcript_list = []
       #print(os.getcwd())
@@ -282,16 +291,16 @@ Now please respond to my query: {user_question}"""
           with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
             #print("Splitting file: ", split_tmp.name)
             if count == file_count - 1:
-                # last segment
-                audio_chunk = full_audio[start:]
+              # last segment
+              audio_chunk = full_audio[start:]
             else:
-                audio_chunk = full_audio[start:split_segment]
+              audio_chunk = full_audio[start:split_segment]
 
             audio_chunk.export(split_tmp.name, format="webm")
 
             # transcribe the split file and store the text in dictionary
             with open(split_tmp.name, "rb") as f:
-                transcript = openai.Audio.transcribe("whisper-1", f)
+              transcript = openai.Audio.transcribe("whisper-1", f)
             transcript_list.append(transcript['text'])  # type: ignore
           start += split_segment
           split_segment += split_segment
@@ -301,19 +310,18 @@ Now please respond to my query: {user_question}"""
         # transcribe the full audio
         with open(webm_tmpfile.name, "rb") as f:
           transcript = openai.Audio.transcribe("whisper-1", f)
-        transcript_list.append(transcript['text']) # type: ignore
-      
+        transcript_list.append(transcript['text'])  # type: ignore
+
       os.remove(webm_tmpfile.name)
 
       text = [txt for txt in transcript_list]
-      metadatas: List[Dict[str,Any]] = [
-        {
+      metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
           'pagenumber_or_timestamp': text.index(txt),
-        } for txt in text]
-        
+      } for txt in text]
+
       self.split_and_upload(texts=text, metadatas=metadatas)
       return "Success"
     except Exception as e:
@@ -441,13 +449,12 @@ Now please respond to my query: {user_question}"""
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       text = response['Body'].read().decode('utf-8')
       text = [text]
-      metadatas: List[Dict[str,Any]] = [
-        {
-          'course_name': course_name, 
+      metadatas: List[Dict[str, Any]] = [{
+          'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': text.index(text), # TODO: does this even work??
-        }]
+          'pagenumber_or_timestamp': text.index(text),  # TODO: does this even work??
+      }]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
       return "Success"
@@ -455,7 +462,7 @@ Now please respond to my query: {user_question}"""
       err: str = f"ERROR IN TXT INGEST: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
-  
+
   def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
     """
     Ingest a single .ppt or .pptx file from S3.
@@ -474,8 +481,8 @@ Now please respond to my query: {user_question}"""
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
             'readable_filename': Path(s3_path).name,
-            'pagenumber_or_timestamp': '', 
-          } for doc in documents]
+            'pagenumber_or_timestamp': '',
+        } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
@@ -484,32 +491,31 @@ Now please respond to my query: {user_question}"""
       print(e)
       return f"Error {e}"
 
-
   def list_files_recursively(self, bucket, prefix):
-        all_files = []
-        continuation_token = None
+    all_files = []
+    continuation_token = None
 
-        while True:
-            list_objects_kwargs = {
-                'Bucket': bucket,
-                'Prefix': prefix,
-            }
-            if continuation_token:
-                list_objects_kwargs['ContinuationToken'] = continuation_token
+    while True:
+      list_objects_kwargs = {
+          'Bucket': bucket,
+          'Prefix': prefix,
+      }
+      if continuation_token:
+        list_objects_kwargs['ContinuationToken'] = continuation_token
 
-            response = self.s3_client.list_objects_v2(**list_objects_kwargs)
+      response = self.s3_client.list_objects_v2(**list_objects_kwargs)
 
-            if 'Contents' in response:
-                for obj in response['Contents']:
-                    all_files.append(obj['Key'])
+      if 'Contents' in response:
+        for obj in response['Contents']:
+          all_files.append(obj['Key'])
 
-            if response['IsTruncated']:
-                continuation_token = response['NextContinuationToken']
-            else:
-                break
+      if response['IsTruncated']:
+        continuation_token = response['NextContinuationToken']
+      else:
+        break
 
-        return all_files
-  
+    return all_files
+
   def ingest_coursera(self, coursera_course_name: str, course_name: str) -> str:
     """ Download all the files from a coursera course and ingest them.
     
@@ -526,9 +532,13 @@ Now please respond to my query: {user_question}"""
     """
     certificate = "-ca 'FVhVoDp5cb-ZaoRr5nNJLYbyjCLz8cGvaXzizqNlQEBsG5wSq7AHScZGAGfC1nI0ehXFvWy1NG8dyuIBF7DLMA.X3cXsDvHcOmSdo3Fyvg27Q.qyGfoo0GOHosTVoSMFy-gc24B-_BIxJtqblTzN5xQWT3hSntTR1DMPgPQKQmfZh_40UaV8oZKKiF15HtZBaLHWLbpEpAgTg3KiTiU1WSdUWueo92tnhz-lcLeLmCQE2y3XpijaN6G4mmgznLGVsVLXb-P3Cibzz0aVeT_lWIJNrCsXrTFh2HzFEhC4FxfTVqS6cRsKVskPpSu8D9EuCQUwJoOJHP_GvcME9-RISBhi46p-Z1IQZAC4qHPDhthIJG4bJqpq8-ZClRL3DFGqOfaiu5y415LJcH--PRRKTBnP7fNWPKhcEK2xoYQLr9RxBVL3pzVPEFyTYtGg6hFIdJcjKOU11AXAnQ-Kw-Gb_wXiHmu63veM6T8N2dEkdqygMre_xMDT5NVaP3xrPbA4eAQjl9yov4tyX4AQWMaCS5OCbGTpMTq2Y4L0Mbz93MHrblM2JL_cBYa59bq7DFK1IgzmOjFhNG266mQlC9juNcEhc'"
     always_use_flags = "-u kastanvday@gmail.com -p hSBsLaF5YM469# --ignore-formats mp4 --subtitle-language en --path ./coursera-dl"
-    
+
     try:
-      results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}", check=True, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # capture_output=True,
+      results = subprocess.run(f"coursera-dl {always_use_flags} {certificate} {coursera_course_name}",
+                               check=True,
+                               shell=True,
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)  # capture_output=True,
       dl_results_path = os.path.join('coursera-dl', coursera_course_name)
       s3_paths: Union[List, None] = upload_data_files_to_s3(course_name, dl_results_path)
 
@@ -579,13 +589,13 @@ Now please respond to my query: {user_question}"""
       # upload to Qdrant
       self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
       data = [{"content": doc.page_content, "metadata": doc.metadata} for doc in documents]
-      count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(data).execute() # type: ignore
+      count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(data).execute()  # type: ignore
 
       return "Success"
     except Exception as e:
       print(f'ERROR IN SPLIT AND UPLOAD {e}')
       return f"Error: {e}"
-    
+
   def delete_entire_course(self, course_name: str):
     """Delete entire course.
     
@@ -600,24 +610,23 @@ Now please respond to my query: {user_question}"""
       objects_to_delete = self.s3_client.list_objects(Bucket=os.getenv('S3_BUCKET_NAME'), Prefix=f'courses/{course_name}/')
       for object in objects_to_delete['Contents']:
         self.s3_client.delete_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=object['Key'])
-      
+
       # Delete from Qdrant
       # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
       # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
       self.qdrant_client.delete(
           collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
-          points_selector=models.Filter(
-              must=[
-                  models.FieldCondition(
-                      key="metadata.course_name", 
-                      match=models.MatchValue(value=course_name),
-                  ),
-              ]
-          ),
+          points_selector=models.Filter(must=[
+              models.FieldCondition(
+                  key="metadata.course_name",
+                  match=models.MatchValue(value=course_name),
+              ),
+          ]),
       )
-      
+
       # Delete from Supabase
-      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>course_name', course_name).execute()
+      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>course_name',
+                                                                                               course_name).execute()
       print("supabase response: ", response)
       return "Success"
     except Exception as e:
@@ -633,25 +642,23 @@ Now please respond to my query: {user_question}"""
       # Delete file from S3
       bucket_name = os.getenv('S3_BUCKET_NAME')
       self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
-      
+
       # Delete from Qdrant
       # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
       # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
       self.qdrant_client.delete(
           collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
-          points_selector=models.Filter(
-              must=[
-                  models.FieldCondition(
-                      key="metadata.s3_path", 
-                      match=models.MatchValue(value=s3_path),
-                  ),
-              ]
-          ),
+          points_selector=models.Filter(must=[
+              models.FieldCondition(
+                  key="metadata.s3_path",
+                  match=models.MatchValue(value=s3_path),
+              ),
+          ]),
       )
-      
+
       # Delete from Supabase
       response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>s3_path', s3_path).eq(
-        'metadata->>course_name', course_name).execute()
+          'metadata->>course_name', course_name).execute()
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
@@ -668,9 +675,9 @@ Now please respond to my query: {user_question}"""
     Returns : 
         list of dictionaries with distinct s3 path, readable_filename and course_name.
     """
-    response = self.supabase_client.table(
-        os.getenv('MATERIALS_SUPABASE_TABLE')).select('metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq( # type: ignore
-            'metadata->>course_name', course_name).execute() 
+    response = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).select(
+        'metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq(  # type: ignore
+            'metadata->>course_name', course_name).execute()
 
     data = response.data
     unique_combinations = set()
