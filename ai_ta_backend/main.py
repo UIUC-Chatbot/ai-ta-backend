@@ -240,7 +240,9 @@ def mit_download_course():
 
   success_fail = mit_course_download(url, course_name,local_dir)
 
-  return success_fail
+  response = jsonify(success_fail)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=8000))
