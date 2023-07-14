@@ -480,7 +480,7 @@ class Ingest():
       self.split_and_upload(texts=text, metadatas=metadatas)
       return "Success"
     except Exception as e:
-      print("ERROR IN VIDEO READING ")
+      print("ERROR IN VIDEO READING")
       print(e)
       return f"Error {e}"
 
