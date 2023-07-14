@@ -11,10 +11,8 @@ from tempfile import NamedTemporaryFile  # TemporaryFile
 from typing import Any, Dict, List, Optional, Tuple, Union  # Literal
 
 import boto3
-# import requests
 import fitz
 import openai
-import requests
 import supabase
 # from arize.api import Client
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
@@ -22,12 +20,9 @@ import supabase
 # from arize.utils.ModelTypes import GENERATIVE_LLM
 # # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
 # #                                Metrics, ModelTypes, Schema)
-from flask import jsonify, request
-from langchain import LLMChain, OpenAI, PromptTemplate
-from langchain.chains.summarize import load_summarize_chain
-from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader, SRTLoader, UnstructuredPowerPointLoader)
+from langchain.document_loaders import (Docx2txtLoader, SRTLoader,
+                                        UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.llms import OpenAIChat
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
@@ -147,10 +142,8 @@ class Ingest():
           break  # Stop building the string if it exceeds the maximum number of tokens
         token_counter += num_tokens
         filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
-        course_name = str(results[i][-1].get('course_name', ''))  # type: ignore
         pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))  # type: ignore
-        s3_path = str(results[i][-1].get('s3_path', ''))  # type: ignore
-        doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
+        doc = f"Document : filename: {filename}, pagenumber: {pagenumber_or_timestamp}"
         # summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
         summary = f"\nSummary: {text}"
         all_texts += doc + summary + '\n' + separator + '\n'
