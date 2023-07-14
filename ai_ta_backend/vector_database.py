@@ -130,7 +130,7 @@ class Ingest():
     all_texts = ""
     separator = '---'  # between each context
     token_counter = 0  #keeps track of tokens in each summarization
-    max_tokens = 8000  #limit, will keep adding text to string until 8000 tokens reached.
+    max_tokens = 7_500  #limit, will keep adding text to string until 8000 tokens reached.
     for i, text in enumerate(oai.cleaned_results):
       if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
         # no useful text, it replied with a summary of "None"
@@ -143,16 +143,20 @@ class Ingest():
         token_counter += num_tokens
         filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
         pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))  # type: ignore
-        doc = f"Document : filename: {filename}, pagenumber: {pagenumber_or_timestamp}"
-        # summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
+        pagenumber = f", page: {pagenumber_or_timestamp}" if pagenumber_or_timestamp else ''
+        doc = f"Document : filename: {filename}" + pagenumber
         summary = f"\nSummary: {text}"
         all_texts += doc + summary + '\n' + separator + '\n'
 
     stuffed_prompt = f"""Please answer the following question.
-Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant.
-It's good to quote the official course materials directly, something like 'from ABS source it says XYZ'. Feel free to say you don't know.
-Here's a few passages of high quality official course materials:\n{all_texts}
-Now please respond to my query: {user_question}"""
+Use the context below, called 'your documents,' only if it's helpful and don't use parts that are very irrelevant.
+It's good to quote 'your documents' directly using informal citations, like "in document X it says Y". Try to avoid giving false or misleading information. Feel free to say you don't know.
+Try to be helpful, polite, honest, sophisticated, emotionally aware, and humble-but-knowledgeable.
+That said, the assistant is practical and really does its best, and doesn't let caution get too much in the way of being useful.
+To help answer the question, here's a few passages of high quality documents:\n{all_texts}
+Now please respond to my question: {user_question}"""
+
+# "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
 
     return stuffed_prompt
 
