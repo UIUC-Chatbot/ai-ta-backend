@@ -1,0 +1,23 @@
+{
+  "$schema": "https://railway.app/railway.schema.json",
+  "build": {
+    "builder": "NIXPACKS",
+    "nixpacksPlan": {
+      "phases": {
+        "myPhase": {
+          "name": "myPhase",
+          "dependsOn": [],
+          "cmds": [],
+          "nixPkgs": [],
+          "nixLibs": [],
+          "aptPkgs": ["ffmpeg"],
+          "nixOverlays": [],
+          "nixPkgsArchive": "",
+          "includedFiles": [],
+          "cacheDirectories": [],
+          "paths": []
+        }
+      }
+    }
+  }
+}
