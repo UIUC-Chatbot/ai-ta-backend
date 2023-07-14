@@ -395,7 +395,7 @@ class Ingest():
           'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': '1',
+          'pagenumber_or_timestamp': '',
         }]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
@@ -474,7 +474,7 @@ class Ingest():
           'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': None,
+          'pagenumber_or_timestamp': '',
         } for txt in text]
         
       self.split_and_upload(texts=text, metadatas=metadatas)
