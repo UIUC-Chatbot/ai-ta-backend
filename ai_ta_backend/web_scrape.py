@@ -188,7 +188,7 @@ def pdf_scraper(soup:BeautifulSoup):
 
 # Uses all of above functions to crawl a site
 def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
-    all_sites = site_map(site, max_urls, max_depth)
+    all_sites = list(set(site_map(site, max_urls, max_depth)))
     crawled = []
     invalid_urls = []
 
