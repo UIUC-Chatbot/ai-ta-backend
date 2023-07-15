@@ -448,7 +448,7 @@ class Ingest():
 
         while count < file_count:
           with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
-            print("Splitting file: ", split_tmp.name)
+            #print("Splitting file: ", split_tmp.name)
             if count == file_count - 1:
                 # last segment
                 audio_chunk = full_audio[start:]
@@ -473,7 +473,7 @@ class Ingest():
       
       os.remove(webm_tmpfile.name)
 
-      print("transcript: ", transcript_list)
+      #print("transcript: ", transcript_list)
       text = [txt for txt in transcript_list]
       metadatas: List[Dict[str,Any]] = [
         {
