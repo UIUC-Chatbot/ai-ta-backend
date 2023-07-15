@@ -428,12 +428,12 @@ class Ingest():
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
         # extract audio from video tmpfile
         mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
-        print("Video file: ", video_tmpfile.name)
+        #print("Video file: ", video_tmpfile.name)
 
       # save the extracted audio as a temporary webm file
       with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
         mp4_version.export(webm_tmpfile, format="webm")
-        print("WEBM file: ", webm_tmpfile.name)
+        #print("WEBM file: ", webm_tmpfile.name)
 
       # check file size
       file_size = os.path.getsize(webm_tmpfile.name)
