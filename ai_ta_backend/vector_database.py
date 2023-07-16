@@ -165,7 +165,13 @@ Now please respond to my query: {user_question}"""
       for s3_path in s3_paths:
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
-
+        if s3_path.endswith('.vtt'):
+          print("VTT file found")
+          ret = self._ingest_single_vtt(s3_path, course_name)
+          if ret != "Success":
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append(s3_path)
         if s3_path.endswith('.html'):
           ret = self._ingest_single_html(s3_path, course_name)
           if ret != "Success":
@@ -236,6 +242,7 @@ Now please respond to my query: {user_question}"""
         print("texts: ", texts)
         print("metadatas: ", metadatas)
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+        print(success_or_failure, "in ingesting vtt")
         return success_or_failure
     except Exception as e:
       print(f"ERROR IN VTT READING {e}")
