@@ -166,13 +166,13 @@ class Ingest():
       for s3_path in s3_paths:
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
-        if s3_path.endswith('.vtt'):
-          print("VTT file found")
-          ret = self._ingest_single_vtt(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
+        # if s3_path.endswith('.vtt'):
+        #   print("VTT file found")
+        #   ret = self._ingest_single_vtt(s3_path, course_name)
+        #   if ret != "Success":
+        #     success_status['failure_ingest'].append(s3_path)
+        #   else:
+        #     success_status['success_ingest'].append(s3_path)
         if s3_path.endswith('.html'):
           ret = self._ingest_single_html(s3_path, course_name)
           if ret != "Success":
@@ -223,30 +223,30 @@ class Ingest():
       return success_status
   
   #TODO: add a method to ingest a single vtt file
-  def _ingest_single_vtt(self, s3_path: str, course_name: str):
-    """
-    Ingest a single .vtt file from S3.
-    """
-    try:
-      with NamedTemporaryFile() as tmpfile:
-        # download from S3 into vtt_tmpfile
-        response = self.s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-        text = response.read().decode('utf-8')
-        texts = [text]
-        metadatas: List[Dict[str, Any]] = [{
-            'course_name': course_name,
-            's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
-            'pagenumber_or_timestamp': '',
-        }]
+  # def _ingest_single_vtt(self, s3_path: str, course_name: str):
+  #   """
+  #   Ingest a single .vtt file from S3.
+  #   """
+  #   try:
+  #     with NamedTemporaryFile() as tmpfile:
+  #       # download from S3 into vtt_tmpfile
+  #       response = self.s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
+  #       text = response.read().decode('utf-8')
+  #       texts = [text]
+  #       metadatas: List[Dict[str, Any]] = [{
+  #           'course_name': course_name,
+  #           's3_path': s3_path,
+  #           'readable_filename': Path(s3_path).name,
+  #           'pagenumber_or_timestamp': '',
+  #       }]
 
-        print("texts: ", texts)
-        print("metadatas: ", metadatas)
-        success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
-        print(success_or_failure, "in ingesting vtt")
-        return success_or_failure
-    except Exception as e:
-      print(f"ERROR IN VTT READING {e}")
+  #       print("texts: ", texts)
+  #       print("metadatas: ", metadatas)
+  #       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+  #       print(success_or_failure, "in ingesting vtt")
+  #       return success_or_failure
+  #   except Exception as e:
+  #     print(f"ERROR IN VTT READING {e}")
 
 
   def _ingest_single_html(self, s3_path: str, course_name: str) -> str:
