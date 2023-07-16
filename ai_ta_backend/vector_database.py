@@ -167,7 +167,7 @@ Now please respond to my query: {user_question}"""
         # todo check each return value for failures. If any fail, send emails.
 
         if s3_path.endswith('.html'):
-          ret = self._ingest_html(s3_path, course_name)
+          ret = self._ingest_single_html(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
@@ -214,8 +214,34 @@ Now please respond to my query: {user_question}"""
     except Exception as e:
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
       return success_status
+  
+  #TODO: add a method to ingest a single vtt file
+  def _ingest_single_vtt(self, s3_path: str, course_name: str):
+    """
+    Ingest a single .vtt file from S3.
+    """
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into vtt_tmpfile
+        documents = self.s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
 
-  def _ingest_html(self, s3_path: str, course_name: str) -> str:
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).name,
+            'pagenumber_or_timestamp': '',
+        } for doc in documents]
+
+        print("texts: ", texts)
+        print("metadatas: ", metadatas)
+        success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+        return success_or_failure
+    except Exception as e:
+      print(f"ERROR IN VTT READING {e}")
+
+
+  def _ingest_single_html(self, s3_path: str, course_name: str) -> str:
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       text = response['Body'].read().decode('utf-8')
@@ -235,11 +261,7 @@ Now please respond to my query: {user_question}"""
       'pagenumber_or_timestamp': ''
       }]
       
-      # print(f"In _ingest_clean: {text}")
-      # print(f"In _ingest_clean: {metadata}")
       success_or_failure = self.split_and_upload(text, metadata)
-      print(success_or_failure)
-      # print(f"In _ingest_clean -- working??: {success_or_failure}")
       return success_or_failure
     except Exception as e:
       print(f"ERROR IN HTML INGEST: {e}")
