@@ -230,15 +230,15 @@ class Ingest():
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into vtt_tmpfile
-        documents = self.s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-
-        texts = [doc.page_content for doc in documents]
+        response = self.s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
+        text = response.read().decode('utf-8')
+        texts = [text]
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '',
-        } for doc in documents]
+        }]
 
         print("texts: ", texts)
         print("metadatas: ", metadatas)
