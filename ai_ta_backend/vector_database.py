@@ -37,7 +37,7 @@ from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 
 from ai_ta_backend.aws import upload_data_files_to_s3
-from main.ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
+
 # from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 
 
@@ -80,79 +80,79 @@ class Ingest():
 
     return None
 
-  def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
-    """
-    Get a stuffed prompt for a given user question and course name.
-    Args : 
-      user_question (str)
-      course_name (str) : used for metadata filtering
-    Returns : str
-      a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
-    """
-    # MMR with metadata filtering based on course_name
-    vec_start_time = time.monotonic()
-    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
-    print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
+#   def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
+#     """
+#     Get a stuffed prompt for a given user question and course name.
+#     Args : 
+#       user_question (str)
+#       course_name (str) : used for metadata filtering
+#     Returns : str
+#       a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
+#     """
+#     # MMR with metadata filtering based on course_name
+#     vec_start_time = time.monotonic()
+#     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
+#     print(f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds")
     
-    requests = []
-    for i, doc in enumerate(found_docs):
-      dictionary = {
-          "model": "gpt-3.5-turbo",
-          "messages": [{
-              "role": "system",
-              "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
-          }, {
-              "role":
-                  "user",
-              "content":
-                  f"Provide a comprehensive summary of the given text, based on this question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write 'None' and nothing else.",
-          }],
-          "n": 1,
-          "max_tokens": 600,
-          "metadata": doc.metadata
-      }
-      requests.append(dictionary)
+#     requests = []
+#     for i, doc in enumerate(found_docs):
+#       dictionary = {
+#           "model": "gpt-3.5-turbo",
+#           "messages": [{
+#               "role": "system",
+#               "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+#           }, {
+#               "role":
+#                   "user",
+#               "content":
+#                   f"Provide a comprehensive summary of the given text, based on this question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write 'None' and nothing else.",
+#           }],
+#           "n": 1,
+#           "max_tokens": 600,
+#           "metadata": doc.metadata
+#       }
+#       requests.append(dictionary)
 
-    oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                              request_url='https://api.openai.com/v1/chat/completions',
-                              api_key=os.getenv("OPENAI_API_KEY"),
-                              max_requests_per_minute=1500,
-                              max_tokens_per_minute=90000,
-                              token_encoding_name='cl100k_base',
-                              max_attempts=5,
-                              logging_level=20)
+#     oai = OpenAIAPIProcessor(input_prompts_list=requests,
+#                               request_url='https://api.openai.com/v1/chat/completions',
+#                               api_key=os.getenv("OPENAI_API_KEY"),
+#                               max_requests_per_minute=1500,
+#                               max_tokens_per_minute=90000,
+#                               token_encoding_name='cl100k_base',
+#                               max_attempts=5,
+#                               logging_level=20)
 
-    chain_start_time = time.monotonic()
-    asyncio.run(oai.process_api_requests_from_file())
-    results: list[str] = oai.results
-    print(f"⏰ EXTREME context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+#     chain_start_time = time.monotonic()
+#     asyncio.run(oai.process_api_requests_from_file())
+#     results: list[str] = oai.results
+#     print(f"⏰ EXTREME context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
     
-    print(f"Cleaned results: {oai.cleaned_results}")
+#     print(f"Cleaned results: {oai.cleaned_results}")
     
 
-    all_texts = ""
-    separator = '---'  # between each context
-    for i, text in enumerate(oai.cleaned_results):
-      if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
-        # no useful text, it replied with a summary of "None"
-        continue 
-      if text is not None:
-        filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
-        course_name = str(results[i][-1].get('course_name', ''))  # type: ignore
-        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))  # type: ignore
-        s3_path = str(results[i][-1].get('s3_path', ''))  # type: ignore
-        doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
-        # summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
-        summary = f"\nSummary: {text}"
-        all_texts += doc + summary + '\n' + separator + '\n'
+#     all_texts = ""
+#     separator = '---'  # between each context
+#     for i, text in enumerate(oai.cleaned_results):
+#       if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
+#         # no useful text, it replied with a summary of "None"
+#         continue 
+#       if text is not None:
+#         filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
+#         course_name = str(results[i][-1].get('course_name', ''))  # type: ignore
+#         pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))  # type: ignore
+#         s3_path = str(results[i][-1].get('s3_path', ''))  # type: ignore
+#         doc = f"Document : filename: {filename}, course_name:{course_name}, pagenumber: {pagenumber_or_timestamp}, s3_path: {s3_path}"
+#         # summary = f"\nSummary : {str(results[i][1]['choices'][0]['message']['content'])}"
+#         summary = f"\nSummary: {text}"
+#         all_texts += doc + summary + '\n' + separator + '\n'
 
-    stuffed_prompt = f"""Please answer the following question.
-Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant.
-It's good to quote the official course materials directly, something like 'from ABS source it says XYZ'. Feel free to say you don't know.
-Here's a few passages of high quality official course materials:\n{all_texts}
-Now please respond to my query: {user_question}"""
+#     stuffed_prompt = f"""Please answer the following question.
+# Use the context below, called 'official course materials,' only if it's helpful and don't use parts that are very irrelevant.
+# It's good to quote the official course materials directly, something like 'from ABS source it says XYZ'. Feel free to say you don't know.
+# Here's a few passages of high quality official course materials:\n{all_texts}
+# Now please respond to my query: {user_question}"""
 
-    return stuffed_prompt
+#     return stuffed_prompt
 
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
