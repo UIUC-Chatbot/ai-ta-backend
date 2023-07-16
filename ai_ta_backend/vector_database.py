@@ -37,6 +37,7 @@ from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 
 from ai_ta_backend.aws import upload_data_files_to_s3
+from main.ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 # from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 
 
@@ -112,14 +113,14 @@ class Ingest():
       }
       requests.append(dictionary)
 
-    # oai = OpenAIAPIProcessor(input_prompts_list=requests,
-    #                           request_url='https://api.openai.com/v1/chat/completions',
-    #                           api_key=os.getenv("OPENAI_API_KEY"),
-    #                           max_requests_per_minute=1500,
-    #                           max_tokens_per_minute=90000,
-    #                           token_encoding_name='cl100k_base',
-    #                           max_attempts=5,
-    #                           logging_level=20)
+    oai = OpenAIAPIProcessor(input_prompts_list=requests,
+                              request_url='https://api.openai.com/v1/chat/completions',
+                              api_key=os.getenv("OPENAI_API_KEY"),
+                              max_requests_per_minute=1500,
+                              max_tokens_per_minute=90000,
+                              token_encoding_name='cl100k_base',
+                              max_attempts=5,
+                              logging_level=20)
 
     chain_start_time = time.monotonic()
     asyncio.run(oai.process_api_requests_from_file())
