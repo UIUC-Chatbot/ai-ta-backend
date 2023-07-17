@@ -230,7 +230,7 @@ class Ingest():
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into vtt_tmpfile
-        self.s3_client.download_fiileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
+        self.s3_client.download_fiileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
         loader = TextLoader(tmpfile.name)
         documents = loader.load()
         texts = [doc.page_content for doc in documents]
@@ -471,7 +471,7 @@ class Ingest():
     """
     try:
       # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
-      response = self.s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
+      response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       text = response['Body'].read().decode('utf-8')
       text = [text]
       metadatas: List[Dict[str,Any]] = [
