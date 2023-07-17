@@ -166,13 +166,13 @@ class Ingest():
       for s3_path in s3_paths:
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
-        # if s3_path.endswith('.vtt'):
-        #   print("VTT file found")
-        #   ret = self._ingest_single_vtt(s3_path, course_name)
-        #   if ret != "Success":
-        #     success_status['failure_ingest'].append(s3_path)
-        #   else:
-        #     success_status['success_ingest'].append(s3_path)
+        if s3_path.endswith('.vtt'):
+          print("VTT file found")
+          ret = self._ingest_single_vtt(s3_path, course_name)
+          if ret != "Success":
+            success_status['failure_ingest'].append(s3_path)
+          else:
+            success_status['success_ingest'].append(s3_path)
         if s3_path.endswith('.html'):
           ret = self._ingest_single_html(s3_path, course_name)
           if ret != "Success":
