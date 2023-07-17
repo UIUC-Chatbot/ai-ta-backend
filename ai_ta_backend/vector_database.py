@@ -167,12 +167,12 @@ class Ingest():
         # print("s3_path", s3_path)
         # todo check each return value for failures. If any fail, send emails.
         if s3_path.endswith('.vtt'):
-          print("VTT file found")
           ret = self._ingest_single_vtt(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
+            print("VTT Success")
         if s3_path.endswith('.html'):
           ret = self._ingest_single_html(s3_path, course_name)
           if ret != "Success":
@@ -187,18 +187,18 @@ class Ingest():
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.txt'):
           ret = self._ingest_single_txt(s3_path, course_name)
-          #print('Not yet implemented')
-          #ret = "failure"
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
-            success_status['success_ingest'].append("TXT -- Not yet implemented: " + s3_path)
+            success_status['success_ingest'].append(s3_path)
+            print("TXT success")
         elif s3_path.endswith('.srt'):
           ret = self._ingest_single_srt(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
+            print("SRT success")
         elif s3_path.endswith('.docx'):
           ret = self._ingest_single_docx(s3_path, course_name)
           if ret != "Success":
@@ -241,10 +241,7 @@ class Ingest():
             'pagenumber_or_timestamp': '',
         } for doc in documents]
 
-        print("texts: ", texts)
-        print("metadatas: ", metadatas)
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
-        print(success_or_failure, "in ingesting vtt")
         return success_or_failure
     except Exception as e:
       print(f"ERROR IN VTT READING {e}")
@@ -470,24 +467,23 @@ class Ingest():
         str: "Success" or an error message
     """
     try:
-      # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
-      response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
-      text = response['Body'].read().decode('utf-8')
-      text = [text]
-      metadatas: List[Dict[str,Any]] = [
-        {
-          'course_name': course_name, 
-          's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': text.index(text), # TODO: does this even work??
-        }]
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into vtt_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+        loader = TextLoader(tmpfile.name)
+        documents = loader.load()
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).name,
+            'pagenumber_or_timestamp': '',
+        } for doc in documents]
 
-      self.split_and_upload(texts=text, metadatas=metadatas)
-      return "Success"
+      success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+      return success_or_failure
     except Exception as e:
-      err: str = f"ERROR IN TXT INGEST: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
-      print(err)
-      return err
+      print(f"ERROR IN TXT READING {e}")
   
   def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
     """
