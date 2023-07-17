@@ -281,7 +281,7 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
       zObject.extractall(
         path=local_dir)
     
-    shutil.move(local_dir+"robots.txt", local_dir+"/static_resources")
+    shutil.move(local_dir+"/"+"robots.txt", local_dir+"/static_resources")
     s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
     success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
 
