@@ -27,7 +27,7 @@ from langchain import LLMChain, OpenAI, PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
                                         SRTLoader,
-                                        UnstructuredPowerPointLoader)
+                                        UnstructuredPowerPointLoader, TextLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import OpenAIChat
 from langchain.schema import Document
@@ -223,35 +223,36 @@ class Ingest():
       return success_status
   
   #TODO: add a method to ingest a single vtt file
-  # def _ingest_single_vtt(self, s3_path: str, course_name: str):
-  #   """
-  #   Ingest a single .vtt file from S3.
-  #   """
-  #   try:
-  #     with NamedTemporaryFile() as tmpfile:
-  #       # download from S3 into vtt_tmpfile
-  #       response = self.s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-  #       text = response.read().decode('utf-8')
-  #       texts = [text]
-  #       metadatas: List[Dict[str, Any]] = [{
-  #           'course_name': course_name,
-  #           's3_path': s3_path,
-  #           'readable_filename': Path(s3_path).name,
-  #           'pagenumber_or_timestamp': '',
-  #       }]
+  def _ingest_single_vtt(self, s3_path: str, course_name: str):
+    """
+    Ingest a single .vtt file from S3.
+    """
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into vtt_tmpfile
+        self.s3_client.download_fiileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
+        loader = TextLoader(tmpfile.name)
+        documents = loader.load()
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).name,
+            'pagenumber_or_timestamp': '',
+        } for doc in documents]
 
-  #       print("texts: ", texts)
-  #       print("metadatas: ", metadatas)
-  #       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
-  #       print(success_or_failure, "in ingesting vtt")
-  #       return success_or_failure
-  #   except Exception as e:
-  #     print(f"ERROR IN VTT READING {e}")
+        print("texts: ", texts)
+        print("metadatas: ", metadatas)
+        success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+        print(success_or_failure, "in ingesting vtt")
+        return success_or_failure
+    except Exception as e:
+      print(f"ERROR IN VTT READING {e}")
 
 
   def _ingest_single_html(self, s3_path: str, course_name: str) -> str:
     try:
-      response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
+      response = self.s3_client.get_object(os.getenv('S3_BUCKET_NAME'), s3_path)
       text = response['Body'].read().decode('utf-8')
       title = s3_path.replace("courses/"+course_name, "")
       title = title.replace(".html", "")
@@ -470,7 +471,7 @@ class Ingest():
     """
     try:
       # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
-      response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
+      response = self.s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
       text = response['Body'].read().decode('utf-8')
       text = [text]
       metadatas: List[Dict[str,Any]] = [
