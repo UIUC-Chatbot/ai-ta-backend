@@ -281,9 +281,24 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
       zObject.extractall(
         path=local_dir)
 
+    ingester = Ingest()
+    s3_client = boto3.client(
+          's3',
+          aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+          aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+      )
     s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
-    s3_paths.extend(upload_data_files_to_s3(course_name, local_dir+"/robots.txt"))
+    with NamedTemporaryFile(suffix=".txt") as temp_txt:
+      temp_txt.write(local_dir+"/robots.txt")
+      temp_txt.seek(0)
+      s3_upload_path = "courses/"+ course_name + "/" + "robots.txt" 
+      s3_paths.append(s3_upload_path)
+      with open(temp_txt.name, 'rb') as f:
+        print("Uploading txt to S3")
+        s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+    
     success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
+
     shutil.move(zip_file, local_dir)
     shutil.rmtree(local_dir)
         
