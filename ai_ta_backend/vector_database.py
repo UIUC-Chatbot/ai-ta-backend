@@ -247,7 +247,7 @@ class Ingest():
 
   def _ingest_single_html(self, s3_path: str, course_name: str) -> str:
     try:
-      response = self.s3_client.get_object(os.environ['S3_BUCKET_NAME'], s3_path)
+      response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       text = response['Body'].read().decode('utf-8')
       title = s3_path.replace("courses/"+course_name, "")
       title = title.replace(".html", "")

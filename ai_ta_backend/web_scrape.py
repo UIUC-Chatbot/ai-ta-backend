@@ -287,7 +287,7 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
 
     shutil.move(zip_file, local_dir)
     shutil.rmtree(local_dir)
-        
+    print("Finished Ingest")
     return success_fail
 
 # FIX BUGS - NO NEED BABY
