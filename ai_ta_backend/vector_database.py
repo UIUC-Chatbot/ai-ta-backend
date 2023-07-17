@@ -27,7 +27,7 @@ from langchain import LLMChain, OpenAI, PromptTemplate
 from langchain.chains.summarize import load_summarize_chain
 from langchain.document_loaders import (Docx2txtLoader, S3DirectoryLoader,
                                         SRTLoader,
-                                        UnstructuredPowerPointLoader, TextLoader)
+                                        UnstructuredPowerPointLoader, TextLoader, PythonLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.llms import OpenAIChat
 from langchain.schema import Document
@@ -236,7 +236,7 @@ class Ingest():
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into vtt_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-        loader = TextLoader(tmpfile.name)
+        loader = PythonLoader(tmpfile.name)
         documents = loader.load()
         texts = [doc.page_content for doc in documents]
         metadatas: List[Dict[str, Any]] = [{
