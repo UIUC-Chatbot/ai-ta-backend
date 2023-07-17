@@ -282,7 +282,7 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
         path=local_dir)
 
     s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
-    s3_paths.extend(upload_data_files_to_s3(course_name, local_dir+"/robots.txt"))
+    s3_paths.append(course_name+"/"+local_dir+"/robots.txt")
     success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
     shutil.move(zip_file, local_dir)
     shutil.rmtree(local_dir)
