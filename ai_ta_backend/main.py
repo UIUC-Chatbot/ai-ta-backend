@@ -1,7 +1,7 @@
 import os
 import re
 import time
-from typing import Any, List
+from typing import Any, List, Union
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
@@ -228,9 +228,10 @@ def scrape():
   max_urls:int = request.args.get('max_urls')
   max_depth:int = request.args.get('max_depth')
   timeout:int = request.args.get('timeout')
-  course_name: List[str] | str = request.args.get('course_name')
+  course_name: str = request.args.get('course_name')
 
   # print all input params
+  print(f"Web scrap!")
   print(f"Url: {url}")
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
@@ -253,28 +254,6 @@ def mit_download_course():
   response = jsonify(success_fail)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
-
-@app.route('/web-scrape', methods=['GET'])
-def scrape():
-  url: str = request.args.get('url')
-  max_urls:int = request.args.get('max_urls')
-  max_depth:int = request.args.get('max_depth')
-  timeout:int = request.args.get('timeout')
-  course_name: List[str] | str = request.args.get('course_name')
-
-  # print all input params
-  print('\n')
-  print(f"Url: {url}")
-  print(f"Max Urls: {max_urls}")
-  print(f"Max Depth: {max_depth}")
-  print(f"Timeout in Seconds ⏰: {timeout}")
-
-  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout)
-
-  response = jsonify(success_fail_dict)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=8000))
