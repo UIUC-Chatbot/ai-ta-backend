@@ -1,7 +1,9 @@
 click
 Flask==2.3.2
 protobuf<=3.20
-gunicorn==20.0.4
+gunicorn==20.1.0
+aiohttp
+tiktoken
 itsdangerous
 Jinja2
 MarkupSafe
@@ -14,7 +16,7 @@ mkdocstrings[python]
 mkdocs-material
 sqlalchemy
 qdrant-client
-langchain==0.0.170
+langchain==0.0.229
 openai
 supabase
 SQLAlchemy
@@ -23,8 +25,8 @@ PyMuPDF
 unstructured
 tabulate
 pdf2image
-typing-inspect==0.8.0
-typing_extensions==4.5.0
+typing-inspect==0.9.0
+typing_extensions==4.7.1
 tiktoken
 pysrt
 docx2txt
@@ -32,8 +34,8 @@ pydub
 ffmpeg-python
 ffprobe
 ffmpeg
-# arize[AutoEmbeddings, LLM_Evaluation]
-# coursera-dl @ git+https://github.com/raffaem/coursera-dl.git
+beautifulsoup4
+cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
 
-# Arize disabled for now because it's a huge import
+# No arize for now, huge build size with these additions.
 # arize[AutoEmbeddings, LLM_Evaluation]
