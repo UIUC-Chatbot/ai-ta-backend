@@ -11,7 +11,6 @@ from ai_ta_backend.aws import upload_data_files_to_s3
 from zipfile import ZipFile
 import shutil
 
-
 # Check if the url is valid
 # Else return the status code
 def valid_url(url):
@@ -290,10 +289,6 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
     print("Finished Ingest")
     return success_fail
 
-# FIX BUGS - NO NEED BABY
-# TODO LIST
-# GET RID OF COOKIES
-
 def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1):
   print("\n")
   max_urls = int(max_urls)
@@ -365,5 +360,4 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
             s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
             ingester.bulk_ingest(s3_upload_path, course_name)
 
-  print("Begin Ingest")
-  print("Finished Ingest")
+  print("Finished /web-scrape")

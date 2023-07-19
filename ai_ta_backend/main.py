@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import time
@@ -7,6 +6,7 @@ from typing import Any, List
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from h11 import Response
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
 
@@ -32,6 +32,7 @@ def index() -> JSON:
   """
   return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
+
 @app.route('/coursera', methods=['GET'])
 def coursera() -> JSON:
   try:
@@ -42,6 +43,20 @@ def coursera() -> JSON:
   
   ingester = Ingest()
   results = ingester.ingest_coursera(coursera_course_name, course_name) # type: ignore
+  response = jsonify(results)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/delete-entire-course', methods=['GET'])
+def delete_entire_course():
+  try:
+    course_name: str = request.args.get('course_name') # type: ignore
+    # coursera_course_name: str = request.args.get('coursera_course_name') # type: ignore
+  except Exception as e:
+    print(f"No course name provided: {e}")
+  
+  ingester = Ingest()
+  results = ingester.delete_entire_course(course_name) # type: ignore
   response = jsonify(results)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -140,21 +155,16 @@ def getContextStuffedPrompt():
     a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
   """
   print("In /getContextStuffedPrompt")
+  
 
   ingester = Ingest()
-  search_query: List[str] | str = request.args.get('search_query')
-  course_name: List[str] | str = request.args.get('course_name')
-  top_n: int = int(request.args.get('top_n'))
-  top_k_to_search: int = int(request.args.get('top_k_to_search'))
-  # print all input params
-  print(f"search_query: {search_query}")
-  print(f"course_name: {course_name}")
-  print(f"top_n: {top_n}")
-  print(f"top_k_to_search: {top_k_to_search}")
+  search_query: str = str(request.args.get('search_query'))      # type: ignore
+  course_name: str = str(request.args.get('course_name'))         # type: ignore 
+  top_n: int = int(request.args.get('top_n'))                     # type: ignore
+  top_k_to_search: int = int(request.args.get('top_k_to_search')) # type: ignore
 
   start_time = time.monotonic()
   stuffed_prompt = ingester.get_context_stuffed_prompt(search_query, course_name, top_n, top_k_to_search)
-  print("stuffed_prompt: ", stuffed_prompt)
   print(f"⏰ Runtime of EXTREME prompt stuffing: {(time.monotonic() - start_time):.2f} seconds")
   response = jsonify({"prompt": stuffed_prompt})
 
@@ -243,6 +253,28 @@ def mit_download_course():
   response = jsonify(success_fail)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+@app.route('/web-scrape', methods=['GET'])
+def scrape():
+  url: str = request.args.get('url')
+  max_urls:int = request.args.get('max_urls')
+  max_depth:int = request.args.get('max_depth')
+  timeout:int = request.args.get('timeout')
+  course_name: List[str] | str = request.args.get('course_name')
+
+  # print all input params
+  print('\n')
+  print(f"Url: {url}")
+  print(f"Max Urls: {max_urls}")
+  print(f"Max Depth: {max_depth}")
+  print(f"Timeout in Seconds ⏰: {timeout}")
+
+  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout)
+
+  response = jsonify(success_fail_dict)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=8000))

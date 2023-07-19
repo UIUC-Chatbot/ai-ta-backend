@@ -8,6 +8,15 @@ from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
 # self.arize_client = Client(space_key=os.getenv('ARIZE_SPACE_KEY'), api_key=os.getenv('ARIZE_API_KEY')) # type: ignore
 
 def log_to_arize(self, course_name: str, user_question: str, llm_completion: str) -> str:
+    """
+    Use LangChain map_reduce_QA to implement this in parallel.
+    Write a function that takes in a question, and returns a very long "stuffed" prompt for GPT-4 to answer on the front-end. (You only construct the prompt for GPT-4, you don't actually return the answer).
+    
+    References:
+    Example & Docs: https://python.langchain.com/en/latest/modules/chains/index_examples/question_answering.html#the-map-reduce-chain
+    Code: https://github.com/hwchase17/langchain/blob/4092fd21dcabd1de273ad902fae2186ae5347e03/langchain/chains/question_answering/map_reduce_prompt.py#L11 
+    """
+    return f"TODO: Implement me! You asked for: {course_name}"
     import pandas as pd
     
     features = {
