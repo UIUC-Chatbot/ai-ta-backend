@@ -6,6 +6,7 @@ from typing import List, Optional
 import boto3
 
 
+
 def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[str]]:
   """Uploads all files in localdir to S3 bucket.
 

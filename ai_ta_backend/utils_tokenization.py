@@ -8,15 +8,13 @@ import tiktoken
 
 def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: str = "gpt-3.5-turbo"): # -> tuple[int, float] | tuple[int, float, int, float]:
   """
-    Returns the number of tokens in a text string.
-    
-    Only the first parameter is required, a string of text to measure. THe completion and model name are optional.
-    
-    num_tokens, prompt_cost = num_tokens_from_string(prompt="hello there")
-    num_tokens_prompt, prompt_cost, num_tokens_completion, completion_cost  = num_tokens_from_string(prompt="hello there", completion="how are you?")
-    
-    
-    
+  Returns the number of tokens in a text string.
+
+  Only the first parameter is required, a string of text to measure. The completion and model name are optional.
+
+  num_tokens, prompt_cost = count_tokens_and_cost(prompt="hello there")
+  num_tokens_prompt, prompt_cost, num_tokens_completion, completion_cost  = count_tokens_and_cost(prompt="hello there", completion="how are you?")  
+  
   Args:
       prompt (str): _description_
       completion (str, optional): _description_. Defaults to ''.
@@ -72,7 +70,7 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
     num_tokens_prompt: int = len(encoding.encode(prompt))
     num_tokens_completion: int = len(encoding.encode(completion))
     prompt_cost = float(prompt_token_cost * num_tokens_prompt)
-    completion_cost = float(completion_token_cost * num_tokens_prompt)
+    completion_cost = float(completion_token_cost * num_tokens_completion)
     return num_tokens_prompt, prompt_cost, num_tokens_completion, completion_cost
 
 from dotenv import load_dotenv
