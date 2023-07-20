@@ -320,7 +320,7 @@ Now please respond to my question: {user_question}"""
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': title,
+          'readable_filename': str(title), # adding str to avoid error: unhashable type 'slice'  
           # 'url': url,
           'pagenumber_or_timestamp': ''
       }]
@@ -329,10 +329,11 @@ Now please respond to my question: {user_question}"""
       # print(f"In _ingest_clean: {metadata}")
       success_or_failure = self.split_and_upload(text, metadata)
       print(success_or_failure)
-      # print(f"In _ingest_clean -- working??: {success_or_failure}")
+      print(f"In _ingest_html -- working??: {success_or_failure}")
       return success_or_failure
     except Exception as e:
-      print(f"ERROR IN HTML INGEST: {e}")
+      err: str = f"ERROR IN HTML INGEST: {e}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
       return f"Error: {e}"
 
   def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
