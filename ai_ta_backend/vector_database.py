@@ -773,7 +773,7 @@ Now please respond to my question: {user_question}"""
 
     return distinct_dicts
 
-  def getTopContexts(self, search_query: str, course_name: str, top_n: int = 20, max_tokens: int = 4_000) -> Union[List[Dict], str]:
+  def getTopContexts(self, search_query: str, course_name: str, top_n: int = 20, max_tokens: int = 3_000) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
     /GET arguments
