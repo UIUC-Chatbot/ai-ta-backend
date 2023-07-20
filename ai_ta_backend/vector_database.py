@@ -308,7 +308,9 @@ Now please respond to my question: {user_question}"""
   def _ingest_html(self, s3_path: str, course_name: str) -> str:
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
-      soup = BeautifulSoup(response, 'html.parser')
+      raw_html = response['Body'].read().decode('utf-8')
+      
+      soup = BeautifulSoup(raw_html, 'html.parser')
       title = s3_path.replace("courses/"+course_name, "")
       title = title.replace(".html", "")
       title = title.replace("_", " ")
@@ -325,16 +327,14 @@ Now please respond to my question: {user_question}"""
           'pagenumber_or_timestamp': ''
       }]
 
-      # print(f"In _ingest_clean: {text}")
-      # print(f"In _ingest_clean: {metadata}")
       success_or_failure = self.split_and_upload(text, metadata)
       print(success_or_failure)
-      print(f"In _ingest_html -- working??: {success_or_failure}")
+      print(f"_ingest_html: {success_or_failure}")
       return success_or_failure
     except Exception as e:
-      err: str = f"ERROR IN HTML INGEST: {e}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      err: str = f"ERROR IN _ingest_html: {e}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
-      return f"Error: {e}"
+      return f"_ingest_html Error: {e}"
 
   def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
     """
