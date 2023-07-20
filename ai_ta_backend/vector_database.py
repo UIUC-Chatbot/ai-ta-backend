@@ -11,11 +11,11 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile  # TemporaryFile
 from typing import Any, Dict, List, Optional, Tuple, Union  # Literal
 
-from bs4 import BeautifulSoup
 import boto3
 import fitz
 import openai
 import supabase
+from bs4 import BeautifulSoup
 # from arize.api import Client
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
 # from arize.utils import ModelTypes
@@ -773,7 +773,7 @@ Now please respond to my question: {user_question}"""
 
     return distinct_dicts
 
-  def getTopContexts(self, search_query: str, course_name: str, top_n: int = 20, max_tokens: int = 6_000) -> Union[List[Dict], str]:
+  def getTopContexts(self, search_query: str, course_name: str, top_n: int = 20, max_tokens: int = 4_000) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
     /GET arguments
@@ -790,6 +790,8 @@ Now please respond to my question: {user_question}"""
       top_n = 25 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS. TODO: Refactor front end.
       print("Max tokens: ", max_tokens)
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
+      
+      ## TODO also count the length of the document name and page number as tokens. Including "Document: " and "Page (if exists): "
       
       
       token_counter: int = 0
