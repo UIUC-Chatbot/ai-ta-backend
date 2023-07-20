@@ -1,7 +1,7 @@
 import os
 import re
 import time
-from typing import Any, List
+from typing import Any, List, Union
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
@@ -11,7 +11,7 @@ from h11 import Response
 from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend.web_scrape import main_crawler
+from ai_ta_backend.web_scrape import main_crawler, mit_course_download
 
 app = Flask(__name__)
 CORS(app)
@@ -222,17 +222,16 @@ def log():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-
 @app.route('/web-scrape', methods=['GET'])
 def scrape():
   url: str = request.args.get('url')
   max_urls:int = request.args.get('max_urls')
   max_depth:int = request.args.get('max_depth')
   timeout:int = request.args.get('timeout')
-  course_name: List[str] | str = request.args.get('course_name')
+  course_name: str = request.args.get('course_name')
 
   # print all input params
-  print('\n')
+  print(f"Web scrap!")
   print(f"Url: {url}")
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
@@ -244,6 +243,17 @@ def scrape():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/mit-download', methods=['GET'])
+def mit_download_course():
+  url:str = request.args.get('url')
+  course_name:str = request.args.get('course_name')
+  local_dir:str = request.args.get('local_dir')
+
+  success_fail = mit_course_download(url, course_name,local_dir)
+
+  response = jsonify(success_fail)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=8000))

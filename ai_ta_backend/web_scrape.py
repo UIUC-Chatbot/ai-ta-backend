@@ -7,6 +7,9 @@ import boto3  # type: ignore
 import requests
 from bs4 import BeautifulSoup
 from ai_ta_backend.vector_database import Ingest
+from ai_ta_backend.aws import upload_data_files_to_s3
+from zipfile import ZipFile
+import shutil
 
 # Check if the url is valid
 # Else return the status code
@@ -25,7 +28,7 @@ def valid_url(url):
 		return e
 
 # Function gets titles of urls and the urls themselves
-def get_urls_dict(url:str):
+def get_urls_list(url:str):
 
     site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
 
@@ -34,21 +37,23 @@ def get_urls_dict(url:str):
     url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
     url = "https://"+url
 
-    urls= {}
+    urls= set()
 
     r = requests.get(url)
     s = BeautifulSoup(r.text,"html.parser")
     body = s.find("body")
-
-    for i in body.find_all("a"):
-
-        # text/label inside the tag for url
-        text = i.text
-
-        # regex to clean \n and \r from text
-        text = re.sub(r'[\n\r]', '', text)
-        text = text.strip()
-        
+    header = s.find("head") 
+    try:
+        if s.title.string == "403 Forbidden": # type: ignore
+            print("403 Forbidden")
+        else:
+            pass
+    except Exception as e:
+        print("Error:", e)
+        pass 
+    
+    # header = s.find("head")
+    for i in body.find_all("a"): # type: ignore
         try:
         # getting the href tag
             href = i.attrs['href']
@@ -64,8 +69,27 @@ def get_urls_dict(url:str):
             href = site+href
         else:
             href = site+'/'+href
-        urls[text] = href    
-    return urls
+        urls.add(href)
+
+    for i in header.find_all("a"): # type: ignore
+        try:
+        # getting the href tag
+            href = i.attrs['href']
+        except KeyError as e:
+            print("KeyError:", e, "for", i)
+            continue
+    
+        if href.startswith("http"):
+            pass
+            
+        # This line doesn't matter because the amount of slashes doesn't change the site, but leave it in for now
+        elif href.startswith("/"):
+            href = site+href
+        else:
+            href = site+'/'+href
+        urls.add(href)
+
+    return list(urls)
 
 
 # Gathers all of the connected urls from the base url
@@ -81,7 +105,7 @@ def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _in
   # If the base url is valid, then add it to the list of urls and get the urls from the base url
   if valid_url(base_url) == True:
     all.append(base_url)
-    urls = list(get_urls_dict(base_url).values())
+    urls = get_urls_list(base_url)
 
     if len(urls) <= max_urls:
       all.extend(urls)
@@ -163,7 +187,7 @@ def pdf_scraper(soup:BeautifulSoup):
 
 # Uses all of above functions to crawl a site
 def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
-    all_sites = site_map(site, max_urls, max_depth)
+    all_sites = list(set(site_map(site, max_urls, max_depth)))
     crawled = []
     invalid_urls = []
 
@@ -222,7 +246,8 @@ def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
     return crawled
 
 # Download a course using its url
-def mit_course_download(url:str, save_path:str, ):
+def mit_course_download(url:str, course_name:str, local_dir:str):
+    ingester = Ingest()
     base = "https://ocw.mit.edu"
     if url.endswith("download"):
         pass
@@ -241,19 +266,28 @@ def mit_course_download(url:str, save_path:str, ):
     print('site', site)
     r = requests.get(url=site, stream=True)
 
+    zip_file = local_dir + ".zip"
+
     try:
-        with open(save_path, 'wb') as fd:
+        with open(zip_file, 'wb') as fd:
             for chunk in r.iter_content(chunk_size=128):
                 fd.write(chunk)
-    
         print("course downloaded!")
-    
     except Exception as e:
         print("Error:", e, site)
 
-# FIX BUGS - NO NEED BABY
-# TODO LIST
-# GET RID OF COOKIES
+    with ZipFile(zip_file, 'r') as zObject:
+      zObject.extractall(
+        path=local_dir)
+    
+    shutil.move(local_dir+"/"+"robots.txt", local_dir+"/static_resources")
+    s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
+    success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
+
+    shutil.move(zip_file, local_dir)
+    shutil.rmtree(local_dir)
+    print("Finished Ingest")
+    return success_fail
 
 def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1):
   print("\n")
@@ -312,6 +346,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       with open(temp_html.name, 'rb') as f:
         print("Uploading html to S3")
         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+        ingester.bulk_ingest(s3_upload_path, course_name)
 
     if key[3] != []:
       with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
@@ -319,11 +354,9 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
           temp_pdf.write(pdf)
           temp_pdf.seek(0) 
           s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
+          paths.append(s3_upload_path)
           with open(temp_pdf.name, 'rb') as f:
             print("Uploading PDF to S3")
             s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
 
-  print("Begin Ingest")
-  success_fail_dict = ingester.bulk_ingest(paths, course_name)
-  print("Finished Ingest")
-  return success_fail_dict
+  print("Finished /web-scrape")
