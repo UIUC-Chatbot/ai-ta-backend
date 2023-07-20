@@ -784,13 +784,18 @@ Now please respond to my question: {user_question}"""
     try:
       import time
       start_time_overall = time.monotonic()
-      top_n = 20 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS. TODO: Refactor front end.
+      top_n = 25 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS. TODO: Refactor front end.
+      print("Max tokens: ", max_tokens)
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
+      
       
       token_counter: int = 0
       valid_docs = []
       for d in found_docs:
-        num_tokens, prompt_cost = count_tokens_and_cost(d.page_content)
+        num_tokens, prompt_cost = count_tokens_and_cost(str(d.page_content))
+        # print(f"num_tokens: {num_tokens}, prompt_cost: {prompt_cost}")
+        print(f"Page: {d.page_content[:100]}...")
+        print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {max_tokens}")
         if token_counter + num_tokens <= max_tokens:
           token_counter += num_tokens
           valid_docs.append(d)
