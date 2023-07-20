@@ -783,16 +783,11 @@ Now please respond to my question: {user_question}"""
       import time
       start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
+      
+      # todo: prompt stuffing until a certain token amount. See prompt_stuffing function.
+      
       print(found_docs)
-
-      # log to Supabase
-      # todo: make this async. It's .6 seconds to log to Supabase. 1 second to get contexts.
-      start_time = time.monotonic()
-      context_arr = [{"content": doc.page_content, "metadata": doc.metadata} for doc in found_docs]
-      one_user_question = {"prompt": search_query, "context": context_arr, "course_name": course_name}  # "completion": 'todo'
-      self.supabase_client.table('llm-monitor').insert(one_user_question).execute()  # type: ignore
-      print(f"⏰ Log to Supabase time: {(time.monotonic() - start_time):.2f} seconds")
-      print(f"⏰ Overall runtime of contexts + logging to Supabase: {(time.monotonic() - start_time_overall):.2f} seconds")
+      print(f"⏰ Runtime of contexts: {(time.monotonic() - start_time_overall):.2f} seconds")
       return self.format_for_json(found_docs)
     except Exception as e:
       # return full traceback to front end
