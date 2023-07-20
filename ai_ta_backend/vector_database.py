@@ -11,6 +11,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile  # TemporaryFile
 from typing import Any, Dict, List, Optional, Tuple, Union  # Literal
 
+from bs4 import BeautifulSoup
 import boto3
 import fitz
 import openai
@@ -228,13 +229,15 @@ Now please respond to my question: {user_question}"""
   def _ingest_html(self, s3_path: str, course_name: str) -> str:
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
-      text = response['Body'].read().decode('utf-8')
-      title = s3_path.replace("courses/" + course_name, "")
+      soup = BeautifulSoup(response, 'html.parser')
+      title = s3_path.replace("courses/"+course_name, "")
       title = title.replace(".html", "")
       title = title.replace("_", " ")
+      title = title.replace("/", " ")
+      title = title.strip()
 
       # url = text.url.string
-      text = [text]
+      text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
