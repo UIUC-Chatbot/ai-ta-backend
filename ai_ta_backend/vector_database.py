@@ -17,6 +17,7 @@ import fitz
 import openai
 import requests
 import supabase
+from bs4 import BeautifulSoup
 # from arize.api import Client
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
 # from arize.utils import ModelTypes
@@ -307,13 +308,15 @@ Now please respond to my question: {user_question}"""
   def _ingest_html(self, s3_path: str, course_name: str) -> str:
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
-      text = response['Body'].read().decode('utf-8')
-      title = s3_path.replace("courses/" + course_name, "")
+      soup = BeautifulSoup(response, 'html.parser')
+      title = s3_path.replace("courses/"+course_name, "")
       title = title.replace(".html", "")
       title = title.replace("_", " ")
+      title = title.replace("/", " ")
+      title = title.strip()
 
       # url = text.url.string
-      text = [text]
+      text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
@@ -768,7 +771,7 @@ Now please respond to my question: {user_question}"""
 
     return distinct_dicts
 
-  def getTopContexts(self, search_query: str, course_name: str, top_n: int = 4) -> Union[List[Dict], str]:
+  def getTopContexts(self, search_query: str, course_name: str, top_n: int = 20, max_tokens: int = 3_000) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
     /GET arguments
@@ -782,13 +785,29 @@ Now please respond to my question: {user_question}"""
     try:
       import time
       start_time_overall = time.monotonic()
+      top_n = 25 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS. TODO: Refactor front end.
+      print("Max tokens: ", max_tokens)
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
       
-      # todo: prompt stuffing until a certain token amount. See prompt_stuffing function.
+      ## TODO also count the length of the document name and page number as tokens. Including "Document: " and "Page (if exists): "
       
-      print(found_docs)
-      print(f"⏰ Runtime of contexts: {(time.monotonic() - start_time_overall):.2f} seconds")
-      return self.format_for_json(found_docs)
+      
+      token_counter: int = 0
+      valid_docs = []
+      for d in found_docs:
+        num_tokens, prompt_cost = count_tokens_and_cost(str(d.page_content))
+        # print(f"num_tokens: {num_tokens}, prompt_cost: {prompt_cost}")
+        print(f"Page: {d.page_content[:100]}...")
+        print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {max_tokens}")
+        if token_counter + num_tokens <= max_tokens:
+          token_counter += num_tokens
+          valid_docs.append(d)
+        else:
+          break
+      
+      print(valid_docs)
+      print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
+      return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
       err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
