@@ -26,7 +26,7 @@ from bs4 import BeautifulSoup
 # #                                Metrics, ModelTypes, Schema)
 from langchain.document_loaders import (Docx2txtLoader, PythonLoader,
                                         SRTLoader,
-                                        UnstructuredPowerPointLoader)
+                                        UnstructuredPowerPointLoader, TextLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -58,7 +58,7 @@ class Ingest():
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-        embeddings=OpenAIEmbeddings())  # type: ignore
+        embeddings=OpenAIEmbeddings())  
 
     # S3
     self.s3_client = boto3.client(
