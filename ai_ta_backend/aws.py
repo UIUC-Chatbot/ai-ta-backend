@@ -6,7 +6,6 @@ from typing import List, Optional
 import boto3
 
 
-
 def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[str]]:
   """Uploads all files in localdir to S3 bucket.
 
@@ -44,7 +43,8 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
     with s3_paths_lock:
       s3_paths.append(s3_file)
 
-  min_p = 6
+  # only 2 parallel uploads because we're getting rate limited with min_p=6... 503 errors.
+  min_p = 2
   max_p = cpu_count()
   num_procs = max(min(len(filenames), max_p), min_p)
   pool = ThreadPool(processes=num_procs)
