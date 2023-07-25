@@ -12,25 +12,32 @@ from bs4 import BeautifulSoup
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
 
-
-# Check if the url is valid
-# Else return the status code
 def valid_url(url):
-	try:
-		# pass the url into
-		# request.hear
-		response = requests.head(url)
-		
-		# check the status code
-		if response.status_code == 200:
-			return True
-		else:
-			return response.status_code
-	except requests.ConnectionError as e:
-		return e
+  '''Returns the URL if it's good, otherwise returns false. Prints the status code.'''
+  try:
+    response = requests.head(url, allow_redirects=True)
+    
+    redirect_loop_counter = 0
+    while response.status_code == 301:
+      # Check for permanent redirect
+      if redirect_loop_counter > 3:
+        print("Redirect loop (on 301 error) exceeded redirect limit of:", redirect_loop_counter)
+        return False
+      redirect_url = response.headers['Location']
+      response = requests.head(redirect_url)
+      redirect_loop_counter += 1
+    
+    if response.status_code == 200:
+      return response.url
+    else:
+      print("URL is invalid:", response.url, "Return code:", response.status_code)
+      return False
+  except requests.RequestException as e:
+    print("URL is invalid:", url, "Error:", e)
+    return False
 
-# Function gets titles of urls and the urls themselves
 def get_urls_list(url:str):
+  '''Function gets titles of urls and the urls themselves'''
 
     site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
 
