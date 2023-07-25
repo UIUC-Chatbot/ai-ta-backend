@@ -102,18 +102,60 @@ def getTopContexts():
   try:
     course_name: str = request.args.get('course_name')
     search_query: str = request.args.get('search_query')
-    top_n: str = request.args.get('top_n')
+    token_limit: int = request.args.get('token_limit')
   except Exception as e:
     print("No course name provided.")
 
   print("In /getTopContexts: ", search_query)
   if search_query is None:
     return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
+  if token_limit is None:
+    token_limit = 3_000
+  else:
+    token_limit = int(token_limit)
 
   ingester = Ingest()
-  found_documents = ingester.getTopContexts(search_query, course_name, top_n)
+  found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
 
   response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/get_stuffed_prompt', methods=['GET'])
+def get_stuffed_prompt():
+  """Get most relevant contexts for a given search query.
+  
+  ## GET arguments
+  course name (optional) str
+      A json response with TBD fields.
+  search_query
+  top_n
+  
+  Returns
+  -------
+    String
+    
+  """
+  # todo: best way to handle optional arguments?
+  try:
+    course_name: str = request.args.get('course_name')
+    search_query: str = request.args.get('search_query')
+    token_limit: int = request.args.get('token_limit')
+  except Exception as e:
+    print("No course name provided.")
+
+  print("In /getTopContexts: ", search_query)
+  if search_query is None:
+    return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
+  if token_limit is None:
+    token_limit = 3_000
+  else:
+    token_limit = int(token_limit)
+
+  ingester = Ingest()
+  prompt = ingester.get_stuffed_prompt(search_query, course_name, token_limit)
+
+  response = jsonify(prompt)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
