@@ -1,15 +1,17 @@
 import os
 import re
+import shutil
 import time
 from tempfile import NamedTemporaryFile
+from zipfile import ZipFile
 
 import boto3  # type: ignore
 import requests
 from bs4 import BeautifulSoup
-from ai_ta_backend.vector_database import Ingest
+
 from ai_ta_backend.aws import upload_data_files_to_s3
-from zipfile import ZipFile
-import shutil
+from ai_ta_backend.vector_database import Ingest
+
 
 # Check if the url is valid
 # Else return the status code
@@ -185,8 +187,19 @@ def pdf_scraper(soup:BeautifulSoup):
   return list(set(pdf))
 
 
-# Uses all of above functions to crawl a site
 def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
+    """
+    Crawl a site and scrape its content and PDFs.
+
+    Args:
+        site (str): The URL of the site to crawl.
+        max_urls (int, optional): The maximum number of URLs to crawl. Defaults to 1000.
+        max_depth (int, optional): The maximum depth of URLs to crawl. Defaults to 3.
+        timeout (int, optional): The number of seconds to wait between requests. Defaults to 1.
+
+    Returns:
+        A list of lists, where each inner list contains the URL, text content, BeautifulSoup object, and list of PDF URLs for a crawled site.
+    """
     all_sites = list(set(site_map(site, max_urls, max_depth)))
     crawled = []
     invalid_urls = []
@@ -290,13 +303,25 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
     return success_fail
 
 def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1):
+  """
+  Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
+
+  Args:
+    url (str): The URL of the site to crawl.
+    course_name (str): The name of the course to associate with the crawled data.
+    max_urls (int, optional): The maximum number of URLs to crawl. Defaults to 100.
+    max_depth (int, optional): The maximum depth of URLs to crawl. Defaults to 3.
+    timeout (int, optional): The number of seconds to wait between requests. Defaults to 1.
+
+  Returns:
+    None
+  """
   print("\n")
   max_urls = int(max_urls)
   max_depth = int(max_depth)
   timeout = int(timeout)
   data = crawler(url, max_urls, max_depth, timeout)
 
-  print("Crawl Success!")
   print("Begin Ingest")
 
   ingester = Ingest()
