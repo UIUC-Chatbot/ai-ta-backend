@@ -784,7 +784,7 @@ Now please respond to my question: {user_question}"""
       String: An error message with traceback.
     """
     try:
-      top_n = 50 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS. TODO: Refactor front end.
+      top_n = 50 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
       if len(found_docs) == 0:
@@ -798,7 +798,6 @@ Now please respond to my question: {user_question}"""
       for d in found_docs:
         doc_string = f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber_or_timestamp']) if d.metadata['pagenumber_or_timestamp'] else ''}\n{d.page_content}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
-        print(f"Page: {d.page_content[:100]}...")
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
@@ -806,8 +805,9 @@ Now please respond to my question: {user_question}"""
         else:
           break
       
-      print(valid_docs)
+      print(f"Total tokens: {token_counter}", "total docs: ", len(found_docs), "num docs used: ", len(valid_docs))
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
+
       return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
@@ -861,7 +861,6 @@ Now please respond to my question: {user_question}"""
 
       TOTAL_num_tokens, prompt_cost = count_tokens_and_cost(stuffedPrompt, openai_model_name='gpt-4')
       print(f"Total tokens: {TOTAL_num_tokens}, prompt_cost: {prompt_cost}")
-      print(f"Should be same as token counter: {token_counter}")
       print("total docs: ", len(found_docs))
       print("num docs used: ", len(valid_docs))
 
