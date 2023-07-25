@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
 
+
 def valid_url(url):
   '''Returns the URL if it's good, otherwise returns false. Prints the status code.'''
   try:
@@ -37,7 +38,7 @@ def valid_url(url):
     return False
 
 def get_urls_list(url:str):
-  '''Function gets titles of urls and the urls themselves'''
+    '''Function gets titles of urls and the urls themselves'''
 
     site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
 
@@ -112,7 +113,9 @@ def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _in
   amount = max_urls
 
   # If the base url is valid, then add it to the list of urls and get the urls from the base url
-  if valid_url(base_url) == True:
+  valid_base_url = valid_url(base_url)
+  if valid_base_url:
+    base_url = valid_base_url
     all.append(base_url)
     urls = get_urls_list(base_url)
 
@@ -121,7 +124,6 @@ def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _in
     else:
       all.extend(urls[:max_urls])
   else:
-    print("Invalid URL", base_url + ",", "Status Code:",valid_url(base_url))
     _invalid_urls.append(base_url)
 
   # Create the new amount of max urls for the next function call
@@ -134,7 +136,9 @@ def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _in
       # _invalid_urls.append(url)
       
       if url not in _invalid_urls:
-        if valid_url(url) == True:
+        valid_url_result = valid_url(url)
+        if valid_url_result:
+          url = valid_url_result
           if max_urls > 0:
             if _depth < max_depth:
               all.extend(site_map(url, max_urls, max_depth, _depth+1, _invalid_urls))
@@ -146,7 +150,6 @@ def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _in
           else:
             break
         else:
-          print("Invalid URL", url + ',', "Status Code:",valid_url(url))
           _invalid_urls.append(url)
           continue
       else:
