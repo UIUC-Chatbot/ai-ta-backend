@@ -106,7 +106,6 @@ def getTopContexts():
   except Exception as e:
     print("No course name provided.")
 
-  print("In /getTopContexts: ", search_query)
   if search_query is None:
     return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
   if token_limit is None:
