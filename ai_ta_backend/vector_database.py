@@ -197,7 +197,6 @@ Now please respond to my question: {user_question}"""
     asyncio.run(oai.process_api_requests_from_file())
     #results: list[str] = oai.results
     #print(f"Cleaned results: {oai.cleaned_results}")
-    
     summary = oai.cleaned_results
     return summary
 
