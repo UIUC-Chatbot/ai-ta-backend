@@ -673,8 +673,9 @@ Now please respond to my question: {user_question}"""
 
       return "Success"
     except Exception as e:
-      print(f'ERROR IN SPLIT AND UPLOAD {e}')
-      return f"Error: {e}"
+      err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+      return err
     
   def delete_entire_course(self, course_name: str):
     """Delete entire course.
