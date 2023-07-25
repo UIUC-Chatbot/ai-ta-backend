@@ -158,6 +158,49 @@ Now please respond to my question: {user_question}"""
 # "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
 
     return stuffed_prompt
+  
+  def ai_summary(self, text: List[str], metadata: List[Dict[str, Any]]) -> List[str]:
+    """
+    Given a textual input, return a summary of the text.
+    """
+    #print("in AI SUMMARY")
+    requests = []
+    for i in range(len(text)):
+      dictionary = {
+            "model": "gpt-3.5-turbo",
+            "messages": [{
+                "role":
+                    "system",
+                "content":
+                    "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+            }, {
+                "role":
+                    "user",
+                "content":
+                    f"Provide a descriptive summary of the given text:\n{text[i]}\nThe summary should cover all the key points, while also condensing the information into a concise format. The length of the summary should not exceed 3 sentences.",
+            }],
+            "n": 1,
+            "max_tokens": 600,
+            "metadata": metadata[i]
+        }
+      requests.append(dictionary)
+
+    oai = OpenAIAPIProcessor(input_prompts_list=requests,
+                             request_url='https://api.openai.com/v1/chat/completions',
+                             api_key=os.getenv("OPENAI_API_KEY"),
+                             max_requests_per_minute=1500,
+                             max_tokens_per_minute=90000,
+                             token_encoding_name='cl100k_base',
+                             max_attempts=5,
+                             logging_level=20)
+
+    asyncio.run(oai.process_api_requests_from_file())
+    #results: list[str] = oai.results
+    #print(f"Cleaned results: {oai.cleaned_results}")
+    
+    summary = oai.cleaned_results
+    return summary
+
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
@@ -174,7 +217,7 @@ Now please respond to my question: {user_question}"""
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
           mime_type = mimetypes.guess_type(tmpfile.name)[0]
           category, subcategory = mime_type.split('/')
-
+        
         if s3_path.endswith('.html'):
           ret = self._ingest_html(s3_path, course_name)
           if ret != "Success":
@@ -200,6 +243,7 @@ Now please respond to my question: {user_question}"""
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.txt'):
+          print("in txt condition")
           ret = self._ingest_single_txt(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
@@ -250,6 +294,10 @@ Now please respond to my question: {user_question}"""
             'pagenumber_or_timestamp': '',
         } for doc in documents]
 
+        summary = self.ai_summary(texts, metadatas)
+        for i in range(len(summary)):
+          metadatas[i]['summary'] = summary[i]
+
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
         return success_or_failure
     except Exception as e:
@@ -266,6 +314,7 @@ Now please respond to my question: {user_question}"""
         loader = TextLoader(tmpfile.name)
         documents = loader.load()
         texts = [doc.page_content for doc in documents]
+
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
@@ -273,37 +322,41 @@ Now please respond to my question: {user_question}"""
             'pagenumber_or_timestamp': '',
         } for doc in documents]
 
+        summary = self.ai_summary(texts, metadatas)
+        for i in range(len(summary)):
+          metadatas[i]['summary'] = summary[i]
+
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
         return success_or_failure
     except Exception as e:
       print(f"ERROR IN VTT READING {e}")
 
 
-  def _ingest_single_html(self, s3_path: str, course_name: str) -> str:
-    try:
-      response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
-      text = response['Body'].read().decode('utf-8')
-      title = s3_path.replace("courses/"+course_name, "")
-      title = title.replace(".html", "")
-      title = title.replace("_", " ")
-      title = title.replace("/", " ")
-      title = title.strip()
+  # def _ingest_single_html(self, s3_path: str, course_name: str) -> str:
+  #   try:
+  #     response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
+  #     text = response['Body'].read().decode('utf-8')
+  #     title = s3_path.replace("courses/"+course_name, "")
+  #     title = title.replace(".html", "")
+  #     title = title.replace("_", " ")
+  #     title = title.replace("/", " ")
+  #     title = title.strip()
 
-      # url = text.url.string
-      text = [text]
-      metadata: List[Dict[str, Any]] = [{
-      'course_name': course_name,
-      's3_path': s3_path,
-      'readable_filename': title,
-      # 'url': url, 
-      'pagenumber_or_timestamp': ''
-      }]
+  #     # url = text.url.string
+  #     text = [text]
+  #     metadata: List[Dict[str, Any]] = [{
+  #     'course_name': course_name,
+  #     's3_path': s3_path,
+  #     'readable_filename': title,
+  #     # 'url': url, 
+  #     'pagenumber_or_timestamp': ''
+  #     }]
       
-      success_or_failure = self.split_and_upload(text, metadata)
-      return success_or_failure
-    except Exception as e:
-      print(f"ERROR IN HTML INGEST: {e}")
-      return f"Error: {e}"
+  #     success_or_failure = self.split_and_upload(text, metadata)
+  #     return success_or_failure
+  #   except Exception as e:
+  #     print(f"ERROR IN HTML INGEST: {e}")
+  #     return f"Error: {e}"
 
   def _ingest_html(self, s3_path: str, course_name: str) -> str:
     try:
@@ -326,6 +379,10 @@ Now please respond to my question: {user_question}"""
           # 'url': url,
           'pagenumber_or_timestamp': ''
       }]
+
+      summary = self.ai_summary(text, metadata)
+      for i in range(len(summary)):
+        metadata[i]['summary'] = summary[i]
 
       success_or_failure = self.split_and_upload(text, metadata)
       print(success_or_failure)
@@ -406,6 +463,10 @@ Now please respond to my question: {user_question}"""
           'pagenumber_or_timestamp': text.index(txt),
       } for txt in text]
 
+      summary = self.ai_summary(text, metadatas)
+      for i in range(len(summary)):
+        metadatas[i]['summary'] = summary[i]
+
       self.split_and_upload(texts=text, metadatas=metadatas)
       return "Success"
     except Exception as e:
@@ -434,6 +495,10 @@ Now please respond to my question: {user_question}"""
             'pagenumber_or_timestamp': '',
         } for doc in documents]
 
+        summary = self.ai_summary(texts, metadatas)
+        for i in range(len(summary)):
+          metadatas[i]['summary'] = summary[i]
+
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
@@ -456,6 +521,10 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '',
         } for doc in documents]
+
+        summary = self.ai_summary(texts, metadatas)
+        for i in range(len(summary)):
+          metadatas[i]['summary'] = summary[i]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
@@ -509,6 +578,9 @@ Now please respond to my question: {user_question}"""
             } for page in pdf_pages_OCRed
         ]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+        summary = self.ai_summary(pdf_texts, metadatas)
+        for i in range(len(summary)):
+          metadatas[i]['summary'] = summary[i]
 
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
     except Exception as e:
@@ -519,11 +591,9 @@ Now please respond to my question: {user_question}"""
 
   def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
     """Ingest a single .txt file from S3.
-
     Args:
         s3_path (str): A path to a .txt file in S3
         course_name (str): The name of the course
-
     Returns:
         str: "Success" or an error message
     """
@@ -532,12 +602,17 @@ Now please respond to my question: {user_question}"""
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       text = response['Body'].read().decode('utf-8')
       text = [text]
+    
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
           'pagenumber_or_timestamp': '',
         }]
+      summary = self.ai_summary(text, metadatas)
+      for i in range(len(summary)):
+        metadatas[i]['summary'] = summary[i]
+
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
     except Exception as e:
@@ -551,6 +626,7 @@ Now please respond to my question: {user_question}"""
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
+        #print("in ingest PPTX")
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
 
         loader = UnstructuredPowerPointLoader(tmpfile.name)
@@ -563,6 +639,11 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '', 
         } for doc in documents]
+
+        summary = self.ai_summary(texts, metadatas)
+        #print("texts: ", len(texts))
+        for i in range(len(summary)):
+          metadatas[i]['summary'] = summary[i]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
