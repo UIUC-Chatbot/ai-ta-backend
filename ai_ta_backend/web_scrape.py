@@ -187,18 +187,35 @@ def scraper(url:str):
     return soup
 
 
-def pdf_scraper(soup:BeautifulSoup): 
+def pdf_scraper(soup:BeautifulSoup, url:str): 
+  try:
+    if url.startswith("https:"):
+      base= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
+    elif url.startswith("http:"):
+      base = re.match(pattern=r'http:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
+    else:
+      return []
+  except Exception as e:
+    print("Error:", e)
+    return []
+  
   links = soup.find_all('a')
   pdf = []
   try:
     for link in links:
       if ('.pdf' in link.get('href', [])):
         # Get response object for link
-        response = requests.get(link.get('href'))
+        if link.get('href').startswith("http"):
+          site = link.get('href')
+        elif link.get('href').startswith("/"):
+          site = base+link.get('href')
+        else:
+          site = base+'/'+link.get('href')
+        response = requests.get(site)
         content =  response.content
         if f"<!DOCTYPE html>" not in str(content):
           pdf.append(content)
-          print("PDF scraped:", link.get('href'))
+          print("PDF scraped:", site)
   except Exception as e:
     print("PDF scrape error:", e)
 
@@ -230,7 +247,7 @@ def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
             site_data.append(soup.get_text())
             site_data.append(soup)
             print("Scraped:", site)
-            site_data.append(pdf_scraper(soup))
+            site_data.append(pdf_scraper(soup, site))
             crawled.append(site_data)
             time.sleep(timeout)
 
