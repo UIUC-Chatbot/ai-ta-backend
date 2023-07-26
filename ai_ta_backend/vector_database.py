@@ -673,8 +673,9 @@ Now please respond to my question: {user_question}"""
 
       return "Success"
     except Exception as e:
-      print(f'ERROR IN SPLIT AND UPLOAD {e}')
-      return f"Error: {e}"
+      err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+      return err
     
   def delete_entire_course(self, course_name: str):
     """Delete entire course.
@@ -798,7 +799,7 @@ Now please respond to my question: {user_question}"""
       for d in found_docs:
         doc_string = f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber_or_timestamp']) if d.metadata['pagenumber_or_timestamp'] else ''}\n{d.page_content}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
-        print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
+        # print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
           valid_docs.append(d)
@@ -806,6 +807,7 @@ Now please respond to my question: {user_question}"""
           break
       
       print(f"Total tokens: {token_counter}", "total docs: ", len(found_docs), "num docs used: ", len(valid_docs))
+      print(f"Course: {course_name} ... search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
 
       return self.format_for_json(valid_docs)
