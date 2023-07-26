@@ -322,33 +322,6 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       print(f"ERROR IN VTT READING {e}")
 
-
-  # def _ingest_single_html(self, s3_path: str, course_name: str) -> str:
-  #   try:
-  #     response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
-  #     text = response['Body'].read().decode('utf-8')
-  #     title = s3_path.replace("courses/"+course_name, "")
-  #     title = title.replace(".html", "")
-  #     title = title.replace("_", " ")
-  #     title = title.replace("/", " ")
-  #     title = title.strip()
-
-  #     # url = text.url.string
-  #     text = [text]
-  #     metadata: List[Dict[str, Any]] = [{
-  #     'course_name': course_name,
-  #     's3_path': s3_path,
-  #     'readable_filename': title,
-  #     # 'url': url, 
-  #     'pagenumber_or_timestamp': ''
-  #     }]
-      
-  #     success_or_failure = self.split_and_upload(text, metadata)
-  #     return success_or_failure
-  #   except Exception as e:
-  #     print(f"ERROR IN HTML INGEST: {e}")
-  #     return f"Error: {e}"
-
   def _ingest_html(self, s3_path: str, course_name: str) -> str:
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
@@ -701,7 +674,7 @@ Now please respond to my question: {user_question}"""
     """
     print("in ingest_github")
     repo_path = "media/cloned_repo"
-    repo = Repo.clone_from(github_url, to_path=repo_path)
+    repo = Repo.clone_from(github_url, to_path=repo_path, depth=1, clone_submodules=False)
     branch = repo.head.reference
 
     loader = GitLoader(repo_path="media/cloned_repo", branch=branch)
