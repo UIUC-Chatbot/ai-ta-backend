@@ -47,6 +47,21 @@ def coursera() -> JSON:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/github', methods=['GET'])
+def github() -> JSON:
+  try:
+    course_name: str = request.args.get('course_name') # type: ignore
+    github_url: str = request.args.get('github_url') # type: ignore
+  except Exception as e:
+    print(f"No course name provided: {e}")
+  
+  print("In /github")
+  ingester = Ingest()
+  results = ingester.ingest_github(github_url, course_name)
+  response = jsonify(results)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 @app.route('/delete-entire-course', methods=['GET'])
 def delete_entire_course():
   try:

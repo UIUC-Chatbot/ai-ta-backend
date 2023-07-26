@@ -26,13 +26,15 @@ from bs4 import BeautifulSoup
 # #                                Metrics, ModelTypes, Schema)
 from langchain.document_loaders import (Docx2txtLoader, PythonLoader,
                                         SRTLoader,
-                                        UnstructuredPowerPointLoader, TextLoader)
+                                        UnstructuredPowerPointLoader, TextLoader, GitLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
+
+from git import Repo
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
@@ -242,11 +244,9 @@ Now please respond to my question: {user_question}"""
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.txt'):
-          print("in txt condition")
           ret = self._ingest_single_txt(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
-            print("txt failure")
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.srt'):
@@ -293,10 +293,6 @@ Now please respond to my question: {user_question}"""
             'pagenumber_or_timestamp': '',
         } for doc in documents]
 
-        summary = self.ai_summary(texts, metadatas)
-        for i in range(len(summary)):
-          metadatas[i]['summary'] = summary[i]
-
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
         return success_or_failure
     except Exception as e:
@@ -320,10 +316,6 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '',
         } for doc in documents]
-
-        summary = self.ai_summary(texts, metadatas)
-        for i in range(len(summary)):
-          metadatas[i]['summary'] = summary[i]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
         return success_or_failure
@@ -378,10 +370,6 @@ Now please respond to my question: {user_question}"""
           # 'url': url,
           'pagenumber_or_timestamp': ''
       }]
-
-      summary = self.ai_summary(text, metadata)
-      for i in range(len(summary)):
-        metadata[i]['summary'] = summary[i]
 
       success_or_failure = self.split_and_upload(text, metadata)
       print(success_or_failure)
@@ -462,10 +450,6 @@ Now please respond to my question: {user_question}"""
           'pagenumber_or_timestamp': text.index(txt),
       } for txt in text]
 
-      summary = self.ai_summary(text, metadatas)
-      for i in range(len(summary)):
-        metadatas[i]['summary'] = summary[i]
-
       self.split_and_upload(texts=text, metadatas=metadatas)
       return "Success"
     except Exception as e:
@@ -494,10 +478,6 @@ Now please respond to my question: {user_question}"""
             'pagenumber_or_timestamp': '',
         } for doc in documents]
 
-        summary = self.ai_summary(texts, metadatas)
-        for i in range(len(summary)):
-          metadatas[i]['summary'] = summary[i]
-
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
@@ -520,10 +500,6 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '',
         } for doc in documents]
-
-        summary = self.ai_summary(texts, metadatas)
-        for i in range(len(summary)):
-          metadatas[i]['summary'] = summary[i]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
@@ -577,9 +553,6 @@ Now please respond to my question: {user_question}"""
             } for page in pdf_pages_OCRed
         ]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
-        summary = self.ai_summary(pdf_texts, metadatas)
-        for i in range(len(summary)):
-          metadatas[i]['summary'] = summary[i]
 
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
     except Exception as e:
@@ -608,9 +581,6 @@ Now please respond to my question: {user_question}"""
           'readable_filename': Path(s3_path).name,
           'pagenumber_or_timestamp': '',
         }]
-      summary = self.ai_summary(text, metadatas)
-      for i in range(len(summary)):
-        metadatas[i]['summary'] = summary[i]
 
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
@@ -638,11 +608,6 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber_or_timestamp': '', 
         } for doc in documents]
-
-        summary = self.ai_summary(texts, metadatas)
-        #print("texts: ", len(texts))
-        for i in range(len(summary)):
-          metadatas[i]['summary'] = summary[i]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
@@ -719,6 +684,34 @@ Now please respond to my question: {user_question}"""
       err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
+    
+  def ingest_github(self, github_url: str, course_name: str) -> str:
+    """
+    Clones the given GitHub URL and uses Langchain to load data.
+    1. Clone the repo
+    2. Use Langchain to load the data
+    3. Upload data to S3
+    4. Pass to split_and_upload()
+    Args:
+        github_url (str): The Github Repo URL to be ingested.
+        course_name (str): The name of the course in our system.
+
+    Returns:
+        _type_: Success or error message.
+    """
+    print("in ingest_github")
+    repo_path = "media/cloned_repo"
+    repo = Repo.clone_from(github_url, to_path=repo_path)
+    branch = repo.head.reference
+
+    loader = GitLoader(repo_path="media/cloned_repo", branch=branch)
+    data = loader.load()
+    print(len(data))
+
+    s3_paths: Union[List, None] = upload_data_files_to_s3(course_name, repo_path)
+    print("s3_paths: ", s3_paths)
+    
+    shutil.rmtree("media/cloned_repo")
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
@@ -733,6 +726,11 @@ Now please respond to my question: {user_question}"""
     assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
 
     try:
+      # generate AI summary
+      summary = self.ai_summary(texts, metadatas)
+      for i in range(len(summary)):
+        metadatas[i]['summary'] = summary[i]
+
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
