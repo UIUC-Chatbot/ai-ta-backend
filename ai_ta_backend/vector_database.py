@@ -813,7 +813,7 @@ Now please respond to my question: {user_question}"""
       return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
-      err: str = f"In /getTopContexts. Course: {course_name} ||| search_query: {search_query} ||| Total tokens: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      err: str = f"In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
   
