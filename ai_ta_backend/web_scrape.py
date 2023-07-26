@@ -39,19 +39,15 @@ def valid_url(url):
 
 def get_urls_list(url:str):
     '''Function gets titles of urls and the urls themselves'''
-    # if url.startswith("https:")
-    #   site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
-    # elif url.startswith("http:"):
-    #   site = re.match(pattern=r'http:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
-    # else:
-      
-    #   return []
-    # Gets rid of double slashes
-    if url.startswith("https:"):
+    # Get rid of double slashes in url
+    # Create a base site for incomplete hrefs
+    if url.startswith("https:")
+      site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
       url = re.sub(pattern=r"https:\/\/", repl="", string=url)
       url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
       url = "https://"+url
     elif url.startswith("http:"):
+      site = re.match(pattern=r'http:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
       url = re.sub(pattern=r"http:\/\/", repl="", string=url)
       url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
       url = "http://"+url
