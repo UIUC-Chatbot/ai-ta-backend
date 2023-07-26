@@ -387,10 +387,12 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   except Exception as e:
     print("Error:", e)
     clean = titles
+  print("title names after regex before cleaning", clean)
   path_name = []
   counter = 0
   for value in clean:
-    value = value.strip()
+    value = value.strip() if value else ""
+    # value = value.strip()
     value = value.replace(" ", "_")
     if value == "403_Forbidden":
       print("Found Forbidden Key, deleting data")
@@ -398,6 +400,8 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     else:
       path_name.append(value)
       counter += 1
+      
+  print("Cleaned title names", path_name)
 
 
   # Upload each html to S3
