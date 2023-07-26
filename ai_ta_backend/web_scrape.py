@@ -41,6 +41,7 @@ def get_urls_list(url:str):
     '''Function gets titles of urls and the urls themselves'''
     # Get rid of double slashes in url
     # Create a base site for incomplete hrefs
+
     if url.startswith("https:"):
       site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
       url = re.sub(pattern=r"https:\/\/", repl="", string=url)
@@ -80,8 +81,6 @@ def get_urls_list(url:str):
     
         if href.startswith("http"):
             pass
-            
-        # This line doesn't matter because the amount of slashes doesn't change the site, but leave it in for now
         elif href.startswith("/"):
             href = site+href
         else:
@@ -98,8 +97,6 @@ def get_urls_list(url:str):
     
         if href.startswith("http"):
             pass
-            
-        # This line doesn't matter because the amount of slashes doesn't change the site, but leave it in for now
         elif href.startswith("/"):
             href = site+href
         else:
@@ -357,11 +354,18 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       titles.append(value[2].title.string)  
     except AttributeError as e:
       # if no title
-      placeholder_title = re.findall(pattern=r'[a-zA-Z0-9.]*[a-z]', string=value[0])[1]
+      try:
+        placeholder_title = re.findall(pattern=r'[a-zA-Z0-9.]*[a-z]', string=value[0])[1]
+      except Exception as e:
+        placeholder_title = "Title Not Found"
       titles.append(placeholder_title)
       print(f"URL is missing a title, using this title instead: {placeholder_title}")
-  
-  clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles] # type: ignore
+
+  try:
+    clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles] # type: ignore
+  except Exception as e:
+    print("Error:", e)
+    clean = titles
   path_name = []
   counter = 0
   for value in clean:
@@ -388,7 +392,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       with open(temp_html.name, 'rb') as f:
         print("Uploading html to S3")
         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-        ingester.bulk_ingest(s3_upload_path, course_name)
+        ingester.bulk_ingest(s3_upload_path, course_name=course_name)
 
     if key[3] != []:
       with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
