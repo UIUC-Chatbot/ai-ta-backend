@@ -788,7 +788,7 @@ Now please respond to my question: {user_question}"""
     """
     try:
       # TODO: change back to 50+ once we have bigger qdrant DB.
-      top_n = 5 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
+      top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
       if len(found_docs) == 0:
@@ -816,7 +816,7 @@ Now please respond to my question: {user_question}"""
       return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
-      err: str = f"In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      err: str = f"In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
       print(err)
       return err
   
