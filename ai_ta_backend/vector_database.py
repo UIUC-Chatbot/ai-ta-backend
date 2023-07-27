@@ -787,7 +787,8 @@ Now please respond to my question: {user_question}"""
       String: An error message with traceback.
     """
     try:
-      top_n = 50 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
+      # TODO: change back to 50+ once we have bigger qdrant DB.
+      top_n = 5 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
       if len(found_docs) == 0:
