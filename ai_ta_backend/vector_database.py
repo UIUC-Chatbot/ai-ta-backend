@@ -7,9 +7,10 @@ import shutil
 import subprocess
 import time
 import traceback
+import uuid  # Literal
 from pathlib import Path
 from tempfile import NamedTemporaryFile  # TemporaryFile
-from typing import Any, Dict, List, Optional, Tuple, Union  # Literal
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import boto3
 # import requests
@@ -33,6 +34,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
+from qdrant_client.models import PointStruct
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
@@ -48,6 +50,7 @@ class Ingest():
     """
     Initialize AWS S3, Qdrant, and Supabase.
     """
+    openai.api_key = os.getenv("OPENAI_API_KEY")
 
     # vector DB
     self.qdrant_client = QdrantClient(
@@ -667,9 +670,36 @@ Now please respond to my question: {user_question}"""
         return [doc for doc in documents if len(doc.page_content) > 50]
 
       documents = remove_small_contexts(documents=documents)
-
+      
+      # TODO: make embeddings once, save to both Qdrant and Supabase SQL
+      # todo; make all these calls in parallel / batches
+      response = openai.Embedding.create(
+          input="Your text string goes here",
+          model="text-embedding-ada-002"
+      )
+      embeddings = response['data'][0]['embedding']
+      
+      vectors = []
+      for doc, embed in zip(documents, embeddings):
+        vectors.append(
+          PointStruct(
+                      id=str(uuid.uuid4()),
+                      vector=embed.tolist(),
+                      payload=doc.metadata
+                  )
+        )
       # upload to Qdrant
+      self.qdrant_client.upsert(
+          collection_name="my_collection",
+          points=[
+              
+          ]
+      )
+      # replace with Qdrant
       self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
+      
+      
+      # upload to Supabase SQL
       data = [{"content": doc.page_content, "metadata": doc.metadata} for doc in documents]
       count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(data).execute()  # type: ignore
 
