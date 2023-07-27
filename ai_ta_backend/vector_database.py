@@ -161,46 +161,46 @@ Now please respond to my question: {user_question}"""
 
     return stuffed_prompt
   
-  def ai_summary(self, text: List[str], metadata: List[Dict[str, Any]]) -> List[str]:
-    """
-    Given a textual input, return a summary of the text.
-    """
-    #print("in AI SUMMARY")
-    requests = []
-    for i in range(len(text)):
-      dictionary = {
-            "model": "gpt-3.5-turbo",
-            "messages": [{
-                "role":
-                    "system",
-                "content":
-                    "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
-            }, {
-                "role":
-                    "user",
-                "content":
-                    f"Provide a descriptive summary of the given text:\n{text[i]}\nThe summary should cover all the key points, while also condensing the information into a concise format. The length of the summary should not exceed 3 sentences.",
-            }],
-            "n": 1,
-            "max_tokens": 600,
-            "metadata": metadata[i]
-        }
-      requests.append(dictionary)
+  # def ai_summary(self, text: List[str], metadata: List[Dict[str, Any]]) -> List[str]:
+  #   """
+  #   Given a textual input, return a summary of the text.
+  #   """
+  #   #print("in AI SUMMARY")
+  #   requests = []
+  #   for i in range(len(text)):
+  #     dictionary = {
+  #           "model": "gpt-3.5-turbo",
+  #           "messages": [{
+  #               "role":
+  #                   "system",
+  #               "content":
+  #                   "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+  #           }, {
+  #               "role":
+  #                   "user",
+  #               "content":
+  #                   f"Provide a descriptive summary of the given text:\n{text[i]}\nThe summary should cover all the key points, while also condensing the information into a concise format. The length of the summary should not exceed 3 sentences.",
+  #           }],
+  #           "n": 1,
+  #           "max_tokens": 600,
+  #           "metadata": metadata[i]
+  #       }
+  #     requests.append(dictionary)
 
-    oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                             request_url='https://api.openai.com/v1/chat/completions',
-                             api_key=os.getenv("OPENAI_API_KEY"),
-                             max_requests_per_minute=1500,
-                             max_tokens_per_minute=90000,
-                             token_encoding_name='cl100k_base',
-                             max_attempts=5,
-                             logging_level=20)
+  #   oai = OpenAIAPIProcessor(input_prompts_list=requests,
+  #                            request_url='https://api.openai.com/v1/chat/completions',
+  #                            api_key=os.getenv("OPENAI_API_KEY"),
+  #                            max_requests_per_minute=1500,
+  #                            max_tokens_per_minute=90000,
+  #                            token_encoding_name='cl100k_base',
+  #                            max_attempts=5,
+  #                            logging_level=20)
 
-    asyncio.run(oai.process_api_requests_from_file())
-    #results: list[str] = oai.results
-    #print(f"Cleaned results: {oai.cleaned_results}")
-    summary = oai.cleaned_results
-    return summary
+  #   asyncio.run(oai.process_api_requests_from_file())
+  #   #results: list[str] = oai.results
+  #   #print(f"Cleaned results: {oai.cleaned_results}")
+  #   summary = oai.cleaned_results
+  #   return summary
 
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
@@ -672,6 +672,7 @@ Now please respond to my question: {user_question}"""
         _type_: Success or error message.
     """
     print("in ingest_github")
+
     try:
       repo_path = "media/cloned_repo"
       repo = Repo.clone_from(github_url, to_path=repo_path, depth=1, clone_submodules=False)
