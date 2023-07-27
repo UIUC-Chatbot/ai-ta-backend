@@ -663,8 +663,7 @@ Now please respond to my question: {user_question}"""
     Clones the given GitHub URL and uses Langchain to load data.
     1. Clone the repo
     2. Use Langchain to load the data
-    3. Upload data to S3
-    4. Pass to split_and_upload()
+    3. Pass to split_and_upload()
     Args:
         github_url (str): The Github Repo URL to be ingested.
         course_name (str): The name of the course in our system.
@@ -673,18 +672,28 @@ Now please respond to my question: {user_question}"""
         _type_: Success or error message.
     """
     print("in ingest_github")
-    repo_path = "media/cloned_repo"
-    repo = Repo.clone_from(github_url, to_path=repo_path, depth=1, clone_submodules=False)
-    branch = repo.head.reference
+    try:
+      repo_path = "media/cloned_repo"
+      repo = Repo.clone_from(github_url, to_path=repo_path, depth=1, clone_submodules=False)
+      branch = repo.head.reference
 
-    loader = GitLoader(repo_path="media/cloned_repo", branch=branch)
-    data = loader.load()
-    print(len(data))
-
-    s3_paths: Union[List, None] = upload_data_files_to_s3(course_name, repo_path)
-    print("s3_paths: ", s3_paths)
-    
-    shutil.rmtree("media/cloned_repo")
+      loader = GitLoader(repo_path="media/cloned_repo", branch=branch)
+      data = loader.load()
+      shutil.rmtree("media/cloned_repo")
+      # create metadata for each file in data 
+      texts = [doc.page_content for doc in data]
+      metadatas: List[Dict[str, Any]] = [{
+              'course_name': course_name,
+              's3_path': '',
+              'readable_filename': doc.metadata['file_name'],
+              'url': github_url,
+              'pagenumber_or_timestamp': '', 
+          } for doc in data]
+      self.split_and_upload(texts=texts, metadatas=metadatas)
+      return "Success"
+    except Exception as e:
+      print(f"ERROR IN GITHUB INGEST {e}")
+      return f"Error: {e}"
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
@@ -700,9 +709,9 @@ Now please respond to my question: {user_question}"""
 
     try:
       # generate AI summary
-      summary = self.ai_summary(texts, metadatas)
-      for i in range(len(summary)):
-        metadatas[i]['summary'] = summary[i]
+      # summary = self.ai_summary(texts, metadatas)
+      # for i in range(len(summary)):
+      #   metadatas[i]['summary'] = summary[i]
 
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
