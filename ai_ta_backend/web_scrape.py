@@ -142,7 +142,6 @@ def site_map(base_url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _in
   for url in all:
     # if url.startswith(base_url):
       # _invalid_urls.append(url)
-      
       if url not in _invalid_urls:
         valid_url_result = valid_url(url)
         if valid_url_result:
@@ -194,10 +193,10 @@ def pdf_scraper(soup:BeautifulSoup, url:str):
     elif url.startswith("http:"):
       base = re.match(pattern=r'http:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
     else:
-      return []
+      return {}
   except Exception as e:
     print("Error:", e)
-    return []
+    return {}
   
   links = soup.find_all('a')
   pdf = []
@@ -219,7 +218,7 @@ def pdf_scraper(soup:BeautifulSoup, url:str):
   except Exception as e:
     print("PDF scrape error:", e)
 
-  return list(set(pdf))
+  return pdf
 
 
 def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
@@ -270,6 +269,7 @@ def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
                 break
               
     # Delete repeated PDFs and keeping one
+
     pdf_repeat = []
     for value in crawled:
         pdf_repeat.extend(value[3])
@@ -288,6 +288,18 @@ def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
                 for i in range(pdf_counts[value]-1):
                     row[3].remove(value)
                     pdf_counts[value] -= 1
+
+    # IF we need pdf to be dictionary and want the pdf urls as well. 
+    # pdf_repeat = [value[3].values() for value in crawled]
+    # counts = {value:pdf_repeat.count(value) for value in pdf_repeat}
+
+    # for row in crawled:
+    #   for key, value in row[3].items():
+    #     if counts[value] > 1:
+    #       counts[value] -= 1
+    #       del row[3][key]
+    #     else:
+    #       break
 
     print("Scraped", len(crawled), "urls out of", max_urls)
 
@@ -405,10 +417,10 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
 
 
   # Upload each html to S3
-  print("Uploading", len(data), "files to S3")
+  print("Uploading files to S3")
   paths = []
+  counter = 0
   for i, key in enumerate(data):
-
     with NamedTemporaryFile(suffix=".html") as temp_html:
       temp_html.write(key[2].encode('utf-8'))
       temp_html.seek(0)
@@ -417,7 +429,8 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       with open(temp_html.name, 'rb') as f:
         print("Uploading html to S3")
         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-        ingester.bulk_ingest(s3_upload_path, course_name=course_name)
+        ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0])
+        counter += 1
 
     if key[3] != []:
       with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
@@ -430,5 +443,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
             print("Uploading PDF to S3")
             s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
             ingester.bulk_ingest(s3_upload_path, course_name)
+            counter += 1
 
+  print("Successfully uploaded", counter, "files to S3")
   print("Finished /web-scrape")

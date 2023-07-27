@@ -159,7 +159,7 @@ Now please respond to my question: {user_question}"""
 
     return stuffed_prompt
 
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
 
@@ -176,7 +176,7 @@ Now please respond to my question: {user_question}"""
           category, subcategory = mime_type.split('/')
 
         if s3_path.endswith('.html'):
-          ret = self._ingest_html(s3_path, course_name)
+          ret = self._ingest_html(s3_path, course_name, kwargs=kwargs)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
@@ -305,7 +305,7 @@ Now please respond to my question: {user_question}"""
       print(f"ERROR IN HTML INGEST: {e}")
       return f"Error: {e}"
 
-  def _ingest_html(self, s3_path: str, course_name: str) -> str:
+  def _ingest_html(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       raw_html = response['Body'].read().decode('utf-8')
@@ -317,13 +317,15 @@ Now please respond to my question: {user_question}"""
       title = title.replace("/", " ")
       title = title.strip()
 
-      # url = text.url.string
+      if kwargs:
+        url = kwargs['kwargs']['url']
+
       text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': str(title), # adding str to avoid error: unhashable type 'slice'  
-          # 'url': url,
+          'url': url,
           'pagenumber_or_timestamp': ''
       }]
 
