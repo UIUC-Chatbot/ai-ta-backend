@@ -193,10 +193,10 @@ def pdf_scraper(soup:BeautifulSoup, url:str):
     elif url.startswith("http:"):
       base = re.match(pattern=r'http:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
     else:
-      return {}
+      return []
   except Exception as e:
     print("Error:", e)
-    return {}
+    return []
   
   links = soup.find_all('a')
   pdf = []
@@ -218,7 +218,7 @@ def pdf_scraper(soup:BeautifulSoup, url:str):
   except Exception as e:
     print("PDF scrape error:", e)
 
-  return pdf
+  return list(set(pdf))
 
 
 def crawler(site:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
