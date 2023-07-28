@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import logging
 import mimetypes
 # import json
 import os
@@ -701,22 +702,25 @@ Now please respond to my question: {user_question}"""
                                token_encoding_name='cl100k_base')  # type: ignore
       asyncio.run(oai.process_api_requests_from_file())
       # parse results into dict of shape page_content -> embedding
-      embeddings_dict: dict[str, List[float]] = {item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results}
-      # add embeddings to regular doc metadata (for Supabase)
+      embeddings_dict: dict[str, List[float]] = {
+        item[0]['input']: [float(i) for i in item[1]['data'][0]['embedding']] for item in oai.results
+    }      # add embeddings to regular doc metadata (for Supabase)
       for context in contexts:
         context.metadata['embedding'] = embeddings_dict[context.page_content]
 
       vectors: list[PointStruct] = []
       for context in contexts:
+        # print({k: v for k, v in context.metadata.items() if k != 'embedding'})
+        print(list(context.metadata['embedding']))
         vectors.append(
             PointStruct(
                 id=str(uuid.uuid4()),
-                vector=context.metadata['embedding'],
+                vector=[context.metadata['embedding']],
                 payload={
                     k: v for k, v in context.metadata.items() if k != 'embedding'
                 }  # remove the embedding from the metadata in Qdrant
             ))
-
+        
       # BULK upload to Qdrant
       self.qdrant_client.upsert(
           collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
@@ -726,15 +730,17 @@ Now please respond to my question: {user_question}"""
       # self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
 
       # upload to Supabase SQL
-      data = [{
-          "content": doc.page_content,
+
+      context = [doc.page_content for doc in contexts]
+
+      data = [
+          {
           "course_name": doc.metadata['course_name'],
           "s3_path": doc.metadata['s3_path'],
           "readable_filename": doc.metadata['readable_filename'],
           "url": doc.metadata['url'],
-          "pagenumber": doc.metadata['pagenumber'],
-          "timestamp": doc.metadata['timestamp']
-      } for doc in documents]
+          "contexts": {"context":context, "pagenumber": doc.metadata['pagenumber'], "timestamp": doc.metadata['timestamp'], "embedding":doc.metadata['embedding']}
+      } for doc in contexts]
       count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(data).execute()  # type: ignore
 
       return "Success"
