@@ -252,7 +252,7 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
+            'url': None,
         } for doc in documents]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
