@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import json
 import logging
 import mimetypes
 # import json
@@ -687,11 +688,8 @@ Now please respond to my question: {user_question}"""
 
       contexts = remove_small_contexts(contexts=contexts)
 
-      # TODO: make embeddings once, save to both Qdrant and Supabase SQL
-      # todo; make all these calls in parallel / batches
-
+      ### OpenAI Embeddings ###
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
-
       oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
                                request_url='https://api.openai.com/v1/embeddings',
                                api_key=os.getenv('OPENAI_API_KEY'),
@@ -703,45 +701,45 @@ Now please respond to my question: {user_question}"""
       asyncio.run(oai.process_api_requests_from_file())
       # parse results into dict of shape page_content -> embedding
       embeddings_dict: dict[str, List[float]] = {
-        item[0]['input']: [float(i) for i in item[1]['data'][0]['embedding']] for item in oai.results
-    }      # add embeddings to regular doc metadata (for Supabase)
+          item[0]['input']: [float(i) for i in item[1]['data'][0]['embedding']] for item in oai.results
+      }
+      # add embeddings to regular doc metadata (for Supabase)
       for context in contexts:
         context.metadata['embedding'] = embeddings_dict[context.page_content]
 
+      ### BULK upload to Qdrant ###
       vectors: list[PointStruct] = []
       for context in contexts:
-        # print({k: v for k, v in context.metadata.items() if k != 'embedding'})
-        print(list(context.metadata['embedding']))
         vectors.append(
             PointStruct(
                 id=str(uuid.uuid4()),
-                vector=[context.metadata['embedding']],
+                vector=context.metadata['embedding'],
+                # remove the embedding from the metadata in Qdrant
                 payload={
                     k: v for k, v in context.metadata.items() if k != 'embedding'
-                }  # remove the embedding from the metadata in Qdrant
-            ))
-        
-      # BULK upload to Qdrant
+                }))
+
       self.qdrant_client.upsert(
           collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-          points=[vectors]  # type: ignore
+          points=vectors  # type: ignore
       )
-      # # replace with Qdrant
-      # self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
 
-      # upload to Supabase SQL
+      ### Supabase SQL ###
+      contexts_for_supa = [{
+          "text": context.page_content,
+          "pagenumber": context.metadata.get('pagenumber'),
+          "timestamp": context.metadata.get('timestamp'),
+          "embedding": context.metadata.get('embedding')
+      } for context in contexts]
 
-      context = [doc.page_content for doc in contexts]
-
-      data = [
-          {
-          "course_name": doc.metadata['course_name'],
-          "s3_path": doc.metadata['s3_path'],
-          "readable_filename": doc.metadata['readable_filename'],
-          "url": doc.metadata['url'],
-          "contexts": {"context":context, "pagenumber": doc.metadata['pagenumber'], "timestamp": doc.metadata['timestamp'], "embedding":doc.metadata['embedding']}
-      } for doc in contexts]
-      count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(data).execute()  # type: ignore
+      document = {
+          "course_name": contexts[0].metadata.get('course_name'),
+          "s3_path": contexts[0].metadata.get('s3_path'),
+          "readable_filename": contexts[0].metadata.get('readable_filename'),
+          "url": contexts[0].metadata.get('url'),
+          "contexts": contexts_for_supa,
+      }
+      count = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
 
       return "Success"
     except Exception as e:
