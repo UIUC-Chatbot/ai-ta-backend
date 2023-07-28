@@ -25,9 +25,7 @@ from bs4 import BeautifulSoup
 # from arize.utils.ModelTypes import GENERATIVE_LLM
 # # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
 # #                                Metrics, ModelTypes, Schema)
-from langchain.document_loaders import (Docx2txtLoader, PythonLoader,
-                                        SRTLoader, TextLoader,
-                                        UnstructuredPowerPointLoader)
+from langchain.document_loaders import (Docx2txtLoader, PythonLoader, SRTLoader, TextLoader, UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -61,7 +59,7 @@ class Ingest():
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-        embeddings=OpenAIEmbeddings())  
+        embeddings=OpenAIEmbeddings())
 
     # S3
     self.s3_client = boto3.client(
@@ -71,7 +69,7 @@ class Ingest():
     )
 
     # Create a Supabase client
-    self.supabase_client = supabase.create_client( # type: ignore
+    self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
         supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
     return None
@@ -158,7 +156,7 @@ That said, be practical and really do your best, and don't let caution get too m
 To help answer the question, here's a few passages of high quality documents:\n{all_texts}
 Now please respond to my question: {user_question}"""
 
-# "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
+    # "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
 
     return stuffed_prompt
 
@@ -171,7 +169,7 @@ Now please respond to my question: {user_question}"""
         s3_paths = [s3_paths]
 
       for s3_path in s3_paths:
-        ext = Path(s3_path).suffix # check mimetype of file
+        ext = Path(s3_path).suffix  # check mimetype of file
         # TODO: no need to download, just guess_type against the s3_path...
         with NamedTemporaryFile(suffix=ext) as tmpfile:
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
@@ -232,12 +230,12 @@ Now please respond to my question: {user_question}"""
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
-            success_status['success_ingest'].append(s3_path)  
+            success_status['success_ingest'].append(s3_path)
       return success_status
     except Exception as e:
       success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
       return success_status
-  
+
   def _ingest_single_py(self, s3_path: str, course_name: str):
     try:
       with NamedTemporaryFile() as tmpfile:
@@ -285,12 +283,11 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       print(f"ERROR IN VTT READING {e}")
 
-
   def _ingest_single_html(self, s3_path: str, course_name: str) -> str:
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       text = response['Body'].read().decode('utf-8')
-      title = s3_path.replace("courses/"+course_name, "")
+      title = s3_path.replace("courses/" + course_name, "")
       title = title.replace(".html", "")
       title = title.replace("_", " ")
       title = title.replace("/", " ")
@@ -299,13 +296,13 @@ Now please respond to my question: {user_question}"""
       # url = text.url.string
       text = [text]
       metadata: List[Dict[str, Any]] = [{
-      'course_name': course_name,
-      's3_path': s3_path,
-      'readable_filename': title,
-      # 'url': url, 
-      'pagenumber_or_timestamp': ''
+          'course_name': course_name,
+          's3_path': s3_path,
+          'readable_filename': title,
+          # 'url': url,
+          'pagenumber_or_timestamp': ''
       }]
-      
+
       success_or_failure = self.split_and_upload(text, metadata)
       return success_or_failure
     except Exception as e:
@@ -316,9 +313,9 @@ Now please respond to my question: {user_question}"""
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       raw_html = response['Body'].read().decode('utf-8')
-      
+
       soup = BeautifulSoup(raw_html, 'html.parser')
-      title = s3_path.replace("courses/"+course_name, "")
+      title = s3_path.replace("courses/" + course_name, "")
       title = title.replace(".html", "")
       title = title.replace("_", " ")
       title = title.replace("/", " ")
@@ -333,7 +330,7 @@ Now please respond to my question: {user_question}"""
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': str(title), # adding str to avoid error: unhashable type 'slice'  
+          'readable_filename': str(title),  # adding str to avoid error: unhashable type 'slice'  
           'url': url,
           'pagenumber_or_timestamp': ''
       }]
@@ -558,13 +555,13 @@ Now please respond to my question: {user_question}"""
           'pagenumber': '',
           'timestamp': '',
           'url': None,
-        }]
+      }]
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
     except Exception as e:
       print(f"ERROR IN TXT READING {e}")
       return f"Error: {e}"
-  
+
   def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
     """
     Ingest a single .ppt or .pptx file from S3.
@@ -582,7 +579,7 @@ Now please respond to my question: {user_question}"""
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
-            'pagenumber': '', 
+            'pagenumber': '',
             'timestamp': '',
             'url': None,
         } for doc in documents]
@@ -618,7 +615,7 @@ Now please respond to my question: {user_question}"""
         break
 
     return all_files
-  
+
   def ingest_coursera(self, coursera_course_name: str, course_name: str) -> str:
     """ Download all the files from a coursera course and ingest them.
     
@@ -681,45 +678,63 @@ Now please respond to my question: {user_question}"""
           chunk_overlap=150,
           separators=". ",  # try to split on sentences... 
       )
-      documents: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
+      contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
 
-      def remove_small_contexts(documents: List[Document]) -> List[Document]:
+      def remove_small_contexts(contexts: List[Document]) -> List[Document]:
         # Remove TextSplit contexts with fewer than 50 chars.
-        return [doc for doc in documents if len(doc.page_content) > 50]
+        return [doc for doc in contexts if len(doc.page_content) > 50]
 
-      documents = remove_small_contexts(documents=documents)
-      
+      contexts = remove_small_contexts(contexts=contexts)
+
       # TODO: make embeddings once, save to both Qdrant and Supabase SQL
       # todo; make all these calls in parallel / batches
-      response = openai.Embedding.create(
-          input="Your text string goes here",
-          model="text-embedding-ada-002"
-      )
-      embeddings = response['data'][0]['embedding']
-      
-      vectors = []
-      for doc, embed in zip(documents, embeddings):
+
+      input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
+
+      oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
+                               request_url='https://api.openai.com/v1/embeddings',
+                               api_key=os.getenv('OPENAI_API_KEY'),
+                               max_requests_per_minute=10_000,
+                               max_tokens_per_minute=20_000,
+                               max_attempts=20,
+                               logging_level=logging.INFO,
+                               token_encoding_name='cl100k_base')  # type: ignore
+      asyncio.run(oai.process_api_requests_from_file())
+      # parse results into dict of shape page_content -> embedding
+      embeddings_dict: dict[str, List[float]] = {item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results}
+      # add embeddings to regular doc metadata (for Supabase)
+      for context in contexts:
+        context.metadata['embedding'] = embeddings_dict[context.page_content]
+
+      vectors: list[PointStruct] = []
+      for context in contexts:
         vectors.append(
-          PointStruct(
-                      id=str(uuid.uuid4()),
-                      vector=embed.tolist(),
-                      payload=doc.metadata
-                  )
-        )
-      # upload to Qdrant
+            PointStruct(
+                id=str(uuid.uuid4()),
+                vector=context.metadata['embedding'],
+                payload={
+                    k: v for k, v in context.metadata.items() if k != 'embedding'
+                }  # remove the embedding from the metadata in Qdrant
+            ))
+
+      # BULK upload to Qdrant
       self.qdrant_client.upsert(
-          collection_name="my_collection",
-          points=[
-              
-          ]
+          collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+          points=[vectors]  # type: ignore
       )
-      # replace with Qdrant
-      self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
+      # # replace with Qdrant
+      # self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
 
       # upload to Supabase SQL
-      data = [{"content": doc.page_content, "course_name":doc.metadata['course_name'], "s3_path":doc.metadata['s3_path'], 
-                                    "readable_filename":doc.metadata['readable_filename'], "url": doc.metadata['url'], 
-                                    "pagenumber":doc.metadata['pagenumber'], "timestamp":doc.metadata['timestamp']} for doc in documents]
+      data = [{
+          "content": doc.page_content,
+          "course_name": doc.metadata['course_name'],
+          "s3_path": doc.metadata['s3_path'],
+          "readable_filename": doc.metadata['readable_filename'],
+          "url": doc.metadata['url'],
+          "pagenumber": doc.metadata['pagenumber'],
+          "timestamp": doc.metadata['timestamp']
+      } for doc in documents]
       count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(data).execute()  # type: ignore
 
       return "Success"
@@ -727,7 +742,7 @@ Now please respond to my question: {user_question}"""
       err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
-    
+
   def delete_entire_course(self, course_name: str):
     """Delete entire course.
     
@@ -742,22 +757,20 @@ Now please respond to my question: {user_question}"""
       objects_to_delete = self.s3_client.list_objects(Bucket=os.getenv('S3_BUCKET_NAME'), Prefix=f'courses/{course_name}/')
       for object in objects_to_delete['Contents']:
         self.s3_client.delete_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=object['Key'])
-      
+
       # Delete from Qdrant
       # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
       # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
       self.qdrant_client.delete(
           collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
-          points_selector=models.Filter(
-              must=[
-                  models.FieldCondition(
-                      key="metadata.course_name", 
-                      match=models.MatchValue(value=course_name),
-                  ),
-              ]
-          ),
+          points_selector=models.Filter(must=[
+              models.FieldCondition(
+                  key="metadata.course_name",
+                  match=models.MatchValue(value=course_name),
+              ),
+          ]),
       )
-      
+
       # Delete from Supabase
       response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('course_name', course_name).execute()
       print("supabase response: ", response)
@@ -809,8 +822,8 @@ Now please respond to my question: {user_question}"""
         list of dictionaries with distinct s3 path, readable_filename and course_name.
     """
 
-    response = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).select(
-        'course_name, s3_path, readable_filename').eq(  # type: ignore
+    response = self.supabase_client.table(
+        os.getenv('MATERIALS_SUPABASE_TABLE')).select('course_name, s3_path, readable_filename').eq(  # type: ignore
             'course_name', course_name).execute()
 
     data = response.data
@@ -838,14 +851,14 @@ Now please respond to my question: {user_question}"""
     """
     try:
       # TODO: change back to 50+ once we have bigger qdrant DB.
-      top_n = 5 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
+      top_n = 5  # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
       if len(found_docs) == 0:
         return []
-      
+
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
-      
+
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
       valid_docs = []
@@ -858,7 +871,7 @@ Now please respond to my question: {user_question}"""
           valid_docs.append(d)
         else:
           break
-      
+
       print(f"Total tokens: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
@@ -869,7 +882,7 @@ Now please respond to my question: {user_question}"""
       err: str = f"In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
-  
+
   def get_stuffed_prompt(self, search_query: str, course_name: str, token_limit: int = 7_000) -> str:
     """
     Returns
@@ -881,9 +894,9 @@ Now please respond to my question: {user_question}"""
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
       if len(found_docs) == 0:
         return search_query
-      
+
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
-      
+
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
       valid_docs = []
@@ -898,21 +911,15 @@ Now please respond to my question: {user_question}"""
         else:
           continue
           print("running continue")
-        
+
       # Convert the valid_docs to full prompt
-      separator = '---\n' # between each context
+      separator = '---\n'  # between each context
       context_text = separator.join(
           f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber_or_timestamp']) if d.metadata['pagenumber_or_timestamp'] else ''}\n{d.page_content}\n"
-          for d in valid_docs
-      )
+          for d in valid_docs)
 
       # Create the stuffedPrompt
-      stuffedPrompt = (
-        pre_prompt +
-        context_text +
-        '\n\nNow please respond to my query: ' +
-        search_query
-      )
+      stuffedPrompt = (pre_prompt + context_text + '\n\nNow please respond to my query: ' + search_query)
 
       TOTAL_num_tokens, prompt_cost = count_tokens_and_cost(stuffedPrompt, openai_model_name='gpt-4')
       print(f"Total tokens: {TOTAL_num_tokens}, prompt_cost: {prompt_cost}")
@@ -922,10 +929,10 @@ Now please respond to my question: {user_question}"""
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
       return stuffedPrompt
     except Exception as e:
-        # return full traceback to front end
-        err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
-        print(err)
-        return err
+      # return full traceback to front end
+      err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+      return err
 
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
     """Formatting only.
