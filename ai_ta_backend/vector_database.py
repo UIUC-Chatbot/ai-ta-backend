@@ -250,7 +250,9 @@ Now please respond to my question: {user_question}"""
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
-            'pagenumber_or_timestamp': '',
+            'pagenumber': '',
+            'timestamp': '',
+            'url': '',
         } for doc in documents]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -273,7 +275,9 @@ Now please respond to my question: {user_question}"""
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
-            'pagenumber_or_timestamp': '',
+            'pagenumber': '',
+            'timestamp': '',
+            'url': None,
         } for doc in documents]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -322,6 +326,8 @@ Now please respond to my question: {user_question}"""
 
       if kwargs:
         url = kwargs['kwargs']['url']
+      else:
+        url = None
 
       text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
@@ -408,7 +414,9 @@ Now please respond to my question: {user_question}"""
           'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': text.index(txt),
+          'pagenumber': '',
+          'timestamp': text.index(txt),
+          'url': None,
       } for txt in text]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
@@ -436,7 +444,9 @@ Now please respond to my question: {user_question}"""
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
-            'pagenumber_or_timestamp': '',
+            'pagenumber': '',
+            'timestamp': '',
+            'url': None,
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -459,7 +469,9 @@ Now please respond to my question: {user_question}"""
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
-            'pagenumber_or_timestamp': '',
+            'pagenumber': '',
+            'timestamp': '',
+            'url': None,
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -509,8 +521,10 @@ Now please respond to my question: {user_question}"""
             {
                 'course_name': course_name,
                 's3_path': s3_path,
-                'pagenumber_or_timestamp': page['page_number'] + 1,  # +1 for human indexing
+                'pagenumber': page['page_number'] + 1,  # +1 for human indexing
                 'readable_filename': page['readable_filename'],
+                'timestamp': '',
+                'url': None,
             } for page in pdf_pages_OCRed
         ]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
@@ -541,7 +555,9 @@ Now please respond to my question: {user_question}"""
           'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': Path(s3_path).name,
-          'pagenumber_or_timestamp': '',
+          'pagenumber': '',
+          'timestamp': '',
+          'url': None,
         }]
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
@@ -566,7 +582,9 @@ Now please respond to my question: {user_question}"""
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
-            'pagenumber_or_timestamp': '', 
+            'pagenumber': '', 
+            'timestamp': '',
+            'url': None,
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -697,10 +715,11 @@ Now please respond to my question: {user_question}"""
       )
       # replace with Qdrant
       self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
-      
-      
+
       # upload to Supabase SQL
-      data = [{"content": doc.page_content, "metadata": doc.metadata} for doc in documents]
+      data = [{"content": doc.page_content, "course_name":doc.metadata['course_name'], "s3_path":doc.metadata['s3_path'], 
+                                    "readable_filename":doc.metadata['readable_filename'], "url": doc.metadata['url'], 
+                                    "pagenumber":doc.metadata['pagenumber'], "timestamp":doc.metadata['timestamp']} for doc in documents]
       count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(data).execute()  # type: ignore
 
       return "Success"
@@ -740,7 +759,7 @@ Now please respond to my question: {user_question}"""
       )
       
       # Delete from Supabase
-      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>course_name', course_name).execute()
+      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('course_name', course_name).execute()
       print("supabase response: ", response)
       return "Success"
     except Exception as e:
@@ -771,7 +790,7 @@ Now please respond to my question: {user_question}"""
       )
 
       # Delete from Supabase
-      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>s3_path', s3_path).eq(
+      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('s3_path', s3_path).eq(
           'metadata->>course_name', course_name).execute()
       return "Success"
     except Exception as e:
@@ -789,9 +808,10 @@ Now please respond to my question: {user_question}"""
     Returns : 
         list of dictionaries with distinct s3 path, readable_filename and course_name.
     """
+
     response = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).select(
-        'metadata->>course_name, metadata->>s3_path, metadata->>readable_filename').eq(  # type: ignore
-            'metadata->>course_name', course_name).execute()
+        'course_name, s3_path, readable_filename').eq(  # type: ignore
+            'course_name', course_name).execute()
 
     data = response.data
     unique_combinations = set()
