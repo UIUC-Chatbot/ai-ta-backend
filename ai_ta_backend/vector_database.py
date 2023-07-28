@@ -161,13 +161,13 @@ Now please respond to my question: {user_question}"""
 
     return stuffed_prompt
   
-  def ai_summary(self, text: List[str], metadata: List[Dict[str, Any]]) -> List[str]:
+  def generate_summaries(self, documents: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Given a textual input, return a summary of the text.
     """
-    #print("in AI SUMMARY")
+    print("in AI SUMMARY")
     requests = []
-    for i in range(len(text)):
+    for i in range(len(documents)):
       dictionary = {
             "model": "gpt-3.5-turbo",
             "messages": [{
@@ -179,11 +179,10 @@ Now please respond to my question: {user_question}"""
                 "role":
                     "user",
                 "content":
-                    f"Provide a descriptive summary of the given text:\n{text[i]}\nThe summary should cover all the key points, while also condensing the information into a concise format. The length of the summary should not exceed 3 sentences.",
+                    f"Provide a descriptive summary of the given text:\n{documents[i]['text']}\nThe summary should cover all the key points, while also condensing the information into a concise format. The length of the summary should not exceed 3 sentences.",
             }],
             "n": 1,
-            "max_tokens": 600,
-            "metadata": metadata[i]
+            "max_tokens": 600
         }
       requests.append(dictionary)
 
@@ -199,8 +198,10 @@ Now please respond to my question: {user_question}"""
     asyncio.run(oai.process_api_requests_from_file())
     #results: list[str] = oai.results
     #print(f"Cleaned results: {oai.cleaned_results}")
-    summary = oai.cleaned_results
-    return summary
+    
+    for i in range(len(documents)):
+      documents[i]['summary'] = oai.cleaned_results[i]
+    return documents
 
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
