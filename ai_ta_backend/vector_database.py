@@ -204,7 +204,7 @@ Now please respond to my question: {user_question}"""
     return documents
 
 
-  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str) -> Dict[str, List[str]]:
+  def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
 
@@ -221,7 +221,7 @@ Now please respond to my question: {user_question}"""
           category, subcategory = mime_type.split('/')
         
         if s3_path.endswith('.html'):
-          ret = self._ingest_html(s3_path, course_name)
+          ret = self._ingest_html(s3_path, course_name, kwargs=kwargs)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
@@ -323,7 +323,7 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       print(f"ERROR IN VTT READING {e}")
 
-  def _ingest_html(self, s3_path: str, course_name: str) -> str:
+  def _ingest_html(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       raw_html = response['Body'].read().decode('utf-8')
@@ -335,13 +335,15 @@ Now please respond to my question: {user_question}"""
       title = title.replace("/", " ")
       title = title.strip()
 
-      # url = text.url.string
+      if kwargs:
+        url = kwargs['kwargs']['url']
+
       text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
           'readable_filename': str(title), # adding str to avoid error: unhashable type 'slice'  
-          # 'url': url,
+          'url': url,
           'pagenumber_or_timestamp': ''
       }]
 
@@ -725,8 +727,9 @@ Now please respond to my question: {user_question}"""
 
       return "Success"
     except Exception as e:
-      print(f'ERROR IN SPLIT AND UPLOAD {e}')
-      return f"Error: {e}"
+      err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+      return err
     
   def delete_entire_course(self, course_name: str):
     """Delete entire course.
@@ -824,7 +827,7 @@ Now please respond to my question: {user_question}"""
 
     return distinct_dicts
 
-  def getTopContexts(self, search_query: str, course_name: str, top_n: int = 20, max_tokens: int = 3_000) -> Union[List[Dict], str]:
+  def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
     /GET arguments
@@ -836,36 +839,95 @@ Now please respond to my question: {user_question}"""
       String: An error message with traceback.
     """
     try:
-      import time
+      # TODO: change back to 50+ once we have bigger qdrant DB.
+      top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
-      top_n = 25 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS. TODO: Refactor front end.
-      print("Max tokens: ", max_tokens)
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
+      if len(found_docs) == 0:
+        return []
       
-      ## TODO also count the length of the document name and page number as tokens. Including "Document: " and "Page (if exists): "
+      pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       
-      
-      token_counter: int = 0
+      # count tokens at start and end, then also count each context.
+      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
       valid_docs = []
       for d in found_docs:
-        num_tokens, prompt_cost = count_tokens_and_cost(str(d.page_content))
-        # print(f"num_tokens: {num_tokens}, prompt_cost: {prompt_cost}")
-        print(f"Page: {d.page_content[:100]}...")
-        print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {max_tokens}")
-        if token_counter + num_tokens <= max_tokens:
+        doc_string = f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber_or_timestamp']) if d.metadata['pagenumber_or_timestamp'] else ''}\n{d.page_content}\n"
+        num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
+        # print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
+        if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
           valid_docs.append(d)
         else:
           break
       
-      print(valid_docs)
+      print(f"Total tokens: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
+      print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
+
       return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
-      err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      err: str = f"In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
       print(err)
       return err
+  
+  def get_stuffed_prompt(self, search_query: str, course_name: str, token_limit: int = 7_000) -> str:
+    """
+    Returns
+      String: A fully formatted prompt string.
+    """
+    try:
+      top_n = 150
+      start_time_overall = time.monotonic()
+      found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
+      if len(found_docs) == 0:
+        return search_query
+      
+      pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
+      
+      # count tokens at start and end, then also count each context.
+      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
+      valid_docs = []
+      for d in found_docs:
+        doc_string = f"---\nDocument: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber_or_timestamp']) if d.metadata['pagenumber_or_timestamp'] else ''}\n{d.page_content}\n"
+        num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
+        print(f"Page: {d.page_content[:100]}...")
+        print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
+        if token_counter + num_tokens <= token_limit:
+          token_counter += num_tokens
+          valid_docs.append(d)
+        else:
+          continue
+          print("running continue")
+        
+      # Convert the valid_docs to full prompt
+      separator = '---\n' # between each context
+      context_text = separator.join(
+          f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber_or_timestamp']) if d.metadata['pagenumber_or_timestamp'] else ''}\n{d.page_content}\n"
+          for d in valid_docs
+      )
+
+      # Create the stuffedPrompt
+      stuffedPrompt = (
+        pre_prompt +
+        context_text +
+        '\n\nNow please respond to my query: ' +
+        search_query
+      )
+
+      TOTAL_num_tokens, prompt_cost = count_tokens_and_cost(stuffedPrompt, openai_model_name='gpt-4')
+      print(f"Total tokens: {TOTAL_num_tokens}, prompt_cost: {prompt_cost}")
+      print("total docs: ", len(found_docs))
+      print("num docs used: ", len(valid_docs))
+
+      print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
+      return stuffedPrompt
+    except Exception as e:
+        # return full traceback to front end
+        err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+        print(err)
+        return err
 
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
     """Formatting only.
