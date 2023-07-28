@@ -681,41 +681,46 @@ Now please respond to my question: {user_question}"""
           chunk_overlap=150,
           separators=". ",  # try to split on sentences... 
       )
-      documents: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
+      contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
 
-      def remove_small_contexts(documents: List[Document]) -> List[Document]:
+      def remove_small_contexts(contexts: List[Document]) -> List[Document]:
         # Remove TextSplit contexts with fewer than 50 chars.
-        return [doc for doc in documents if len(doc.page_content) > 50]
+        return [doc for doc in contexts if len(doc.page_content) > 50]
 
-      documents = remove_small_contexts(documents=documents)
+      contexts = remove_small_contexts(contexts=contexts)
       
       # TODO: make embeddings once, save to both Qdrant and Supabase SQL
       # todo; make all these calls in parallel / batches
-      response = openai.Embedding.create(
-          input="Your text string goes here",
-          model="text-embedding-ada-002"
-      )
-      embeddings = response['data'][0]['embedding']
       
-      vectors = []
-      for doc, embed in zip(documents, embeddings):
+      input_texts = [{'input': context.page_content, 'model':'text-embedding-ada-002'} for context in contexts]
+      
+      oai = OpenAIAPIProcessor(input_prompts_list=input_texts, request_url='https://api.openai.com/v1/embeddings', api_key=os.getenv('OPENAI_API_KEY'), max_requests_per_minute=10_000, max_tokens_per_minute=20_000, max_attempts=20, logging_level=logging.INFO, token_encoding_name='cl100k_base') # type: ignore
+      asyncio.run(oai.process_api_requests_from_file())
+      # parse results into dict of shape page_content -> embedding
+      embeddings_dict: dict[str, List[float]] = {item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results}
+      # add embeddings to regular doc metadata (for Supabase)
+      for context in contexts:
+        context.metadata['embedding'] = embeddings_dict[context.page_content]
+        
+      vectors: list[PointStruct] = []
+      for context in contexts:
         vectors.append(
           PointStruct(
                       id=str(uuid.uuid4()),
-                      vector=embed.tolist(),
-                      payload=doc.metadata
+                      vector=context.metadata['embedding'],
+                      payload= {k: v for k, v in context.metadata.items() if k != 'embedding'} # remove the embedding from the metadata in Qdrant
                   )
         )
-      # upload to Qdrant
+      
+      # BULK upload to Qdrant
       self.qdrant_client.upsert(
-          collection_name="my_collection",
-          points=[
-              
-          ]
+          collection_name=os.getenv('QDRANT_COLLECTION_NAME'), # type: ignore
+          points=[vectors] # type: ignore
       )
-      # replace with Qdrant
-      self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
-
+      # # replace with Qdrant
+      # self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
+      
+      
       # upload to Supabase SQL
       data = [{"content": doc.page_content, "course_name":doc.metadata['course_name'], "s3_path":doc.metadata['s3_path'], 
                                     "readable_filename":doc.metadata['readable_filename'], "url": doc.metadata['url'], 
