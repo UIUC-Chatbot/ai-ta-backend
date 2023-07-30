@@ -218,7 +218,6 @@ def pdf_scraper(soup:BeautifulSoup, url:str):
         else:
           return {}
         if f"<!DOCTYPE html>" not in str(content):
-          print(type(content))
           pdf[site] = content
           print("PDF scraped:", site)
   except Exception as e:
