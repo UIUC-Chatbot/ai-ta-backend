@@ -1,14 +1,15 @@
 import os
 import re
 import time
-from typing import Any, List, Union
+from typing import Any, List, Optional, Union
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, make_response, request
 from flask_cors import CORS
 from h11 import Response
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
+from werkzeug.exceptions import BadRequest
 
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
@@ -19,6 +20,7 @@ CORS(app)
 # load API keys from globally-availabe .env file
 # load_dotenv(dotenv_path='.env', override=True)
 load_dotenv()
+
 
 @app.route('/')
 def index() -> JSON:
@@ -36,34 +38,40 @@ def index() -> JSON:
 @app.route('/coursera', methods=['GET'])
 def coursera() -> JSON:
   try:
-    course_name: str = request.args.get('course_name') # type: ignore
-    coursera_course_name: str = request.args.get('coursera_course_name') # type: ignore
+    course_name: str = request.args.get('course_name')  # type: ignore
+    coursera_course_name: str = request.args.get('coursera_course_name')  # type: ignore
   except Exception as e:
     print(f"No course name provided: {e}")
-  
+
   ingester = Ingest()
-  results = ingester.ingest_coursera(coursera_course_name, course_name) # type: ignore
+  results = ingester.ingest_coursera(coursera_course_name, course_name)  # type: ignore
   response = jsonify(results)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/delete-entire-course', methods=['GET'])
 def delete_entire_course():
   try:
-    course_name: str = request.args.get('course_name') # type: ignore
+    course_name: str = request.args.get('course_name')  # type: ignore
     # coursera_course_name: str = request.args.get('coursera_course_name') # type: ignore
   except Exception as e:
     print(f"No course name provided: {e}")
-  
+
   ingester = Ingest()
-  results = ingester.delete_entire_course(course_name) # type: ignore
+  results = ingester.delete_entire_course(course_name)  # type: ignore
   response = jsonify(results)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
 
+# from typing import Optional
+
+# from flask import jsonify, make_response, request
+
+
 @app.route('/getTopContexts', methods=['GET'])
-def getTopContexts():
+def get_top_contexts():
   """Get most relevant contexts for a given search query.
   
   Return value
@@ -72,7 +80,8 @@ def getTopContexts():
   course name (optional) str
       A json response with TBD fields.
   search_query
-  top_n
+  token_limit
+    total tokens to use in the contexts (including formatting for prompt engineering)
   
   Returns
   -------
@@ -98,27 +107,21 @@ def getTopContexts():
   Exception
       Testing how exceptions are handled.
   """
-  # todo: best way to handle optional arguments?
-  try:
-    course_name: str = request.args.get('course_name')
-    search_query: str = request.args.get('search_query')
-    token_limit: int = request.args.get('token_limit')
-  except Exception as e:
-    print("No course name provided.")
+  ## REVISED WITH BEST PRACTICES!
+  search_query: str = request.args.get('search_query', default='', type=str)
+  course_name: str = request.args.get('course_name', default='', type=str)
+  token_limit: int = request.args.get('token_limit', default=3000, type=int)
 
-  if search_query is None:
-    return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
-  if token_limit is None:
-    token_limit = 3_000
-  else:
-    token_limit = int(token_limit)
+  if search_query is None or course_name is None:
+    raise BadRequest(f"Parameters `search_query` and `course_name` are required. Search query: {search_query}, course name: {course_name}")
 
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
 
-  response = jsonify(found_documents)
+  response = make_response(jsonify(found_documents), 200)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/get_stuffed_prompt', methods=['GET'])
 def get_stuffed_prompt():
@@ -196,13 +199,12 @@ def getContextStuffedPrompt():
     a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
   """
   print("In /getContextStuffedPrompt")
-  
 
   ingester = Ingest()
-  search_query: str = str(request.args.get('search_query'))      # type: ignore
-  course_name: str = str(request.args.get('course_name'))         # type: ignore 
-  top_n: int = int(request.args.get('top_n'))                     # type: ignore
-  top_k_to_search: int = int(request.args.get('top_k_to_search')) # type: ignore
+  search_query: str = str(request.args.get('search_query'))  # type: ignore
+  course_name: str = str(request.args.get('course_name'))  # type: ignore
+  top_n: int = int(request.args.get('top_n'))  # type: ignore
+  top_k_to_search: int = int(request.args.get('top_k_to_search'))  # type: ignore
 
   start_time = time.monotonic()
   stuffed_prompt = ingester.get_context_stuffed_prompt(search_query, course_name, top_n, top_k_to_search)
@@ -232,19 +234,19 @@ def getAll():
 #Write api to delete s3 files for a course
 @app.route('/delete', methods=['DELETE'])
 def delete():
-    """Delete all course materials based on the course_name
+  """Delete all course materials based on the course_name
     """
 
-    print("In /delete")
+  print("In /delete")
 
-    ingester = Ingest()
-    course_name: List[str] | str = request.args.get('course_name')
-    s3_path: str = request.args.get('s3_path')
-    success_or_failure = ingester.delete_data(s3_path, course_name)
-    response = jsonify({"outcome": success_or_failure})
+  ingester = Ingest()
+  course_name: List[str] | str = request.args.get('course_name')
+  s3_path: str = request.args.get('s3_path')
+  success_or_failure = ingester.delete_data(s3_path, course_name)
+  response = jsonify({"outcome": success_or_failure})
 
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 
 @app.route('/log', methods=['GET'])
@@ -263,12 +265,13 @@ def log():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/web-scrape', methods=['GET'])
 def scrape():
   url: str = request.args.get('url')
-  max_urls:int = request.args.get('max_urls')
-  max_depth:int = request.args.get('max_depth')
-  timeout:int = request.args.get('timeout')
+  max_urls: int = request.args.get('max_urls')
+  max_depth: int = request.args.get('max_depth')
+  timeout: int = request.args.get('timeout')
   course_name: str = request.args.get('course_name')
 
   # print all input params
@@ -284,17 +287,19 @@ def scrape():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/mit-download', methods=['GET'])
 def mit_download_course():
-  url:str = request.args.get('url')
-  course_name:str = request.args.get('course_name')
-  local_dir:str = request.args.get('local_dir')
+  url: str = request.args.get('url')
+  course_name: str = request.args.get('course_name')
+  local_dir: str = request.args.get('local_dir')
 
-  success_fail = mit_course_download(url, course_name,local_dir)
+  success_fail = mit_course_download(url, course_name, local_dir)
 
   response = jsonify(success_fail)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 # TODO: add a way to delete items from course based on base_url
 
