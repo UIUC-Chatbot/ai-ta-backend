@@ -194,7 +194,7 @@ Now please respond to my question: {user_question}"""
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.pdf'):
-          ret = self._ingest_single_pdf(s3_path, course_name)
+          ret = self._ingest_single_pdf(s3_path, course_name, kwargs=kwargs)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
@@ -317,8 +317,18 @@ Now please respond to my question: {user_question}"""
       title = title.replace("/", " ")
       title = title.strip()
 
-      if kwargs:
-        url = kwargs['kwargs']['url']
+      if kwargs['kwargs'] == {}:
+        url = ''
+        base_url = ''
+      else:
+        if 'url' in kwargs['kwargs'].keys():
+          url = kwargs['kwargs']['url']
+        else:
+          url = ''
+        if 'base_url' in kwargs['kwargs'].keys():
+          base_url = kwargs['kwargs']['base_url']
+        else:
+          base_url = ''
 
       text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
@@ -326,6 +336,7 @@ Now please respond to my question: {user_question}"""
           's3_path': s3_path,
           'readable_filename': str(title), # adding str to avoid error: unhashable type 'slice'  
           'url': url,
+          'base_url': base_url,
           'pagenumber_or_timestamp': ''
       }]
 
@@ -465,7 +476,7 @@ Now please respond to my question: {user_question}"""
       print(f"SRT ERROR {e}")
       return f"Error: {e}"
 
-  def _ingest_single_pdf(self, s3_path: str, course_name: str):
+  def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
     """
     Both OCR the PDF. And grab the first image as a PNG. 
       LangChain `Documents` have .metadata and .page_content attributes.
@@ -502,12 +513,27 @@ Now please respond to my question: {user_question}"""
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
+      if kwargs['kwargs'] == {}:
+        url = ''
+        base_url = ''
+      else:
+        if 'url' in kwargs['kwargs'].keys():
+          url = kwargs['kwargs']['url']
+        else:
+          url = ''
+        if 'base_url' in kwargs['kwargs'].keys():
+          base_url = kwargs['kwargs']['base_url']
+        else:
+          base_url = ''
+        
         metadatas: List[Dict[str, Any]] = [
             {
                 'course_name': course_name,
                 's3_path': s3_path,
                 'pagenumber_or_timestamp': page['page_number'] + 1,  # +1 for human indexing
                 'readable_filename': page['readable_filename'],
+                'url': url,
+                'base_url': base_url,
             } for page in pdf_pages_OCRed
         ]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]

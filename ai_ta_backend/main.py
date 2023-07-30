@@ -296,5 +296,7 @@ def mit_download_course():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+# TODO: add a way to delete items from course based on base_url
+
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=8000))
