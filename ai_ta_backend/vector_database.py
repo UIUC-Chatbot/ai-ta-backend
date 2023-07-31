@@ -513,18 +513,18 @@ Now please respond to my question: {user_question}"""
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
-      if kwargs['kwargs'] == {}:
-        url = ''
-        base_url = ''
-      else:
-        if 'url' in kwargs['kwargs'].keys():
-          url = kwargs['kwargs']['url']
-        else:
+        if kwargs['kwargs'] == {}:
           url = ''
-        if 'base_url' in kwargs['kwargs'].keys():
-          base_url = kwargs['kwargs']['base_url']
-        else:
           base_url = ''
+        else:
+          if 'url' in kwargs['kwargs'].keys():
+            url = kwargs['kwargs']['url']
+          else:
+            url = ''
+          if 'base_url' in kwargs['kwargs'].keys():
+            base_url = kwargs['kwargs']['base_url']
+          else:
+            base_url = ''
         
         metadatas: List[Dict[str, Any]] = [
             {
@@ -539,6 +539,7 @@ Now please respond to my question: {user_question}"""
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
 
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        print("Success pdf ingest")
     except Exception as e:
       print("ERROR IN PDF READING ")
       print(e)

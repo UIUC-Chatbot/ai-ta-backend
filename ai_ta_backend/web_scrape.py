@@ -218,8 +218,9 @@ def pdf_scraper(soup:BeautifulSoup, url:str):
         else:
           return {}
         if f"<!DOCTYPE html>" not in str(content):
-          pdf[site] = content
-          print("PDF scraped:", site)
+          if site not in pdf.keys():
+            pdf[site] = content
+            print("PDF scraped:", site)
   except Exception as e:
     print("PDF scrape error:", e)
 
