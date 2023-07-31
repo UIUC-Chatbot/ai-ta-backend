@@ -251,7 +251,8 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
-            'url': None,
+            'url': '',
+            'baseurl': '',
         } for doc in documents]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -276,7 +277,8 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
-            'url': None,
+            'url': '',
+            'baseurl': '',
         } for doc in documents]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -322,10 +324,18 @@ Now please respond to my question: {user_question}"""
       title = title.replace("/", " ")
       title = title.strip()
 
-      if kwargs:
-        url = kwargs['kwargs']['url']
+      if kwargs['kwargs'] == {}:
+        url = ''
+        base_url = ''
       else:
-        url = None
+        if 'url' in kwargs['kwargs'].keys():
+          url = kwargs['kwargs']['url']
+        else:
+          url = ''
+        if 'base_url' in kwargs['kwargs'].keys():
+          base_url = kwargs['kwargs']['base_url']
+        else:
+          base_url = ''
 
       text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
@@ -415,7 +425,8 @@ Now please respond to my question: {user_question}"""
           'readable_filename': Path(s3_path).name,
           'pagenumber': '',
           'timestamp': text.index(txt),
-          'url': None,
+          'url': '',
+          'baseurl': '',
       } for txt in text]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
@@ -445,7 +456,8 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
-            'url': None,
+            'url': '',
+            'baseurl': '',
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -470,7 +482,8 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
-            'url': None,
+            'url': '',
+            'baseurl': '',
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -570,7 +583,8 @@ Now please respond to my question: {user_question}"""
           'readable_filename': Path(s3_path).name,
           'pagenumber': '',
           'timestamp': '',
-          'url': None,
+          'url': '',
+          'baseurl': '',
       }]
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
@@ -597,7 +611,8 @@ Now please respond to my question: {user_question}"""
             'readable_filename': Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
-            'url': None,
+            'url': '',
+            'baseurl': '',
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
