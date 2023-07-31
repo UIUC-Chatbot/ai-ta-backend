@@ -252,7 +252,7 @@ Now please respond to my question: {user_question}"""
             'pagenumber': '',
             'timestamp': '',
             'url': '',
-            'baseurl': '',
+            'base_url': '',
         } for doc in documents]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -278,7 +278,7 @@ Now please respond to my question: {user_question}"""
             'pagenumber': '',
             'timestamp': '',
             'url': '',
-            'baseurl': '',
+            'base_url': '',
         } for doc in documents]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -426,7 +426,7 @@ Now please respond to my question: {user_question}"""
           'pagenumber': '',
           'timestamp': text.index(txt),
           'url': '',
-          'baseurl': '',
+          'base_url': '',
       } for txt in text]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
@@ -457,7 +457,7 @@ Now please respond to my question: {user_question}"""
             'pagenumber': '',
             'timestamp': '',
             'url': '',
-            'baseurl': '',
+            'base_url': '',
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -483,7 +483,7 @@ Now please respond to my question: {user_question}"""
             'pagenumber': '',
             'timestamp': '',
             'url': '',
-            'baseurl': '',
+            'base_url': '',
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -529,33 +529,33 @@ Now please respond to my question: {user_question}"""
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
-      if kwargs['kwargs'] == {}:
-        url = ''
-        base_url = ''
-      else:
-        if 'url' in kwargs['kwargs'].keys():
-          url = kwargs['kwargs']['url']
-        else:
+        if kwargs['kwargs'] == {}:
           url = ''
-        if 'base_url' in kwargs['kwargs'].keys():
-          base_url = kwargs['kwargs']['base_url']
-        else:
           base_url = ''
-        
-        metadatas: List[Dict[str, Any]] = [
-            {
-                'course_name': course_name,
-                's3_path': s3_path,
-                'pagenumber': page['page_number'] + 1,  # +1 for human indexing
-                'readable_filename': page['readable_filename'],
-                'timestamp': '',
-                'url': url,
-                'base_url': base_url,
-            } for page in pdf_pages_OCRed
-        ]
-        pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+        else:
+          if 'url' in kwargs['kwargs'].keys():
+            url = kwargs['kwargs']['url']
+          else:
+            url = ''
+          if 'base_url' in kwargs['kwargs'].keys():
+            base_url = kwargs['kwargs']['base_url']
+          else:
+            base_url = ''
+          
+          metadatas: List[Dict[str, Any]] = [
+              {
+                  'course_name': course_name,
+                  's3_path': s3_path,
+                  'pagenumber': page['page_number'] + 1,  # +1 for human indexing
+                  'readable_filename': page['readable_filename'],
+                  'timestamp': '',
+                  'url': url,
+                  'base_url': base_url,
+              } for page in pdf_pages_OCRed
+          ]
+          pdf_texts = [page['text'] for page in pdf_pages_OCRed]
 
-        self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+          self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
     except Exception as e:
       print("ERROR IN PDF READING ")
       print(e)
@@ -584,7 +584,7 @@ Now please respond to my question: {user_question}"""
           'pagenumber': '',
           'timestamp': '',
           'url': '',
-          'baseurl': '',
+          'base_url': '',
       }]
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
@@ -612,7 +612,7 @@ Now please respond to my question: {user_question}"""
             'pagenumber': '',
             'timestamp': '',
             'url': '',
-            'baseurl': '',
+            'base_url': '',
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -767,7 +767,7 @@ Now please respond to my question: {user_question}"""
           "s3_path": contexts[0].metadata.get('s3_path'),
           "readable_filename": contexts[0].metadata.get('readable_filename'),
           "url": contexts[0].metadata.get('url'),
-          "baseurl": contexts[0].metadata.get('baseurl'),
+          "base_url": contexts[0].metadata.get('base_url'),
           "contexts": contexts_for_supa,
       }
 
@@ -988,7 +988,10 @@ Now please respond to my question: {user_question}"""
         'readable_filename': doc.metadata['readable_filename'],
         'course_name ': doc.metadata['course_name'],
         's3_path': doc.metadata['s3_path'],
-        'pagenumber_or_timestamp': doc.metadata['pagenumber_or_timestamp'],
+        'pagenumber': doc.metadata['pagenumber'],
+        'timestamp': doc.metadata['timestamp'],
+        'url': doc.metadata['url'],
+        'base_url': doc.metadata['base_url'],
     } for doc in found_docs]
 
     return contexts
