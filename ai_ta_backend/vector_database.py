@@ -767,10 +767,11 @@ Now please respond to my question: {user_question}"""
           "s3_path": contexts[0].metadata.get('s3_path'),
           "readable_filename": contexts[0].metadata.get('readable_filename'),
           "url": contexts[0].metadata.get('url'),
+          "baseurl": contexts[0].metadata.get('baseurl'),
           "contexts": contexts_for_supa,
       }
 
-      count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
+      count = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore

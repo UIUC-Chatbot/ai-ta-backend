@@ -218,8 +218,9 @@ def pdf_scraper(soup:BeautifulSoup, url:str):
         else:
           return {}
         if f"<!DOCTYPE html>" not in str(content):
-          pdf[site] = content
-          print("PDF scraped:", site)
+          if site not in pdf.keys():
+            pdf[site] = content
+            print("PDF scraped:", site)
   except Exception as e:
     print("PDF scrape error:", e)
 
@@ -262,54 +263,22 @@ def crawler(base_url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1):
             continue
         
     # Delete repeated sites, with different URLs and keeping one
-    repeated = [value[2] for value in crawled]
-    counts = {value:repeated.count(value) for value in repeated}
-  
-    for value in repeated:
-        for i, row in enumerate(crawled):
-            if counts[value] > 1:
-                if row[3] == value:
-                  counts[value] -= 1
-                  del crawled[i]
-            else:
-                break
-              
-    # Delete repeated PDFs and keeping one if they were lists.
+    not_repeated_htmls = []
 
-    # pdf_repeat = []
-    # for value in crawled:
-    #     pdf_repeat.extend(value[4])
-    # pdf_counts = {value:pdf_repeat.count(value) for value in pdf_repeat}
-
-    # for value in pdf_repeat:
-    #     for row in crawled:
-    #         count = row[4].count(value)
-    #         if pdf_counts[value] == 1:
-    #             break
-    #         elif pdf_counts[value] > count:
-    #             for i in range(count):
-    #                 row[4].remove(value)
-    #                 pdf_counts[value] -= 1
-    #         else:
-    #             for i in range(pdf_counts[value]-1):
-    #                 row[4].remove(value)
-    #                 pdf_counts[value] -= 1
-
-    # IF we need pdf to be dictionary and want the pdf urls as well. 
-    pdf_repeat = []
     for row in crawled:
-      for value in row[4].values():
-        pdf_repeat.append(value)
-    counts = {value:pdf_repeat.count(value) for value in pdf_repeat}
-
+      if row[3] not in not_repeated_htmls:
+        not_repeated_htmls.append(row[3])
+      else:
+        continue
+      
+    # Delete repeated pdfs, with different URLs and keeping one
+    not_repeated_pdfs = {}
     for row in crawled:
       for key, value in row[4].items():
-        if counts[value] > 1:
-          counts[value] -= 1
-          del row[4][key]
+        if value not in not_repeated_pdfs.values():
+          not_repeated_pdfs[key] = value
         else:
-          break
-
+          continue
 
     print("Scraped", len(crawled), "urls out of", max_urls)
 
