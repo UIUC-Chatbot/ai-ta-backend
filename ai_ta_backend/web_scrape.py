@@ -75,37 +75,45 @@ def get_urls_list(url:str):
         pass 
     
     # header = s.find("head")
-    for i in body.find_all("a"): # type: ignore
-        try:
-        # getting the href tag
-            href = i.attrs['href']
-        except KeyError as e:
-            print("KeyError:", e, "for", i)
-            continue
+    try:
+      for i in body.find_all("a"): # type: ignore
+          try:
+          # getting the href tag
+              href = i.attrs['href']
+          except KeyError as e:
+              print("KeyError:", e, "for", i)
+              continue
+      
+          if href.startswith("http"):
+              pass
+          elif href.startswith("/"):
+              href = site+href
+          else:
+              href = site+'/'+href
+          urls.add(href)
+    except Exception as e:
+      print("Error in body:", e)
+      pass
     
-        if href.startswith("http"):
-            pass
-        elif href.startswith("/"):
-            href = site+href
-        else:
-            href = site+'/'+href
-        urls.add(href)
-
-    for i in header.find_all("a"): # type: ignore
-        try:
-        # getting the href tag
-            href = i.attrs['href']
-        except KeyError as e:
-            print("KeyError:", e, "for", i)
-            continue
-    
-        if href.startswith("http"):
-            pass
-        elif href.startswith("/"):
-            href = site+href
-        else:
-            href = site+'/'+href
-        urls.add(href)
+    try:
+      for i in header.find_all("a"): # type: ignore
+          try:
+          # getting the href tag
+              href = i.attrs['href']
+          except KeyError as e:
+              print("KeyError:", e, "for", i)
+              continue
+      
+          if href.startswith("http"):
+              pass
+          elif href.startswith("/"):
+              href = site+href
+          else:
+              href = site+'/'+href
+          urls.add(href)
+    except Exception as e:
+      print("Error in header:", e)
+      pass
 
     return list(urls)
 
