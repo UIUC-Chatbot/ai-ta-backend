@@ -341,7 +341,6 @@ Now please respond to my question: {user_question}"""
       }]
 
       success_or_failure = self.split_and_upload(text, metadata)
-      print(success_or_failure)
       print(f"_ingest_html: {success_or_failure}")
       return success_or_failure
     except Exception as e:
