@@ -15,7 +15,7 @@ mkdocs
 mkdocstrings[python]
 mkdocs-material
 sqlalchemy
-langchain==0.0.248
+langchain==0.0.256
 openai
 supabase
 SQLAlchemy
