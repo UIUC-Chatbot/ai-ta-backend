@@ -239,7 +239,7 @@ Now please respond to my question: {user_question}"""
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.pdf'):
-          ret = self._ingest_single_pdf(s3_path, course_name)
+          ret = self._ingest_single_pdf(s3_path, course_name, kwargs=kwargs)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
           else:
@@ -335,8 +335,18 @@ Now please respond to my question: {user_question}"""
       title = title.replace("/", " ")
       title = title.strip()
 
-      if kwargs:
-        url = kwargs['kwargs']['url']
+      if kwargs['kwargs'] == {}:
+        url = ''
+        base_url = ''
+      else:
+        if 'url' in kwargs['kwargs'].keys():
+          url = kwargs['kwargs']['url']
+        else:
+          url = ''
+        if 'base_url' in kwargs['kwargs'].keys():
+          base_url = kwargs['kwargs']['base_url']
+        else:
+          base_url = ''
 
       text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
@@ -344,11 +354,11 @@ Now please respond to my question: {user_question}"""
           's3_path': s3_path,
           'readable_filename': str(title), # adding str to avoid error: unhashable type 'slice'  
           'url': url,
+          'base_url': base_url,
           'pagenumber_or_timestamp': ''
       }]
 
       success_or_failure = self.split_and_upload(text, metadata)
-      print(success_or_failure)
       print(f"_ingest_html: {success_or_failure}")
       return success_or_failure
     except Exception as e:
@@ -483,7 +493,7 @@ Now please respond to my question: {user_question}"""
       print(f"SRT ERROR {e}")
       return f"Error: {e}"
 
-  def _ingest_single_pdf(self, s3_path: str, course_name: str):
+  def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
     """
     Both OCR the PDF. And grab the first image as a PNG. 
       LangChain `Documents` have .metadata and .page_content attributes.
@@ -520,17 +530,33 @@ Now please respond to my question: {user_question}"""
           text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
+        if kwargs['kwargs'] == {}:
+          url = ''
+          base_url = ''
+        else:
+          if 'url' in kwargs['kwargs'].keys():
+            url = kwargs['kwargs']['url']
+          else:
+            url = ''
+          if 'base_url' in kwargs['kwargs'].keys():
+            base_url = kwargs['kwargs']['base_url']
+          else:
+            base_url = ''
+        
         metadatas: List[Dict[str, Any]] = [
             {
                 'course_name': course_name,
                 's3_path': s3_path,
                 'pagenumber_or_timestamp': page['page_number'] + 1,  # +1 for human indexing
                 'readable_filename': page['readable_filename'],
+                'url': url,
+                'base_url': base_url,
             } for page in pdf_pages_OCRed
         ]
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
 
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        print("Success pdf ingest")
     except Exception as e:
       print("ERROR IN PDF READING ")
       print(e)
@@ -666,8 +692,8 @@ Now please respond to my question: {user_question}"""
     Clones the given GitHub URL and uses Langchain to load data.
     1. Clone the repo
     2. Use Langchain to load the data
-    3. Upload data to S3
-    4. Pass to split_and_upload()
+    3. Pass to split_and_upload()
+
     Args:
         github_url (str): The Github Repo URL to be ingested.
         course_name (str): The name of the course in our system.
@@ -676,18 +702,29 @@ Now please respond to my question: {user_question}"""
         _type_: Success or error message.
     """
     print("in ingest_github")
-    repo_path = "media/cloned_repo"
-    repo = Repo.clone_from(github_url, to_path=repo_path, depth=1, clone_submodules=False)
-    branch = repo.head.reference
 
-    loader = GitLoader(repo_path="media/cloned_repo", branch=branch)
-    data = loader.load()
-    print(len(data))
+    try:
+      repo_path = "media/cloned_repo"
+      repo = Repo.clone_from(github_url, to_path=repo_path, depth=1, clone_submodules=False)
+      branch = repo.head.reference
 
-    s3_paths: Union[List, None] = upload_data_files_to_s3(course_name, repo_path)
-    print("s3_paths: ", s3_paths)
-    
-    shutil.rmtree("media/cloned_repo")
+      loader = GitLoader(repo_path="media/cloned_repo", branch=branch)
+      data = loader.load()
+      shutil.rmtree("media/cloned_repo")
+      # create metadata for each file in data 
+      texts = [doc.page_content for doc in data]
+      metadatas: List[Dict[str, Any]] = [{
+              'course_name': course_name,
+              's3_path': '',
+              'readable_filename': doc.metadata['file_name'],
+              'url': github_url,
+              'pagenumber_or_timestamp': '', 
+          } for doc in data]
+      self.split_and_upload(texts=texts, metadatas=metadatas)
+      return "Success"
+    except Exception as e:
+      print(f"ERROR IN GITHUB INGEST {e}")
+      return f"Error: {e}"
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
@@ -702,11 +739,6 @@ Now please respond to my question: {user_question}"""
     assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
 
     try:
-      # generate AI summary
-      summary = self.ai_summary(texts, metadatas)
-      for i in range(len(summary)):
-        metadatas[i]['summary'] = summary[i]
-
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
@@ -839,6 +871,12 @@ Now please respond to my question: {user_question}"""
       String: An error message with traceback.
     """
     try:
+      # TODO: Generate AI summaries for contexts... maybe make this a separate function so it's still fast for retrieval.
+      # only do top 4!!!! 
+#       summary = self.ai_summary(texts, metadatas)
+#       for i in range(len(summary)):
+#         metadatas[i]['summary'] = summary[i]
+      
       # TODO: change back to 50+ once we have bigger qdrant DB.
       top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()

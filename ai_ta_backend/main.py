@@ -313,15 +313,16 @@ def scrape():
   max_depth:int = request.args.get('max_depth')
   timeout:int = request.args.get('timeout')
   course_name: str = request.args.get('course_name')
+  base_url_bool: str = request.args.get('base_url_on')
 
   # print all input params
-  print(f"Web scrap!")
+  print(f"Web scrape!")
   print(f"Url: {url}")
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
   print(f"Timeout in Seconds ⏰: {timeout}")
 
-  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout)
+  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout, base_url_bool)
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -338,6 +339,8 @@ def mit_download_course():
   response = jsonify(success_fail)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+# TODO: add a way to delete items from course based on base_url
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=8000))
