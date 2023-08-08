@@ -83,6 +83,7 @@ def find_urls(soup:BeautifulSoup, urls:set, site:str):
       else:
         href = site+'/'+href
       urls.add(href)
+
   except Exception as e:
     print("Error in body:", e)
     pass
@@ -103,7 +104,7 @@ def remove_duplicates(urls:list):
   print("deleted", og_len-len(not_repeated_files), "duplicate files")
   return urls
 
-def crawler(url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _invalid_urls:list=[], _soup:BeautifulSoup=None):
+def crawler(url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, base_url_on:str=None, _invalid_urls:list=[], _soup:BeautifulSoup=None):
   '''Function gets titles of urls and the urls themselves'''
   # Prints the depth of the current search
   print("depth: ", _depth)
@@ -111,6 +112,9 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _invalid_
   max_urls = int(max_urls)
   _depth = int(_depth)
   max_depth = int(max_depth)
+  print(base_url_on, type(base_url_on))
+  base_url_on = str(base_url_on)
+
   amount = max_urls
   
   # Get rid of double slashes in url
@@ -148,13 +152,25 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _invalid_
 
   urls = list(urls)
   # We grab content out of these urls
+
   for url in urls:
-    url, s = valid_url(url)
-    if url:
-      print("Scraped:", url)
-      url_contents.append((url, s))
+    if base_url_on:
+      if url.startswith(site):
+        url, s = valid_url(url)
+        if url:
+          print("Scraped:", url)
+          url_contents.append((url, s))
+        else:
+          _invalid_urls.append(url)
+      else:
+        pass
     else:
-      _invalid_urls.append(url)
+      url, s = valid_url(url)
+      if url:
+        print("Scraped:", url)
+        url_contents.append((url, s))
+      else:
+        _invalid_urls.append(url)
   
   url_contents = remove_duplicates(url_contents)
   max_urls = max_urls - len(url_contents)
@@ -174,17 +190,18 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, _invalid_
         break
     else:
       pass
-
-  if len(url_contents) < amount and _depth == 0:
-    print("Max URLS not reached, returning all urls found:", len(url_contents), "out of", amount)
-    return url_contents
-  elif len(url_contents) == amount and _depth == 0:
-    print("Max URLS reached:", len(url_contents), "out of", amount)
-    return url_contents
-
+  
+  if _depth == 0:
+    if len(url_contents) < amount:
+      print("Max URLS not reached, returning all urls found:", len(url_contents), "out of", amount)
+    elif len(url_contents) == amount:
+      print("Max URLS reached:", len(url_contents), "out of", amount)
+    else:
+      print("Exceeded Max URLS, found:", len(url_contents), "out of", amount)
+  print(len(url_contents), "urls found")
   return url_contents
 
-def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1):
+def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, base_url_on:str=None):
   """
   Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
 
@@ -202,7 +219,9 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   max_urls = int(max_urls)
   max_depth = int(max_depth)
   timeout = int(timeout)
-  data = crawler(url, max_urls, max_depth, timeout)
+  base_url_on = str(base_url_on)
+  print(base_url_on, type(base_url_on), "base_url_on")
+  data = crawler(url, max_urls, max_depth, timeout, base_url_on)
 
   print("Begin Ingest")
 

@@ -73,9 +73,9 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
     completion_cost = float(completion_token_cost * num_tokens_completion)
     return num_tokens_prompt, prompt_cost, num_tokens_completion, completion_cost
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv()
+# load_dotenv()
 
 def analyze_conversations(supabase_client: Any = None):
 

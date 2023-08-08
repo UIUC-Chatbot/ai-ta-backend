@@ -285,6 +285,7 @@ def scrape():
   max_depth:int = request.args.get('max_depth')
   timeout:int = request.args.get('timeout')
   course_name: str = request.args.get('course_name')
+  base_url_bool: str = request.args.get('base_url_on')
 
   # print all input params
   print(f"Web scrape!")
@@ -293,7 +294,7 @@ def scrape():
   print(f"Max Depth: {max_depth}")
   print(f"Timeout in Seconds ⏰: {timeout}")
 
-  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout)
+  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout, base_url_bool)
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')

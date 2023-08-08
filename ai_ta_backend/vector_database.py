@@ -322,7 +322,7 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       print(f"ERROR IN VTT READING {e}")
 
-  def _ingest_html(self, s3_path: str, course_name: str) -> str:
+  def _ingest_html(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       raw_html = response['Body'].read().decode('utf-8')
