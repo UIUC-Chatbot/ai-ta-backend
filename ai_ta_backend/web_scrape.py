@@ -223,14 +223,22 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   print(base_url_on, type(base_url_on), "base_url_on")
   data = crawler(url, max_urls, max_depth, timeout, base_url_on)
 
-  print("Begin Ingest")
-
   ingester = Ingest()
   s3_client = boto3.client(
         's3',
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
     )
+
+  if url.startswith("https://github.com/"):
+    results = ingester.ingest_github(url, course_name)
+    print("Finished ingesting GitHub page")
+    return results
+  else:
+    pass
+
+  print("Begin Ingest")
+
   # Clean some keys for a proper file name
   # todo: have a default title
   # titles = [value[1][1].title.string for value in data]
