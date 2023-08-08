@@ -220,9 +220,6 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   max_depth = int(max_depth)
   timeout = int(timeout)
   base_url_on = str(base_url_on)
-  print(base_url_on, type(base_url_on), "base_url_on")
-  data = crawler(url, max_urls, max_depth, timeout, base_url_on)
-
   ingester = Ingest()
   s3_client = boto3.client(
         's3',
@@ -231,11 +228,13 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     )
 
   if url.startswith("https://github.com/"):
+    print("Begin Ingesting GitHub page")
     results = ingester.ingest_github(url, course_name)
     print("Finished ingesting GitHub page")
     return results
   else:
-    pass
+    data = crawler(url, max_urls, max_depth, timeout, base_url_on)
+
 
   print("Begin Ingest")
 
