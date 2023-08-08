@@ -174,6 +174,34 @@ def get_stuffed_prompt():
   return response
 
 
+@app.route('/getTopContextsWithSummary', methods=['GET'])
+def getTopContextsWithSummary():
+  """
+  Get most relevant contexts for a given search query. 
+  Generate a summary for the top n results and add to metadata.
+  """
+  try:
+    course_name: str = request.args.get('course_name')
+    search_query: str = request.args.get('search_query')
+    top_n: str = request.args.get('top_n')
+  except Exception as e:
+    print("No course name provided.")
+
+  print("In /getTopContextsWithSummary: ", search_query)
+  if search_query is None:
+    return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
+
+  ingester = Ingest()
+  found_documents = ingester.getTopContexts(search_query, course_name, top_n)
+
+  print("Found documents: ", found_documents[0])
+  docs_with_summaries = ingester.generate_summaries(found_documents)
+  
+  response = jsonify(docs_with_summaries)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/ingest', methods=['GET'])
 def ingest():
   """Recursively ingests anything from S3 filepath and below. 
