@@ -346,6 +346,7 @@ Now please respond to my question: {user_question}"""
           base_url = kwargs['kwargs']['base_url']
         else:
           base_url = ''
+      title = str(object=time.localtime()[1])+ "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:] + ' ' + str(title)
 
       text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
@@ -541,6 +542,8 @@ Now please respond to my question: {user_question}"""
             base_url = kwargs['kwargs']['base_url']
           else:
             base_url = ''
+          page['readable_filename'] = str(object=time.localtime()[1])+ "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:] + ' ' + page['readable_filename']
+
         
         metadatas: List[Dict[str, Any]] = [
             {

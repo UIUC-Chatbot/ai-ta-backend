@@ -302,7 +302,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
           if key[1] != "" or key[1] != None:
             temp_pdf.write(key[1])
             temp_pdf.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf" + str(time.localtime()[1])+ "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:]
+            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
             paths.append(s3_upload_path)
             with open(temp_pdf.name, 'rb') as f:
               print("Uploading PDF to S3")
@@ -316,7 +316,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
           if key[1] != "" or key[1] != None:
             temp_html.write(key[1].encode('utf-8'))
             temp_html.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html" + str(time.localtime()[1])+ "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:]
+            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html"
             paths.append(s3_upload_path)
             with open(temp_html.name, 'rb') as f:
               print("Uploading html to S3")
