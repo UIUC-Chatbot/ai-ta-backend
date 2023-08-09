@@ -32,6 +32,8 @@ def valid_url(url):
       if ".pdf" in response.url:
         if f"<!DOCTYPE html>" not in str(response.content):
           content = response.content
+      elif str(response.content).startswith("%PDF"):
+        content = response.content
       else:
         content = BeautifulSoup(response.text, "html.parser")
       return (response.url, content)
@@ -104,7 +106,7 @@ def remove_duplicates(urls:list):
   print("deleted", og_len-len(not_repeated_files), "duplicate files")
   return urls
 
-def crawler(url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, base_url_on:str=None, _invalid_urls:list=[], _soup:BeautifulSoup=None):
+def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup:BeautifulSoup=None,  _invalid_urls:list=[]):
   '''Function gets titles of urls and the urls themselves'''
   # Prints the depth of the current search
   print("depth: ", _depth)
@@ -130,6 +132,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, base_url_
     s = _soup
   else:
     url, s = valid_url(url)
+    time.sleep(timeout)
     url_contents.append((url,s))
   if url:
     body = s.find("body")
@@ -151,6 +154,13 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, base_url_
     return None
 
   urls = list(urls)
+  if max_urls > len(urls):
+    max_urls = max_urls - len(urls)
+  elif max_urls < len(urls):
+    urls = urls[:max_urls]
+    max_urls = 0
+  else:
+    max_urls = 0
   # We grab content out of these urls
 
   for url in urls:
@@ -174,15 +184,19 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, _depth:int=0, base_url_
   
   url_contents = remove_duplicates(url_contents)
   max_urls = max_urls - len(url_contents)
+  print(max_urls, "urls left")
 
   # recursively go through crawler until we reach the max amount of urls. 
   for url in url_contents:
     if url[0] not in _invalid_urls:
       if max_urls > 0:
         if _depth < max_depth:
-          url_contents.extend(crawler(url, max_urls, max_depth, _depth+1, _invalid_urls, url[1]))
+          temp_data = crawler(url[0], max_urls, max_depth, timeout, _invalid_urls, _depth, url[1])
+          temp_data = remove_duplicates(temp_data)
+          max_urls = max_urls - len(temp_data)
+          print(max_urls, "urls left")
+          url_contents.extend(temp_data)
           url_contents = remove_duplicates(url_contents)
-          max_urls = max_urls - len(url_contents)
         else:
           print("Depth exceeded:", _depth+1, "out of", max_depth)
           break
@@ -288,7 +302,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
           if key[1] != "" or key[1] != None:
             temp_pdf.write(key[1])
             temp_pdf.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
+            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf" + str(time.localtime()[1])+ "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:]
             paths.append(s3_upload_path)
             with open(temp_pdf.name, 'rb') as f:
               print("Uploading PDF to S3")
@@ -302,7 +316,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
           if key[1] != "" or key[1] != None:
             temp_html.write(key[1].encode('utf-8'))
             temp_html.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html"
+            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html" + str(time.localtime()[1])+ "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:]
             paths.append(s3_upload_path)
             with open(temp_html.name, 'rb') as f:
               print("Uploading html to S3")
