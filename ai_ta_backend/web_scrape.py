@@ -128,18 +128,21 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
     site = base
 
   urls= set()
-  try:
-    if _soup:
-      s = _soup
-    else:
-      url, s = valid_url(url)
-      time.sleep(timeout)
-      url_contents.append((url,s))
-    if url:
+
+  if _soup:
+    s = _soup
+  else:
+    url, s = valid_url(url)
+    time.sleep(timeout)
+    url_contents.append((url,s))
+  if url:
+    try:
       body = s.find("body")
       header = s.find("head") 
-  except Exception as e:
-    print("Error:", e)
+    except Exception as e:
+      print("Error:", e)
+
+
     
     # Check for 403 Forbidden urls
     try:
@@ -250,10 +253,10 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     print("Finished ingesting GitHub page")
     return results
   else:
+    print("Begin Ingesting Web page")
     data = crawler(url, max_urls, max_depth, timeout, base_url_on)
 
 
-  print("Begin Ingest")
 
   # Clean some keys for a proper file name
   # todo: have a default title
