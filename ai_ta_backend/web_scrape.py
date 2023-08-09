@@ -141,6 +141,8 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
       header = s.find("head") 
     except Exception as e:
       print("Error:", e)
+      body = ""
+      header = ""
 
 
     
@@ -153,11 +155,14 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
     except Exception as e:
       print("Error:", e)
       pass 
-    
-    urls = find_urls(body, urls, site)
-    urls = find_urls(header, urls, site)
+    if body != "" and header != "":
+      urls = find_urls(body, urls, site)
+      urls = find_urls(header, urls, site)
+    else:
+      urls = find_urls(s, urls, site)
   else:
-    return None
+    _invalid_urls.append(url)
+    return []
 
   urls = list(urls)
   if max_urls > len(urls):
