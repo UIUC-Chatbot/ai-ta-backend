@@ -128,15 +128,18 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
     site = base
 
   urls= set()
-  if _soup:
-    s = _soup
-  else:
-    url, s = valid_url(url)
-    time.sleep(timeout)
-    url_contents.append((url,s))
-  if url:
-    body = s.find("body")
-    header = s.find("head") 
+  try:
+    if _soup:
+      s = _soup
+    else:
+      url, s = valid_url(url)
+      time.sleep(timeout)
+      url_contents.append((url,s))
+    if url:
+      body = s.find("body")
+      header = s.find("head") 
+  except Exception as e:
+    print("Error:", e)
     
     # Check for 403 Forbidden urls
     try:
