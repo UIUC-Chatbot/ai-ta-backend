@@ -12,6 +12,7 @@ from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
+from ai_ta_backend.canvas import CanvasAPI
 
 app = Flask(__name__)
 CORS(app)
@@ -309,6 +310,24 @@ def mit_download_course():
   success_fail = mit_course_download(url, course_name,local_dir)
 
   response = jsonify(success_fail)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/addCanvasUsers', methods=['GET'])
+def add_canvas_users():
+  """
+  Add users from canvas to the course
+  """
+  print("In /addCanvasUsers")
+
+  canvas = CanvasAPI()
+  canvas_course_id: str = request.args.get('course_id')
+  course_name: str = request.args.get('course_name')
+
+  success_or_failure = canvas.add_users(canvas_course_id, course_name)
+  
+  response = jsonify({"outcome": success_or_failure})
+
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
