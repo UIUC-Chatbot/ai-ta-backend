@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from h11 import Response
+from regex import D
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
 
@@ -17,21 +18,20 @@ app = Flask(__name__)
 CORS(app)
 
 # load API keys from globally-availabe .env file
-# load_dotenv(dotenv_path='.env', override=True)
-load_dotenv()
+load_dotenv(dotenv_path='.env', override=True)
+# load_dotenv()
 
+# @app.route('/')
+# def index() -> JSON:
+#   """_summary_
 
-@app.route('/')
-def index() -> JSON:
-  """_summary_
+#   Args:
+#       test (int, optional): _description_. Defaults to 1.
 
-  Args:
-      test (int, optional): _description_. Defaults to 1.
-
-  Returns:
-      JSON: _description_
-  """
-  return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
+#   Returns:
+#       JSON: _description_
+#   """
+#   return jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
 
 
 @app.route('/coursera', methods=['GET'])
@@ -322,6 +322,8 @@ def mit_download_course():
 
 # from github import Github
 from github import Auth, GithubIntegration
+from github.Issue import Issue
+from github.PullRequest import PullRequest
 
 
 # TODO: handle new comment on PR. Make sure task queue is not overrun.
@@ -370,6 +372,10 @@ def handle_issue_opened(payload):
 
 
 def handle_comment_opened(payload):
+  """Note: In Github API, PRs are just issues with an extra PR object. Issue numbers and PR numbers live in the same space.
+  Args:
+      payload (_type_): _description_
+  """
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
@@ -379,41 +385,63 @@ def handle_comment_opened(payload):
   installation = gi.get_installations()[0]
   g = installation.get_github_for_installation()
 
-  comment = payload['comment']
-  issue = payload['issue']
   repo_name = payload["repository"]["full_name"]
+  repo = g.get_repo(repo_name)
+  number = payload.get('issue').get('number')
+  comment = payload.get('comment')
   comment_author = comment['user']['login']
-  print("Comment author: ", comment['user']['login'])
+  # issue_response = payload.get('issue')
+  issue: Issue = repo.get_issue(number=number)
+  is_pr = True if payload.get('issue').get('pull_request') else False
+  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
+
+  # DON'T REPLY TO SELF (inf loop)
   if comment_author == 'lil-jr-dev[bot]':
     print("Comment author is lil-jr-dev[bot], no reply...")
     return
 
-  messageForNewPRs = "Thanks for opening a new or edited comment!"
-  print(f"Received a new comment on issue #{issue['number']}. Comment: {comment}")
+  print("Comment author: ", comment['user']['login'])
   try:
-    repo = g.get_repo(repo_name)
-    issue = repo.get_issue(number=issue['number'])
-    issue.create_comment(messageForNewPRs)
+    if is_pr:
+      messageForNewPRs = "Thanks for opening a new or edited comment on a PR!"
+      print("🥵🥵🥵🥵🥵🥵🥵🥵🥵🥵 COMMENT ON A PR")
+      pr: PullRequest = repo.get_pull(number=number)
+
+      branch_name = pr.head.ref
+      print(f"Head branch_name: {branch_name}")
+      repo = g.get_repo(repo_name)
+      pr = repo.get_pull(number=number)
+      issue.create_comment(body=messageForNewPRs)
+    else:
+      # IS COMMENT ON ISSUE
+      print("🤗🤗🤗🤗🤗🤗🤗🤗🤗🤗 THIS IS A COMMENT ON AN ISSUE")
+      messageForIssues = "Thanks for opening a new or edited comment on an issue!"
+      issue.create_comment(messageForIssues)
   except Exception as error:
     print(f"Error: {error}")
 
 
-# IN PROGRESS: Github App Webhooks (for lil-jr-dev)
-# WEBHOOK DOCS: https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/using-webhooks-with-github-apps
-
-
-@app.route('/api/webhook', methods=['POST'])
+# @app.route('/api/webhook', methods=['POST'])
+@app.route('/', methods=['POST'])
 def webhook():
-  print("In api/webhook! YAYYY")
+  """
+  IN PROGRESS: Github App Webhooks (for lil-jr-dev)
+  Wehbook URL to use on my github app (if this route is `/api/webhook`): https://flask-ai-ta-backend-pr-34.up.railway.app/api/webhook
+
+  DOCS: 
+  API reference for Webhook objects: https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
+  WEBHOOK explainer: https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/using-webhooks-with-github-apps
+  """
+
   payload = request.json
-  print(f"In api/webhook! Payload: {payload}")
+  print(f"{payload}")
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
 
   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
   if payload.get('action') == 'opened' and payload.get('pull_request'):
     handle_pull_request_opened(payload)
-  elif payload.get('action') == 'opened' and payload.get('issue'):
+  elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
     handle_issue_opened(payload)
   elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
     handle_comment_opened(payload)
