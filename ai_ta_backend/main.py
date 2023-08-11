@@ -322,21 +322,16 @@ def mit_download_course():
 
 from github import Github
 
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
-
-# Read private key
-messageForNewPRs = "Thanks for opening a new PR! Please follow our contributing guidelines to make your PR easier to review."
-
-# GitHub initialization
-print("RIGHT BEFORE GITHUB INSTANCE")
-print("os.getenv(GITHUB_APP_ID)", os.getenv("GITHUB_APP_ID"))
-print("os.getenv(GITHUB_APP_PRIVATE_KEY)", os.getenv("GITHUB_APP_PRIVATE_KEY"))
-g = Github(os.getenv("GITHUB_APP_ID"), os.getenv("GITHUB_APP_PRIVATE_KEY"))
-
 
 # TODO: handle new comment on PR. Make sure task queue is not overrun.
 # IN PROGRESS: Github agent webhooks
 def handle_pull_request_opened(payload):
+  print("RIGHT BEFORE GITHUB INSTANCE")
+  print("os.getenv(GITHUB_APP_ID)", os.getenv("GITHUB_APP_ID"))
+  print("os.getenv(GITHUB_APP_PRIVATE_KEY)", os.getenv("GITHUB_APP_PRIVATE_KEY"))
+  g = Github(os.getenv("GITHUB_APP_ID"), os.getenv("GITHUB_APP_PRIVATE_KEY"))
+
+  messageForNewPRs = "Thanks for opening a new PR! Please follow our contributing guidelines to make your PR easier to review."
   print(f"Received a pull request event for #{payload['number']}")
   try:
     repo = g.get_repo(f"{payload['repository']['owner']['login']}/{payload['repository']['name']}")
@@ -349,7 +344,9 @@ def handle_pull_request_opened(payload):
 # IN PROGRESS: Github App Webhooks (for lil-jr-dev)
 @app.route('/api/webhook', methods=['POST'])
 def webhook():
+  print("In api/webhook! YAYYY")
   payload = request.json
+  print(f"In api/webhook! Payload: {payload}")
   if payload and payload['action'] == 'opened' and payload['pull_request']:
     handle_pull_request_opened(payload['pull_request'])
   return '', 200
