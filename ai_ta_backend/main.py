@@ -404,7 +404,7 @@ def webhook():
   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
   if payload['action'] == 'opened' and payload['pull_request']:
     handle_pull_request_opened(payload['pull_request'])
-  elif payload['action'] == 'opened' and payload['issues']:
+  elif payload['action'] == 'opened' and payload['issue']:
     handle_issue_opened(payload['issue'])
   elif payload['action'] in ['created', 'edited'] and payload['issue_comment']:
     handle_comment_opened(payload['comment'])
