@@ -411,11 +411,11 @@ def webhook():
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
 
   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
-  if payload['action'] == 'opened' and payload['pull_request']:
+  if payload.get('action') == 'opened' and payload.get('pull_request'):
     handle_pull_request_opened(payload)
-  elif payload['action'] == 'created' and payload['issue']:
+  elif payload.get('action') == 'created' and payload.get('issue'):
     handle_issue_opened(payload)
-  elif payload['action'] in ['created', 'edited'] and payload['comment']:
+  elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
     handle_comment_opened(payload)
 
   return '', 200
