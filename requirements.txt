@@ -15,7 +15,8 @@ mkdocs
 mkdocstrings[python]
 mkdocs-material
 sqlalchemy
-langchain==0.0.256
+# langchain==0.0.256
+git+https://github.com/KastanDay/langchain-improved-agents.git#egg=langchain&subdirectory=libs/langchain
 openai
 supabase
 SQLAlchemy

@@ -325,9 +325,9 @@ from github import Auth, GithubIntegration
 from github.Issue import Issue
 from github.PullRequest import PullRequest
 
+from ai_ta_backend.agents import handle_new_pr
 
-# TODO: handle new comment on PR. Make sure task queue is not overrun.
-# IN PROGRESS: Github agent webhooks
+
 def handle_pull_request_opened(payload):
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
@@ -336,14 +336,26 @@ def handle_pull_request_opened(payload):
   gi = GithubIntegration(auth=auth)
   installation = gi.get_installations()[0]
   g = installation.get_github_for_installation()
-  pr = payload['pull_request']
 
-  messageForNewPRs = "Thanks for opening a new PR! Please follow our contributing guidelines to make your PR easier to review."
-  print(f"Received a pull request event for #{pr['number']}")
+  repo_name = payload["repository"]["full_name"]
+  repo = g.get_repo(repo_name)
+
+  number = payload.get('issue').get('number')
+  comment = payload.get('comment')
+  comment_author = comment['user']['login']
+  issue: Issue = repo.get_issue(number=number)
+  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
+  pr: PullRequest = repo.get_pull(number=number)
+
+  print(f"Received a pull request event for #{number}")
   try:
-    repo = g.get_repo(pr["head"]["repo"]["full_name"])
-    issue = repo.get_issue(number=pr['number'])
+    branch_name = pr.head.ref
+    messageForNewPRs = "Thanks for opening a new PR! I'll now try to finish this implementation and I'll comment of I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
     issue.create_comment(messageForNewPRs)
+
+    print("LAUNCHING BOT")
+    bot = handle_new_pr.PR_Bot(branch_name=branch_name)
+    bot.on_new_pr(number=number)
   except Exception as error:
     print(f"Error: {error}")
 
@@ -360,13 +372,24 @@ def handle_issue_opened(payload):
   # comment = payload['comment']
   issue = payload['issue']
   repo_name = payload["repository"]["full_name"]
+  repo = g.get_repo(repo_name)
 
-  messageForNewPRs = "Thanks for opening a new issue!"
-  print(f"Received a issue opened event for #{issue['number']}")
+  number = payload.get('issue').get('number')
+  comment = payload.get('comment')
+  comment_author = comment['user']['login']
+  issue: Issue = repo.get_issue(number=number)
+  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
+
+  print(f"New issue created: #{number}")
   try:
-    repo = g.get_repo(repo_name)
-    issue = repo.get_issue(number=issue['number'])
-    issue.create_comment(messageForNewPRs)
+    messageForNewIssues = "Thanks for opening a new issue! I'll now try to finish this implementation and open a PR for you to review. I'll comment of I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
+    issue.create_comment(messageForNewIssues)
+
+    branch_name = handle_new_pr.convert_issue_to_branch_name(issue)
+
+    print("LAUNCHING BOT")
+    bot = handle_new_pr.PR_Bot(branch_name)
+    bot.on_new_issue(number=number)
   except Exception as error:
     print(f"Error: {error}")
 
