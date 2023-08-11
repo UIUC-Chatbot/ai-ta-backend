@@ -329,9 +329,9 @@ messageForNewPRs = "Thanks for opening a new PR! Please follow our contributing 
 
 # GitHub initialization
 print("RIGHT BEFORE GITHUB INSTANCE")
-print("os.getenv(APP_ID)", os.getenv("APP_ID"))
+print("os.getenv(GITHUB_APP_ID)", os.getenv("GITHUB_APP_ID"))
 print("os.getenv(GITHUB_APP_PRIVATE_KEY)", os.getenv("GITHUB_APP_PRIVATE_KEY"))
-g = Github(os.getenv("APP_ID"), os.getenv("GITHUB_APP_PRIVATE_KEY"))
+g = Github(os.getenv("GITHUB_APP_ID"), os.getenv("GITHUB_APP_PRIVATE_KEY"))
 
 
 # TODO: handle new comment on PR. Make sure task queue is not overrun.
