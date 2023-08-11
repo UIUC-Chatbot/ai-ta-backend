@@ -361,8 +361,8 @@ def handle_issue_opened(issue):
   messageForNewPRs = "Thanks for opening a new issue!"
   print(f"Received a pull request event for #{issue['number']}")
   try:
-    print("KASTAN ---- issue[repo][full_name]", issue["repo"]["full_name"])
-    repo = g.get_repo(issue["repo"]["full_name"])  # probably delete the head variable
+    print("KASTAN ---- issue[repository][full_name]", issue["repository"]["full_name"])
+    repo = g.get_repo(issue["repository"]["full_name"])  # probably delete the head variable
     issue = repo.get_issue(number=issue['number'])
     issue.create_comment(messageForNewPRs)
   except Exception as error:
@@ -383,7 +383,7 @@ def handle_comment_opened(comment, issue):
   messageForNewPRs = "Thanks for opening a new or edited comment!"
   print(f"Received a new comment on issue #{issue['number']}. Comment: {comment}")
   try:
-    repo = g.get_repo(issue["repo"]["full_name"])  # probably delete the head variable
+    repo = g.get_repo(issue["repository"]["full_name"])
     issue = repo.get_issue(number=issue['number'])
     issue.create_comment(messageForNewPRs)
   except Exception as error:
