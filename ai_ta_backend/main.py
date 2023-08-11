@@ -381,10 +381,10 @@ def handle_comment_opened(comment, issue):
   g = installation.get_github_for_installation()
 
   messageForNewPRs = "Thanks for opening a new or edited comment!"
-  print(f"Received a pull request event for #{comment['number']}")
+  print(f"Received a new comment on issue #{issue['number']}. Comment: {comment}")
   try:
-    repo = g.get_repo(comment["head"]["repo"]["full_name"])  # probably delete the head variable
-    issue = repo.get_issue(number=comment['number'])
+    repo = g.get_repo(issue["repo"]["full_name"])  # probably delete the head variable
+    issue = repo.get_issue(number=issue['number'])
     issue.create_comment(messageForNewPRs)
   except Exception as error:
     print(f"Error: {error}")
