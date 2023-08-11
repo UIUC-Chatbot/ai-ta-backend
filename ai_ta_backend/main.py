@@ -413,7 +413,7 @@ def webhook():
   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
   if payload.get('action') == 'opened' and payload.get('pull_request'):
     handle_pull_request_opened(payload)
-  elif payload.get('action') == 'created' and payload.get('issue'):
+  elif payload.get('action') == 'opened' and payload.get('issue'):
     handle_issue_opened(payload)
   elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
     handle_comment_opened(payload)
