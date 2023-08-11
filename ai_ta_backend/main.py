@@ -384,8 +384,8 @@ def handle_comment_opened(payload):
   repo_name = payload["repository"]["full_name"]
   comment_author = comment['user']['login']
   print("Comment author: ", comment['user']['login'])
-  if comment_author == 'lil-jr-dev':
-    print("Comment author is lil-jr-dev, no reply...")
+  if comment_author == 'lil-jr-dev[bot]':
+    print("Comment author is lil-jr-dev[bot], no reply...")
     return
 
   messageForNewPRs = "Thanks for opening a new or edited comment!"
@@ -413,7 +413,7 @@ def webhook():
   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
   if payload['action'] == 'opened' and payload['pull_request']:
     handle_pull_request_opened(payload)
-  elif payload['action'] == 'opened' and payload['issue']:
+  elif payload['action'] == 'created' and payload['issue']:
     handle_issue_opened(payload)
   elif payload['action'] in ['created', 'edited'] and payload['comment']:
     handle_comment_opened(payload)
