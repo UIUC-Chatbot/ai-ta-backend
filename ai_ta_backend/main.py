@@ -361,6 +361,7 @@ def handle_issue_opened(issue):
   messageForNewPRs = "Thanks for opening a new issue!"
   print(f"Received a pull request event for #{issue['number']}")
   try:
+    print("KASTAN ---- issue[repo][full_name]", issue["repo"]["full_name"])
     repo = g.get_repo(issue["repo"]["full_name"])  # probably delete the head variable
     issue = repo.get_issue(number=issue['number'])
     issue.create_comment(messageForNewPRs)
@@ -368,7 +369,7 @@ def handle_issue_opened(issue):
     print(f"Error: {error}")
 
 
-def handle_comment_opened(comment):
+def handle_comment_opened(comment, issue):
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
@@ -406,8 +407,8 @@ def webhook():
     handle_pull_request_opened(payload['pull_request'])
   elif payload['action'] == 'opened' and payload['issue']:
     handle_issue_opened(payload['issue'])
-  elif payload['action'] in ['created', 'edited'] and payload['issue_comment']:
-    handle_comment_opened(payload['comment'])
+  elif payload['action'] in ['created', 'edited'] and payload['comment']:
+    handle_comment_opened(payload['comment'], payload['issue'])
 
   return '', 200
 
