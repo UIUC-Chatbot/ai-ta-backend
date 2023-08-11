@@ -334,7 +334,7 @@ def handle_pull_request_opened(payload):
   messageForNewPRs = "Thanks for opening a new PR! Please follow our contributing guidelines to make your PR easier to review."
   print(f"Received a pull request event for #{payload['number']}")
   try:
-    repo = g.get_repo(f"{payload['repository']['full_name']}")
+    repo = g.get_repo(payload["pull_request"]["head"]["repo"]["full_name"])
     issue = repo.get_issue(number=payload['number'])
     issue.create_comment(messageForNewPRs)
   except Exception as error:
