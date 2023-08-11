@@ -374,6 +374,7 @@ def handle_comment_opened(payload):
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
   )
+  # ensure the author is not lil-jr-dev bot.
   gi = GithubIntegration(auth=auth)
   installation = gi.get_installations()[0]
   g = installation.get_github_for_installation()
@@ -381,6 +382,11 @@ def handle_comment_opened(payload):
   comment = payload['comment']
   issue = payload['issue']
   repo_name = payload["repository"]["full_name"]
+  comment_author = comment['user']['login']
+  print("Comment author: ", comment['user']['login'])
+  if comment_author == 'lil-jr-dev':
+    print("Comment author is lil-jr-dev, no reply...")
+    return
 
   messageForNewPRs = "Thanks for opening a new or edited comment!"
   print(f"Received a new comment on issue #{issue['number']}. Comment: {comment}")
