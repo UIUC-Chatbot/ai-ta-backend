@@ -333,57 +333,59 @@ def handle_pull_request_opened(payload):
   )
   gi = GithubIntegration(auth=auth)
   installation = gi.get_installations()[0]
-
-  # create a GitHub instance:
   g = installation.get_github_for_installation()
+  pr = payload['pull_request']
 
   messageForNewPRs = "Thanks for opening a new PR! Please follow our contributing guidelines to make your PR easier to review."
-  print(f"Received a pull request event for #{payload['number']}")
+  print(f"Received a pull request event for #{pr['number']}")
   try:
-    repo = g.get_repo(payload["head"]["repo"]["full_name"])
-    issue = repo.get_issue(number=payload['number'])
+    repo = g.get_repo(pr["head"]["repo"]["full_name"])
+    issue = repo.get_issue(number=pr['number'])
     issue.create_comment(messageForNewPRs)
   except Exception as error:
     print(f"Error: {error}")
 
 
-def handle_issue_opened(issue):
+def handle_issue_opened(payload):
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
   )
   gi = GithubIntegration(auth=auth)
   installation = gi.get_installations()[0]
-
-  # create a GitHub instance:
   g = installation.get_github_for_installation()
 
+  # comment = payload['comment']
+  issue = payload['issue']
+  repo_name = payload["repository"]["full_name"]
+
   messageForNewPRs = "Thanks for opening a new issue!"
-  print(f"Received a pull request event for #{issue['number']}")
+  print(f"Received a issue opened event for #{issue['number']}")
   try:
-    print("KASTAN ---- issue[repository][full_name]", issue["repository"]["full_name"])
-    repo = g.get_repo(issue["repository"]["full_name"])  # probably delete the head variable
+    repo = g.get_repo(repo_name)
     issue = repo.get_issue(number=issue['number'])
     issue.create_comment(messageForNewPRs)
   except Exception as error:
     print(f"Error: {error}")
 
 
-def handle_comment_opened(comment, issue):
+def handle_comment_opened(payload):
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
   )
   gi = GithubIntegration(auth=auth)
   installation = gi.get_installations()[0]
-
-  # create a GitHub instance:
   g = installation.get_github_for_installation()
+
+  comment = payload['comment']
+  issue = payload['issue']
+  repo_name = payload["repository"]["full_name"]
 
   messageForNewPRs = "Thanks for opening a new or edited comment!"
   print(f"Received a new comment on issue #{issue['number']}. Comment: {comment}")
   try:
-    repo = g.get_repo(issue["repository"]["full_name"])
+    repo = g.get_repo(repo_name)
     issue = repo.get_issue(number=issue['number'])
     issue.create_comment(messageForNewPRs)
   except Exception as error:
@@ -404,11 +406,11 @@ def webhook():
 
   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
   if payload['action'] == 'opened' and payload['pull_request']:
-    handle_pull_request_opened(payload['pull_request'])
+    handle_pull_request_opened(payload)
   elif payload['action'] == 'opened' and payload['issue']:
-    handle_issue_opened(payload['issue'])
+    handle_issue_opened(payload)
   elif payload['action'] in ['created', 'edited'] and payload['comment']:
-    handle_comment_opened(payload['comment'], payload['issue'])
+    handle_comment_opened(payload)
 
   return '', 200
 
