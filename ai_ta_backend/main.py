@@ -328,6 +328,9 @@ WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
 messageForNewPRs = "Thanks for opening a new PR! Please follow our contributing guidelines to make your PR easier to review."
 
 # GitHub initialization
+print("RIGHT BEFORE GITHUB INSTANCE")
+print("os.getenv(APP_ID)", os.getenv("APP_ID"))
+print("os.getenv(GITHUB_APP_PRIVATE_KEY)", os.getenv("GITHUB_APP_PRIVATE_KEY"))
 g = Github(os.getenv("APP_ID"), os.getenv("GITHUB_APP_PRIVATE_KEY"))
 
 
