@@ -34,12 +34,13 @@ def handle_pull_request_opened(payload):
     branch_name = pr.head.ref
     messageForNewPRs = "Thanks for opening a new PR! I'll now try to finish this implementation and I'll comment if I get blocked or (WIP) 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
     issue.create_comment(messageForNewPRs)
-
+    
     print("LAUNCHING BOT")
     bot = handle_new_pr.PR_Bot(branch_name=branch_name)
     bot.on_new_pr(number=number)
   except Exception as error:
     print(f"Error: {error}")
+    issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{e}")
 
 
 def handle_issue_opened(payload):
@@ -156,5 +157,6 @@ def handle_comment_opened(payload):
       bot = handle_new_pr.PR_Bot(branch_name=branch_name)
       final = bot.on_pr_comment(number=number)
       print("👇FINAL RESULT FROM PR COMMENT BOT 👇:\n", final)
-  except Exception as error:
-    print(f"Error: {error}")
+  except Exception as e:
+    print(f"Error: {e}")
+    issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {e}")

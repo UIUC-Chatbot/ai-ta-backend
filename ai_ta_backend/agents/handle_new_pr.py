@@ -71,8 +71,6 @@ class PR_Bot():
 
   def __init__(self, branch_name: str = ''):
     self.branch_name = branch_name
-
-    print("ABOUT TO CREATE GithubAPIWrapper -- caution")
     self.github_api_wrapper = GitHubAPIWrapper(github_branch=branch_name)  # type: ignore
     self.pr_agent = self.make_bot()
 
