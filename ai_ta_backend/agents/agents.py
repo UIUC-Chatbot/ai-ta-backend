@@ -22,7 +22,7 @@ langchain.debug = True
 VERBOSE = True
 
 
-def get_docstore_agent(docstore: Docstore | None = None):
+def get_docstore_agent(docstore: Docstore):
   """This returns an agent. Usage of this agent: react.run(question)"""
   if docstore is None:
     doc_explorer = DocstoreExplorer(langchain.Wikipedia())
