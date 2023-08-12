@@ -32,7 +32,7 @@ def handle_pull_request_opened(payload):
   print(f"Received a pull request event for #{number}")
   try:
     branch_name = pr.head.ref
-    messageForNewPRs = "Thanks for opening a new PR! I'll now try to finish this implementation and I'll comment if I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
+    messageForNewPRs = "Thanks for opening a new PR! I'll now try to finish this implementation and I'll comment if I get blocked or (WIP) 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
     issue.create_comment(messageForNewPRs)
 
     print("LAUNCHING BOT")
@@ -139,7 +139,7 @@ def handle_comment_opened(payload):
       print(f"Head branch_name: {branch_name}")
       
       # LAUNCH NEW PR COMMENT BOT 
-      messageForNewPRs = "Thanks for commenting on this PR!! I'll now try to finish this implementation and I'll comment if I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
+      messageForNewPRs = "Thanks for commenting on this PR!! I'll now try to finish this implementation and I'll comment if I get blocked or (WIP) 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
       issue.create_comment(messageForNewPRs)
 
       print("LAUNCHING BOT for PR comment:")
