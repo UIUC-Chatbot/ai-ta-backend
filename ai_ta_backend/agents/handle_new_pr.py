@@ -132,18 +132,19 @@ class PR_Bot():
     """Runs the given bot with attempted retries. First prototype.
     """
     runtime_exceptions = []
+    result = ''
     for num_retries in range(1,3):
+      warning_to_bot = f"Keep in mind the last bot that tried to solve this problem faced a runtime error. Please learn from the mistakes of the last bot. The last bot's error was: {str(runtime_exceptions)}"
+      if len(runtime_exceptions) > 1:
+        warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
       try:
-          out = bot.run(f"{run_instruction}\n{warning_to_bot}")
+          result = bot.run(f"{run_instruction}\n{warning_to_bot}")
       except Exception as e:
           print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
           runtime_exceptions.append(e)
-          warning_to_bot = f"Keep in mind the last bot that tried to solve this problem faced a runtime error. Please learn from the mistakes of the last bot. The last bot's error was: {str(runtime_exceptions)}"
-          if len(runtime_exceptions > 1):
-            warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
-          out = bot.run(f"{run_instruction}\n{warning_to_bot}")
-    print(f"👇FINAL ANSWER 👇\n{out}")
-    return out
+          result = bot.run(f"{run_instruction}\n{warning_to_bot}")
+    print(f"👇FINAL ANSWER 👇\n{result}")
+    return result
 
 
 def convert_issue_to_branch_name(issue):
