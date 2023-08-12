@@ -157,7 +157,7 @@ class GH_Agent():
           print(f"Traceback:")
           print(traceback.print_exc())
 
-          runtime_exceptions.append(e)
+          runtime_exceptions.append(str(traceback.print_exc())+ "\n")
           print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
     if result == '':
       result = f"{total_retries} agents ALL FAILED with runtime exceptions: runtime_exceptions: {runtime_exceptions}"
