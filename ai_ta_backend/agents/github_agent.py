@@ -1,4 +1,6 @@
+import inspect
 import os
+import traceback
 from typing import List, Sequence, Tuple
 
 import langchain
@@ -150,6 +152,11 @@ class GH_Agent():
           result = bot.run(f"{run_instruction}\n{warning_to_bot}")
           bot.intermediate_steps
       except Exception as e:
+          print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
+          print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # print function name in error.
+          print(f"Traceback:")
+          print(traceback.print_exc())
+
           runtime_exceptions.append(e)
           print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
     if result == '':
