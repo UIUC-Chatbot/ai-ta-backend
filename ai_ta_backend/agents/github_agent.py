@@ -65,10 +65,10 @@ VERBOSE = True
 from ai_ta_backend.agents.outer_loop_planner import \
     fancier_trim_intermediate_steps
 
-PR_BOT_SYSTEM_PROMPT = """You are a senior developer who helps others finish the work faster and to a higher quality than anyone else on the team. People often tag you on pull requests (PRs), and you will finish the PR to the best of your ability and commit your changes. If you're blocked or stuck, feel free to leave a comment on the PR and the rest of the team will help you out. Remember to keep trying, and reflecting on how you solved previous problems will usually help you fix the current issue. Please work hard, stay organized, and follow best practices.\nYou have access to the following tools:"""
+GH_Agent_SYSTEM_PROMPT = """You are a senior developer who helps others finish the work faster and to a higher quality than anyone else on the team. People often tag you on pull requests (PRs), and you will finish the PR to the best of your ability and commit your changes. If you're blocked or stuck, feel free to leave a comment on the PR and the rest of the team will help you out. Remember to keep trying, and reflecting on how you solved previous problems will usually help you fix the current issue. Please work hard, stay organized, and follow best practices.\nYou have access to the following tools:"""
 
 
-class PR_Bot():
+class GH_Agent():
 
   def __init__(self, branch_name: str = ''):
     self.branch_name = branch_name
@@ -77,7 +77,7 @@ class PR_Bot():
 
   def make_bot(self):
     # LLMs
-    SystemMessage(content=PR_BOT_SYSTEM_PROMPT)
+    SystemMessage(content=GH_Agent_SYSTEM_PROMPT)
 
     llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
     human_llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
@@ -108,26 +108,33 @@ class PR_Bot():
         agent_kwargs={
             "memory_prompts": [chat_history],
             "input_variables": ["input", "agent_scratchpad", "chat_history"],
-            "prefix": PR_BOT_SYSTEM_PROMPT,
-            # pretty sure this is wack: # "extra_prompt_messages": [MessagesPlaceholder(variable_name="PR_BOT_SYSTEM_PROMPT")] 
+            "prefix": GH_Agent_SYSTEM_PROMPT,
+            # pretty sure this is wack: # "extra_prompt_messages": [MessagesPlaceholder(variable_name="GH_Agent_SYSTEM_PROMPT")] 
         })
 
-  # TODO: these 3 functions can probably be consolidated to "launch GH agent w/ custom prompt, make the caller's responsibility to use GH agents for a task"
-  def on_new_pr(self, number: int):
-    pr = self.github_api_wrapper.get_pull_request(number)
-    print(f"PR {number}: {pr}")
-    instruction = f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr)}"
-    self.bot_runner_with_retries(self.pr_agent, instruction)
+  def launch_gh_agent(self, instruction: str, active_branch='bot-branch'):
+    self.github_api_wrapper.set_active_branch(active_branch)
+    return self.bot_runner_with_retries(self.pr_agent, instruction)
 
-  def on_new_issue(self, number: int):
-    issue = self.github_api_wrapper.get_issue(number)
-    instruction = f"Please implement these changes by creating or editing the necessary files. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. The last step is to create a PR with a clear and concise title and description, list any concerns or final changes necessary in the PR body. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest assignment: {str(issue)}"
-    self.bot_runner_with_retries(self.pr_agent, instruction)
+  def set_active_branch(self, branch_name):
+    self.github_api_wrapper.set_active_branch(branch_name)
+
+  # TODO: these 3 functions can probably be consolidated to "launch GH agent w/ custom prompt, make the caller's responsibility to use GH agents for a task"
+  # def on_new_pr(self, number: int):
+  #   pr = self.github_api_wrapper.get_pull_request(number)
+  #   print(f"PR {number}: {pr}")
+  #   instruction = f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr)}"
+  #   self.bot_runner_with_retries(self.pr_agent, instruction)
+
+  # def on_new_issue(self, number: int):
+  #   issue = self.github_api_wrapper.get_issue(number)
+  #   instruction = f"Please implement these changes by creating or editing the necessary files. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. The last step is to create a PR with a clear and concise title and description, list any concerns or final changes necessary in the PR body. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest assignment: {str(issue)}"
+  #   self.bot_runner_with_retries(self.pr_agent, instruction)
   
-  def on_pr_comment(self, number: int):
-    issue = self.github_api_wrapper.get_issue(number)
-    instruction = f"Please complete this work-in-progress pull request by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue)}"
-    self.bot_runner_with_retries(self.pr_agent, instruction)
+  # def on_pr_comment(self, number: int):
+  #   issue = self.github_api_wrapper.get_issue(number)
+  #   instruction = f"Please complete this work-in-progress pull request by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue)}"
+  #   self.bot_runner_with_retries(self.pr_agent, instruction)
   
   def bot_runner_with_retries(self, bot, run_instruction, total_retries=3):
     """Runs the given bot with attempted retries. First prototype.
@@ -141,10 +148,11 @@ class PR_Bot():
       
       try:
           result = bot.run(f"{run_instruction}\n{warning_to_bot}")
+          bot.intermediate_steps
       except Exception as e:
           runtime_exceptions.append(e)
           print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
-    if result is '':
+    if result == '':
       result = f"{total_retries} agents ALL FAILED with runtime exceptions: runtime_exceptions: {runtime_exceptions}"
     print(f"👇FINAL ANSWER 👇\n{result}")
     return result
@@ -201,6 +209,7 @@ def strip_n_clean_text(text):
 
 
 if __name__ == "__main__":
+  print("No code.")
   # hard coded placeholders for now. TODO: watch PRs for changes via "Github App" api.
-  b = PR_Bot(branch_name='bot-branch')
-  b.on_new_pr(number=7)
+  # b = GH_Agent(branch_name='bot-branch')
+  # b.on_new_pr(number=7)
