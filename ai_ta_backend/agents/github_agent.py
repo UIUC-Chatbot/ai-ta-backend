@@ -72,7 +72,7 @@ class GH_Agent():
 
   def __init__(self, branch_name: str = ''):
     self.branch_name = branch_name
-    self.github_api_wrapper = GitHubAPIWrapper(github_branch=branch_name)  # type: ignore
+    self.github_api_wrapper = GitHubAPIWrapper(activate_branch=branch_name)  # type: ignore
     self.pr_agent = self.make_bot()
 
   def make_bot(self):
