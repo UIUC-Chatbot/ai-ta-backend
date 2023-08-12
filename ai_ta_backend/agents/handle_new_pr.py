@@ -111,29 +111,39 @@ class PR_Bot():
             # pretty sure this is wack: # "extra_prompt_messages": [MessagesPlaceholder(variable_name="PR_BOT_SYSTEM_PROMPT")] 
         })
 
+  # TODO: these 3 functions can probably be consolidated to "launch GH agent w/ custom prompt, make the caller's responsibility to use GH agents for a task"
   def on_new_pr(self, number: int):
     pr = self.github_api_wrapper.get_pull_request(number)
     print(f"PR {number}: {pr}")
-    out = self.pr_agent.run(
-        f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr)}"
-    )
-    print(f"👇FINAL ANSWER 👇\n{out}")
+    instruction = f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr)}"
+    self.bot_runner_with_retries(self.pr_agent, instruction)
 
   def on_new_issue(self, number: int):
     issue = self.github_api_wrapper.get_issue(number)
-    out = self.pr_agent.run(
-        f"Please implement these changes by creating or editing the necessary files. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. The last step is to create a PR with a clear and concise title and description, list any concerns or final changes necessary in the PR body. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest assignment: {str(issue)}"
-    )
-    print(f"👇FINAL ANSWER 👇\n{out}")
-    return
+    instruction = f"Please implement these changes by creating or editing the necessary files. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. The last step is to create a PR with a clear and concise title and description, list any concerns or final changes necessary in the PR body. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest assignment: {str(issue)}"
+    self.bot_runner_with_retries(self.pr_agent, instruction)
   
   def on_pr_comment(self, number: int):
     issue = self.github_api_wrapper.get_issue(number)
-    out = self.pr_agent.run(
-        f"Please complete this work-in-progress pull request by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue)}"
-    )
+    instruction = f"Please complete this work-in-progress pull request by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue)}"
+    self.bot_runner_with_retries(self.pr_agent, instruction)
+  
+  def bot_runner_with_retries(self, bot, run_instruction):
+    """Runs the given bot with attempted retries. First prototype.
+    """
+    runtime_exceptions = []
+    for num_retries in range(1,3):
+      try:
+          out = bot.run(f"{run_instruction}\n{warning_to_bot}")
+      except Exception as e:
+          print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
+          runtime_exceptions.append(e)
+          warning_to_bot = f"Keep in mind the last bot that tried to solve this problem faced a runtime error. Please learn from the mistakes of the last bot. The last bot's error was: {str(runtime_exceptions)}"
+          if len(runtime_exceptions > 1):
+            warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
+          out = bot.run(f"{run_instruction}\n{warning_to_bot}")
     print(f"👇FINAL ANSWER 👇\n{out}")
-    return
+    return out
 
 
 def convert_issue_to_branch_name(issue):
@@ -153,13 +163,10 @@ def convert_issue_to_branch_name(issue):
     Issue: {issue}
     Branch name: `''')
 
-  # Combine them into a ChatPromptTemplate
+  # Combine into a Chat conversation
   chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, prompt])
-
-  # Example usage
   formatted_messages = chat_prompt.format_messages(issue=str(issue), example_issue=str(example_issue))
 
-  # Initialize the model
   llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
   output = llm(formatted_messages)
   print(f"SUGGESTED_BRANCH_NAME: <<{output.content}>>")
@@ -188,10 +195,6 @@ def strip_n_clean_text(text):
 
   return result
 
-
-# make an embedding for every FUNCTION in the repo.
-
-# get a list of all docstrings in the repo (w/ and w/out function signatures)
 
 if __name__ == "__main__":
   # hard coded placeholders for now. TODO: watch PRs for changes via "Github App" api.
