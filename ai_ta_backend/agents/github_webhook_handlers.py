@@ -142,6 +142,14 @@ def handle_comment_opened(payload):
       repo = g.get_repo(repo_name)
       pr = repo.get_pull(number=number)
       issue.create_comment(body=messageForNewPRs)
+      # LAUNCH NEW PR COMMENT BOT 
+      messageForNewPRs = "Thanks for commenting on this PR!! I'll now try to finish this implementation and I'll comment if I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
+      issue.create_comment(messageForNewPRs)
+
+      print("LAUNCHING BOT ON PR COMMENT")
+      bot = handle_new_pr.PR_Bot(branch_name=branch_name)
+      final = bot.on_pr_comment(number=number)
+      print("👇FINAL RESULT FROM PR COMMENT BOT 👇:\n", final)
     else:
       # IS COMMENT ON ISSUE
       print("🤗🤗🤗🤗🤗🤗🤗🤗🤗🤗 THIS IS A COMMENT ON AN ISSUE")

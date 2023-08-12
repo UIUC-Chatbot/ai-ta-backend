@@ -128,6 +128,14 @@ class PR_Bot():
     )
     print(f"👇FINAL ANSWER 👇\n{out}")
     return
+  
+  def on_pr_comment(self, number: int):
+    issue = self.github_api_wrapper.get_issue(number)
+    out = self.pr_agent.run(
+        f"Please complete this work-in-progress pull request by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue)}"
+    )
+    print(f"👇FINAL ANSWER 👇\n{out}")
+    return
 
 
 def convert_issue_to_branch_name(issue):
