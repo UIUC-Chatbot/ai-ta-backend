@@ -319,133 +319,11 @@ def mit_download_course():
 
 
 # TODO: add a way to delete items from course based on base_url
-
-# from github import Github
-from github import Auth, GithubIntegration
-from github.Issue import Issue
-from github.PullRequest import PullRequest
-
-from ai_ta_backend.agents import handle_new_pr
+from ai_ta_backend.agents import github_webhook_handlers
 
 
-def handle_pull_request_opened(payload):
-  auth = Auth.AppAuth(
-      os.environ["GITHUB_APP_ID"],
-      os.environ["GITHUB_APP_PRIVATE_KEY"],
-  )
-  gi = GithubIntegration(auth=auth)
-  installation = gi.get_installations()[0]
-  g = installation.get_github_for_installation()
-
-  repo_name = payload["repository"]["full_name"]
-  repo = g.get_repo(repo_name)
-
-  number = payload.get('issue').get('number')
-  comment = payload.get('comment')
-  comment_author = comment['user']['login']
-  issue: Issue = repo.get_issue(number=number)
-  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
-  pr: PullRequest = repo.get_pull(number=number)
-
-  print(f"Received a pull request event for #{number}")
-  try:
-    branch_name = pr.head.ref
-    messageForNewPRs = "Thanks for opening a new PR! I'll now try to finish this implementation and I'll comment of I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
-    issue.create_comment(messageForNewPRs)
-
-    print("LAUNCHING BOT")
-    bot = handle_new_pr.PR_Bot(branch_name=branch_name)
-    bot.on_new_pr(number=number)
-  except Exception as error:
-    print(f"Error: {error}")
-
-
-def handle_issue_opened(payload):
-  auth = Auth.AppAuth(
-      os.environ["GITHUB_APP_ID"],
-      os.environ["GITHUB_APP_PRIVATE_KEY"],
-  )
-  gi = GithubIntegration(auth=auth)
-  installation = gi.get_installations()[0]
-  g = installation.get_github_for_installation()
-
-  # comment = payload['comment']
-  issue = payload['issue']
-  repo_name = payload["repository"]["full_name"]
-  repo = g.get_repo(repo_name)
-
-  number = payload.get('issue').get('number')
-  comment = payload.get('comment')
-  comment_author = comment['user']['login']
-  issue: Issue = repo.get_issue(number=number)
-  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
-
-  print(f"New issue created: #{number}")
-  try:
-    messageForNewIssues = "Thanks for opening a new issue! I'll now try to finish this implementation and open a PR for you to review. I'll comment of I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
-    issue.create_comment(messageForNewIssues)
-
-    branch_name = handle_new_pr.convert_issue_to_branch_name(issue)
-
-    print("LAUNCHING BOT")
-    bot = handle_new_pr.PR_Bot(branch_name)
-    bot.on_new_issue(number=number)
-  except Exception as error:
-    print(f"Error: {error}")
-
-
-def handle_comment_opened(payload):
-  """Note: In Github API, PRs are just issues with an extra PR object. Issue numbers and PR numbers live in the same space.
-  Args:
-      payload (_type_): _description_
-  """
-  auth = Auth.AppAuth(
-      os.environ["GITHUB_APP_ID"],
-      os.environ["GITHUB_APP_PRIVATE_KEY"],
-  )
-  # ensure the author is not lil-jr-dev bot.
-  gi = GithubIntegration(auth=auth)
-  installation = gi.get_installations()[0]
-  g = installation.get_github_for_installation()
-
-  repo_name = payload["repository"]["full_name"]
-  repo = g.get_repo(repo_name)
-  number = payload.get('issue').get('number')
-  comment = payload.get('comment')
-  comment_author = comment['user']['login']
-  # issue_response = payload.get('issue')
-  issue: Issue = repo.get_issue(number=number)
-  is_pr = True if payload.get('issue').get('pull_request') else False
-  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
-
-  # DON'T REPLY TO SELF (inf loop)
-  if comment_author == 'lil-jr-dev[bot]':
-    print("Comment author is lil-jr-dev[bot], no reply...")
-    return
-
-  print("Comment author: ", comment['user']['login'])
-  try:
-    if is_pr:
-      messageForNewPRs = "Thanks for opening a new or edited comment on a PR!"
-      print("🥵🥵🥵🥵🥵🥵🥵🥵🥵🥵 COMMENT ON A PR")
-      pr: PullRequest = repo.get_pull(number=number)
-
-      branch_name = pr.head.ref
-      print(f"Head branch_name: {branch_name}")
-      repo = g.get_repo(repo_name)
-      pr = repo.get_pull(number=number)
-      issue.create_comment(body=messageForNewPRs)
-    else:
-      # IS COMMENT ON ISSUE
-      print("🤗🤗🤗🤗🤗🤗🤗🤗🤗🤗 THIS IS A COMMENT ON AN ISSUE")
-      messageForIssues = "Thanks for opening a new or edited comment on an issue!"
-      issue.create_comment(messageForIssues)
-  except Exception as error:
-    print(f"Error: {error}")
-
-
-# @app.route('/api/webhook', methods=['POST'])
-@app.route('/', methods=['POST'])
+# @app.route('/', methods=['POST'])
+@app.route('/api/webhook', methods=['POST'])
 def webhook():
   """
   IN PROGRESS: Github App Webhooks (for lil-jr-dev)
@@ -457,17 +335,17 @@ def webhook():
   """
 
   payload = request.json
-  print(f"{payload}")
+  # print(f"{payload}\n","-"*50, "\n")
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
 
   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
   if payload.get('action') == 'opened' and payload.get('pull_request'):
-    handle_pull_request_opened(payload)
+    github_webhook_handlers.handle_pull_request_opened(payload)
   elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
-    handle_issue_opened(payload)
+    github_webhook_handlers.handle_issue_opened(payload)
   elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
-    handle_comment_opened(payload)
+    github_webhook_handlers.handle_comment_opened(payload)
 
   return '', 200
 

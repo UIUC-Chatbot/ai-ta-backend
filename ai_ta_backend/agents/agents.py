@@ -16,7 +16,6 @@ from langchain.tools.base import BaseTool
 from langchain.tools.playwright.utils import \
     create_sync_playwright_browser  # A synchronous browser is available, though it isn't compatible with jupyter.
 from langchain.tools.playwright.utils import create_async_playwright_browser
-from llama_hub.github_repo import GithubClient, GithubRepositoryReader
 
 os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
 langchain.debug = True

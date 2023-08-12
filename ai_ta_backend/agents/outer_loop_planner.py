@@ -16,7 +16,6 @@ import token
 from typing import List, Sequence, Tuple
 
 import langchain
-from agents import get_docstore_agent
 from dotenv import load_dotenv
 from langchain.agents import AgentType, Tool, initialize_agent, load_tools
 from langchain.agents.agent_toolkits import PlayWrightBrowserToolkit
@@ -29,22 +28,29 @@ from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.docstore.base import Docstore
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.memory import (ConversationBufferMemory, ConversationSummaryBufferMemory)
+from langchain.memory import (ConversationBufferMemory,
+                              ConversationSummaryBufferMemory)
 from langchain.prompts import MessagesPlaceholder
-from langchain.prompts.chat import (BaseMessagePromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder)
+from langchain.prompts.chat import (BaseMessagePromptTemplate,
+                                    ChatPromptTemplate,
+                                    HumanMessagePromptTemplate,
+                                    MessagesPlaceholder)
 from langchain.schema import AgentAction
 from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import (AIMessage, BaseMessage, FunctionMessage, SystemMessage)
+from langchain.schema.messages import (AIMessage, BaseMessage, FunctionMessage,
+                                       SystemMessage)
 from langchain.tools.base import BaseTool
 from langchain.tools.playwright.utils import \
     create_sync_playwright_browser  # A synchronous browser is available, though it isn't compatible with jupyter.
 from langchain.tools.playwright.utils import create_async_playwright_browser
 from langchain.utilities.github import GitHubAPIWrapper
 from langchain.vectorstores import Qdrant
-from llama_hub.github_repo import GithubClient, GithubRepositoryReader
 from qdrant_client import QdrantClient
-from tools import get_shell_tool, get_tools
-from vector_db import count_tokens_and_cost, get_top_contexts_uiuc_chatbot
+
+from ai_ta_backend.agents.agents import get_docstore_agent
+from ai_ta_backend.agents.tools import get_shell_tool, get_tools
+from ai_ta_backend.agents.vector_db import (count_tokens_and_cost,
+                                            get_top_contexts_uiuc_chatbot)
 
 load_dotenv(override=True, dotenv_path='.env')
 
