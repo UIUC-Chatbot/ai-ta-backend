@@ -154,7 +154,8 @@ def handle_comment_opened(payload):
       issue.create_comment(messageForIssues)
 
       print("LAUNCHING BOT for ISSUE comment:")
-      bot = handle_new_pr.PR_Bot(branch_name=branch_name)
+      #TODO what should the branch name be?
+      bot = handle_new_pr.PR_Bot(branch_name="bot-branch")
       final = bot.on_pr_comment(number=number)
       print("👇FINAL RESULT FROM PR COMMENT BOT 👇:\n", final)
   except Exception as e:
