@@ -133,27 +133,28 @@ def handle_comment_opened(payload):
   print("Comment author: ", comment['user']['login'])
   try:
     if is_pr:
-      messageForNewPRs = "Thanks for opening a new or edited comment on a PR!"
       print("🥵🥵🥵🥵🥵🥵🥵🥵🥵🥵 COMMENT ON A PR")
       pr: PullRequest = repo.get_pull(number=number)
-
       branch_name = pr.head.ref
       print(f"Head branch_name: {branch_name}")
-      repo = g.get_repo(repo_name)
-      pr = repo.get_pull(number=number)
-      issue.create_comment(body=messageForNewPRs)
+      
       # LAUNCH NEW PR COMMENT BOT 
       messageForNewPRs = "Thanks for commenting on this PR!! I'll now try to finish this implementation and I'll comment if I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
       issue.create_comment(messageForNewPRs)
 
-      print("LAUNCHING BOT ON PR COMMENT")
+      print("LAUNCHING BOT for PR comment:")
       bot = handle_new_pr.PR_Bot(branch_name=branch_name)
       final = bot.on_pr_comment(number=number)
       print("👇FINAL RESULT FROM PR COMMENT BOT 👇:\n", final)
     else:
       # IS COMMENT ON ISSUE
       print("🤗🤗🤗🤗🤗🤗🤗🤗🤗🤗 THIS IS A COMMENT ON AN ISSUE")
-      messageForIssues = "Thanks for opening a new or edited comment on an issue!"
+      messageForIssues = "Thanks for opening a new or edited comment on an issue! This bot is experimental (the PR comment bot works better), but we'll try to implement changes per your updated request."
       issue.create_comment(messageForIssues)
+
+      print("LAUNCHING BOT for ISSUE comment:")
+      bot = handle_new_pr.PR_Bot(branch_name=branch_name)
+      final = bot.on_pr_comment(number=number)
+      print("👇FINAL RESULT FROM PR COMMENT BOT 👇:\n", final)
   except Exception as error:
     print(f"Error: {error}")
