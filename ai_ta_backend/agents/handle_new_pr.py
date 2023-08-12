@@ -43,6 +43,7 @@ from langchain_experimental.plan_and_execute.executors.agent_executor import \
 from langchain_experimental.plan_and_execute.planners.chat_planner import \
     load_chat_planner
 from qdrant_client import QdrantClient
+from typing_extensions import runtime
 
 from ai_ta_backend.agents.tools import (get_human_input, get_shell_tool,
                                         get_tools)
@@ -128,21 +129,23 @@ class PR_Bot():
     instruction = f"Please complete this work-in-progress pull request by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue)}"
     self.bot_runner_with_retries(self.pr_agent, instruction)
   
-  def bot_runner_with_retries(self, bot, run_instruction):
+  def bot_runner_with_retries(self, bot, run_instruction, total_retries=3):
     """Runs the given bot with attempted retries. First prototype.
-    """
+    """  
     runtime_exceptions = []
     result = ''
-    for num_retries in range(1,3):
+    for num_retries in range(1,total_retries+1):
       warning_to_bot = f"Keep in mind the last bot that tried to solve this problem faced a runtime error. Please learn from the mistakes of the last bot. The last bot's error was: {str(runtime_exceptions)}"
       if len(runtime_exceptions) > 1:
         warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
+      
       try:
           result = bot.run(f"{run_instruction}\n{warning_to_bot}")
       except Exception as e:
-          print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
           runtime_exceptions.append(e)
-          result = bot.run(f"{run_instruction}\n{warning_to_bot}")
+          print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
+    if result is '':
+      result = f"{total_retries} agents ALL FAILED with runtime exceptions: runtime_exceptions: {runtime_exceptions}"
     print(f"👇FINAL ANSWER 👇\n{result}")
     return result
 
