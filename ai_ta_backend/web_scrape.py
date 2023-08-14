@@ -385,3 +385,4 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
     shutil.rmtree(local_dir)
     print("Finished Ingest")
     return success_fail
+
