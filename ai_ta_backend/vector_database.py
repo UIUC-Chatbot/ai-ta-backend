@@ -807,7 +807,7 @@ Now please respond to my question: {user_question}"""
       )
 
       # Delete from Supabase
-      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('course_name', course_name).execute()
+      response = self.supabase_client.from_(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).delete().eq('course_name', course_name).execute()
       print("supabase response: ", response)
       return "Success"
     except Exception as e:
@@ -838,8 +838,8 @@ Now please respond to my question: {user_question}"""
       )
 
       # Delete from Supabase
-      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('s3_path', s3_path).eq(
-          'metadata->>course_name', course_name).execute()
+      response = self.supabase_client.from_(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).delete().eq('s3_path', s3_path).eq(
+          'course_name', course_name).execute()
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
@@ -858,7 +858,7 @@ Now please respond to my question: {user_question}"""
     """
 
     response = self.supabase_client.table(
-        os.getenv('MATERIALS_SUPABASE_TABLE')).select('course_name, s3_path, readable_filename').eq(  # type: ignore
+        os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, s3_path, readable_filename').eq(  # type: ignore
             'course_name', course_name).execute()
 
     data = response.data
@@ -988,8 +988,7 @@ Now please respond to my question: {user_question}"""
         'readable_filename': doc.metadata['readable_filename'],
         'course_name ': doc.metadata['course_name'],
         's3_path': doc.metadata['s3_path'],
-        'pagenumber': doc.metadata['pagenumber'],
-        'timestamp': doc.metadata['timestamp'],
+        'pagenumber': doc.metadata['pagenumber_or_timestamp'],
         'url': doc.metadata['url'],
         'base_url': doc.metadata['base_url'],
     } for doc in found_docs]
