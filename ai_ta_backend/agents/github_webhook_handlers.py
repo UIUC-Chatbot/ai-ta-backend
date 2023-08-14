@@ -7,6 +7,7 @@ from dis import Instruction
 from github import Auth, GithubException, GithubIntegration
 from github.Issue import Issue
 from github.PullRequest import PullRequest
+from github.Repository import Repository
 
 from ai_ta_backend.agents import github_agent
 
@@ -37,7 +38,7 @@ def handle_pull_request_opened(payload):
     issue.create_comment(messageForNewPRs)
     
     print("LAUNCHING BOT")
-    bot = github_agent.GH_Agent()
+    bot = github_agent.GH_Agent(branch_name=branch_name)
     pr_description = bot.github_api_wrapper.get_pull_request(number)
     instruction = f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr_description)}"
     result = bot.launch_gh_agent(instruction, active_branch=branch_name)
@@ -59,7 +60,7 @@ def handle_issue_opened(payload):
   # comment = payload['comment']
   issue = payload['issue']
   repo_name = payload["repository"]["full_name"]
-  repo = g.get_repo(repo_name)
+  repo: Repository = g.get_repo(repo_name)
   base_branch = repo.get_branch(payload["repository"]["default_branch"])
   number = payload.get('issue').get('number')
   issue: Issue = repo.get_issue(number=number)
@@ -82,7 +83,7 @@ def handle_issue_opened(payload):
     unique_branch_name = ensure_unique_branch_name(repo, proposed_branch_name)
 
     print("LAUNCHING BOT")
-    bot = github_agent.GH_Agent()
+    bot = github_agent.GH_Agent(branch_name=unique_branch_name)
     issue_description = bot.github_api_wrapper.get_issue(number)
     instruction = f"Please implement these changes by creating or editing the necessary files. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. The last step is to create a PR with a clear and concise title and description, list any concerns or final changes necessary in the PR body. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest assignment: {str(issue_description)}"
     result = bot.launch_gh_agent(instruction, active_branch=unique_branch_name)
@@ -133,9 +134,9 @@ def handle_comment_opened(payload):
       messageForNewPRs = "Thanks for commenting on this PR!! I'll now try to finish this implementation and I'll comment if I get blocked or (WIP) 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
       issue.create_comment(messageForNewPRs)
 
-      bot = github_agent.GH_Agent()
+      bot = github_agent.GH_Agent(branch_name=branch_name)
       issue_description = bot.github_api_wrapper.get_issue(number)
-      instruction = f"Please complete this work-in-progress pull request by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue_description)}"
+      instruction = f"Please complete this work-in-progress pull request (PR number {number}) by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue_description)}"
       result = bot.launch_gh_agent(instruction, active_branch=branch_name)
       issue.create_comment(result)
     else:
@@ -158,6 +159,7 @@ def ensure_unique_branch_name(repo, proposed_branch_name):
   # Attempt to create the branch, appending _v{i} if the name already exists
   i = 0
   new_branch_name = proposed_branch_name
+  base_branch = repo.get_branch(repo.default_branch)
   while True:
     try:
       repo.create_git_ref(ref=f"refs/heads/{new_branch_name}", sha=base_branch.commit.sha)

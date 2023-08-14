@@ -54,12 +54,12 @@ from ai_ta_backend.agents.vector_db import (count_tokens_and_cost,
 
 # load_dotenv(override=True, dotenv_path='.env')
 
-# os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
-# os.environ["LANGCHAIN_WANDB_TRACING"] = "true"  # TODO: https://docs.wandb.ai/guides/integrations/langchain
-# os.environ["WANDB_PROJECT"] = "langchain-tracing"  # optionally set your wandb settings or configs
-os.environ["LANGCHAIN_TRACING"] = "false"  # If you want to trace the execution of the program, set to "true"
-os.environ["LANGCHAIN_WANDB_TRACING"] = "false"  # TODO: https://docs.wandb.ai/guides/integrations/langchain
-os.environ["WANDB_PROJECT"] = ""  # optionally set your wandb settings or configs
+os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
+os.environ["LANGCHAIN_WANDB_TRACING"] = "true"  # TODO: https://docs.wandb.ai/guides/integrations/langchain
+os.environ["WANDB_PROJECT"] = "langchain-tracing"  # optionally set your wandb settings or configs
+# os.environ["LANGCHAIN_TRACING"] = "false"  # If you want to trace the execution of the program, set to "true"
+# os.environ["LANGCHAIN_WANDB_TRACING"] = "false"  # TODO: https://docs.wandb.ai/guides/integrations/langchain
+# os.environ["WANDB_PROJECT"] = ""  # optionally set your wandb settings or configs
 
 langchain.debug = False  # True for more detailed logs
 VERBOSE = True
@@ -74,7 +74,7 @@ class GH_Agent():
 
   def __init__(self, branch_name: str = ''):
     self.branch_name = branch_name
-    self.github_api_wrapper = GitHubAPIWrapper(active_branch=branch_name)  # type: ignore
+    self.github_api_wrapper = GitHubAPIWrapper(active_branch=branch_name, github_base_branch='main')  # type: ignore
     self.pr_agent = self.make_bot()
 
   def make_bot(self):
@@ -150,14 +150,14 @@ class GH_Agent():
       
       try:
           result = bot.run(f"{run_instruction}\n{warning_to_bot}")
-          bot.intermediate_steps
+          break
       except Exception as e:
           print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
           print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # print function name in error.
           print(f"Traceback:")
           print(traceback.print_exc())
 
-          runtime_exceptions.append(str(traceback.print_exc())+ "\n")
+          runtime_exceptions.append(traceback.format_exc())
           print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
     if result == '':
       result = f"{total_retries} agents ALL FAILED with runtime exceptions: runtime_exceptions: {runtime_exceptions}"

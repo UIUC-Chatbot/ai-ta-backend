@@ -322,8 +322,8 @@ def mit_download_course():
 from ai_ta_backend.agents import github_webhook_handlers
 
 
-# @app.route('/', methods=['POST'])
-@app.route('/api/webhook', methods=['POST'])
+@app.route('/', methods=['POST']) # RUN: $ smee -u https://smee.io/nRnJDGnCbWYUaSGg --port 8000
+# @app.route('/api/webhook', methods=['POST']) # https://flask-ai-ta-backend-pr-34.up.railway.app/api/webhook
 def webhook():
   """
   IN PROGRESS: Github App Webhooks (for lil-jr-dev)
