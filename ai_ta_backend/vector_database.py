@@ -26,7 +26,10 @@ from bs4 import BeautifulSoup
 # from arize.utils.ModelTypes import GENERATIVE_LLM
 # # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
 # #                                Metrics, ModelTypes, Schema)
-from langchain.document_loaders import (Docx2txtLoader, PythonLoader, SRTLoader, TextLoader, UnstructuredPowerPointLoader)
+
+from langchain.document_loaders import (Docx2txtLoader, PythonLoader,
+                                        SRTLoader,
+                                        UnstructuredPowerPointLoader, TextLoader, GitLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -34,6 +37,8 @@ from langchain.vectorstores import Qdrant
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
+
+from git import Repo
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
@@ -160,6 +165,48 @@ Now please respond to my question: {user_question}"""
     # "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
 
     return stuffed_prompt
+  
+  # def ai_summary(self, text: List[str], metadata: List[Dict[str, Any]]) -> List[str]:
+  #   """
+  #   Given a textual input, return a summary of the text.
+  #   """
+  #   #print("in AI SUMMARY")
+  #   requests = []
+  #   for i in range(len(text)):
+  #     dictionary = {
+  #           "model": "gpt-3.5-turbo",
+  #           "messages": [{
+  #               "role":
+  #                   "system",
+  #               "content":
+  #                   "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+  #           }, {
+  #               "role":
+  #                   "user",
+  #               "content":
+  #                   f"Provide a descriptive summary of the given text:\n{text[i]}\nThe summary should cover all the key points, while also condensing the information into a concise format. The length of the summary should not exceed 3 sentences.",
+  #           }],
+  #           "n": 1,
+  #           "max_tokens": 600,
+  #           "metadata": metadata[i]
+  #       }
+  #     requests.append(dictionary)
+
+  #   oai = OpenAIAPIProcessor(input_prompts_list=requests,
+  #                            request_url='https://api.openai.com/v1/chat/completions',
+  #                            api_key=os.getenv("OPENAI_API_KEY"),
+  #                            max_requests_per_minute=1500,
+  #                            max_tokens_per_minute=90000,
+  #                            token_encoding_name='cl100k_base',
+  #                            max_attempts=5,
+  #                            logging_level=20)
+
+  #   asyncio.run(oai.process_api_requests_from_file())
+  #   #results: list[str] = oai.results
+  #   #print(f"Cleaned results: {oai.cleaned_results}")
+  #   summary = oai.cleaned_results
+  #   return summary
+
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
     # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
@@ -176,7 +223,7 @@ Now please respond to my question: {user_question}"""
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
           mime_type = mimetypes.guess_type(tmpfile.name)[0]
           category, subcategory = mime_type.split('/')
-
+        
         if s3_path.endswith('.html'):
           ret = self._ingest_html(s3_path, course_name, kwargs=kwargs)
           if ret != "Success":
@@ -205,7 +252,6 @@ Now please respond to my question: {user_question}"""
           ret = self._ingest_single_txt(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
-            print("txt failure")
           else:
             success_status['success_ingest'].append(s3_path)
         elif s3_path.endswith('.srt'):
@@ -271,6 +317,7 @@ Now please respond to my question: {user_question}"""
         loader = TextLoader(tmpfile.name)
         documents = loader.load()
         texts = [doc.page_content for doc in documents]
+
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
@@ -310,6 +357,7 @@ Now please respond to my question: {user_question}"""
           base_url = kwargs['kwargs']['base_url']
         else:
           base_url = ''
+      title = str(object=time.localtime()[1])+ "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:] + ' ' + str(title)
 
       text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
@@ -322,7 +370,6 @@ Now please respond to my question: {user_question}"""
       }]
 
       success_or_failure = self.split_and_upload(text, metadata)
-      print(success_or_failure)
       print(f"_ingest_html: {success_or_failure}")
       return success_or_failure
     except Exception as e:
@@ -515,21 +562,22 @@ Now please respond to my question: {user_question}"""
             base_url = kwargs['kwargs']['base_url']
           else:
             base_url = ''
-          
-          metadatas: List[Dict[str, Any]] = [
-              {
-                  'course_name': course_name,
-                  's3_path': s3_path,
-                  'pagenumber': page['page_number'] + 1,  # +1 for human indexing
-                  'readable_filename': page['readable_filename'],
-                  'timestamp': '',
-                  'url': url,
-                  'base_url': base_url,
-              } for page in pdf_pages_OCRed
-          ]
-          pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+          page['readable_filename'] = str(object=time.localtime()[1])+ "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:] + ' ' + page['readable_filename']
+        
+        metadatas: List[Dict[str, Any]] = [
+            {
+                'course_name': course_name,
+                's3_path': s3_path,
+                'pagenumber_or_timestamp': page['page_number'] + 1,  # +1 for human indexing
+                'readable_filename': page['readable_filename'],
+                'url': url,
+                'base_url': base_url,
+            } for page in pdf_pages_OCRed
+        ]
+        pdf_texts = [page['text'] for page in pdf_pages_OCRed]
 
-          self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        print("Success pdf ingest")
     except Exception as e:
       print("ERROR IN PDF READING ")
       print(e)
@@ -538,11 +586,9 @@ Now please respond to my question: {user_question}"""
 
   def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
     """Ingest a single .txt file from S3.
-
     Args:
         s3_path (str): A path to a .txt file in S3
         course_name (str): The name of the course
-
     Returns:
         str: "Success" or an error message
     """
@@ -551,6 +597,7 @@ Now please respond to my question: {user_question}"""
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
       text = response['Body'].read().decode('utf-8')
       text = [text]
+    
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
@@ -560,6 +607,7 @@ Now please respond to my question: {user_question}"""
           'url': '',
           'base_url': '',
       }]
+
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
     except Exception as e:
@@ -573,6 +621,7 @@ Now please respond to my question: {user_question}"""
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
+        #print("in ingest PPTX")
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
 
         loader = UnstructuredPowerPointLoader(tmpfile.name)
@@ -664,6 +713,44 @@ Now please respond to my question: {user_question}"""
       err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       return err
+    
+  def ingest_github(self, github_url: str, course_name: str) -> str:
+    """
+    Clones the given GitHub URL and uses Langchain to load data.
+    1. Clone the repo
+    2. Use Langchain to load the data
+    3. Pass to split_and_upload()
+    Args:
+        github_url (str): The Github Repo URL to be ingested.
+        course_name (str): The name of the course in our system.
+
+    Returns:
+        _type_: Success or error message.
+    """
+    print("in ingest_github")
+
+    try:
+      repo_path = "media/cloned_repo"
+      repo = Repo.clone_from(github_url, to_path=repo_path, depth=1, clone_submodules=False)
+      branch = repo.head.reference
+
+      loader = GitLoader(repo_path="media/cloned_repo", branch=branch)
+      data = loader.load()
+      shutil.rmtree("media/cloned_repo")
+      # create metadata for each file in data 
+      texts = [doc.page_content for doc in data]
+      metadatas: List[Dict[str, Any]] = [{
+              'course_name': course_name,
+              's3_path': '',
+              'readable_filename': doc.metadata['file_name'],
+              'url': github_url,
+              'pagenumber_or_timestamp': '', 
+          } for doc in data]
+      self.split_and_upload(texts=texts, metadatas=metadatas)
+      return "Success"
+    except Exception as e:
+      print(f"ERROR IN GITHUB INGEST {e}")
+      return f"Error: {e}"
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
@@ -678,6 +765,11 @@ Now please respond to my question: {user_question}"""
     assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
 
     try:
+      # generate AI summary
+      # summary = self.ai_summary(texts, metadatas)
+      # for i in range(len(summary)):
+      #   metadatas[i]['summary'] = summary[i]
+
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
