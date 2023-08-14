@@ -20,16 +20,10 @@ import openai
 import requests
 import supabase
 from bs4 import BeautifulSoup
-# from arize.api import Client
-# from arize.pandas.embeddings import EmbeddingGenerator, UseCases
-# from arize.utils import ModelTypes
-# from arize.utils.ModelTypes import GENERATIVE_LLM
-# # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
-# #                                Metrics, ModelTypes, Schema)
-
-from langchain.document_loaders import (Docx2txtLoader, PythonLoader,
-                                        SRTLoader,
-                                        UnstructuredPowerPointLoader, TextLoader, GitLoader)
+from git import Repo
+from langchain.document_loaders import (Docx2txtLoader, GitLoader,
+                                        PythonLoader, SRTLoader, TextLoader,
+                                        UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -38,11 +32,19 @@ from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
 
-from git import Repo
-
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
+
+# from arize.api import Client
+# from arize.pandas.embeddings import EmbeddingGenerator, UseCases
+# from arize.utils import ModelTypes
+# from arize.utils.ModelTypes import GENERATIVE_LLM
+# # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
+# #                                Metrics, ModelTypes, Schema)
+
+
+
 
 
 class Ingest():
@@ -1054,9 +1056,10 @@ Now please respond to my question: {user_question}"""
         'readable_filename': doc.metadata['readable_filename'],
         'course_name ': doc.metadata['course_name'],
         's3_path': doc.metadata['s3_path'],
-        'pagenumber': doc.metadata['pagenumber_or_timestamp'],
-        'url': doc.metadata['url'],
-        'base_url': doc.metadata['base_url'],
+        'pagenumber': doc.metadata['pagenumber_or_timestamp'], # this because vector db schema is older...
+        # OPTIONAL PARAMS...
+        'url': doc.metadata.get('url'), # wouldn't this error out?
+        'base_url': doc.metadata.get('base_url'),
     } for doc in found_docs]
 
     return contexts
