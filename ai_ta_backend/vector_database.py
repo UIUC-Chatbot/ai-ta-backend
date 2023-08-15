@@ -812,23 +812,17 @@ Now please respond to my question: {user_question}"""
       asyncio.run(oai.process_api_requests_from_file())
       # parse results into dict of shape page_content -> embedding
       embeddings_dict: dict[str, List[float]] = {item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results}
-      # add embeddings to regular doc metadata (for Supabase)
-      for context in contexts:
-        if context.page_content != None:
-          context.metadata['embedding'] = embeddings_dict[context.page_content]
-          context.metadata['page_content'] = context.page_content
 
       ### BULK upload to Qdrant ###
       vectors: list[PointStruct] = []
       for context in contexts:
         # print({k: v for k, v in context.metadata.items() if k != 'embedding'})
+        upload_metadata = {"metadata":context.metadata, "page_content":context.page_content}
         vectors.append(
             PointStruct(
                 id=str(uuid.uuid4()),
-                vector=context.metadata['embedding'],
-                payload={
-                    k: v for k, v in context.metadata.items() if k != 'embedding'
-                }  
+                vector=embeddings_dict[context.page_content],
+                payload= upload_metadata
             ))
 
       self.qdrant_client.upsert(
@@ -843,7 +837,7 @@ Now please respond to my question: {user_question}"""
           "text": context.page_content,
           "pagenumber": context.metadata.get('pagenumber'),
           "timestamp": context.metadata.get('timestamp'),
-          "embedding": context.metadata.get('embedding')
+          "embedding": embeddings_dict[context.page_content]
       } for context in contexts]
 
       document = {
@@ -978,7 +972,7 @@ Now please respond to my question: {user_question}"""
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='course_name',
+                      key='metadata.course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -990,41 +984,31 @@ Now please respond to my question: {user_question}"""
           query_vector=user_query_embedding,
           limit=top_n  # Return 5 closest points
       )
-      # found_docs = []
-      # print("before result in search")
-      # for result in search_results:
-      #   if result.payload.get('page_content') is not None:
-      #     found_docs.append(Document(page_content=result.payload.get('page_content'), metadata=result.get()))
-      # print("after result in search")
-      # # found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter=filter)
-      # if len(found_docs) == 0:
-      #   return []
+      print("Search results: ", search_results)
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
-
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
       valid_docs = []
+      num_tokens = 0
       for result in search_results:
-        if result.payload.get('page_content') != None and "page_content" in result.payload.keys():
-          if "pagenumber" not in result.payload.keys():
-            result.payload["pagenumber"] = result.payload["pagenumber_or_timestamp"]
-          doc_string = f"Document: {result.payload['readable_filename']}{', page: ' + str(result.payload['pagenumber']) if result.payload['pagenumber'] else ''}\n{result.payload['page_content']}\n"
+        if result.payload.get('page_content') != None and "page_content" in result.payload['metadata'].keys():
+          if "pagenumber" not in result.payload['metadata'].keys():
+            result.payload['metadata']["pagenumber"] = result.payload['metadata']["pagenumber_or_timestamp"]
+          doc_string = f"Document: {result.payload['metadata']['readable_filename']}{', page: ' + str(result.payload['metadata']['pagenumber']) if result.payload['metadata']['pagenumber'] else ''}\n{str(result.payload['page_content'])}\n"
           num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
         
         # print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
-          valid_docs.append(result.payload)
+          valid_docs.append(Document(page_content=result.payload.get('page_content'), metadata=result.payload.get('metadata')))
         else:
           break
-    
-      if len(valid_docs) == 0:
-        return []
 
       print(f"Total tokens: {token_counter} total docs: {len(search_results)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
-
+      if len(valid_docs) == 0:
+        return []
       return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
@@ -1045,7 +1029,7 @@ Now please respond to my question: {user_question}"""
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='course_name',
+                      key='metadata.course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -1057,6 +1041,7 @@ Now please respond to my question: {user_question}"""
           query_vector=user_query_embedding,
           limit=top_n  # Return 5 closest points
       )
+      print("Search results: ", found_docs)
       if len(found_docs) == 0:
         return search_query
 
@@ -1066,18 +1051,16 @@ Now please respond to my question: {user_question}"""
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
       valid_docs = []
       for d in found_docs:
-        if "pagenumber" not in d.payload.keys():
-          d.payload["pagenumber"] = d.payload["pagenumber_or_timestamp"]
-        doc_string = f"---\nDocument: {d.payload['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"
+        if "pagenumber" not in d.payload["metadata"].keys():
+          d.payload["metadata"]["pagenumber"] = d.payload["metadata"]["pagenumber_or_timestamp"]
+        doc_string = f"---\nDocument: {d.payload['metadata']['readable_filename']}{', page: ' + str(d.payload['metadata']['pagenumber']) if d.payload['metadata']['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
-        if 'page_content' not in d.payload.keys():
-          print("Page content absent")
-        else:
-          print(f"Page: {d.payload.get('page_content')[:100]}...")
+   
+        print(f"Page: {d.payload.get('page_content')[:100]}...")
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
-          valid_docs.append(d)
+          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload.get('metadata')))
         else:
           continue
           print("running continue")
@@ -1085,7 +1068,7 @@ Now please respond to my question: {user_question}"""
       # Convert the valid_docs to full prompt
       separator = '---\n'  # between each context
       context_text = separator.join(
-          f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"
+          f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber']) if d.metadata['pagenumber'] else ''}\n{d.page_content}\n"
           for d in valid_docs)
 
       # Create the stuffedPrompt
@@ -1117,21 +1100,20 @@ Now please respond to my question: {user_question}"""
     Returns:
         List[Dict]: _description_
     """
-    print("formatting for json", found_docs[0].keys())
     for found_doc in found_docs:
-      if "pagenumber" not in found_doc.keys():
+      if "pagenumber" not in found_doc.metadata.keys():
         print("found no pagenumber")
-        found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
+        found_doc.metadata['pagenumber'] = found_doc.metadata['pagenumber_or_timestamp']
 
     contexts = [{
-        'text': doc.get('page_content'),
-        'readable_filename': doc['readable_filename'],
-        'course_name ': doc['course_name'],
-        's3_path': doc['s3_path'],
-        'pagenumber': doc['pagenumber'], # this because vector db schema is older...
+        'text': doc.page_content,
+        'readable_filename': doc.metadata['readable_filename'],
+        'course_name ': doc.metadata['course_name'],
+        's3_path': doc.metadata['s3_path'],
+        'pagenumber': doc.metadata['pagenumber'], # this because vector db schema is older...
         # OPTIONAL PARAMS...
-        'url': doc.get('url'), # wouldn't this error out?
-        'base_url': doc.get('base_url'),
+        'url': doc.metadata.get('url'), # wouldn't this error out?
+        'base_url': doc.metadata.get('base_url'),
     } for doc in found_docs]
 
     return contexts
