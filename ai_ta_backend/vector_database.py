@@ -1004,7 +1004,6 @@ Now please respond to my question: {user_question}"""
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
       valid_docs = []
-      print("before loop")
       for result in search_results:
         if result.payload.get('page_content') != None and "page_content" in result.payload.keys():
           if "pagenumber" not in result.payload.keys():
@@ -1041,7 +1040,23 @@ Now please respond to my question: {user_question}"""
     try:
       top_n = 150
       start_time_overall = time.monotonic()
-      found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
+      o = OpenAIEmbeddings()
+      user_query_embedding = o.embed_documents(search_query)[0]
+      myfilter = models.Filter(
+              must=[
+                  models.FieldCondition(
+                      key='course_name',
+                      match=models.MatchValue(value=course_name)
+                  ),
+              ])
+
+      found_docs = self.qdrant_client.search(
+          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+          query_filter=myfilter,
+          with_vectors=False,
+          query_vector=user_query_embedding,
+          limit=top_n  # Return 5 closest points
+      )
       if len(found_docs) == 0:
         return search_query
 
@@ -1051,11 +1066,14 @@ Now please respond to my question: {user_question}"""
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
       valid_docs = []
       for d in found_docs:
-        if "pagenumber" not in d.metadata.keys():
-          d.metadata["pagenumber"] = d.metadata["pagenumber_or_timestamp"]
-        doc_string = f"---\nDocument: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber']) if d.metadata['pagenumber'] else ''}\n{d.page_content}\n"
+        if "pagenumber" not in d.payload.keys():
+          d.payload["pagenumber"] = d.payload["pagenumber_or_timestamp"]
+        doc_string = f"---\nDocument: {d.payload['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
-        print(f"Page: {d.page_content[:100]}...")
+        if 'page_content' not in d.payload.keys():
+          print("Page content absent")
+        else:
+          print(f"Page: {d.payload.get('page_content')[:100]}...")
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
@@ -1067,7 +1085,7 @@ Now please respond to my question: {user_question}"""
       # Convert the valid_docs to full prompt
       separator = '---\n'  # between each context
       context_text = separator.join(
-          f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber']) if d.metadata['pagenumber'] else ''}\n{d.page_content}\n"
+          f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"
           for d in valid_docs)
 
       # Create the stuffedPrompt
