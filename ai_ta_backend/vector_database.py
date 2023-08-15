@@ -144,13 +144,15 @@ class Ingest():
         # no useful text, it replied with a summary of "None"
         continue
       if text is not None:
+        if "pagenumber" not in results[i][-1].keys():
+          results[i][-1]['pagenumber'] = results[i][-1].get('pagenumber_or_timestamp')
         num_tokens, prompt_cost = count_tokens_and_cost(text)
         if token_counter + num_tokens > max_tokens:
           print(f"Total tokens yet in loop {i} is {num_tokens}")
           break  # Stop building the string if it exceeds the maximum number of tokens
         token_counter += num_tokens
         filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
-        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber_or_timestamp', ''))  # type: ignore
+        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber', ''))  # type: ignore
         pagenumber = f", page: {pagenumber_or_timestamp}" if pagenumber_or_timestamp else ''
         doc = f"Document : filename: {filename}" + pagenumber
         summary = f"\nSummary: {text}"
@@ -368,7 +370,8 @@ Now please respond to my question: {user_question}"""
           'readable_filename': str(title),  # adding str to avoid error: unhashable type 'slice'  
           'url': url,
           'base_url': base_url,
-          'pagenumber_or_timestamp': None,
+          'pagenumber': '',
+          'timestamp': '',
       }]
 
       success_or_failure = self.split_and_upload(text, metadata)
@@ -570,7 +573,8 @@ Now please respond to my question: {user_question}"""
             {
                 'course_name': course_name,
                 's3_path': s3_path,
-                'pagenumber_or_timestamp': page['page_number'] + 1,  # +1 for human indexing
+                'pagenumber': page['page_number'] + 1,  # +1 for human indexing
+                'timestamp': '',
                 'readable_filename': page['readable_filename'],
                 'url': url,
                 'base_url': base_url,
@@ -746,7 +750,8 @@ Now please respond to my question: {user_question}"""
               's3_path': '',
               'readable_filename': doc.metadata['file_name'],
               'url': github_url,
-              'pagenumber_or_timestamp': '', 
+              'pagenumber': '', 
+              'timestamp': '',
           } for doc in data]
       self.split_and_upload(texts=texts, metadatas=metadatas)
       return "Success"
@@ -965,15 +970,20 @@ Now please respond to my question: {user_question}"""
       found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
       if len(found_docs) == 0:
         return []
-
+      print("pre_prompt")
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
 
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
+      print("token_counter")
       valid_docs = []
       for d in found_docs:
-        doc_string = f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber_or_timestamp']) if d.metadata['pagenumber_or_timestamp'] else ''}\n{d.page_content}\n"
+        print("keys", d.metadata.keys())
+        if "pagenumber" not in d.metadata.keys():
+          d.metadata["pagenumber"] = d.metadata["pagenumber_or_timestamp"]
+        doc_string = f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber']) if d.metadata['pagenumber'] else ''}\n{d.page_content}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
+
         # print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
@@ -1010,7 +1020,9 @@ Now please respond to my question: {user_question}"""
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
       valid_docs = []
       for d in found_docs:
-        doc_string = f"---\nDocument: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber_or_timestamp']) if d.metadata['pagenumber_or_timestamp'] else ''}\n{d.page_content}\n"
+        if "pagenumber" not in d.metadata.keys():
+          d.metadata["pagenumber"] = d.metadata["pagenumber_or_timestamp"]
+        doc_string = f"---\nDocument: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber']) if d.metadata['pagenumber'] else ''}\n{d.page_content}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
         print(f"Page: {d.page_content[:100]}...")
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
@@ -1024,7 +1036,7 @@ Now please respond to my question: {user_question}"""
       # Convert the valid_docs to full prompt
       separator = '---\n'  # between each context
       context_text = separator.join(
-          f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber_or_timestamp']) if d.metadata['pagenumber_or_timestamp'] else ''}\n{d.page_content}\n"
+          f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber']) if d.metadata['pagenumber'] else ''}\n{d.page_content}\n"
           for d in valid_docs)
 
       # Create the stuffedPrompt
@@ -1056,13 +1068,17 @@ Now please respond to my question: {user_question}"""
     Returns:
         List[Dict]: _description_
     """
+    for found_doc in found_docs:
+      if "pagenumber" not in found_doc.metadata:
+        print("found no pagenumber")
+        found_doc.metadata['pagenumber'] = found_doc.metadata['pagenumber_or_timestamp']
 
     contexts = [{
         'text': doc.page_content,
         'readable_filename': doc.metadata['readable_filename'],
         'course_name ': doc.metadata['course_name'],
         's3_path': doc.metadata['s3_path'],
-        'pagenumber': doc.metadata['pagenumber_or_timestamp'], # this because vector db schema is older...
+        'pagenumber': doc.metadata['pagenumber'], # this because vector db schema is older...
         # OPTIONAL PARAMS...
         'url': doc.metadata.get('url'), # wouldn't this error out?
         'base_url': doc.metadata.get('base_url'),
