@@ -113,6 +113,7 @@ def getTopContexts():
   Exception
       Testing how exceptions are handled.
   """
+  print("In getRopContexts in Main()")
   # todo: best way to handle optional arguments?
   try:
     course_name: str = request.args.get('course_name')
@@ -133,6 +134,7 @@ def getTopContexts():
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
+  print(f"about to return result from getRopContexts in Main(). result = {response}")
   return response
 
 @app.route('/get_stuffed_prompt', methods=['GET'])
