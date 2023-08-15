@@ -979,7 +979,7 @@ Now please respond to my question: {user_question}"""
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='metadata.course_name',
+                      key='course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -991,36 +991,39 @@ Now please respond to my question: {user_question}"""
           query_vector=user_query_embedding,
           limit=top_n  # Return 5 closest points
       )
-      print("Search results:", search_results)
-      found_docs = []
-      for result in search_results:
-        found_docs.append(Document(page_content=result.payload.get('page_content'), metadata=result.payload.get('metadata')))
-  
-      # found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter=filter)
-      if len(found_docs) == 0:
-        return []
-      print("pre_prompt")
+      # found_docs = []
+      # print("before result in search")
+      # for result in search_results:
+      #   if result.payload.get('page_content') is not None:
+      #     found_docs.append(Document(page_content=result.payload.get('page_content'), metadata=result.get()))
+      # print("after result in search")
+      # # found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter=filter)
+      # if len(found_docs) == 0:
+      #   return []
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
 
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
-      print("token_counter")
       valid_docs = []
-      for d in found_docs:
-        print("keys", d.metadata.keys())
-        if "pagenumber" not in d.metadata.keys():
-          d.metadata["pagenumber"] = d.metadata["pagenumber_or_timestamp"]
-        doc_string = f"Document: {d.metadata['readable_filename']}{', page: ' + str(d.metadata['pagenumber']) if d.metadata['pagenumber'] else ''}\n{d.page_content}\n"
-        num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
-
+      print("before loop")
+      for result in search_results:
+        if result.payload.get('page_content') != None and "page_content" in result.payload.keys():
+          if "pagenumber" not in result.payload.keys():
+            result.payload["pagenumber"] = result.payload["pagenumber_or_timestamp"]
+          doc_string = f"Document: {result.payload['readable_filename']}{', page: ' + str(result.payload['pagenumber']) if result.payload['pagenumber'] else ''}\n{result.payload['page_content']}\n"
+          num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
+        
         # print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
-          valid_docs.append(d)
+          valid_docs.append(result.payload)
         else:
           break
+    
+      if len(valid_docs) == 0:
+        return []
 
-      print(f"Total tokens: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
+      print(f"Total tokens: {token_counter} total docs: {len(search_results)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
 
@@ -1097,20 +1100,21 @@ Now please respond to my question: {user_question}"""
     Returns:
         List[Dict]: _description_
     """
+    print("formatting for json", found_docs[0].keys())
     for found_doc in found_docs:
-      if "pagenumber" not in found_doc.metadata:
+      if "pagenumber" not in found_doc.keys():
         print("found no pagenumber")
-        found_doc.metadata['pagenumber'] = found_doc.metadata['pagenumber_or_timestamp']
+        found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
 
     contexts = [{
-        'text': doc.page_content,
-        'readable_filename': doc.metadata['readable_filename'],
-        'course_name ': doc.metadata['course_name'],
-        's3_path': doc.metadata['s3_path'],
-        'pagenumber': doc.metadata['pagenumber'], # this because vector db schema is older...
+        'text': doc.get('page_content'),
+        'readable_filename': doc['readable_filename'],
+        'course_name ': doc['course_name'],
+        's3_path': doc['s3_path'],
+        'pagenumber': doc['pagenumber'], # this because vector db schema is older...
         # OPTIONAL PARAMS...
-        'url': doc.metadata.get('url'), # wouldn't this error out?
-        'base_url': doc.metadata.get('base_url'),
+        'url': doc.get('url'), # wouldn't this error out?
+        'base_url': doc.get('base_url'),
     } for doc in found_docs]
 
     return contexts
