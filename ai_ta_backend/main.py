@@ -13,6 +13,7 @@ from sqlalchemy import JSON
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
 from ai_ta_backend.canvas import CanvasAPI
+from ai_ta_backend.data_logging import DataLog
 
 app = Flask(__name__)
 CORS(app)
@@ -132,6 +133,10 @@ def getTopContexts():
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
 
+  # add nomic log function here
+  logger = DataLog()
+  result = logger.nomic_log(course_name, search_query, found_documents)
+  
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
