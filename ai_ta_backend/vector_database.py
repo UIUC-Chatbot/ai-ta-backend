@@ -764,7 +764,12 @@ Now please respond to my question: {user_question}"""
         texts (List[str]): _description_
         metadatas (List[Dict[str, Any]]): _description_
     """
+    print("In split and upload")
+    print(f"Texts: {texts}")
+    print(f"metadatas: {metadatas}")
+
     assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
+
 
     try:
       # generate AI summary
@@ -840,6 +845,7 @@ Now please respond to my question: {user_question}"""
       }
 
       count = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
+      print("successful END OF split_and_upload")
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
