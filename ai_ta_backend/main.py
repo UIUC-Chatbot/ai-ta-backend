@@ -134,7 +134,7 @@ def getTopContexts():
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
-  print(f"about to return result from getRopContexts in Main(). result = {response}")
+  print(f"about to return result from getRopContexts in Main(). docs: {found_documents}")
   return response
 
 @app.route('/get_stuffed_prompt', methods=['GET'])

@@ -964,7 +964,6 @@ Now please respond to my question: {user_question}"""
       String: An error message with traceback.
     """
     try:
-      # TODO: change back to 50+ once we have bigger qdrant DB.
       top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
       o = OpenAIEmbeddings()
@@ -984,6 +983,8 @@ Now please respond to my question: {user_question}"""
           query_vector=user_query_embedding,
           limit=top_n  # Return 5 closest points
       )
+
+      print("search_results", search_results)
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
@@ -1055,7 +1056,7 @@ Now please respond to my question: {user_question}"""
           d.payload["metadata"]["pagenumber"] = d.payload["metadata"]["pagenumber_or_timestamp"]
         doc_string = f"---\nDocument: {d.payload['metadata']['readable_filename']}{', page: ' + str(d.payload['metadata']['pagenumber']) if d.payload['metadata']['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
-   
+
         print(f"Page: {d.payload.get('page_content')[:100]}...")
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
         if token_counter + num_tokens <= token_limit:
