@@ -16,6 +16,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import boto3
 # import requests
 import fitz
+import numpy as np
 import openai
 import requests
 import supabase
@@ -816,7 +817,7 @@ Now please respond to my question: {user_question}"""
         print("CONTEXT PAGE CONTENT:::",context.page_content)
         if context.page_content != None:
           context.metadata['embedding'] = embeddings_dict[context.page_content]
-          context.metadata['text'] = context.page_content
+          context.metadata['page_content'] = context.page_content
 
       ### BULK upload to Qdrant ###
       vectors: list[PointStruct] = []
@@ -971,17 +972,35 @@ Now please respond to my question: {user_question}"""
     """
     try:
       # TODO: change back to 50+ once we have bigger qdrant DB.
-      filter= models.Filter(
-        must=[
-            models.FieldCondition(
-                key='course_name',
-                match=models.MatchValue(value=course_name)
-            )])
       top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
-      print("before found docs")
-      found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter=filter)
-      print(found_docs)
+      o = OpenAIEmbeddings()
+      user_query_embedding = o.embed_documents(search_query)
+      print(user_query_embedding)
+
+      myfilter = models.Filter(
+              must=[
+                  models.FieldCondition(
+                      key='metadata.course_name',
+                      match=models.MatchValue(value=course_name)
+                  ),
+              ])
+
+      query_vector = np.random.rand(1536)
+      search_results = self.qdrant_client.search(
+          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+          query_filter=myfilter,
+          with_vectors=False,
+          query_vector=query_vector,
+          limit=top_n  # Return 5 closest points
+      )
+      # how to use
+      search_results[0].payload.get('page_content')
+      found_docs = []
+      for result in search_results:
+        found_docs.append(Document(page_content=result.payload.get('page_content'), metadata=result.payload.get('metadata')))
+
+      # found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter=filter)
       if len(found_docs) == 0:
         return []
       print("pre_prompt")
