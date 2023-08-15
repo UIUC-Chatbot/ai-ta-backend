@@ -975,7 +975,7 @@ Now please respond to my question: {user_question}"""
       top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
       o = OpenAIEmbeddings()
-      user_query_embedding = o.embed_documents(search_query)
+      user_query_embedding = o.embed_documents(search_query)[0]
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
@@ -992,11 +992,10 @@ Now please respond to my question: {user_question}"""
           limit=top_n  # Return 5 closest points
       )
       print("Search results:", search_results)
-      print("Query Vector:", user_query_embedding)
       found_docs = []
       for result in search_results:
         found_docs.append(Document(page_content=result.payload.get('page_content'), metadata=result.payload.get('metadata')))
-
+  
       # found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter=filter)
       if len(found_docs) == 0:
         return []
