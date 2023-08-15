@@ -984,14 +984,14 @@ Now please respond to my question: {user_question}"""
           query_vector=user_query_embedding,
           limit=top_n  # Return 5 closest points
       )
-      print("Search results: ", search_results)
+
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
       valid_docs = []
       num_tokens = 0
       for result in search_results:
-        if result.payload.get('page_content') != None and "page_content" in result.payload['metadata'].keys():
+        if result.payload.get('page_content') != None:
           if "pagenumber" not in result.payload['metadata'].keys():
             result.payload['metadata']["pagenumber"] = result.payload['metadata']["pagenumber_or_timestamp"]
           doc_string = f"Document: {result.payload['metadata']['readable_filename']}{', page: ' + str(result.payload['metadata']['pagenumber']) if result.payload['metadata']['pagenumber'] else ''}\n{str(result.payload['page_content'])}\n"
