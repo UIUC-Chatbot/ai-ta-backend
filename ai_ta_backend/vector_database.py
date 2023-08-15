@@ -976,8 +976,6 @@ Now please respond to my question: {user_question}"""
       start_time_overall = time.monotonic()
       o = OpenAIEmbeddings()
       user_query_embedding = o.embed_documents(search_query)
-      print(user_query_embedding)
-
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
@@ -986,15 +984,15 @@ Now please respond to my question: {user_question}"""
                   ),
               ])
 
-      query_vector = np.random.rand(1536)
       search_results = self.qdrant_client.search(
           collection_name=os.environ['QDRANT_COLLECTION_NAME'],
           query_filter=myfilter,
           with_vectors=False,
-          query_vector=query_vector,
+          query_vector=user_query_embedding,
           limit=top_n  # Return 5 closest points
       )
-
+      print("Search results:", search_results)
+      print("Query Vector:", user_query_embedding)
       found_docs = []
       for result in search_results:
         found_docs.append(Document(page_content=result.payload.get('page_content'), metadata=result.payload.get('metadata')))
