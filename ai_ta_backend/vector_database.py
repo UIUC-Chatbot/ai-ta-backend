@@ -93,13 +93,16 @@ class Ingest():
     """
     # MMR with metadata filtering based on course_name
     vec_start_time = time.monotonic()
+    print("before found docs")
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
     print(
         f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds"
     )
 
+
     requests = []
     for i, doc in enumerate(found_docs):
+      print("doc", doc)
       dictionary = {
           "model": "gpt-3.5-turbo",
           "messages": [{
@@ -810,7 +813,10 @@ Now please respond to my question: {user_question}"""
       embeddings_dict: dict[str, List[float]] = {item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results}
       # add embeddings to regular doc metadata (for Supabase)
       for context in contexts:
-        context.metadata['embedding'] = embeddings_dict[context.page_content]
+        print("CONTEXT PAGE CONTENT:::",context.page_content)
+        if context.page_content != None:
+          context.metadata['embedding'] = embeddings_dict[context.page_content]
+          context.metadata['text'] = context.page_content
 
       ### BULK upload to Qdrant ###
       vectors: list[PointStruct] = []
@@ -824,7 +830,7 @@ Now please respond to my question: {user_question}"""
                     k: v for k, v in context.metadata.items() if k != 'embedding'
                 }  
             ))
-        
+
       self.qdrant_client.upsert(
           collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
           points=vectors  # type: ignore
@@ -965,9 +971,17 @@ Now please respond to my question: {user_question}"""
     """
     try:
       # TODO: change back to 50+ once we have bigger qdrant DB.
+      filter= models.Filter(
+        must=[
+            models.FieldCondition(
+                key='course_name',
+                match=models.MatchValue(value=course_name)
+            )])
       top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
-      found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter={'course_name': course_name})
+      print("before found docs")
+      found_docs = self.vectorstore.similarity_search(search_query, k=top_n, filter=filter)
+      print(found_docs)
       if len(found_docs) == 0:
         return []
       print("pre_prompt")
