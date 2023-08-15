@@ -952,23 +952,10 @@ Now please respond to my question: {user_question}"""
 
     return distinct_dicts
 
-  def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
-    """Here's a summary of the work.
-
-    /GET arguments
-      course name (optional) str: A json response with TBD fields.
-      
-    Returns
-      JSON: A json response with TBD fields. See main.py:getTopContexts docs.
-      or 
-      String: An error message with traceback.
-    """
-    try:
-      # TODO: change back to 50+ once we have bigger qdrant DB.
-      top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
-      start_time_overall = time.monotonic()
+  def vector_search(self, search_query, course_name):
+      top_n = 80
       o = OpenAIEmbeddings()
-      user_query_embedding = o.embed_documents(search_query)[0]
+      user_query_embedding = o.embed_query(search_query)
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
@@ -985,26 +972,56 @@ Now please respond to my question: {user_question}"""
           limit=top_n  # Return 5 closest points
       )
 
+      print("search_results", search_results)
+      found_docs: list[Document] = []
+      for d in search_results:
+        metadata = d.payload.get('metadata')
+        if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys():
+            # aiding in the database migration...
+            metadata["pagenumber"] = metadata["pagenumber_or_timestamp"]
+        
+        found_docs.append(Document(page_content=d.payload.get('page_content'), metadata=metadata))
+      
+      # found_docs: list[Document] = [Document(page_content=str(d.payload.get('page_content')), metadata=d.payload.get('metadata')) for d in search_results]
+      print("found_docs", found_docs)
+      return found_docs
+
+  def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
+    """Here's a summary of the work.
+
+    /GET arguments
+      course name (optional) str: A json response with TBD fields.
+      
+    Returns
+      JSON: A json response with TBD fields. See main.py:getTopContexts docs.
+      or 
+      String: An error message with traceback.
+    """
+    try:
+      top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
+      start_time_overall = time.monotonic()
+
+      found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
+
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
+
       valid_docs = []
       num_tokens = 0
-      for result in search_results:
-        if result.payload.get('page_content') != None:
-          if "pagenumber" not in result.payload['metadata'].keys():
-            result.payload['metadata']["pagenumber"] = result.payload['metadata']["pagenumber_or_timestamp"]
-          doc_string = f"Document: {result.payload['metadata']['readable_filename']}{', page: ' + str(result.payload['metadata']['pagenumber']) if result.payload['metadata']['pagenumber'] else ''}\n{str(result.payload['page_content'])}\n"
-          num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
+      for doc in found_docs:
+        doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
+        num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
         
-        # print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
+        print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
-          valid_docs.append(Document(page_content=result.payload.get('page_content'), metadata=result.payload.get('metadata')))
+          valid_docs.append(doc)
         else:
+          # filled our token size, time to return
           break
 
-      print(f"Total tokens: {token_counter} total docs: {len(search_results)} num docs used: {len(valid_docs)}")
+      print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
       if len(valid_docs) == 0:
@@ -1055,7 +1072,7 @@ Now please respond to my question: {user_question}"""
           d.payload["metadata"]["pagenumber"] = d.payload["metadata"]["pagenumber_or_timestamp"]
         doc_string = f"---\nDocument: {d.payload['metadata']['readable_filename']}{', page: ' + str(d.payload['metadata']['pagenumber']) if d.payload['metadata']['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
-   
+
         print(f"Page: {d.payload.get('page_content')[:100]}...")
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
         if token_counter + num_tokens <= token_limit:
