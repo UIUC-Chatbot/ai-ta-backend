@@ -34,6 +34,8 @@ def valid_url(url):
           content = response.content
       elif str(response.content).startswith("%PDF"):
         content = response.content
+      elif response.url.endswith(".gif"):
+        return (False, False)
       else:
         content = BeautifulSoup(response.text, "html.parser")
       return (response.url, content)

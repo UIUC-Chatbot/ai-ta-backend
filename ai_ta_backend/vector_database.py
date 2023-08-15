@@ -776,7 +776,7 @@ Now please respond to my question: {user_question}"""
     print("In split and upload")
     print(f"Texts: {texts}")
     print(f"metadatas: {metadatas}")
-
+    print(type(texts))
     assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
 
 
@@ -814,7 +814,6 @@ Now please respond to my question: {user_question}"""
       embeddings_dict: dict[str, List[float]] = {item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results}
       # add embeddings to regular doc metadata (for Supabase)
       for context in contexts:
-        print("CONTEXT PAGE CONTENT:::",context.page_content)
         if context.page_content != None:
           context.metadata['embedding'] = embeddings_dict[context.page_content]
           context.metadata['page_content'] = context.page_content
