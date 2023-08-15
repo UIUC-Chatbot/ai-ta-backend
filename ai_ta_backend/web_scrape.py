@@ -29,18 +29,13 @@ def valid_url(url):
       redirect_loop_counter += 1
     
     if response.status_code == 200:
-
-      for filetype in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
-        if response.url.endswith(filetype):
-          continue
-        else:
-          return (False, False)
-      
       if ".pdf" in response.url:
         if f"<!DOCTYPE html>" not in str(response.content):
           content = response.content
       elif str(response.content).startswith("%PDF"):
         content = response.content
+      elif response.url.endswith(".gif"):
+        return (False, False)
       else:
         content = BeautifulSoup(response.text, "html.parser")
       return (response.url, content)
