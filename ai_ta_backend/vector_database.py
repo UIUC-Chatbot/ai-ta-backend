@@ -994,8 +994,7 @@ Now please respond to my question: {user_question}"""
           query_vector=query_vector,
           limit=top_n  # Return 5 closest points
       )
-      # how to use
-      search_results[0].payload.get('page_content')
+
       found_docs = []
       for result in search_results:
         found_docs.append(Document(page_content=result.payload.get('page_content'), metadata=result.payload.get('metadata')))
