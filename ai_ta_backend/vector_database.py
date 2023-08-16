@@ -942,11 +942,11 @@ Now please respond to my question: {user_question}"""
     Args : 
         course_name (as uploaded on supabase)
     Returns : 
-        list of dictionaries with distinct s3 path, readable_filename and course_name.
+        list of dictionaries with distinct s3 path, readable_filename and course_name, url, base_url. 
     """
 
     response = self.supabase_client.table(
-        os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, s3_path, readable_filename').eq(  # type: ignore
+        os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, s3_path, readable_filename, url, base_url').eq(  # type: ignore
             'course_name', course_name).execute()
 
     data = response.data
@@ -954,7 +954,7 @@ Now please respond to my question: {user_question}"""
     distinct_dicts = []
 
     for item in data:
-      combination = (item['s3_path'], item['readable_filename'], item['course_name'])
+      combination = (item['s3_path'], item['readable_filename'], item['course_name'], item['url'], item['base_url'])
       if combination not in unique_combinations:
         unique_combinations.add(combination)
         distinct_dicts.append(item)
