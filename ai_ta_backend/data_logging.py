@@ -3,6 +3,7 @@ import nomic
 from nomic import atlas
 from langchain.embeddings import OpenAIEmbeddings
 import numpy as np
+import time
 
 class DataLog():
     def __init__(self):
@@ -21,34 +22,26 @@ class DataLog():
         for context in retrieved_contexts:
             context_string += context['text'] + " "
         
-        print("context_string: ", context_string)
+        #print("context_string: ", context_string)
 
         # convert query and context to embeddings
         embeddings_model = OpenAIEmbeddings()
-        #embeddings = embeddings_model.embed_documents([search_query, context_string])
-        #embeddings = np.array(embeddings)
+        embeddings = embeddings_model.embed_documents([search_query, context_string])
 
-        num_embeddings = 2
-        embeddings = np.random.rand(num_embeddings, 1536)
+        data = [{'course_name': course_name, 'query': search_query, 'id': time.time()}, 
+                 {'course_name': course_name, 'query': context_string, 'id': time.time()}]
 
-        data = [{'course': course_name, 'id': i} for i in range(len(embeddings))]
         print("len of data: ", len(data))
-        print("len of embeddings: ", embeddings.shape)
+        print("len of embeddings: ", len(embeddings))
+        print(data)
         
-        # project = atlas.map_embeddings(embeddings=np.array(embeddings),
-        #                                data=data,
-        #                                id_field='id',
-        #                                name='Search Query Viz',
-        #                                colorable_fields=['course'])
-        # print(project.maps)
-
-        project = atlas.AtlasProject(name="Search Query Viz", add_datums_if_exists=True)
-        #map = project.get_map('Search Query Viz')
+        project = atlas.AtlasProject(name="User Query Text Viz", add_datums_if_exists=True)
+        map = project.get_map('Search Query Viz')
         print(project.name)
-        #print(map)
+        print(map)
 
         with project.wait_for_project_lock() as project:
-            project.add_embeddings(embeddings=embeddings, data=data)
+            project.add_embeddings(embeddings=np.array(embeddings), data=data)
             project.rebuild_maps()
 
         print("done")
