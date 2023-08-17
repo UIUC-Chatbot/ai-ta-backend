@@ -4,7 +4,7 @@ import time
 from typing import Any, List, Union
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
+from flask import Flask, abort, jsonify, request
 from flask_cors import CORS
 from h11 import Response
 # from qdrant_client import QdrantClient
@@ -115,20 +115,13 @@ def getTopContexts():
   Exception
       Testing how exceptions are handled.
   """
-  # todo: best way to handle optional arguments?
-  try:
-    course_name: str = request.args.get('course_name')
-    search_query: str = request.args.get('search_query')
-    token_limit: int = request.args.get('token_limit')
-  except Exception as e:
-    print("No course name provided.")
-
-  if search_query is None:
-    return jsonify({"error": "No parameter `search_query` provided. It is undefined."})
-  if token_limit is None:
-    token_limit = 3_000
-  else:
-    token_limit = int(token_limit)
+  print("In getRopContexts in Main()")
+  search_query: str = request.args.get('search_query', default='', type=str)
+  course_name: str = request.args.get('course_name', default='', type=str)
+  token_limit: int = request.args.get('token_limit', default=3000, type=int)
+  if search_query == '' or course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing one or me required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`")
 
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
@@ -244,7 +237,7 @@ def getAll():
   ingester = Ingest()
   course_name: List[str] | str = request.args.get('course_name')
   distinct_dicts = ingester.getAll(course_name)
-  response = jsonify({"all_s3_paths": distinct_dicts})
+  response = jsonify({"distinct_files": distinct_dicts})
 
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response

@@ -3,21 +3,23 @@ name: Format code
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: pip install yapf
+        run: pip install yapf
       - name: Format code with yapf
-        run: |
-          pip install yapf
-          yapf --in-place --recursive --parallel --style='{based_on_style: google, column_limit: 140, indent_width: 2}' --exclude '*.env' .
+        run: yapf --in-place --recursive --parallel --style='{based_on_style: google, column_limit: 140, indent_width: 2}' --exclude '*.env' .
       - name: Commit changes
         uses: EndBug/add-and-commit@v4
         with:
           author_name: ${{ github.actor }}
           author_email: ${{ github.actor }}@users.noreply.github.com
-          message: "Format code with Yapf & custom options"
+          message: "Format code"
           add: "."
           branch: ${{ github.ref }}
