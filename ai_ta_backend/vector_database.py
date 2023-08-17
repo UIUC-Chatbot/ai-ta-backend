@@ -302,29 +302,6 @@ Now please respond to my question: {user_question}"""
 
       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
       return success_or_failure
-      
-      # with NamedTemporaryFile() as tmpfile:
-      #   # download from S3 into tmpfile
-      #   self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-        
-      #   print("filename: ", file_name)
-      #   loader = PythonLoader("media/" + file_name)
-      #   print("file: ", tmpfile)
-
-      #   documents = loader.load()
-      #   texts = [doc.page_content for doc in documents]
-
-      #   metadatas: List[Dict[str, Any]] = [{
-      #       'course_name': course_name,
-      #       's3_path': s3_path,
-      #       'readable_filename': Path(s3_path).name,
-      #       'pagenumber_or_timestamp': '',
-      #   } for doc in documents]
-
-      #   print(documents)
-
-      #   success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
-      #   return success_or_failure
     except Exception as e:
       print(f"ERROR IN py READING {e}")
 

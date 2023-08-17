@@ -36,6 +36,7 @@ beautifulsoup4
 pypandoc
 pypandoc_binary
 canvasapi
+nomic
 cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
 
 # No arize for now, huge build size with these additions.
