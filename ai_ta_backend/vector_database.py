@@ -871,7 +871,11 @@ Now please respond to my question: {user_question}"""
       objects_to_delete = self.s3_client.list_objects(Bucket=os.getenv('S3_BUCKET_NAME'), Prefix=f'courses/{course_name}/')
       for object in objects_to_delete['Contents']:
         self.s3_client.delete_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=object['Key'])
-
+    except Exception as e:
+      err: str = f"ERROR IN delete_entire_course(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+    
+    try:
       # Delete from Qdrant
       # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
       # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
@@ -884,7 +888,11 @@ Now please respond to my question: {user_question}"""
               ),
           ]),
       )
-
+    except Exception as e:
+      err: str = f"ERROR IN delete_entire_course(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
+      print(err)
+    
+    try:
       # Delete from Supabase
       response = self.supabase_client.from_(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).delete().eq('course_name', course_name).execute()
       print("supabase response: ", response)
@@ -892,7 +900,8 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       err: str = f"ERROR IN delete_entire_course(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
-      return err
+    # todo: delete from Vercel KV to fully make the coure not exist. Last db to delete from (as of now, Aug 15)
+
 
   # Create a method to delete file from s3, delete vector from qdrant, and delete row from supabase
   def delete_data(self, s3_path: str, course_name: str):
@@ -933,11 +942,11 @@ Now please respond to my question: {user_question}"""
     Args : 
         course_name (as uploaded on supabase)
     Returns : 
-        list of dictionaries with distinct s3 path, readable_filename and course_name.
+        list of dictionaries with distinct s3 path, readable_filename and course_name, url, base_url. 
     """
 
     response = self.supabase_client.table(
-        os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, s3_path, readable_filename').eq(  # type: ignore
+        os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, s3_path, readable_filename, url, base_url').eq(  # type: ignore
             'course_name', course_name).execute()
 
     data = response.data
@@ -945,7 +954,7 @@ Now please respond to my question: {user_question}"""
     distinct_dicts = []
 
     for item in data:
-      combination = (item['s3_path'], item['readable_filename'], item['course_name'])
+      combination = (item['s3_path'], item['readable_filename'], item['course_name'], item['url'], item['base_url'])
       if combination not in unique_combinations:
         unique_combinations.add(combination)
         distinct_dicts.append(item)

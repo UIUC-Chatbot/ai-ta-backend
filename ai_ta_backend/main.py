@@ -231,7 +231,7 @@ def getAll():
   ingester = Ingest()
   course_name: List[str] | str = request.args.get('course_name')
   distinct_dicts = ingester.getAll(course_name)
-  response = jsonify({"all_s3_paths": distinct_dicts})
+  response = jsonify({"distinct_files": distinct_dicts})
 
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
