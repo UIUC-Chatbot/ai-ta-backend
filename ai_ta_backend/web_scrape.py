@@ -34,6 +34,8 @@ def valid_url(url):
           content = response.content
       elif str(response.content).startswith("%PDF"):
         content = response.content
+      elif response.url.endswith(".gif"):
+        return (False, False)
       else:
         content = BeautifulSoup(response.text, "html.parser")
       return (response.url, content)
@@ -114,8 +116,8 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   max_urls = int(max_urls)
   _depth = int(_depth)
   max_depth = int(max_depth)
-  print(base_url_on, type(base_url_on))
-  base_url_on = str(base_url_on)
+  if base_url_on:
+    base_url_on = str(base_url_on)
 
   amount = max_urls
   
@@ -244,7 +246,8 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   max_urls = int(max_urls)
   max_depth = int(max_depth)
   timeout = int(timeout)
-  base_url_on = str(base_url_on)
+  if base_url_on:
+    base_url_on = str(base_url_on)
   ingester = Ingest()
   s3_client = boto3.client(
         's3',
@@ -385,3 +388,4 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
     shutil.rmtree(local_dir)
     print("Finished Ingest")
     return success_fail
+

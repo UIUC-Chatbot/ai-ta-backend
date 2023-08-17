@@ -124,8 +124,8 @@ def analyze_conversations(supabase_client: Any = None):
           print(f'Assistant Completion: {content}\nTokens: {num_tokens_completion}, cost: {cost_completion}')
     return total_convos, total_messages, total_prompt_cost, total_completion_cost
   
-if __name__ == '__main__':
-  print('starting main')
-  total_convos, total_messages, total_prompt_cost, total_completion_cost = analyze_conversations()
-  print(f'total_convos: {total_convos}, total_messages: {total_messages}')
-  print(f'total_prompt_cost: {total_prompt_cost}, total_completion_cost: {total_completion_cost}')
+# if __name__ == '__main__':
+#   print('starting main')
+#   total_convos, total_messages, total_prompt_cost, total_completion_cost = analyze_conversations()
+#   print(f'total_convos: {total_convos}, total_messages: {total_messages}')
+#   print(f'total_prompt_cost: {total_prompt_cost}, total_completion_cost: {total_completion_cost}')
