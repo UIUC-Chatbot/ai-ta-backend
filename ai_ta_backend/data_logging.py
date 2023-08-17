@@ -13,37 +13,22 @@ class DataLog():
         """
         Logs user query and retrieved contexts to Nomic.
         """
-        print("course_name: ", course_name)
-        print("search_query: ", search_query)
-        print("retrieved_contexts: ", len(retrieved_contexts))
+        try:
+            # convert query and context to embeddings
+            embeddings_model = OpenAIEmbeddings()
+            embeddings = embeddings_model.embed_query(search_query)
+            embeddings = np.array(embeddings)
+            reshaped_embeddings = embeddings.reshape(1, 1536)
 
-        # concat all retrieved contexts into one string
-        context_string = ""
-        for context in retrieved_contexts:
-            context_string += context['text'] + " "
-        
-        #print("context_string: ", context_string)
+            data = [{'course_name': course_name, 'query': search_query, 'id': time.time()}]
 
-        # convert query and context to embeddings
-        embeddings_model = OpenAIEmbeddings()
-        embeddings = embeddings_model.embed_documents([search_query, context_string])
+            project = atlas.AtlasProject(name="User Query Text Viz 2", add_datums_if_exists=True)
+            map = project.get_map('User Query Text Viz 2')
 
-        data = [{'course_name': course_name, 'query': search_query, 'id': time.time()}, 
-                 {'course_name': course_name, 'query': context_string, 'id': time.time()}]
+            with project.wait_for_project_lock() as project:
+                project.add_embeddings(embeddings=reshaped_embeddings, data=data)
+                project.rebuild_maps()
 
-        print("len of data: ", len(data))
-        print("len of embeddings: ", len(embeddings))
-        print(data)
-        
-        project = atlas.AtlasProject(name="User Query Text Viz", add_datums_if_exists=True)
-        map = project.get_map('Search Query Viz')
-        print(project.name)
-        print(map)
-
-        with project.wait_for_project_lock() as project:
-            project.add_embeddings(embeddings=np.array(embeddings), data=data)
-            project.rebuild_maps()
-
-        print("done")
-        # log to Nomic
-        return "WIP"
+            return "Successfully logg"
+        except Exception as e:
+            return e
