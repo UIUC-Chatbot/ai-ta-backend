@@ -294,6 +294,8 @@ Now please respond to my question: {user_question}"""
   def _ingest_single_py(self, s3_path: str, course_name: str):
     try:
       print("in ingest_py")
+
+      # is this always right?
       file_name = s3_path.split("/")[-1]
       file_path = "media/" + file_name
 
@@ -308,9 +310,11 @@ Now please respond to my question: {user_question}"""
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
-            'pagenumber_or_timestamp': '',
+            'pagenumber': '',
+            'timestamp': '',
+            'url': '',
+            'base_url': '',
         } for doc in documents]
-      #print(texts)
       os.remove(file_path)
 
       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
