@@ -294,10 +294,8 @@ Now please respond to my question: {user_question}"""
   def _ingest_single_py(self, s3_path: str, course_name: str):
     try:
       print("in ingest_py")
-
-      # is this always right?
       file_name = s3_path.split("/")[-1]
-      file_path = "media/" + file_name
+      file_path = "media/" + file_name # download from s3 to local folder for ingest
 
       self.s3_client.download_file(os.getenv('S3_BUCKET_NAME'), s3_path, file_path)
 
