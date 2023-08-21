@@ -310,40 +310,6 @@ def mit_download_course():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@app.route('/addCanvasUsers', methods=['GET'])
-def add_canvas_users():
-  """
-  Add users from canvas to the course
-  """
-  print("In /addCanvasUsers")
-
-  canvas = CanvasAPI()
-  canvas_course_id: str = request.args.get('course_id')
-  course_name: str = request.args.get('course_name')
-
-  success_or_failure = canvas.add_users(canvas_course_id, course_name)
-  
-  response = jsonify({"outcome": success_or_failure})
-
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-@app.route('/ingestCanvas', methods=['GET'])
-def ingest_canvas():
-  """
-  Ingest course content from Canvas
-  """
-  canvas = CanvasAPI()
-  canvas_course_id: str = request.args.get('course_id')
-  course_name: str = request.args.get('course_name')
-
-  success_or_failure = canvas.ingest_course_content(canvas_course_id, course_name)
-  
-  response = jsonify({"outcome": success_or_failure})
-
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
 
 # TODO: add a way to delete items from course based on base_url
 
