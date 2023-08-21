@@ -18,12 +18,7 @@ import openai
 import requests
 import supabase
 from bs4 import BeautifulSoup
-# from arize.api import Client
-# from arize.pandas.embeddings import EmbeddingGenerator, UseCases
-# from arize.utils import ModelTypes
-# from arize.utils.ModelTypes import GENERATIVE_LLM
-# # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
-# #                                Metrics, ModelTypes, Schema)
+
 from langchain.document_loaders import (Docx2txtLoader, PythonLoader,
                                         SRTLoader, UnstructuredFileLoader, 
                                         UnstructuredPowerPointLoader, TextLoader, GitLoader)
