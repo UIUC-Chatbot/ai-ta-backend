@@ -256,7 +256,7 @@ Now please respond to my question: {user_question}"""
             success_status['failure_ingest'].append(s3_path)
           else:
             success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.txt'):
+        elif s3_path.endswith('.txt') or s3_path.endswith('.md'):
           ret = self._ingest_single_txt(s3_path, course_name)
           if ret != "Success":
             success_status['failure_ingest'].append(s3_path)
@@ -293,13 +293,18 @@ Now please respond to my question: {user_question}"""
 
   def _ingest_single_py(self, s3_path: str, course_name: str):
     try:
-      with NamedTemporaryFile() as tmpfile:
-        # download from S3 into vtt_tmpfile
-        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-        loader = PythonLoader(tmpfile.name)
-        documents = loader.load()
-        texts = [doc.page_content for doc in documents]
-        metadatas: List[Dict[str, Any]] = [{
+      print("in ingest_py")
+      file_name = s3_path.split("/")[-1]
+      file_path = "media/" + file_name # download from s3 to local folder for ingest
+
+      self.s3_client.download_file(os.getenv('S3_BUCKET_NAME'), s3_path, file_path)
+
+      loader = PythonLoader(file_path)
+      documents = loader.load()
+      
+      texts = [doc.page_content for doc in documents]
+
+      metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
             'readable_filename': Path(s3_path).name,
@@ -308,9 +313,11 @@ Now please respond to my question: {user_question}"""
             'url': '',
             'base_url': '',
         } for doc in documents]
+      os.remove(file_path)
 
-        success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
-        return success_or_failure
+      success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+      return success_or_failure
+    
     except Exception as e:
       print(f"ERROR IN py READING {e}")
 
@@ -595,7 +602,7 @@ Now please respond to my question: {user_question}"""
     return "Success"
 
   def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
-    """Ingest a single .txt file from S3.
+    """Ingest a single .txt or .md file from S3.
     Args:
         s3_path (str): A path to a .txt file in S3
         course_name (str): The name of the course
