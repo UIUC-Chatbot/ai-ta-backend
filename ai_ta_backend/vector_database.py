@@ -23,7 +23,7 @@ import supabase
 from bs4 import BeautifulSoup
 
 from langchain.document_loaders import (Docx2txtLoader, PythonLoader,
-                                        SRTLoader, UnstructuredFileLoader, 
+                                        SRTLoader, 
                                         UnstructuredPowerPointLoader, TextLoader, GitLoader)
 
 from git import Repo

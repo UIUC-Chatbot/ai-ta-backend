@@ -126,8 +126,11 @@ def getTopContexts():
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
 
   # add nomic log function here
+  nomic_start_time = time.time()
+  #print("Nomic start time: ", nomic_start_time)
   logger = DataLog()
   result = logger.nomic_log(course_name, search_query, found_documents)
+  print("Nomic run time: ", time.time() - nomic_start_time)
   
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
