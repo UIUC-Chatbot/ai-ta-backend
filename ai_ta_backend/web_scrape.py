@@ -154,6 +154,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
 
   if _soup:
     s = _soup
+    filetype = get_file_extension(url)
   else:
     url, s, filetype = valid_url(url)
     time.sleep(timeout)
