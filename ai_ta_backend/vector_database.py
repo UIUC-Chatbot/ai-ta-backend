@@ -297,11 +297,12 @@ Now please respond to my question: {user_question}"""
   def _ingest_single_py(self, s3_path: str, course_name: str):
     try:
       print("in ingest_py")
-      
+
       file_name = s3_path.split("/")[-1]
-      file_path = "media/" + file_name
+      file_path = "media/" + file_name # download from s3 to local folder for ingest
 
       self.s3_client.download_file(os.getenv('S3_BUCKET_NAME'), s3_path, file_path)
+
       loader = PythonLoader(file_path)
       documents = loader.load()
       
@@ -316,11 +317,12 @@ Now please respond to my question: {user_question}"""
             'url': '',
             'base_url': '',
         } for doc in documents]
-      #print(texts)
+
       os.remove(file_path)
 
       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
       return success_or_failure
+
     except Exception as e:
       print(f"ERROR IN py READING {e}")
 

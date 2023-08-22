@@ -11,13 +11,26 @@ from bs4 import BeautifulSoup
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
+import mimetypes
 
+def get_file_extension(filename):
+    match = re.search(r'\.([a-zA-Z0-9]+)$', filename)
+    valid_filetypes = list(mimetypes.types_map.keys())
+    valid_filetypes = valid_filetypes + ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']
+    if match:
+        filetype = "." + match.group(1)
+        if filetype in valid_filetypes:
+            return filetype
+        else:
+            return '.html'
+    else:
+        return '.html'
 
 def valid_url(url):
   '''Returns the URL and it's content if it's good, otherwise returns false. Prints the status code.'''
   try:
     response = requests.get(url, allow_redirects=True, timeout=20)
-    
+
     redirect_loop_counter = 0
     while response.status_code == 301:
       # Check for permanent redirect
@@ -27,24 +40,32 @@ def valid_url(url):
       redirect_url = response.headers['Location']
       response = requests.head(redirect_url)
       redirect_loop_counter += 1
-    
     if response.status_code == 200:
-      if ".pdf" in response.url:
-        if f"<!DOCTYPE html>" not in str(response.content):
-          content = response.content
-      elif str(response.content).startswith("%PDF"):
-        content = response.content
-      elif response.url.endswith(".gif"):
-        return (False, False)
-      else:
+      filetype = get_file_extension(response.url)
+      print("file extension:", filetype)
+      if filetype == '.html':
         content = BeautifulSoup(response.text, "html.parser")
-      return (response.url, content)
+        if "<!doctype html>" not in str(response.content).lower():
+          print("Filetype not supported:", response.url)
+          return (False, False, False)
+      elif filetype in ['.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
+        if "<!doctype html>" in str(response.content).lower():
+          content = BeautifulSoup(response.text, "html.parser")
+          filetype = '.html'
+        else:
+          content = response.content
+      else:
+        return (False, False, False)
+      print(filetype)
+      if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
+        print("Filetype not supported:", filetype, "howd you get in her you dipshit?")
+      return (response.url, content, filetype)
     else:
       print("URL is invalid:", response.url, "Return code:", response.status_code)
-      return (False, False)
+      return (False, False, False)
   except requests.RequestException as e:
     print("URL is invalid:", url, "Error:", e)
-    return (False, False)
+    return (False, False, False)
 
 # Ensures url is in the correct format
 def base_url(url:str):
@@ -134,10 +155,10 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   if _soup:
     s = _soup
   else:
-    url, s = valid_url(url)
+    url, s, filetype = valid_url(url)
     time.sleep(timeout)
-    url_contents.append((url,s))
-  if url:
+    url_contents.append((url,s, filetype))
+  if url and filetype == '.html':
     try:
       body = s.find("body")
       header = s.find("head") 
@@ -179,19 +200,19 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   for url in urls:
     if base_url_on:
       if url.startswith(site):
-        url, s = valid_url(url)
+        url, s, filetype = valid_url(url)
         if url:
           print("Scraped:", url)
-          url_contents.append((url, s))
+          url_contents.append((url, s, filetype))
         else:
           _invalid_urls.append(url)
       else:
         pass
     else:
-      url, s = valid_url(url)
+      url, s, filetype = valid_url(url)
       if url:
         print("Scraped:", url)
-        url_contents.append((url, s))
+        url_contents.append((url, s, filetype))
       else:
         _invalid_urls.append(url)
   
@@ -311,34 +332,52 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   counter = 0
   try:
     for i, key in enumerate(data):
-      if ".pdf" in key[0]:
-        with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
+      with NamedTemporaryFile(suffix=key[2]) as temp_file:
           if key[1] != "" or key[1] != None:
-            temp_pdf.write(key[1])
-            temp_pdf.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
+            if key[2] == ".html":
+              print("Writing", key[2] ,"to temp file")
+              temp_file.write(key[1].encode('utf-8'))
+            else:
+              print("Writing", key[2] ,"to temp file")
+              temp_file.write(key[1])
+            temp_file.seek(0)
+            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + key[2]
             paths.append(s3_upload_path)
-            with open(temp_pdf.name, 'rb') as f:
-              print("Uploading PDF to S3")
+            with open(temp_file.name, 'rb') as f:
+              print("Uploading", key[2] ,"to S3")
               s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
               ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
               counter += 1
           else:
-            print("No PDF to upload", key[1])
-      else:
-        with NamedTemporaryFile(suffix=".html") as temp_html:
-          if key[1] != "" or key[1] != None:
-            temp_html.write(key[1].encode('utf-8'))
-            temp_html.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html"
-            paths.append(s3_upload_path)
-            with open(temp_html.name, 'rb') as f:
-              print("Uploading html to S3")
-              s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-              ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
-              counter += 1
-          else:
-            print("No html to upload", key[1])
+            print("No", key[2] ,"to upload", key[1])
+      # if ".pdf" in key[0]:
+      #   with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
+      #     if key[1] != "" or key[1] != None:
+      #       temp_pdf.write(key[1])
+      #       temp_pdf.seek(0)
+      #       s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
+      #       paths.append(s3_upload_path)
+      #       with open(temp_pdf.name, 'rb') as f:
+      #         print("Uploading PDF to S3")
+      #         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+      #         ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
+      #         counter += 1
+      #     else:
+      #       print("No PDF to upload", key[1])
+      # else:
+      #   with NamedTemporaryFile(suffix=".html") as temp_html:
+      #     if key[1] != "" or key[1] != None:
+      #       temp_html.write(key[1].encode('utf-8'))
+      #       temp_html.seek(0)
+      #       s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html"
+      #       paths.append(s3_upload_path)
+      #       with open(temp_html.name, 'rb') as f:
+      #         print("Uploading html to S3")
+      #         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+      #         ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
+      #         counter += 1
+      #     else:
+      #       print("No html to upload", key[1])
   except Exception as e:
     print("Error in upload:", e)
 
