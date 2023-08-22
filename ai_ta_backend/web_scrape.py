@@ -158,7 +158,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
     url, s, filetype = valid_url(url)
     time.sleep(timeout)
     url_contents.append((url,s, filetype))
-  if url and filetype == '.html':
+  if url != False and filetype == '.html':
     try:
       body = s.find("body")
       header = s.find("head") 
