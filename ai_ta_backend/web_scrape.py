@@ -44,13 +44,13 @@ def valid_url(url):
       filetype = get_file_extension(response.url)
       print("file extension:", filetype)
       if filetype == '.html':
-        content = BeautifulSoup(response.text, "html.parser")
+        content = BeautifulSoup(response.content, "html.parser")
         if "<!doctype html>" not in str(response.content).lower():
           print("Filetype not supported:", response.url)
           return (False, False, False)
       elif filetype in ['.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
         if "<!doctype html>" in str(response.content).lower():
-          content = BeautifulSoup(response.text, "html.parser")
+          content = BeautifulSoup(response.content, "html.parser")
           filetype = '.html'
         else:
           content = response.content
@@ -58,7 +58,7 @@ def valid_url(url):
         return (False, False, False)
       print(filetype)
       if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
-        print("Filetype not supported:", filetype, "howd you get in her you dipshit?")
+        print("Filetype not supported:", filetype)
       return (response.url, content, filetype)
     else:
       print("URL is invalid:", response.url, "Return code:", response.status_code)
