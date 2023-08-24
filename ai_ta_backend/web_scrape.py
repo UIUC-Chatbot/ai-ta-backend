@@ -44,8 +44,8 @@ def valid_url(url):
       filetype = get_file_extension(response.url)
       print("file extension:", filetype)
       if filetype == '.html':
-        content = BeautifulSoup(response.text, "html.parser")
-        if "<!doctype html>" not in str(response.content).lower():
+        content = BeautifulSoup(response.content, "html.parser")
+        if "<!doctype html>" not in str(response.text).lower():
           print("Filetype not supported:", response.url)
           return (False, False, False)
       elif filetype in ['.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
@@ -58,7 +58,7 @@ def valid_url(url):
         return (False, False, False)
       print(filetype)
       if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
-        print("Filetype not supported:", filetype, "howd you get in her you dipshit?")
+        print("Filetype not supported:", filetype)
       return (response.url, content, filetype)
     else:
       print("URL is invalid:", response.url, "Return code:", response.status_code)
@@ -154,11 +154,12 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
 
   if _soup:
     s = _soup
+    filetype = get_file_extension(url)
   else:
     url, s, filetype = valid_url(url)
     time.sleep(timeout)
     url_contents.append((url,s, filetype))
-  if url and filetype == '.html':
+  if url != False and filetype == '.html':
     try:
       body = s.find("body")
       header = s.find("head") 
