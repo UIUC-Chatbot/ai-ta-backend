@@ -1,14 +1,10 @@
 import os
-import re
 import time
 from typing import Any, List, Union
-import asyncio
 
 from dotenv import load_dotenv
 from flask import Flask, abort, jsonify, request
 from flask_cors import CORS
-from h11 import Response
-# from qdrant_client import QdrantClient
 from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
@@ -21,13 +17,8 @@ CORS(app)
 executor = Executor(app)
 # app.config['EXECUTOR_MAX_WORKERS'] = 5 nothing == picks defaults for me
 
-
 # load API keys from globally-availabe .env file
-# load_dotenv(dotenv_path='.env', override=True)
 load_dotenv()
-
-## GLOBALS ## 
-
 
 @app.route('/')
 def index() -> JSON:
@@ -318,8 +309,6 @@ def nomic_map():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-
-# TODO: add a way to delete items from course based on base_url
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=8000))
