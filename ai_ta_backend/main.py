@@ -22,6 +22,7 @@ CORS(app)
 # load_dotenv(dotenv_path='.env', override=True)
 load_dotenv()
 
+
 @app.route('/')
 def index() -> JSON:
   """_summary_
@@ -38,25 +39,26 @@ def index() -> JSON:
 @app.route('/coursera', methods=['GET'])
 def coursera() -> JSON:
   try:
-    course_name: str = request.args.get('course_name') # type: ignore
-    coursera_course_name: str = request.args.get('coursera_course_name') # type: ignore
+    course_name: str = request.args.get('course_name')  # type: ignore
+    coursera_course_name: str = request.args.get('coursera_course_name')  # type: ignore
   except Exception as e:
     print(f"No course name provided: {e}")
-  
+
   ingester = Ingest()
-  results = ingester.ingest_coursera(coursera_course_name, course_name) # type: ignore
+  results = ingester.ingest_coursera(coursera_course_name, course_name)  # type: ignore
   response = jsonify(results)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/github', methods=['GET'])
 def github() -> JSON:
   try:
-    course_name: str = request.args.get('course_name') # type: ignore
-    github_url: str = request.args.get('github_url') # type: ignore
+    course_name: str = request.args.get('course_name')  # type: ignore
+    github_url: str = request.args.get('github_url')  # type: ignore
   except Exception as e:
     print(f"No course name provided: {e}")
-  
+
   print("In /github")
   ingester = Ingest()
   results = ingester.ingest_github(github_url, course_name)
@@ -64,16 +66,17 @@ def github() -> JSON:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/delete-entire-course', methods=['GET'])
 def delete_entire_course():
   try:
-    course_name: str = request.args.get('course_name') # type: ignore
+    course_name: str = request.args.get('course_name')  # type: ignore
     # coursera_course_name: str = request.args.get('coursera_course_name') # type: ignore
   except Exception as e:
     print(f"No course name provided: {e}")
-  
+
   ingester = Ingest()
-  results = ingester.delete_entire_course(course_name) # type: ignore
+  results = ingester.delete_entire_course(course_name)  # type: ignore
   response = jsonify(results)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -121,19 +124,22 @@ def getTopContexts():
   token_limit: int = request.args.get('token_limit', default=3000, type=int)
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
-    abort(400, description=f"Missing one or me required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`")
+    abort(
+        400,
+        description=
+        f"Missing one or me required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
+    )
 
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
-  
+
   # add nomic log function here
   nomic_start_time = time.time()
   #print("Nomic start time: ", nomic_start_time)
   logger = DataLog()
-  print("test")
   result = logger.nomic_log(course_name, search_query)
   print("Nomic run time: ", time.time() - nomic_start_time)
-  
+
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -215,13 +221,12 @@ def getContextStuffedPrompt():
     a very long "stuffed prompt" with question + summaries of 20 most relevant documents.
   """
   print("In /getContextStuffedPrompt")
-  
 
   ingester = Ingest()
-  search_query: str = str(request.args.get('search_query'))      # type: ignore
-  course_name: str = str(request.args.get('course_name'))         # type: ignore 
-  top_n: int = int(request.args.get('top_n'))                     # type: ignore
-  top_k_to_search: int = int(request.args.get('top_k_to_search')) # type: ignore
+  search_query: str = str(request.args.get('search_query'))  # type: ignore
+  course_name: str = str(request.args.get('course_name'))  # type: ignore
+  top_n: int = int(request.args.get('top_n'))  # type: ignore
+  top_k_to_search: int = int(request.args.get('top_k_to_search'))  # type: ignore
 
   start_time = time.monotonic()
   stuffed_prompt = ingester.get_context_stuffed_prompt(search_query, course_name, top_n, top_k_to_search)
@@ -251,26 +256,27 @@ def getAll():
 #Write api to delete s3 files for a course
 @app.route('/delete', methods=['DELETE'])
 def delete():
-    """Delete all course materials based on the course_name
+  """Delete all course materials based on the course_name
     """
 
-    print("In /delete")
+  print("In /delete")
 
-    ingester = Ingest()
-    course_name: List[str] | str = request.args.get('course_name')
-    s3_path: str = request.args.get('s3_path')
-    success_or_failure = ingester.delete_data(s3_path, course_name)
-    response = jsonify({"outcome": success_or_failure})
+  ingester = Ingest()
+  course_name: List[str] | str = request.args.get('course_name')
+  s3_path: str = request.args.get('s3_path')
+  success_or_failure = ingester.delete_data(s3_path, course_name)
+  response = jsonify({"outcome": success_or_failure})
 
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/web-scrape', methods=['GET'])
 def scrape():
   url: str = request.args.get('url')
-  max_urls:int = request.args.get('max_urls')
-  max_depth:int = request.args.get('max_depth')
-  timeout:int = request.args.get('timeout')
+  max_urls: int = request.args.get('max_urls')
+  max_depth: int = request.args.get('max_depth')
+  timeout: int = request.args.get('timeout')
   course_name: str = request.args.get('course_name')
   base_url_bool: str = request.args.get('base_url_on')
 
@@ -287,26 +293,29 @@ def scrape():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/mit-download', methods=['GET'])
 def mit_download_course():
-  url:str = request.args.get('url')
-  course_name:str = request.args.get('course_name')
-  local_dir:str = request.args.get('local_dir')
+  url: str = request.args.get('url')
+  course_name: str = request.args.get('course_name')
+  local_dir: str = request.args.get('local_dir')
 
-  success_fail = mit_course_download(url, course_name,local_dir)
+  success_fail = mit_course_download(url, course_name, local_dir)
 
   response = jsonify(success_fail)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/nomic-map', methods=['GET'])
 def nomic_map():
-  course_name:str = request.args.get('course_name')
+  course_name: str = request.args.get('course_name')
   logger = DataLog()
   map_str = logger.get_nomic_map(course_name)
   response = jsonify(map_str)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 # TODO: add a way to delete items from course based on base_url
 

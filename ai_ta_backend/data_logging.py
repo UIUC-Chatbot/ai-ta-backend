@@ -11,21 +11,17 @@ class DataLog():
 
   def __init__(self):
     self.login = nomic.login(os.getenv('NOMIC_API_KEY'))
+    self.name_prexif = 'Queries for '
 
   def nomic_log(self, course_name: str, search_query: str):
     """
     Logs user query and retrieved contexts to Nomic.
     """
-    embeddings_model = OpenAIEmbeddings()
+    project_name = self.name_prexif + course_name
+
+    embeddings_model = OpenAIEmbeddings() # type: ignore
     embeddings = np.array(embeddings_model.embed_query(search_query)).reshape(1, 1536)
-
-    # for testing:
-    # reshaped_embeddings = np.random.rand(1, 1536)
-
     data = [{'course_name': course_name, 'query': search_query, 'id': time.time()}]
-
-    # todo fix
-    project_name = "User Query Text Viz for " + course_name
 
     print("Project name: ", project_name)
     try:
@@ -39,13 +35,13 @@ class DataLog():
     except Exception as e:
       print("Nomic map does not exist yet: ", e)
 
-    #return "Successfully logged"
+    return f"Successfully logged for {course_name}"
 
   def get_nomic_map(self, course_name: str):
     """
     Returns iframe string of the Nomic map given a course name.
     """
-    map_name = "User Query Text Viz for " + course_name
+    map_name = self.name_prexif + course_name
     project = atlas.AtlasProject(name=map_name)
     map = project.get_map(map_name)
     return map._iframe()
