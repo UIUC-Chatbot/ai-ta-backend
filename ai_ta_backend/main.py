@@ -22,6 +22,10 @@ CORS(app)
 # load_dotenv(dotenv_path='.env', override=True)
 load_dotenv()
 
+## GLOBALS ## 
+
+nomicLogger = DataLog()
+
 
 @app.route('/')
 def index() -> JSON:
@@ -133,11 +137,9 @@ def getTopContexts():
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
 
-  # add nomic log function here
   nomic_start_time = time.time()
-  #print("Nomic start time: ", nomic_start_time)
-  logger = DataLog()
-  result = logger.nomic_log(course_name, search_query)
+  result = nomicLogger.nomic_log(course_name, search_query)
+  print("Nomic result:", result)
   print("Nomic run time: ", time.time() - nomic_start_time)
 
   response = jsonify(found_documents)
@@ -310,8 +312,7 @@ def mit_download_course():
 @app.route('/nomic-map', methods=['GET'])
 def nomic_map():
   course_name: str = request.args.get('course_name')
-  logger = DataLog()
-  map_str = logger.get_nomic_map(course_name)
+  map_str = nomicLogger.get_nomic_map(course_name)
   response = jsonify(map_str)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response

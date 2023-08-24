@@ -26,22 +26,25 @@ class DataLog():
     print("Project name: ", project_name)
     try:
       project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-      # map = project.get_map(project_name)
-
-      # Try this for async.
+      # mostly async call (0.4 to 0.6 sec)
       project.add_embeddings(embeddings=embeddings, data=data)
-      # with project.wait_for_project_lock() as project:
-      #     project.rebuild_maps()
     except Exception as e:
-      print("Nomic map does not exist yet: ", e)
-
+      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
     return f"Successfully logged for {course_name}"
 
   def get_nomic_map(self, course_name: str):
     """
     Returns iframe string of the Nomic map given a course name.
     """
-    map_name = self.name_prexif + course_name
-    project = atlas.AtlasProject(name=map_name)
-    map = project.get_map(map_name)
+    project_name = self.name_prexif + course_name
+    try:
+      project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
+    except Exception as e:
+      err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
+      print(err)
+      return err
+    
+    with project.wait_for_project_lock() as project:
+        project.rebuild_maps()
+    map = project.get_map(project_name)
     return map._iframe()
