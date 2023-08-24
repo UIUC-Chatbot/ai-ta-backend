@@ -2,6 +2,7 @@ import os
 import re
 import time
 from typing import Any, List, Union
+import asyncio
 
 from dotenv import load_dotenv
 from flask import Flask, abort, jsonify, request
@@ -124,17 +125,19 @@ def getTopContexts():
 
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
-
+  
   # add nomic log function here
   nomic_start_time = time.time()
   #print("Nomic start time: ", nomic_start_time)
   logger = DataLog()
-  result = logger.nomic_log(course_name, search_query, found_documents)
+  print("test")
+  result = logger.nomic_log(course_name, search_query)
   print("Nomic run time: ", time.time() - nomic_start_time)
   
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/get_stuffed_prompt', methods=['GET'])
 def get_stuffed_prompt():
