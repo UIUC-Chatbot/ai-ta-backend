@@ -32,4 +32,15 @@ class DataLog():
             project.rebuild_maps()
 
         #return "Successfully logged"
+    
+    def get_nomic_map(self, course_name:str):
+        """
+        Returns iframe string of the Nomic map given a course name.
+        """
+        map_name = "User Query Text Viz for " + course_name
+        project = atlas.AtlasProject(name=map_name)
+        map = project.get_map(map_name)
+        return map._iframe()
+        
+
         

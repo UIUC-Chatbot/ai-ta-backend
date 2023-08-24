@@ -265,22 +265,6 @@ def delete():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-
-@app.route('/log', methods=['GET'])
-def log():
-  """
-  todo
-  """
-  print("In /log")
-
-  ingester = Ingest()
-  # course_name: List[str] | str = request.args.get('course_name')
-  success_or_failure = ingester.log_to_arize('course_name', 'test', 'completion')
-  response = jsonify({"outcome": success_or_failure})
-
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
 @app.route('/web-scrape', methods=['GET'])
 def scrape():
   url: str = request.args.get('url')
@@ -315,6 +299,14 @@ def mit_download_course():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/nomic-map', methods=['GET'])
+def nomic_map():
+  course_name:str = request.args.get('course_name')
+  logger = DataLog()
+  map_str = logger.get_nomic_map(course_name)
+  response = jsonify(map_str)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 # TODO: add a way to delete items from course based on base_url
 
