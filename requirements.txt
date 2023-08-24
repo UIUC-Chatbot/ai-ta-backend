@@ -1,6 +1,6 @@
 click
-Flask==2.3.2
-protobuf<=3.20
+Flask==2.3.3
+protobuf<=4.24.1
 gunicorn==21.2.0
 aiohttp
 tiktoken
@@ -15,12 +15,15 @@ mkdocs
 mkdocstrings[python]
 mkdocs-material
 sqlalchemy
-langchain==0.0.256
+langchain==0.0.270
 openai
 supabase
 SQLAlchemy
 boto3
-PyMuPDF
+# https://github.com/pymupdf/PyMuPDF/issues/2614
+# ImportError: libcrypt.so.2: cannot open shared object file: No such file or directory
+# only safe version of pymupdf is 1.22.5
+PyMuPDF==1.22.5
 unstructured
 tabulate
 pdf2image
@@ -33,10 +36,8 @@ ffmpeg-python
 ffprobe
 ffmpeg
 beautifulsoup4
-pypandoc
-pypandoc_binary
-nomic
 cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
+GitPython
 
 # No arize for now, huge build size with these additions.
 # arize[AutoEmbeddings, LLM_Evaluation]
