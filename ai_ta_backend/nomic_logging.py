@@ -5,6 +5,8 @@ from langchain.embeddings import OpenAIEmbeddings
 import numpy as np
 import time
 
+print("NOMIC HEREEEE", os.getenv('NOMIC_API_KEY'))
+
 nomic.login(os.getenv('NOMIC_API_KEY')) # login during start of flask app
 NOMIC_MAP_NAME_PREFIX = 'Queries for '
 
@@ -35,7 +37,11 @@ def log_query_to_nomic(course_name: str, search_query: str) -> str:
 
 def get_nomic_map(course_name: str):
   """
-  Returns iframe string of the Nomic map given a course name.
+  Returns the variables necessary to construct an iframe of the Nomic map given a course name.
+  We just need the ID and URL.
+  Example values:
+    map link: https://atlas.nomic.ai/map/ed222613-97d9-46a9-8755-12bbc8a06e3a/f4967ad7-ff37-4098-ad06-7e1e1a93dd93
+    map id: f4967ad7-ff37-4098-ad06-7e1e1a93dd93
   """
   project_name = NOMIC_MAP_NAME_PREFIX + course_name
   start_time = time.monotonic()
@@ -46,11 +52,15 @@ def get_nomic_map(course_name: str):
     err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
     print(err)
     return err
-  
+
+
   with project.wait_for_project_lock() as project:
     rebuild_start_time = time.monotonic()
     project.rebuild_maps()
     print(f"⏰ Nomic _only_ map rebuild: {(time.monotonic() - rebuild_start_time):.2f} seconds")
   map = project.get_map(project_name)
+
   print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
-  return map._iframe()
+
+  return {"map_id": f"iframe{map.id}",
+          "map_link": map.map_link}

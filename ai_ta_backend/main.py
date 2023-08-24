@@ -301,10 +301,22 @@ def mit_download_course():
   return response
 
 
-@app.route('/nomic-map', methods=['GET'])
+@app.route('/getNomicMap', methods=['GET'])
 def nomic_map():
-  course_name: str = request.args.get('course_name')
+  course_name: str = request.args.get('course_name', default='', type=str)
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`"
+    )
+
   map_str = get_nomic_map(course_name)
+  print("noimic map\n", map_str)
+
+
+
   response = jsonify(map_str)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
