@@ -22,14 +22,17 @@ class DataLog():
 
         data = [{'course_name': course_name, 'query': search_query, 'id': time.time()}]
 
-        project = atlas.AtlasProject(name="User Query Text Viz 2", add_datums_if_exists=True)
-        map = project.get_map('User Query Text Viz 2')
-        print("Tags: ", map.tags) # displays id field
-        print("Topics: ", map.topics) # displays topic depth
+        project_name = "User Query Text Viz for " + course_name
+        print("Project name: ", project_name)
+        try:
+            project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
+            map = project.get_map(project_name)
 
-        with project.wait_for_project_lock() as project:
-            project.add_embeddings(embeddings=reshaped_embeddings, data=data)
-            project.rebuild_maps()
+            with project.wait_for_project_lock() as project:
+                project.add_embeddings(embeddings=reshaped_embeddings, data=data)
+                project.rebuild_maps()
+        except Exception as e:
+            print("Nomic map does not exist yet: ", e)
 
         #return "Successfully logged"
     
