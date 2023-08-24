@@ -13,7 +13,7 @@ from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
-from ai_ta_backend.data_logging import log_query_to_nomic, get_nomic_map
+from ai_ta_backend.nomic_logging import log_query_to_nomic, get_nomic_map
 from flask_executor import Executor
 
 app = Flask(__name__)
