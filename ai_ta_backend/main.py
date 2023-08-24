@@ -13,18 +13,20 @@ from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
-from ai_ta_backend.data_logging import DataLog
+from ai_ta_backend.data_logging import log_query_to_nomic, get_nomic_map
+from flask_executor import Executor
 
 app = Flask(__name__)
 CORS(app)
+executor = Executor(app)
+# app.config['EXECUTOR_MAX_WORKERS'] = 5 nothing == picks defaults for me
+
 
 # load API keys from globally-availabe .env file
 # load_dotenv(dotenv_path='.env', override=True)
 load_dotenv()
 
 ## GLOBALS ## 
-
-nomicLogger = DataLog()
 
 
 @app.route('/')
@@ -137,14 +139,13 @@ def getTopContexts():
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
 
-  nomic_start_time = time.time()
-  result = nomicLogger.nomic_log(course_name, search_query)
-  print("Nomic result:", result)
-  print("Nomic run time: ", time.time() - nomic_start_time)
+  # background execution of tasks!! 
+  executor.submit(log_query_to_nomic, course_name, search_query)
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 
 @app.route('/get_stuffed_prompt', methods=['GET'])
@@ -312,7 +313,7 @@ def mit_download_course():
 @app.route('/nomic-map', methods=['GET'])
 def nomic_map():
   course_name: str = request.args.get('course_name')
-  map_str = nomicLogger.get_nomic_map(course_name)
+  map_str = get_nomic_map(course_name)
   response = jsonify(map_str)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
