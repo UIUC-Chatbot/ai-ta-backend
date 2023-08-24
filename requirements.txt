@@ -1,5 +1,5 @@
 click
-Flask==2.3.2
+Flask==2.3.3
 protobuf<=3.20
 gunicorn==21.2.0
 aiohttp
