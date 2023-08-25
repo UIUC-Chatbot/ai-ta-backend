@@ -37,9 +37,13 @@ def update_files(source_path: str, course_name: str):
                              aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),)
     
     # Compute checksum of every file in source_path folder
-    for file in os.listdir(source_path):
-        file_checksum = generate_checksum(os.path.join(source_path, file))
-        
+    filenames = []
+    for root, subdirs, files in os.walk(source_path):
+        for file in files:
+            print("file: ", file)
+            filepath = os.path.join(root, file)
+            file_checksum = generate_checksum(filepath)
+    
         # compare file checksum with checksum of all s3 files
         for s3_file in s3_files:
             s3_path = s3_file['s3_path']
@@ -48,21 +52,27 @@ def update_files(source_path: str, course_name: str):
 
             # remove file from the folder if checksums match
             if str(file_checksum) == s3_checksum[1:-1]:
-                os.remove(os.path.join(source_path, file))
+                print("checksums match: ", file)
+                os.remove(filepath)
                 continue
-    # Check if all files have been removed from the folder
-    if len(os.listdir(source_path)) == 0:
-        return "No new files to update"
+
 
     # Upload remaining files to S3
-    new_s3_paths = upload_data_files_to_s3(course_name, source_path)
-
+    subdirectories = [subdir for subdir in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, subdir))]
+    print("subdirs: ", subdirectories)
+    
+    for subdir in subdirectories:
+        subdir_path = os.path.join(source_path, subdir)
+        if len(os.listdir(subdir_path)) == 0:
+            continue
+        print("subdir_path: ", subdir_path)
+        new_s3_paths = upload_data_files_to_s3(course_name, subdir_path)
+        subdir_ingest = ingester.bulk_ingest(new_s3_paths, course_name=course_name)
+    
     # Delete files from local directory
     shutil.rmtree(source_path)
 
-    # Ingest files into QDRANT
-    canvas_ingest = ingester.bulk_ingest(new_s3_paths, course_name=course_name)
-    return canvas_ingest
+    return "Success"
 
 
     

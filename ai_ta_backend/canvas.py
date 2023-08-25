@@ -46,7 +46,7 @@ class CanvasAPI():
         try:
             api_path = "https://canvas.illinois.edu/api/v1/courses/" + str(canvas_course_id)
             # Start content export
-            content_export_api_path = api_path + "/content_exports?export_type=zip"
+            content_export_api_path = api_path + "/content_exports?export_type=common_cartridge"
             start_content_export = requests.post(content_export_api_path, headers=self.headers)
             content_export_id = start_content_export.json()['id']
             progress_url = start_content_export.json()['progress_url']
@@ -79,7 +79,7 @@ class CanvasAPI():
             with open(os.path.join(dest_folder, file_name), 'wb') as f:
                 f.write(download.content)
             print("Downloaded zip file!")
-
+            
             # Extract and read from zip file
             filepath = dest_folder + "/" + file_name
             with ZipFile(filepath, 'r') as zip:
@@ -109,6 +109,7 @@ class CanvasAPI():
             self.download_course_content(canvas_course_id, folder_path)
             
             # Upload files to S3
+            
             s3_paths = upload_data_files_to_s3(course_name, folder_path)
             
             # Delete files from local directory
