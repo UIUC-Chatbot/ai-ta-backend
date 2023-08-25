@@ -247,23 +247,36 @@ def getAll():
   return response
 
 
-#Write api to delete s3 files for a course
 @app.route('/delete', methods=['DELETE'])
 def delete():
-  """Delete all course materials based on the course_name
-    """
+  """
+  Delete a single file from all our database: S3, Qdrant, and Supabase (for now).
+  Note, of course, we still have parts of that file in our logs.
+  """
 
-  print("In /delete")
+  course_name: str = request.args.get('course_name', default='', type=str)
+  s3_path: str = request.args.get('s3_path', default='', type=str)
 
+  if course_name == '' or s3_path == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name' and 's3_path' must be provided. Course name: `{course_name}`, S3 path: `{s3_path}`"
+    )
+
+  start_time = time.monotonic()
   ingester = Ingest()
-  course_name: List[str] | str = request.args.get('course_name')
-  s3_path: str = request.args.get('s3_path')
-  success_or_failure = ingester.delete_data(s3_path, course_name)
-  response = jsonify({"outcome": success_or_failure})
 
+  # background execution of tasks!! 
+  executor.submit(ingester.delete_data, s3_path, course_name)
+  print(f"From {course_name}, deleted file: {s3_path}")
+  print(f"⏰ Runtime of FULL delete func: {(time.monotonic() - start_time):.2f} seconds")
+
+  # we need instant return. Delets are "best effort" assume always successful... sigh :(
+  response = jsonify({"outcome": 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
-
 
 @app.route('/web-scrape', methods=['GET'])
 def scrape():
