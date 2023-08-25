@@ -57,17 +57,22 @@ def update_files(source_path: str, course_name: str):
                 continue
 
 
-    # Upload remaining files to S3
+    # Upload remaining files to S3 - canvas export contains subdirectories
     subdirectories = [subdir for subdir in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, subdir))]
     print("subdirs: ", subdirectories)
-    
-    for subdir in subdirectories:
-        subdir_path = os.path.join(source_path, subdir)
-        if len(os.listdir(subdir_path)) == 0:
-            continue
-        print("subdir_path: ", subdir_path)
-        new_s3_paths = upload_data_files_to_s3(course_name, subdir_path)
-        subdir_ingest = ingester.bulk_ingest(new_s3_paths, course_name=course_name)
+
+    if len(subdirectories) == 0:
+        # pass the source path
+        new_s3_paths = upload_data_files_to_s3(course_name, source_path)
+    else:
+        # pass the subdirectory paths
+        for subdir in subdirectories:
+            subdir_path = os.path.join(source_path, subdir)
+            if len(os.listdir(subdir_path)) == 0:
+                continue
+            print("subdir_path: ", subdir_path)
+            new_s3_paths = upload_data_files_to_s3(course_name, subdir_path)
+            subdir_ingest = ingester.bulk_ingest(new_s3_paths, course_name=course_name)
     
     # Delete files from local directory
     shutil.rmtree(source_path)
