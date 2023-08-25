@@ -9,7 +9,7 @@ from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
-from ai_ta_backend.nomic_logging import log_query_to_nomic, get_nomic_map
+from ai_ta_backend.nomic_logging import log_query_to_nomic, get_nomic_map, create_nomic_map
 from flask_executor import Executor
 
 app = Flask(__name__)
@@ -313,11 +313,16 @@ def nomic_map():
     )
 
   map_str = get_nomic_map(course_name)
-  print("noimic map\n", map_str)
-
-
+  print("nomic map\n", map_str)
 
   response = jsonify(map_str)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/createNomicMap', methods=['GET'])
+def generate_nomic_map():
+  result = create_nomic_map()
+  response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 

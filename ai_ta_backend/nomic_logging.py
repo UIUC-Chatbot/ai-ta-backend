@@ -4,6 +4,8 @@ from nomic import atlas
 from langchain.embeddings import OpenAIEmbeddings
 import numpy as np
 import time
+import pandas as pd
+import supabase
 
 nomic.login(os.getenv('NOMIC_API_KEY')) # login during start of flask app
 NOMIC_MAP_NAME_PREFIX = 'Queries for '
@@ -66,3 +68,78 @@ def get_nomic_map(course_name: str):
 
   return {"map_id": f"iframe{map.id}",
           "map_link": map.map_link}
+
+def create_nomic_map():
+  """
+  Creates a Nomic map for new courses and those which previously had < 20 queries.
+  """
+  # 1. maintain a list of courses with maps.
+  # 2. fetch conversation data for all the courses.
+  # 3. skip courses which already have maps, and create maps for the rest.
+  # 4. add the course to the list of courses which already have maps.
+  print("inside nomic map creation")
+  courses_with_maps = ['gpt4', 'badm_550_ashley', 'ece120', 'badm-567-v3', 'new-weather', 
+  'gies-online-mba-v2', 'frontend', 'ECE220FA23', 'ECE408FA23', 'ece408', 'farmdoc_test_kastan-v1', 
+  'NPRE247', 'your-awesome-course', 'pract', 'ece120FL22', 'Law794-TransactionalDraftingAlam', 
+  'NCSA', 'NCSADelta', 'NuclGPT-v1']
+  
+  # initialize supabase
+  url = os.getenv('SUPABASE_URL')
+  key = os.getenv('SUPABASE_API_KEY')
+  supabase_client = supabase.Client(url, key)
+
+  # fetch all conversations from supabase
+  response = supabase_client.table("llm-convo-monitor").select("*").execute()
+  data = response.data
+  all_courses_df = df = pd.DataFrame(data)
+  course_names_from_db = df['course_name'].unique()
+
+  # initialize langchain embeddings
+  embeddings_model = OpenAIEmbeddings()
+
+  for course in course_names_from_db:
+    if course is None or course in courses_with_maps:
+      continue
+
+    # get all queries for course and create metadata
+    user_queries = []
+    metadata = []
+
+    course_df = all_courses_df[all_courses_df['course_name'] == course]['convo']
+
+    i = 1
+    for convo in course_df:
+      # extract all messages from convo
+      messages = convo['messages']
+
+      # extract queries for user role from messages
+      for message in messages:
+        if message['role'] == 'user' and message['content'] != '':
+          user_queries.append(message['content'])
+          metadata.append({'course_name': course, 'query': message['content'], 'id': i})
+          i += 1
+    
+    if len(user_queries) < 20:
+      print("course has less than 20 queries, skipping: ", course)
+      print(len(courses_with_maps))
+      continue
+    else:
+      courses_with_maps.append(course)
+
+    # convert query and context to embeddings
+    metadata = pd.DataFrame(metadata)
+    embeddings = embeddings_model.embed_documents(user_queries)
+    embeddings = np.array(embeddings)
+    print(embeddings.shape)
+
+    # create Atlas project
+    project_name = NOMIC_MAP_NAME_PREFIX + course
+    index_name = course + "_index"
+    project = atlas.map_embeddings(embeddings=np.array(embeddings), data=metadata,
+                                   id_field='id', build_topic_model=True, topic_label_field='query',
+                                   name=project_name, colorable_fields=['query'])
+    project.create_index(index_name, build_topic_model=True)
+    print(project.maps)
+    print("total projects with maps: ", len(courses_with_maps))
+
+
