@@ -312,10 +312,10 @@ def nomic_map():
         f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`"
     )
 
-  map_str = get_nomic_map(course_name)
-  print("nomic map\n", map_str)
+  map_id = get_nomic_map(course_name)
+  print("nomic map\n", map_id)
 
-  response = jsonify(map_str)
+  response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
