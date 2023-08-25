@@ -5,8 +5,6 @@ from langchain.embeddings import OpenAIEmbeddings
 import numpy as np
 import time
 
-print("NOMIC HEREEEE", os.getenv('NOMIC_API_KEY'))
-
 nomic.login(os.getenv('NOMIC_API_KEY')) # login during start of flask app
 NOMIC_MAP_NAME_PREFIX = 'Queries for '
 
@@ -51,7 +49,7 @@ def get_nomic_map(course_name: str):
   except Exception as e:
     err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
     print(err)
-    return err
+    return {"map_id": None, "map_link": None}
 
 
   with project.wait_for_project_lock() as project:
