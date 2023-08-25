@@ -21,10 +21,13 @@ import openai
 import requests
 import supabase
 from bs4 import BeautifulSoup
+
+from langchain.document_loaders import (Docx2txtLoader, PythonLoader,
+                                        SRTLoader, 
+                                        UnstructuredPowerPointLoader, TextLoader, GitLoader)
+
 from git import Repo
-from langchain.document_loaders import (Docx2txtLoader, GitLoader,
-                                        PythonLoader, SRTLoader, TextLoader,
-                                        UnstructuredPowerPointLoader)
+
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -67,8 +70,8 @@ class Ingest():
 
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
-        collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-        embeddings=OpenAIEmbeddings())
+        collection_name=os.getenv('QDRANT_COLLECTION_NAME'), # type: ignore
+        embeddings=OpenAIEmbeddings()) # type: ignore
 
     # S3
     self.s3_client = boto3.client(
@@ -94,12 +97,10 @@ class Ingest():
     """
     # MMR with metadata filtering based on course_name
     vec_start_time = time.monotonic()
-    print("before found docs")
     found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
     print(
         f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds"
     )
-
 
     requests = []
     for i, doc in enumerate(found_docs):
@@ -294,6 +295,7 @@ Now please respond to my question: {user_question}"""
   def _ingest_single_py(self, s3_path: str, course_name: str):
     try:
       print("in ingest_py")
+
       file_name = s3_path.split("/")[-1]
       file_path = "media/" + file_name # download from s3 to local folder for ingest
 
@@ -313,11 +315,12 @@ Now please respond to my question: {user_question}"""
             'url': '',
             'base_url': '',
         } for doc in documents]
+
       os.remove(file_path)
 
       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
       return success_or_failure
-    
+
     except Exception as e:
       print(f"ERROR IN py READING {e}")
 
@@ -404,18 +407,15 @@ Now please respond to my question: {user_question}"""
 
       openai.api_key = os.getenv('OPENAI_API_KEY')
       transcript_list = []
-      #print(os.getcwd())
       with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
         # download from S3 into an video tmpfile
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
         # extract audio from video tmpfile
         mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
-        #print("Video file: ", video_tmpfile.name)
 
       # save the extracted audio as a temporary webm file
       with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as webm_tmpfile:
         mp4_version.export(webm_tmpfile, format="webm")
-        #print("WEBM file: ", webm_tmpfile.name)
 
       # check file size
       file_size = os.path.getsize(webm_tmpfile.name)
@@ -430,7 +430,6 @@ Now please respond to my question: {user_question}"""
 
         while count < file_count:
           with NamedTemporaryFile(suffix=".webm", dir="media", delete=False) as split_tmp:
-            #print("Splitting file: ", split_tmp.name)
             if count == file_count - 1:
               # last segment
               audio_chunk = full_audio[start:]
@@ -658,7 +657,7 @@ Now please respond to my question: {user_question}"""
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print("ERROR IN PDF READING ")
+      print("ERROR IN PDF INGEST")
       print(e)
       return f"Error {e}"
 
