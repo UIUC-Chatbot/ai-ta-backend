@@ -27,6 +27,9 @@ def log_query_to_nomic(course_name: str, search_query: str) -> str:
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
     # mostly async call (0.35 to 0.5 sec)
     project.add_embeddings(embeddings=embeddings, data=data)
+
+    # required to keep maps fresh (or we could put on fetch side, but then our UI is slow)
+    project.rebuild_maps()
   except Exception as e:
     print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
   
@@ -52,10 +55,11 @@ def get_nomic_map(course_name: str):
     return {"map_id": None, "map_link": None}
 
 
-  with project.wait_for_project_lock() as project:
-    rebuild_start_time = time.monotonic()
-    project.rebuild_maps()
-    print(f"⏰ Nomic _only_ map rebuild: {(time.monotonic() - rebuild_start_time):.2f} seconds")
+  # with project.wait_for_project_lock() as project:
+  #   rebuild_start_time = time.monotonic()
+  #   project.rebuild_maps()
+  #   print(f"⏰ Nomic _only_ map rebuild: {(time.monotonic() - rebuild_start_time):.2f} seconds")
+  
   map = project.get_map(project_name)
 
   print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
