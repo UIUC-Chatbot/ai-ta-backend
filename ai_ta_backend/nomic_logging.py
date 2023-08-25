@@ -98,6 +98,7 @@ def create_nomic_map():
   embeddings_model = OpenAIEmbeddings()
 
   for course in course_names_from_db:
+    # skip the course if it already has a map
     if course is None or course in courses_with_maps:
       continue
 
