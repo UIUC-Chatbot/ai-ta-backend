@@ -319,13 +319,6 @@ def nomic_map():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@app.route('/createNomicMap', methods=['GET'])
-def generate_nomic_map():
-  result = create_nomic_map()
-  response = jsonify(result)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
 
 if __name__ == '__main__':
   app.run(debug=True, port=os.getenv("PORT", default=8000))
