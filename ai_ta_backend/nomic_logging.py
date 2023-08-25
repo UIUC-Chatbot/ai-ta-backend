@@ -12,11 +12,8 @@ NOMIC_MAP_NAME_PREFIX = 'Queries for '
 
 def log_query_to_nomic(course_name: str, search_query: str) -> str:
   """
-  Logs user query and retrieved contexts to Nomic. Must have more than 20 queries to get a map.
-
-  TODO: Better handle courses that have less than 20 queries
+  Logs user query and retrieved contexts to Nomic. Must have more than 20 queries to get a map, otherwise we'll show nothing for now.
   """
-
   project_name = NOMIC_MAP_NAME_PREFIX + course_name
   start_time = time.monotonic()
 
@@ -61,13 +58,10 @@ def get_nomic_map(course_name: str):
     err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
     print(err)
     return {"map_id": None, "map_link": None}
-    
 
-
+  # Moved this to the logging function to keep our UI fast.
   # with project.wait_for_project_lock() as project:
-  #   rebuild_start_time = time.monotonic()
   #   project.rebuild_maps()
-  #   print(f"⏰ Nomic _only_ map rebuild: {(time.monotonic() - rebuild_start_time):.2f} seconds")
   
   map = project.get_map(project_name)
 
@@ -79,18 +73,16 @@ def get_nomic_map(course_name: str):
 def create_nomic_map(course_name: str, log_embeddings: np.ndarray, log_data: list):
   """
   Creates a Nomic map for new courses and those which previously had < 20 queries.
-  1. fetches supabase data for course
+  1. fetches supabase conversations for course
   2. appends current embeddings and metadata to it
   2. creates map if there are at least 20 queries
   """
-  print("inside nomic map creation")
-  
   # initialize supabase
-  url = os.getenv('SUPABASE_URL')
-  key = os.getenv('SUPABASE_API_KEY')
-  supabase_client = supabase.Client(url, key)
+  supabase_client = supabase.create_client(  # type: ignore
+        supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
-  # fetch all conversations from supabase
+  # fetch all conversations with this new course (we expect <=20 conversations, because otherwise the map should be made already)
   response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
   data = response.data
   
@@ -119,26 +111,16 @@ def create_nomic_map(course_name: str, log_embeddings: np.ndarray, log_data: lis
     metadata.append(log_data[0])
     metadata = pd.DataFrame(metadata)
 
-    embeddings_model = OpenAIEmbeddings()
+    embeddings_model = OpenAIEmbeddings() # type: ignore
     embeddings = embeddings_model.embed_documents(user_queries)
     embeddings = np.array(embeddings)
-    #print(embeddings.shape)
     final_embeddings = np.concatenate((embeddings, log_embeddings), axis=0)
 
     # create Atlas project
     project_name = NOMIC_MAP_NAME_PREFIX + course_name
     index_name = course_name + "_index"
-    project = atlas.map_embeddings(embeddings=final_embeddings, data=metadata,
+    project = atlas.map_embeddings(embeddings=final_embeddings, data=metadata, # type: ignore -- this is actually the correc type, the function signature from Nomic is incomplete
                                    id_field='id', build_topic_model=True, topic_label_field='query',
                                    name=project_name, colorable_fields=['query'])
     project.create_index(index_name, build_topic_model=True)
-    
-    return "success"
-    
-
-
-    
-
-  
-
-
+    return f"Successfully created Nomic map for {course_name}"
