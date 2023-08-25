@@ -21,6 +21,7 @@ class CanvasAPI():
         """
         course = self.canvas_client.get_course(canvas_course_id)
         users = course.get_users()
+        
         user_emails = []
         for user in users:
             net_id = user.sis_user_id
@@ -77,14 +78,13 @@ class CanvasAPI():
             download = requests.get(download_url, headers=self.headers)
             with open(os.path.join(dest_folder, file_name), 'wb') as f:
                 f.write(download.content)
-            print("Downloaded!")
+            print("Downloaded zip file!")
 
             # Extract and read from zip file
             filepath = dest_folder + "/" + file_name
             with ZipFile(filepath, 'r') as zip:
                 zip.printdir()
                 zip.extractall(dest_folder)
-                print('Done!')
             os.remove(filepath)
 
             return "Success"
@@ -140,6 +140,7 @@ class CanvasAPI():
             folder_name = "canvas_course_" + str(canvas_course_id) + "_update"
             folder_path = os.path.join(os.getcwd(), "canvas_materials/" + folder_name)
             self.download_course_content(canvas_course_id, folder_path)
+            print("Downloaded and extracted canvas materials")
 
             # Call diff function
             response = update_materials.update_files(folder_path, course_name)

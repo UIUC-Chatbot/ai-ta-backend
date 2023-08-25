@@ -30,31 +30,30 @@ def update_files(source_path: str, course_name: str):
 
     ingester = Ingest()
     # Get S3 paths of files for given course_name
-    s3_files = ingester.getAll(course_name)
+    s3_files = ingester.getAll(course_name)    
 
     # Access checksum of s3 files
     s3_client = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
                              aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),)
     
-    
     # Compute checksum of every file in source_path folder
-    print("source_path: ", source_path)
     for file in os.listdir(source_path):
         file_checksum = generate_checksum(os.path.join(source_path, file))
-        print("MD5 checksum: ", file_checksum)
         
         # compare file checksum with checksum of all s3 files
         for s3_file in s3_files:
             s3_path = s3_file['s3_path']
-            print("s3_path: ", s3_path)
             s3_object = s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
             s3_checksum = s3_object['ETag']
 
             # remove file from the folder if checksums match
-            if str(file_checksum) == s3_checksum:
+            if str(file_checksum) == s3_checksum[1:-1]:
                 os.remove(os.path.join(source_path, file))
-                break
-    
+                continue
+    # Check if all files have been removed from the folder
+    if len(os.listdir(source_path)) == 0:
+        return "No new files to update"
+
     # Upload remaining files to S3
     new_s3_paths = upload_data_files_to_s3(course_name, source_path)
 
@@ -63,11 +62,7 @@ def update_files(source_path: str, course_name: str):
 
     # Ingest files into QDRANT
     canvas_ingest = ingester.bulk_ingest(new_s3_paths, course_name=course_name)
-
     return canvas_ingest
 
-    # to-do: 
-    # 1. create a custom folder within updated_content for each course to avoid mixup of files.
-    # 2. look into course page data not being exported.
 
     
