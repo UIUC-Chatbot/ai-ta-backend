@@ -33,7 +33,13 @@ def log_query_to_nomic(course_name: str, search_query: str) -> str:
     # required to keep maps fresh (or we could put on fetch side, but then our UI is slow)
     project.rebuild_maps()
   except Exception as e:
-    print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+    # if project doesn't exist, create it
+    result = create_nomic_map(course_name, embeddings, data)
+    if result is None:
+      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+    else:
+      print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
+      return f"Successfully logged for {course_name}"
   
   print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
   return f"Successfully logged for {course_name}"
@@ -55,6 +61,7 @@ def get_nomic_map(course_name: str):
     err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
     print(err)
     return {"map_id": None, "map_link": None}
+    
 
 
   # with project.wait_for_project_lock() as project:
@@ -69,19 +76,14 @@ def get_nomic_map(course_name: str):
   return {"map_id": f"iframe{map.id}",
           "map_link": map.map_link}
 
-def create_nomic_map():
+def create_nomic_map(course_name: str, log_embeddings: np.ndarray, log_data: list):
   """
   Creates a Nomic map for new courses and those which previously had < 20 queries.
+  1. fetches supabase data for course
+  2. appends current embeddings and metadata to it
+  2. creates map if there are at least 20 queries
   """
-  # 1. maintain a list of courses with maps.
-  # 2. fetch conversation data for all the courses.
-  # 3. skip courses which already have maps, and create maps for the rest.
-  # 4. add the course to the list of courses which already have maps.
   print("inside nomic map creation")
-  courses_with_maps = ['gpt4', 'badm_550_ashley', 'ece120', 'badm-567-v3', 'new-weather', 
-  'gies-online-mba-v2', 'frontend', 'ECE220FA23', 'ECE408FA23', 'ece408', 'farmdoc_test_kastan-v1', 
-  'NPRE247', 'your-awesome-course', 'pract', 'ece120FL22', 'Law794-TransactionalDraftingAlam', 
-  'NCSA', 'NCSADelta', 'NuclGPT-v1']
   
   # initialize supabase
   url = os.getenv('SUPABASE_URL')
@@ -89,24 +91,17 @@ def create_nomic_map():
   supabase_client = supabase.Client(url, key)
 
   # fetch all conversations from supabase
-  response = supabase_client.table("llm-convo-monitor").select("*").execute()
+  response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
   data = response.data
-  all_courses_df = df = pd.DataFrame(data)
-  course_names_from_db = df['course_name'].unique()
-
-  # initialize langchain embeddings
-  embeddings_model = OpenAIEmbeddings()
-
-  for course in course_names_from_db:
-    # skip the course if it already has a map
-    if course is None or course in courses_with_maps:
-      continue
-
+  
+  if len(data) < 19:
+    return None
+  else:
     # get all queries for course and create metadata
     user_queries = []
     metadata = []
-
-    course_df = all_courses_df[all_courses_df['course_name'] == course]['convo']
+    course_df = pd.DataFrame(data)
+    course_df = course_df['convo']
 
     i = 1
     for convo in course_df:
@@ -117,30 +112,33 @@ def create_nomic_map():
       for message in messages:
         if message['role'] == 'user' and message['content'] != '':
           user_queries.append(message['content'])
-          metadata.append({'course_name': course, 'query': message['content'], 'id': i})
+          metadata.append({'course_name': course_name, 'query': message['content'], 'id': i})
           i += 1
-    
-    if len(user_queries) < 20:
-      print("course has less than 20 queries, skipping: ", course)
-      print(len(courses_with_maps))
-      continue
-    else:
-      courses_with_maps.append(course)
 
     # convert query and context to embeddings
+    metadata.append(log_data[0])
     metadata = pd.DataFrame(metadata)
+
+    embeddings_model = OpenAIEmbeddings()
     embeddings = embeddings_model.embed_documents(user_queries)
     embeddings = np.array(embeddings)
-    print(embeddings.shape)
+    #print(embeddings.shape)
+    final_embeddings = np.concatenate((embeddings, log_embeddings), axis=0)
 
     # create Atlas project
-    project_name = NOMIC_MAP_NAME_PREFIX + course
-    index_name = course + "_index"
-    project = atlas.map_embeddings(embeddings=np.array(embeddings), data=metadata,
+    project_name = NOMIC_MAP_NAME_PREFIX + course_name
+    index_name = course_name + "_index"
+    project = atlas.map_embeddings(embeddings=final_embeddings, data=metadata,
                                    id_field='id', build_topic_model=True, topic_label_field='query',
                                    name=project_name, colorable_fields=['query'])
     project.create_index(index_name, build_topic_model=True)
-    print(project.maps)
-    print("total projects with maps: ", len(courses_with_maps))
+    
+    return "success"
+    
+
+
+    
+
+  
 
 
