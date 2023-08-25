@@ -56,7 +56,6 @@ def valid_url(url):
           content = response.content
       else:
         return (False, False, False)
-      print(filetype)
       if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
         print("Filetype not supported:", filetype)
       return (response.url, content, filetype)
@@ -129,7 +128,7 @@ def remove_duplicates(urls:list):
   print("deleted", og_len-len(not_repeated_files), "duplicate files")
   return urls
 
-def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup:BeautifulSoup=None,  _invalid_urls:list=[]):
+def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup:BeautifulSoup=None, _filetype:str=None,  _invalid_urls:list=[]):
   '''Function gets titles of urls and the urls themselves'''
   # Prints the depth of the current search
   print("depth: ", _depth)
@@ -154,36 +153,38 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
 
   if _soup:
     s = _soup
-    filetype = get_file_extension(url)
+    filetype = _filetype
   else:
     url, s, filetype = valid_url(url)
     time.sleep(timeout)
     url_contents.append((url,s, filetype))
-  if url != False and filetype == '.html':
-    try:
-      body = s.find("body")
-      header = s.find("head") 
-    except Exception as e:
-      print("Error:", e)
-      body = ""
-      header = ""
+    print("Scraped:", url)
+  if url: 
+    if filetype == '.html':
+      try:
+        body = s.find("body")
+        header = s.find("head") 
+      except Exception as e:
+        print("Error:", e)
+        body = ""
+        header = ""
 
-
-    
-    # Check for 403 Forbidden urls
-    try:
-      if s.title.string.lower() == "403 forbidden" or s.title.string.lower() == 'page not found': # type: ignore
-        print("403 Forbidden")
+      # Check for 403 Forbidden urls
+      try:
+        if s.title.string.lower() == "403 forbidden" or s.title.string.lower() == 'page not found': # type: ignore
+          print("403 Forbidden")
+        else:
+          pass
+      except Exception as e:
+        print("Error:", e)
+        pass 
+      if body != "" and header != "":
+        urls = find_urls(body, urls, site)
+        urls = find_urls(header, urls, site)
       else:
-        pass
-    except Exception as e:
-      print("Error:", e)
-      pass 
-    if body != "" and header != "":
-      urls = find_urls(body, urls, site)
-      urls = find_urls(header, urls, site)
+        urls = find_urls(s, urls, site)
     else:
-      urls = find_urls(s, urls, site)
+      pass
   else:
     _invalid_urls.append(url)
     return []
@@ -226,7 +227,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
     if url[0] not in _invalid_urls:
       if max_urls > 0:
         if _depth < max_depth:
-          temp_data = crawler(url[0], max_urls, max_depth, timeout, _invalid_urls, _depth, url[1])
+          temp_data = crawler(url[0], max_urls, max_depth, timeout, _invalid_urls, _depth, url[1], url[2])
           temp_data = remove_duplicates(temp_data)
           max_urls = max_urls - len(temp_data)
           print(max_urls, "urls left")
@@ -285,8 +286,6 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   else:
     print("Begin Ingesting Web page")
     data = crawler(url, max_urls, max_depth, timeout, base_url_on)
-
-
 
   # Clean some keys for a proper file name
   # todo: have a default title
