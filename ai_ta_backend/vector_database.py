@@ -880,6 +880,7 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       err: str = f"ERROR IN delete_entire_course(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
+      pass
     
     try:
       # Delete from Qdrant
@@ -897,6 +898,7 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       err: str = f"ERROR IN delete_entire_course(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
+      pass
     
     try:
       # Delete from Supabase
