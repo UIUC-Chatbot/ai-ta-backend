@@ -19,6 +19,7 @@ def log_query_to_nomic(course_name: str, search_query: str) -> str:
 
   embeddings_model = OpenAIEmbeddings() # type: ignore
   embeddings = np.array(embeddings_model.embed_query(search_query)).reshape(1, 1536)
+  # add model responses here
   data = [{'course_name': course_name, 'query': search_query, 'id': time.time()}]
 
   try:
