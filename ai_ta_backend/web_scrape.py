@@ -9,6 +9,8 @@ import boto3  # type: ignore
 import requests
 from bs4 import BeautifulSoup
 
+import supabase
+
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
 import mimetypes
@@ -35,7 +37,7 @@ def valid_url(url):
     while response.status_code == 301:
       # Check for permanent redirect
       if redirect_loop_counter > 3:
-        print("Redirect loop (on 301 error) exceeded redirect limit of:", redirect_loop_counter)
+        print("❌ Redirect loop (on 301 error) exceeded redirect limit of:", redirect_loop_counter, "❌")
         return False
       redirect_url = response.headers['Location']
       response = requests.head(redirect_url)
@@ -45,11 +47,11 @@ def valid_url(url):
       print("file extension:", filetype)
       if filetype == '.html':
         content = BeautifulSoup(response.content, "html.parser")
-        if "<!doctype html>" not in str(response.text).lower():
-          print("Filetype not supported:", response.url)
+        if "<!doctype html" not in str(response.text).lower():
+          print("⛔️⛔️ Filetype not supported:", response.url, "⛔️⛔️")
           return (False, False, False)
       elif filetype in ['.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
-        if "<!doctype html>" in str(response.content).lower():
+        if "<!doctype html" in str(response.text).lower():
           content = BeautifulSoup(response.text, "html.parser")
           filetype = '.html'
         else:
@@ -60,10 +62,10 @@ def valid_url(url):
         print("Filetype not supported:", filetype)
       return (response.url, content, filetype)
     else:
-      print("URL is invalid:", response.url, "Return code:", response.status_code)
+      print("🚫🚫 URL is invalid:", response.url, "Return code:", response.status_code, "🚫🚫")
       return (False, False, False)
   except requests.RequestException as e:
-    print("URL is invalid:", url, "Error:", e)
+    print("🚫🚫 URL is invalid:", url, "Error:", e, "🚫🚫")
     return (False, False, False)
 
 # Ensures url is in the correct format
@@ -114,21 +116,42 @@ def find_urls(soup:BeautifulSoup, urls:set, site:str):
 
   return urls
 
-def remove_duplicates(urls:list):
+def remove_duplicates(urls:list, supabase_urls:list=None):
 # Delete repeated sites, with different URLs and keeping one
-  not_repeated_files = []
+  # Making sure we don't have duplicate urls from Supabase
+  supa_urls = [url[0] for url in supabase_urls]
+  supa_content = [url[1] for url in supabase_urls]
   og_len = len(urls)
+  
+  if supabase_urls:
+    for row in urls:
+      if row[2] == '.html':
+        if row[1].get_text() in supa_content:
+          urls.remove(row)
+          print("❌ Removed", row[0], "from urls because it is in supa ❌")
+      elif row[2] == '.pdf':
+        text = row[1].get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
+        if text in supa_content:
+          urls.remove(row)
+          print("❌ Removed", row[0], "from urls because it is in supa ❌")
+      else:
+        if row[0] in supa_urls:
+          urls.remove(row)
+          print("❌ Removed", row[0], "from urls because it is in supa ❌")
+
+  not_repeated_files = []
   print("deleting duplicate files")
   for row in urls:
     if row[1] not in not_repeated_files:
       not_repeated_files.append(row[1])
     else:
       urls.remove(row)
+      print("❌ Removed", row[0], "from urls because it is a duplicate ❌")
       continue
   print("deleted", og_len-len(not_repeated_files), "duplicate files")
   return urls
 
-def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup:BeautifulSoup=None, _filetype:str=None,  _invalid_urls:list=[]):
+def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup:BeautifulSoup=None, _filetype:str=None,  _invalid_urls:list=[], _existing_urls:list=None):
   '''Function gets titles of urls and the urls themselves'''
   # Prints the depth of the current search
   print("depth: ", _depth)
@@ -218,7 +241,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
       else:
         _invalid_urls.append(url)
   
-  url_contents = remove_duplicates(url_contents)
+  url_contents = remove_duplicates(url_contents, _existing_urls)
   max_urls = max_urls - len(url_contents)
   print(max_urls, "urls left")
 
@@ -228,11 +251,11 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
       if max_urls > 0:
         if _depth < max_depth:
           temp_data = crawler(url[0], max_urls, max_depth, timeout, _invalid_urls, _depth, url[1], url[2])
-          temp_data = remove_duplicates(temp_data)
+          temp_data = remove_duplicates(temp_data, _existing_urls)
           max_urls = max_urls - len(temp_data)
           print(max_urls, "urls left")
           url_contents.extend(temp_data)
-          url_contents = remove_duplicates(url_contents)
+          url_contents = remove_duplicates(url_contents, _existing_urls)
         else:
           print("Depth exceeded:", _depth+1, "out of", max_depth)
           break
@@ -277,7 +300,23 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
     )
-
+  
+  print("Gathering existing urls from Supabase")
+  supabase_client = supabase.create_client(  # type: ignore
+  supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+  supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+  urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
+  if urls.data == []:
+    pass
+  else:
+    existing_urls = []
+    for thing in urls.data:
+      whole = ''
+      for t in thing['contexts']:
+        whole += t['text']
+      existing_urls.append((thing['url'], whole))
+  print("Finished gathering existing urls from Supabase")
+  
   if url.startswith("https://github.com/"):
     print("Begin Ingesting GitHub page")
     results = ingester.ingest_github(url, course_name)
@@ -285,7 +324,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     return results
   else:
     print("Begin Ingesting Web page")
-    data = crawler(url, max_urls, max_depth, timeout, base_url_on)
+    data = crawler(url=url, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=base_url_on, _existing_urls=existing_urls)
 
   # Clean some keys for a proper file name
   # todo: have a default title
