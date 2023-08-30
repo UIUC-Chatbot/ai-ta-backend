@@ -19,8 +19,41 @@ def log_query_to_nomic(course_name: str, search_query: str) -> str:
 
   embeddings_model = OpenAIEmbeddings() # type: ignore
   embeddings = np.array(embeddings_model.embed_query(search_query)).reshape(1, 1536)
-  # add model responses here
+  
   data = [{'course_name': course_name, 'query': search_query, 'id': time.time()}]
+
+  try:
+    # slow call, about 0.6 sec
+    project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
+    # mostly async call (0.35 to 0.5 sec)
+    project.add_embeddings(embeddings=embeddings, data=data)
+
+    # required to keep maps fresh (or we could put on fetch side, but then our UI is slow)
+    project.rebuild_maps()
+  except Exception as e:
+    # if project doesn't exist, create it
+    result = create_nomic_map(course_name, embeddings, data)
+    if result is None:
+      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+    else:
+      print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
+      return f"Successfully logged for {course_name}"
+  
+  print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
+  return f"Successfully logged for {course_name}"
+
+def log_query_response_to_nomic(course_name: str, search_query: str, response: str) -> str:
+  """
+  Logs user query and model responses to Nomic. Must have more than 20 queries to get a map, 
+  otherwise we'll show nothing for now.
+  """
+  project_name = NOMIC_MAP_NAME_PREFIX + course_name
+  start_time = time.monotonic()
+
+  embeddings_model = OpenAIEmbeddings() # type: ignore
+  embeddings = np.array(embeddings_model.embed_query(search_query)).reshape(1, 1536)
+  
+  data = [{'course_name': course_name, 'query': search_query, 'response': response, 'id': time.time()}]
 
   try:
     # slow call, about 0.6 sec

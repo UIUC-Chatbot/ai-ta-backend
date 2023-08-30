@@ -9,7 +9,7 @@ from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
-from ai_ta_backend.nomic_logging import log_query_to_nomic, get_nomic_map, create_nomic_map
+from ai_ta_backend.nomic_logging import log_query_to_nomic, get_nomic_map, create_nomic_map, log_query_response_to_nomic
 from flask_executor import Executor
 
 app = Flask(__name__)
@@ -124,7 +124,7 @@ def getTopContexts():
     abort(
         400,
         description=
-        f"Missing one or me required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
+        f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
   ingester = Ingest()
@@ -329,6 +329,27 @@ def nomic_map():
   print("nomic map\n", map_id)
 
   response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/onResponseCompletion', methods=['GET'])
+def logToNomic():
+  course_name: str = request.args.get('course_name', default='', type=str)
+  search_query: str = request.args.get('search_query', default='', type=str)
+  response: str = request.args.get('response', default='', type=str)
+
+  if course_name == '' or search_query == '' or response == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name', 'search_query', and 'response' must be provided. Course name: `{course_name}`"
+    )
+  
+  # background execution of tasks!! 
+  response = executor.submit(log_query_response_to_nomic, course_name, search_query)
+  
+  response = jsonify(response)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
