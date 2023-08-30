@@ -28,51 +28,64 @@ def update_files(source_path: str, course_name: str):
     """
     print("In update_files")
 
+    
+
     ingester = Ingest()
     # Get S3 paths of files for given course_name
-    s3_files = ingester.getAll(course_name)    
+    s3_files = ingester.getAll(course_name)   
+    
 
     # Access checksum of s3 files
     s3_client = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
                              aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),)
     
     # Compute checksum of every file in source_path folder
-    filenames = []
+    total_files = 0
+    files_removed = 0
     for root, subdirs, files in os.walk(source_path):
         for file in files:
+            total_files += 1
             print("file: ", file)
             filepath = os.path.join(root, file)
             file_checksum = generate_checksum(filepath)
     
-        # compare file checksum with checksum of all s3 files
-        for s3_file in s3_files:
-            s3_path = s3_file['s3_path']
-            s3_object = s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
-            s3_checksum = s3_object['ETag']
+            # compare file checksum with checksum of all s3 files
+            for s3_file in s3_files:
+                s3_path = s3_file['s3_path']
+                #print("existing s3 file: ", s3_path) 
+                s3_object = s3_client.get_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
+                s3_checksum = s3_object['ETag']
 
-            # remove file from the folder if checksums match
-            if str(file_checksum) == s3_checksum[1:-1]:
-                print("checksums match: ", file)
-                os.remove(filepath)
-                continue
-
-
-    # Upload remaining files to S3 - canvas export contains subdirectories
-    subdirectories = [subdir for subdir in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, subdir))]
-    print("subdirs: ", subdirectories)
-
-    if len(subdirectories) == 0:
-        # pass the source path
+                # remove file from the folder if checksums match
+                if str(file_checksum) == s3_checksum[1:-1]:
+                    print("checksums match: ", file)
+                    os.remove(filepath)
+                    files_removed += 1
+                    continue
+    
+    print("total files: ", total_files)
+    print("files removed: ", files_removed)
+    if total_files > 0:
         new_s3_paths = upload_data_files_to_s3(course_name, source_path)
-    else:
-        # pass the subdirectory paths
-        for subdir in subdirectories:
-            subdir_path = os.path.join(source_path, subdir)
-            if len(os.listdir(subdir_path)) == 0:
-                continue
-            print("subdir_path: ", subdir_path)
-            new_s3_paths = upload_data_files_to_s3(course_name, subdir_path)
-            subdir_ingest = ingester.bulk_ingest(new_s3_paths, course_name=course_name)
+        subdir_ingest = ingester.bulk_ingest(new_s3_paths, course_name=course_name)
+
+    # # Upload remaining files to S3 - canvas export contains subdirectories
+    # subdirectories = [subdir for subdir in os.listdir(source_path) if os.path.isdir(os.path.join(source_path, subdir))]
+    # print("subdirs: ", subdirectories)
+
+    # if len(subdirectories) == 0:
+    #     # pass the source path
+    #     new_s3_paths = upload_data_files_to_s3(course_name, source_path)
+    # else:
+    #     # pass the subdirectory paths
+    #     for subdir in subdirectories:
+    #         subdir_path = os.path.join(source_path, subdir)
+    #         if len(os.listdir(subdir_path)) == 0:
+    #             continue
+    #         new_s3_paths = upload_data_files_to_s3(course_name, subdir_path)
+    #         print("----------------------------------")
+    #         print("new s3 paths: ", new_s3_paths)
+    #         subdir_ingest = ingester.bulk_ingest(new_s3_paths, course_name=course_name)
     
     # Delete files from local directory
     shutil.rmtree(source_path)

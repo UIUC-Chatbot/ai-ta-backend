@@ -28,7 +28,7 @@ class CanvasAPI():
             email_id = net_id + "@illinois.edu"
             user_emails.append(email_id)
         
-        print(user_emails)
+        print("Collected emails: ", user_emails)
         
         if len(user_emails) > 0:
             return "Success"
@@ -100,6 +100,7 @@ class CanvasAPI():
         3. Call bulk_ingest() to ingest all files into QDRANT
         4. Delete extracted files from local directory
         """
+        print("-------------")
         print("In ingest_course_content")
         try:
             # Download files into course_content folder

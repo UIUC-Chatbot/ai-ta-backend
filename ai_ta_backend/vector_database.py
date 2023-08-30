@@ -374,6 +374,7 @@ Now please respond to my question: {user_question}"""
       title = str(object=time.localtime()[1])+ "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:] + ' ' + str(title)
 
       text = [soup.get_text()]
+      
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
@@ -382,7 +383,7 @@ Now please respond to my question: {user_question}"""
           'base_url': base_url,
           'pagenumber_or_timestamp': ''
       }]
-
+      
       success_or_failure = self.split_and_upload(text, metadata)
       print(f"_ingest_html: {success_or_failure}")
       return success_or_failure
@@ -776,18 +777,19 @@ Now please respond to my question: {user_question}"""
           separators=". ",  # try to split on sentences... 
       )
       documents: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
-
+      
       def remove_small_contexts(documents: List[Document]) -> List[Document]:
         # Remove TextSplit contexts with fewer than 50 chars.
         return [doc for doc in documents if len(doc.page_content) > 50]
 
       documents = remove_small_contexts(documents=documents)
-
+      
       # upload to Qdrant
       self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
       data = [{"content": doc.page_content, "metadata": doc.metadata} for doc in documents]
+      print("split_and_upload data: ", data)
       count = self.supabase_client.table(os.getenv('MATERIALS_SUPABASE_TABLE')).insert(data).execute()  # type: ignore
-
+      print("split_and_upload count: ", count)
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
