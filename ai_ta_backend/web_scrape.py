@@ -119,19 +119,19 @@ def find_urls(soup:BeautifulSoup, urls:set, site:str):
 def remove_duplicates(urls:list, supabase_urls:list=None):
 # Delete repeated sites, with different URLs and keeping one
   # Making sure we don't have duplicate urls from Supabase
-  supa_urls = [url[0] for url in supabase_urls]
-  supa_content = [url[1] for url in supabase_urls]
+  if supabase_urls:
+    supa_urls = [url[0] for url in supabase_urls]
+    supa_content = [url[1] for url in supabase_urls]
+    print("supa_urls", supa_urls)
+  else:
+    print("No supabase urls")
+    
   og_len = len(urls)
   
   if supabase_urls:
     for row in urls:
       if row[2] == '.html':
         if row[1].get_text() in supa_content:
-          urls.remove(row)
-          print("❌ Removed", row[0], "from urls because it is in supa ❌")
-      elif row[2] == '.pdf':
-        text = row[1].get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
-        if text in supa_content:
           urls.remove(row)
           print("❌ Removed", row[0], "from urls because it is in supa ❌")
       else:
@@ -274,7 +274,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   print(len(url_contents), "urls found")
   return url_contents
 
-def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, base_url_on:str=None):
+def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=False):
   """
   Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
 
@@ -292,8 +292,11 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   max_urls = int(max_urls)
   max_depth = int(max_depth)
   timeout = int(timeout)
-  if base_url_on:
-    base_url_on = str(base_url_on)
+  stay_on_baseurl = bool(stay_on_baseurl)
+  if stay_on_baseurl:
+    stay_on_baseurl = base_url(url)
+    print(stay_on_baseurl)
+
   ingester = Ingest()
   s3_client = boto3.client(
         's3',
@@ -307,7 +310,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
   urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
   if urls.data == []:
-    pass
+    existing_urls = None
   else:
     existing_urls = []
     for thing in urls.data:
@@ -315,6 +318,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       for t in thing['contexts']:
         whole += t['text']
       existing_urls.append((thing['url'], whole))
+  print("Existing urls:", [url[0] for url in existing_urls])
   print("Finished gathering existing urls from Supabase")
   
   if url.startswith("https://github.com/"):
@@ -324,7 +328,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     return results
   else:
     print("Begin Ingesting Web page")
-    data = crawler(url=url, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=base_url_on, _existing_urls=existing_urls)
+    data = crawler(url=url, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=stay_on_baseurl, _existing_urls=existing_urls)
 
   # Clean some keys for a proper file name
   # todo: have a default title
@@ -367,58 +371,58 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
 
   # Upload each html to S3
   print("Uploading files to S3")
-  paths = []
-  counter = 0
-  try:
-    for i, key in enumerate(data):
-      with NamedTemporaryFile(suffix=key[2]) as temp_file:
-          if key[1] != "" or key[1] != None:
-            if key[2] == ".html":
-              print("Writing", key[2] ,"to temp file")
-              temp_file.write(key[1].encode('utf-8'))
-            else:
-              print("Writing", key[2] ,"to temp file")
-              temp_file.write(key[1])
-            temp_file.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + key[2]
-            paths.append(s3_upload_path)
-            with open(temp_file.name, 'rb') as f:
-              print("Uploading", key[2] ,"to S3")
-              s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-              ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
-              counter += 1
-          else:
-            print("No", key[2] ,"to upload", key[1])
-      # if ".pdf" in key[0]:
-      #   with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
-      #     if key[1] != "" or key[1] != None:
-      #       temp_pdf.write(key[1])
-      #       temp_pdf.seek(0)
-      #       s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
-      #       paths.append(s3_upload_path)
-      #       with open(temp_pdf.name, 'rb') as f:
-      #         print("Uploading PDF to S3")
-      #         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-      #         ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
-      #         counter += 1
-      #     else:
-      #       print("No PDF to upload", key[1])
-      # else:
-      #   with NamedTemporaryFile(suffix=".html") as temp_html:
-      #     if key[1] != "" or key[1] != None:
-      #       temp_html.write(key[1].encode('utf-8'))
-      #       temp_html.seek(0)
-      #       s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html"
-      #       paths.append(s3_upload_path)
-      #       with open(temp_html.name, 'rb') as f:
-      #         print("Uploading html to S3")
-      #         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-      #         ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
-      #         counter += 1
-      #     else:
-      #       print("No html to upload", key[1])
-  except Exception as e:
-    print("Error in upload:", e)
+  # paths = []
+  # counter = 0
+  # try:
+  #   for i, key in enumerate(data):
+  #     with NamedTemporaryFile(suffix=key[2]) as temp_file:
+  #         if key[1] != "" or key[1] != None:
+  #           if key[2] == ".html":
+  #             print("Writing", key[2] ,"to temp file")
+  #             temp_file.write(key[1].encode('utf-8'))
+  #           else:
+  #             print("Writing", key[2] ,"to temp file")
+  #             temp_file.write(key[1])
+  #           temp_file.seek(0)
+  #           s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + key[2]
+  #           paths.append(s3_upload_path)
+  #           with open(temp_file.name, 'rb') as f:
+  #             print("Uploading", key[2] ,"to S3")
+  #             s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+  #             ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
+  #             counter += 1
+  #         else:
+  #           print("No", key[2] ,"to upload", key[1])
+  #     # if ".pdf" in key[0]:
+  #     #   with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
+  #     #     if key[1] != "" or key[1] != None:
+  #     #       temp_pdf.write(key[1])
+  #     #       temp_pdf.seek(0)
+  #     #       s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
+  #     #       paths.append(s3_upload_path)
+  #     #       with open(temp_pdf.name, 'rb') as f:
+  #     #         print("Uploading PDF to S3")
+  #     #         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+  #     #         ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
+  #     #         counter += 1
+  #     #     else:
+  #     #       print("No PDF to upload", key[1])
+  #     # else:
+  #     #   with NamedTemporaryFile(suffix=".html") as temp_html:
+  #     #     if key[1] != "" or key[1] != None:
+  #     #       temp_html.write(key[1].encode('utf-8'))
+  #     #       temp_html.seek(0)
+  #     #       s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html"
+  #     #       paths.append(s3_upload_path)
+  #     #       with open(temp_html.name, 'rb') as f:
+  #     #         print("Uploading html to S3")
+  #     #         s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+  #     #         ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
+  #     #         counter += 1
+  #     #     else:
+  #     #       print("No html to upload", key[1])
+  # except Exception as e:
+  #   print("Error in upload:", e)
 
   print("Successfully uploaded", counter, "files to S3")
   print("Finished /web-scrape")
