@@ -321,6 +321,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   print("Existing urls:", [url[0] for url in existing_urls])
   print("Finished gathering existing urls from Supabase")
   
+  # Check for GitHub repository coming soon
   if url.startswith("https://github.com/"):
     print("Begin Ingesting GitHub page")
     results = ingester.ingest_github(url, course_name)
