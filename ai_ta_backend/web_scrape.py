@@ -303,24 +303,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
         aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
     )
-  
-  print("Gathering existing urls from Supabase")
-  supabase_client = supabase.create_client(  # type: ignore
-  supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-  supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
-  urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
-  if urls.data == []:
-    existing_urls = None
-  else:
-    existing_urls = []
-    for thing in urls.data:
-      whole = ''
-      for t in thing['contexts']:
-        whole += t['text']
-      existing_urls.append((thing['url'], whole))
-  print("Existing urls:", [url[0] for url in existing_urls])
-  print("Finished gathering existing urls from Supabase")
-  
+
   # Check for GitHub repository coming soon
   if url.startswith("https://github.com/"):
     print("Begin Ingesting GitHub page")
@@ -328,6 +311,21 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     print("Finished ingesting GitHub page")
     return results
   else:
+    print("Gathering existing urls from Supabase")
+    supabase_client = supabase.create_client(  # type: ignore
+    supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+    supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+    urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
+    if urls.data == []:
+      existing_urls = None
+    else:
+      existing_urls = []
+      for thing in urls.data:
+        whole = ''
+        for t in thing['contexts']:
+          whole += t['text']
+        existing_urls.append((thing['url'], whole))
+    print("Finished gathering existing urls from Supabase")
     print("Begin Ingesting Web page")
     data = crawler(url=url, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=stay_on_baseurl, _existing_urls=existing_urls)
 
