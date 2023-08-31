@@ -274,6 +274,17 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   print(len(url_contents), "urls found")
   return url_contents
 
+def is_github_repo(url):
+    pattern = re.compile(r'^https://github\.com/[^/]+/[^/]+$')
+    if not pattern.match(url):
+      return False
+
+    response = requests.head(url)
+    if response.status_code == 200 and response.headers['Content-Type'].startswith('text/html'):
+      return url
+    else:
+      return False
+
 def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=False):
   """
   Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
@@ -305,7 +316,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     )
 
   # Check for GitHub repository coming soon
-  if url.startswith("https://github.com/"):
+  if is_github_repo(url):
     print("Begin Ingesting GitHub page")
     results = ingester.ingest_github(url, course_name)
     print("Finished ingesting GitHub page")
