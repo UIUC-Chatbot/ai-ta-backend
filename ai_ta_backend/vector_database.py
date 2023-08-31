@@ -780,31 +780,17 @@ Now please respond to my question: {user_question}"""
         metadatas (List[Dict[str, Any]]): _description_
     """
     print("In split and upload")
-    print(f"Texts: {texts}")
     print(f"metadatas: {metadatas}")
-    print(type(texts))
-    assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
-
+    print(f"Texts: {texts}")
+    assert len(texts) == len(metadatas), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
 
     try:
-      # generate AI summary
-      # summary = self.ai_summary(texts, metadatas)
-      # for i in range(len(summary)):
-      #   metadatas[i]['summary'] = summary[i]
-
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
-          separators=". ",  # try to split on sentences... 
+          separators=[". ", "\n\n", "\n", " ", ""]  # try to split on sentences... fallback to others to ensure we always fit in context window
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
-
-      def remove_small_contexts(contexts: List[Document]) -> List[Document]:
-        # Remove TextSplit contexts with fewer than 50 chars.
-        return [doc for doc in contexts if len(doc.page_content) > 50]
-
-      contexts = remove_small_contexts(contexts=contexts)
-
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
 
       oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
@@ -835,9 +821,6 @@ Now please respond to my question: {user_question}"""
           collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
           points=vectors  # type: ignore
       )
-      # # replace with Qdrant
-      # self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
-
       ### Supabase SQL ###
       contexts_for_supa = [{
           "text": context.page_content,
