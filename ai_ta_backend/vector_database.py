@@ -829,14 +829,23 @@ Now please respond to my question: {user_question}"""
           "embedding": embeddings_dict[context.page_content]
       } for context in contexts]
 
-      document = {
-          "course_name": contexts[0].metadata.get('course_name'),
-          "s3_path": contexts[0].metadata.get('s3_path'),
-          "readable_filename": contexts[0].metadata.get('readable_filename'),
-          "url": contexts[0].metadata.get('url'),
-          "base_url": contexts[0].metadata.get('base_url'),
-          "contexts": contexts_for_supa,
-      }
+      # document = {
+      #     "course_name": contexts[0].metadata.get('course_name'),
+      #     "s3_path": contexts[0].metadata.get('s3_path'),
+      #     "readable_filename": contexts[0].metadata.get('readable_filename'),
+      #     "url": contexts[0].metadata.get('url'),
+      #     "base_url": contexts[0].metadata.get('base_url'),
+      #     "contexts": contexts_for_supa,
+      # }
+
+      document = [{
+        "course_name": context.metadata.get('course_name'),
+          "s3_path": context.metadata.get('s3_path'),
+          "readable_filename": context.metadata.get('readable_filename'),
+          "url": context.metadata.get('url'),
+          "base_url": context.metadata.get('base_url'),
+          "contexts": contexts_for_supa,  # should ideally be just one context but getting JSON serialization error when I do that
+      } for context in contexts]
 
       count = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
       print("successful END OF split_and_upload")
