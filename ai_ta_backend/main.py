@@ -339,6 +339,7 @@ def logToNomic():
   response: str = request.args.get('conversation', default='', type=str)
 
   print("In /onResponseCompletion")
+  print(request.headers)
   print("course_name: ", course_name)
   print("response: ", response)
 
