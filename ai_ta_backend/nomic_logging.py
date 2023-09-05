@@ -158,3 +158,6 @@ def create_nomic_map(course_name: str, log_embeddings: np.ndarray, log_data: lis
                                    name=project_name, colorable_fields=['query'])
     project.create_index(index_name, build_topic_model=True)
     return f"Successfully created Nomic map for {course_name}"
+
+if __name__ == '__main__':
+  pass
