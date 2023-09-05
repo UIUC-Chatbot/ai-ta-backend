@@ -335,8 +335,14 @@ def nomic_map():
 @app.route('/onResponseCompletion', methods=['GET'])
 def logToNomic():
   course_name: str = request.args.get('course_name', default='', type=str)
-  search_query: str = request.args.get('search_query', default='', type=str)
-  response: str = request.args.get('response', default='', type=str)
+  #search_query: str = request.args.get('search_query', default='', type=str)
+  response: str = request.args.get('conversation', default='', type=str)
+
+  print("In /onResponseCompletion")
+  print("course_name: ", course_name)
+  print("response: ", response)
+
+  search_query = "dummy search query"
 
   if course_name == '' or search_query == '' or response == '':
     # proper web error "400 Bad request"
