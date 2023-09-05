@@ -336,17 +336,16 @@ def nomic_map():
 def logToNomic():
   course_name: str = request.args.get('course_name', default='', type=str)
   #search_query: str = request.args.get('search_query', default='', type=str)
-  response: str = request.args.get('conversation', default='', type=str)
+  conversation: str = request.args.get('conversation', default='', type=str)
 
   print("In /onResponseCompletion")
+  print("course_name: ", course_name)
+  print("conversation: ", conversation)
+
   print(request.headers)
   print(request.get_json())
-  print("course_name: ", course_name)
-  print("response: ", response)
 
-  search_query = "dummy search query"
-
-  if course_name == '' or search_query == '' or response == '':
+  if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
     abort(
         400,
