@@ -1,9 +1,10 @@
+import gc
 import os
 import time
 from typing import Any, List, Union
 
 from dotenv import load_dotenv
-from flask import Flask, abort, jsonify, request
+from flask import Flask, Response, abort, jsonify, request
 from flask_cors import CORS
 from sqlalchemy import JSON
 
@@ -279,13 +280,21 @@ def delete():
   return response
 
 @app.route('/web-scrape', methods=['GET'])
-def scrape():
-  url: str = request.args.get('url')
-  max_urls: int = request.args.get('max_urls')
-  max_depth: int = request.args.get('max_depth')
-  timeout: int = request.args.get('timeout')
-  course_name: str = request.args.get('course_name')
-  base_url_bool: str = request.args.get('base_url_on')
+def scrape() -> Response:
+  url: str = request.args.get('url', default='', type=str)
+  max_urls: int = request.args.get('max_urls', default=-1, type=int)
+  max_depth: int = request.args.get('max_depth', default=-1, type=int)
+  timeout: int = request.args.get('timeout', default=-1, type=int)
+  course_name: str = request.args.get('course_name', default='', type=str)
+  stay_on_baseurl: bool | None = request.args.get('stay_on_baseurl', type=bool)
+
+  if url == '' or max_urls == -1 or max_depth == -1 or timeout == -1 or course_name == '' or stay_on_baseurl is None:
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'url', 'max_urls', 'max_depth', 'timeout', 'course_name', and 'stay_on_baseurl' must be provided. url: `{url}`, max_urls: `{max_urls}`, max_depth: `{max_depth}`, timeout: `{timeout}`, course_name: `{course_name}`, stay_on_baseurl: `{stay_on_baseurl}`"
+    )
 
   # print all input params
   print(f"Web scrape!")
@@ -293,13 +302,14 @@ def scrape():
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
   print(f"Timeout in Seconds ⏰: {timeout}")
+  print(f"Stay on baseurl: {stay_on_baseurl}")
 
-  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout, base_url_bool)
+  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl)
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
+  gc.collect() # manually invoke garbage collection, try to reduce memory on Railway $$$
   return response
-
 
 @app.route('/mit-download', methods=['GET'])
 def mit_download_course():
