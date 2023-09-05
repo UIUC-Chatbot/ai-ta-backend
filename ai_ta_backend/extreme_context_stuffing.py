@@ -442,6 +442,8 @@ def task_id_generator_function():
     yield task_id
     task_id += 1
 
+if __name__ == '__main__':
+  pass
 
 # run script
 # if __name__ == "__main__":

@@ -422,8 +422,10 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       #       print("No html to upload", key[1])
   except Exception as e:
     print("Error in upload:", e)
+  finally:
+    del ingester
 
-  print("Successfully uploaded", counter, "files to S3")
+  print(f"Successfully uploaded files to s3: {counter}")
   print("Finished /web-scrape")
 
 # Download an MIT course using its url
@@ -467,6 +469,9 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
 
     shutil.move(zip_file, local_dir)
     shutil.rmtree(local_dir)
+    del ingester
     print("Finished Ingest")
     return success_fail
 
+if __name__ == '__main__':
+  pass
