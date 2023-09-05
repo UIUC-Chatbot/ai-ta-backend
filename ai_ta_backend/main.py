@@ -332,7 +332,7 @@ def nomic_map():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@app.route('/onResponseCompletion', methods=['POST'])
+@app.route('/onResponseCompletion', methods=['GET'])
 def logToNomic():
   course_name: str = request.args.get('course_name', default='', type=str)
   #search_query: str = request.args.get('search_query', default='', type=str)
