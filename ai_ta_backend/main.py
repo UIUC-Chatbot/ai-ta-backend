@@ -409,10 +409,10 @@ def logToNomic():
   print("response body: ", request.get_json())
   response = request.get_json()
   
-  if json.loads(response) == {}:
-    print("response body is empty")
-  else:
-    print("response body is not empty")
+  # if json.loads(response) == {}:
+  #   print("response body is empty")
+  # else:
+  #   print("response body is not empty")
 
   # if json.loads(response) == {}:
   #   # proper web error "400 Bad request"
