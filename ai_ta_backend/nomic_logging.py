@@ -75,6 +75,48 @@ def log_query_response_to_nomic(course_name: str, search_query: str, response: s
   print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
   return f"Successfully logged for {course_name}"
 
+def log_convo_to_nomic(response: dict) -> str:
+  """
+  Logs conversation to Nomic.
+  1. Check if map exists for given course
+  2. Check if conversation ID exists 
+    - if yes, delete and add new data point
+    - if no, add new data point
+  3. Keep current logic for map doesn't exist - update metadata
+  """
+  print("in log_convo_to_nomic()")
+  course_name = response['course_name']
+  user_email = response['user_email']
+  conversation = response['conversation']
+  conversation_id = conversation['id']
+
+  print("course_name: ", course_name)
+  print("user_email: ", user_email)
+  print("conversation: ", conversation)
+
+  # we have to upload whole conversations
+
+  # check if conversation ID exists in Nomic, if yes fetch all data from it and delete it. 
+  # will have current QA and historical QA from Nomic, append new data and add_embeddings()
+
+  project_name = "Conversation Map for NCSA"
+  try:
+    project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
+    map = project.maps[0]
+    data = map.data
+
+    print("map: ", map)
+    print("2nd map: ", project.maps[1])
+    print("data: ", data)
+
+  except Exception as e:
+    print(e)
+
+
+  return "Successfully logged conversation to Nomic"
+
+
+
 def get_nomic_map(course_name: str):
   """
   Returns the variables necessary to construct an iframe of the Nomic map given a course name.
