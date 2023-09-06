@@ -112,6 +112,8 @@ def analyze_conversations(supabase_client: Any = None):
         content = message['content']
 
         # If the message is from the user, it's a prompt
+        # TODO: Fix these 
+        # WARNING: Fix these error messages... they are the sign of a logic bug.
         if role == 'user':
           num_tokens, cost = count_tokens_and_cost(prompt=content, openai_model_name=model_name) 
           total_prompt_cost += cost
@@ -124,6 +126,9 @@ def analyze_conversations(supabase_client: Any = None):
           print(f'Assistant Completion: {content}\nTokens: {num_tokens_completion}, cost: {cost_completion}')
     return total_convos, total_messages, total_prompt_cost, total_completion_cost
   
+if __name__ == '__main__':
+  pass
+
 # if __name__ == '__main__':
 #   print('starting main')
 #   total_convos, total_messages, total_prompt_cost, total_completion_cost = analyze_conversations()
