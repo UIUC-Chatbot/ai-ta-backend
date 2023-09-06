@@ -405,7 +405,6 @@ def logToNomic():
   print("course_name: ", course_name)
   print("conversation: ", conversation)
 
-  exit()
 
 
   if course_name == '' or conversation == '':
@@ -417,7 +416,8 @@ def logToNomic():
     )
   
   # background execution of tasks!! 
-  response = executor.submit(log_query_response_to_nomic, course_name, search_query)
+  #response = executor.submit(log_query_response_to_nomic, course_name, search_query)
+  response = {'status': 'success'}
   
   response = jsonify(response)
   response.headers.add('Access-Control-Allow-Origin', '*')
