@@ -323,22 +323,28 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     del ingester
     return results
   else:
-    print("Gathering existing urls from Supabase")
-    supabase_client = supabase.create_client(  # type: ignore
-    supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-    supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
-    urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
-    del supabase_client
-    if urls.data == []:
+    try:
+      print("Gathering existing urls from Supabase")
+      supabase_client = supabase.create_client(  # type: ignore
+      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+      urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
+      del supabase_client
+      if urls.data == []:
+        existing_urls = None
+      else:
+        existing_urls = []
+        for thing in urls.data:
+          whole = ''
+          for t in thing['contexts']:
+            whole += t['text']
+          existing_urls.append((thing['url'], whole))
+        print("Finished gathering existing urls from Supabase")
+    except Exception as e:
+      print("Error:", e)
+      print("Could not gather existing urls from Supabase")
       existing_urls = None
-    else:
-      existing_urls = []
-      for thing in urls.data:
-        whole = ''
-        for t in thing['contexts']:
-          whole += t['text']
-        existing_urls.append((thing['url'], whole))
-    print("Finished gathering existing urls from Supabase")
+    
     print("Begin Ingesting Web page")
     data = crawler(url=url, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=stay_on_baseurl, _existing_urls=existing_urls)
 
