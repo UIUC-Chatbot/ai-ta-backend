@@ -829,15 +829,6 @@ Now please respond to my question: {user_question}"""
           "embedding": embeddings_dict[context.page_content]
       } for context in contexts]
 
-      # document = {
-      #     "course_name": contexts[0].metadata.get('course_name'),
-      #     "s3_path": contexts[0].metadata.get('s3_path'),
-      #     "readable_filename": contexts[0].metadata.get('readable_filename'),
-      #     "url": contexts[0].metadata.get('url'),
-      #     "base_url": contexts[0].metadata.get('base_url'),
-      #     "contexts": contexts_for_supa,
-      # }
-
       document = [{
         "course_name": context.metadata.get('course_name'),
           "s3_path": context.metadata.get('s3_path'),
