@@ -414,13 +414,13 @@ def logToNomic():
   else:
     print("response body is not empty")
 
-  if json.loads(response) == {}:
-    # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing parameters: 'response' must be provided."
-    )
+  # if json.loads(response) == {}:
+  #   # proper web error "400 Bad request"
+  #   abort(
+  #       400,
+  #       description=
+  #       f"Missing parameters: 'response' must be provided."
+  #   )
   
   # background execution of tasks!! 
   response = executor.submit(log_convo_to_nomic, response)
