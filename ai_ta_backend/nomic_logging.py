@@ -87,9 +87,9 @@ def log_convo_to_nomic(response: dict) -> str:
   print("\n--------------------------------------------\n")
   print("in log_convo_to_nomic()")
   print("response: ", len(response))
-  print(response[0])
+  #print(response[0])
   print("\n--------------------------------------------\n")
-  print(response[1])
+  print(response)
   # course_name = response['course_name']
   # user_email = response['user_email']
   # conversation = response['conversation']
