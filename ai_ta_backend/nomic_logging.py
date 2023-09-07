@@ -90,10 +90,11 @@ def log_convo_to_nomic(response: dict) -> str:
   #print(response[0])
   print("\n--------------------------------------------\n")
   print(response['course_name'])
-  print(response['user_email'])
-  print(response['conversation'])
+  for key, value in response.items():
+    print(key, value)
+    print("\n--------------------------------------------\n")
 
-  print("\n--------------------------------------------\n")
+  
 
   course_name = response['course_name']
   user_email = response['user_email']
