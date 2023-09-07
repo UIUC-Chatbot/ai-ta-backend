@@ -406,7 +406,7 @@ def logToNomic():
   print("course_name: ", course_name)
   print("conversation: ", conversation)
 
-  print("response body: ", request.body)
+  print("response body: ", request.get_json())
   response = request.get_json()
   
   # if json.loads(response) == {}:

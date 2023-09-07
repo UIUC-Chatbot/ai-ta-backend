@@ -85,6 +85,7 @@ def log_convo_to_nomic(response: dict) -> str:
   3. Keep current logic for map doesn't exist - update metadata
   """
   print("in log_convo_to_nomic()")
+  print("response: ", response)
   course_name = response['course_name']
   user_email = response['user_email']
   conversation = response['conversation']
