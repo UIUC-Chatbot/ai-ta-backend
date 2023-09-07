@@ -403,8 +403,7 @@ def logToNomic():
   conversation: str = request.args.get('conversation', default='', type=str)
 
   print("In /onResponseCompletion")
-  print("course_name: ", course_name)
-  print("conversation: ", conversation)
+  print("\n---------------------------------\n")
 
   print("response body: ", request.get_json())
   response = request.get_json()

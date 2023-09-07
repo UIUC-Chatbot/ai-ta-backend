@@ -84,11 +84,13 @@ def log_convo_to_nomic(response: dict) -> str:
     - if no, add new data point
   3. Keep current logic for map doesn't exist - update metadata
   """
+  print("\n--------------------------------------------\n")
   print("in log_convo_to_nomic()")
-  print("response: ", response)
+  #print("response: ", response)
   course_name = response['course_name']
   user_email = response['user_email']
   conversation = response['conversation']
+  messages = conversation['messages']
   conversation_id = conversation['id']
 
   print("course_name: ", course_name)
@@ -114,7 +116,7 @@ def log_convo_to_nomic(response: dict) -> str:
     print(e)
 
 
-  return "Successfully logged conversation to Nomic"
+  return f"Successfully logged for {course_name}"
 
 
 
