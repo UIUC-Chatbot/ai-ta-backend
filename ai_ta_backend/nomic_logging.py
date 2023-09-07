@@ -87,15 +87,18 @@ def log_convo_to_nomic(response: dict) -> str:
   print("\n--------------------------------------------\n")
   print("in log_convo_to_nomic()")
   print("response: ", len(response))
-  course_name = response['course_name']
-  user_email = response['user_email']
-  conversation = response['conversation']
-  messages = conversation['messages']
-  conversation_id = conversation['id']
+  print(response[0])
+  print("\n--------------------------------------------\n")
+  print(response[1])
+  # course_name = response['course_name']
+  # user_email = response['user_email']
+  # conversation = response['conversation']
+  # messages = conversation['messages']
+  # conversation_id = conversation['id']
 
-  print("course_name: ", course_name)
-  print("user_email: ", user_email)
-  print("conversation: ", conversation)
+  # print("course_name: ", course_name)
+  # print("user_email: ", user_email)
+  # print("conversation: ", conversation)
 
   # we have to upload whole conversations
 

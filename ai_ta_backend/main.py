@@ -405,7 +405,7 @@ def logToNomic():
   print("In /onResponseCompletion")
   print("\n---------------------------------\n")
 
-  print("response body: ", request.get_json())
+  #print("response body: ", request.get_json())
   response = request.get_json()
   
   # if json.loads(response) == {}:
