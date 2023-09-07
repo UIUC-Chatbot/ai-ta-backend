@@ -92,6 +92,7 @@ def log_convo_to_nomic(response: dict) -> str:
   print(response['course_name'])
   for key, value in response.items():
     print(key + "----->" + value)
+    print(key)
     print("\n--------------------------------------------\n")
 
   print(response['conversation']['messages'][0]['content'])
