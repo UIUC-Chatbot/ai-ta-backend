@@ -218,79 +218,54 @@ Now please respond to my question: {user_question}"""
 
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
-    # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
     success_status = {"success_ingest": [], "failure_ingest": []}
 
-    try:
-      if isinstance(s3_paths, str):
-        s3_paths = [s3_paths]
+    def ingest(file_ext_mapping, s3_path, *args, **kwargs):
+        handler = file_ext_mapping.get(Path(s3_path).suffix)
+        if handler:
+            ret = handler(s3_path, *args, **kwargs)
+            if ret != "Success":
+                success_status['failure_ingest'].append(s3_path)
+            else:
+                success_status['success_ingest'].append(s3_path)
 
-      for s3_path in s3_paths:
-        ext = Path(s3_path).suffix  # check mimetype of file
-        # TODO: no need to download, just guess_type against the s3_path...
-        with NamedTemporaryFile(suffix=ext) as tmpfile:
-          self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-          mime_type = mimetypes.guess_type(tmpfile.name)[0]
-          category, subcategory = mime_type.split('/')
-        
-        if s3_path.endswith('.html'):
-          ret = self._ingest_html(s3_path, course_name, kwargs=kwargs)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.py'):
-          ret = self._ingest_single_py(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.vtt'):
-          ret = self._ingest_single_vtt(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.pdf'):
-          ret = self._ingest_single_pdf(s3_path, course_name, kwargs=kwargs)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.txt') or s3_path.endswith('.md'):
-          ret = self._ingest_single_txt(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.srt'):
-          ret = self._ingest_single_srt(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.docx'):
-          ret = self._ingest_single_docx(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.ppt') or s3_path.endswith('.pptx'):
-          ret = self._ingest_single_ppt(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif category == 'video' or category == 'audio':
-          ret = self._ingest_single_video(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-      return success_status
+    file_ext_mapping = {
+        '.html': self._ingest_html,
+        '.py': self._ingest_single_py,
+        '.vtt': self._ingest_single_vtt,
+        '.pdf': self._ingest_single_pdf,
+        '.txt': self._ingest_single_txt,
+        '.md': self._ingest_single_txt,
+        '.srt': self._ingest_single_srt,
+        '.docx': self._ingest_single_docx,
+        '.ppt': self._ingest_single_ppt,
+        '.pptx': self._ingest_single_ppt,
+    }
+
+    try:
+        if isinstance(s3_paths, str):
+            s3_paths = [s3_paths]
+
+        for s3_path in s3_paths:
+            with NamedTemporaryFile(suffix=Path(s3_path).suffix) as tmpfile:
+                self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+                mime_type = mimetypes.guess_type(tmpfile.name)[0]
+                category, _ = mime_type.split('/')
+
+            if category in ['video', 'audio']:
+                ret = self._ingest_single_video(s3_path, course_name)
+                if ret != "Success":
+                    success_status['failure_ingest'].append(s3_path)
+                else:
+                    success_status['success_ingest'].append(s3_path)
+            else:
+                ingest(file_ext_mapping, s3_path, course_name, kwargs=kwargs)
+
+        return success_status
     except Exception as e:
-      success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
-      return success_status
+        success_status['failure_ingest'].append(f"MAJOR ERROR IN /bulk_ingest: Error: {str(e)}")
+        return success_status
+
 
   def _ingest_single_py(self, s3_path: str, course_name: str):
     try:
