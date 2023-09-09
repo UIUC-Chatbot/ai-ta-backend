@@ -396,38 +396,21 @@ def nomic_map():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@app.route('/onResponseCompletion', methods=['POST'])
+@app.route('/onResponseCompletion', methods=['GET'])
 def logToNomic():
   course_name: str = request.args.get('course_name', default='', type=str)
-  #search_query: str = request.args.get('search_query', default='', type=str)
   conversation: str = request.args.get('conversation', default='', type=str)
 
   print("In /onResponseCompletion")
-  print("\n---------------------------------\n")
-
-  #print("response body: ", request.get_json())
-  response = request.get_json()
   
-  # if json.loads(response) == {}:
-  #   print("response body is empty")
-  # else:
-  #   print("response body is not empty")
-
-  # if json.loads(response) == {}:
-  #   # proper web error "400 Bad request"
-  #   abort(
-  #       400,
-  #       description=
-  #       f"Missing parameters: 'response' must be provided."
-  #   )
+  conversation_json = json.loads(conversation)
   
   # background execution of tasks!! 
-  response = executor.submit(log_convo_to_nomic, response)
+  response = executor.submit(log_convo_to_nomic, course_name, conversation_json)
   
-  
-  response = jsonify(response)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+  #response = jsonify(response)
+  #response.headers.add('Access-Control-Allow-Origin', '*')
+  return "response"
 
 
 if __name__ == '__main__':

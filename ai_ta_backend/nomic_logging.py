@@ -1,6 +1,7 @@
 import os
 import nomic
 from nomic import atlas
+from nomic import AtlasProject
 from langchain.embeddings import OpenAIEmbeddings
 import numpy as np
 import time
@@ -10,72 +11,7 @@ import supabase
 nomic.login(os.getenv('NOMIC_API_KEY')) # login during start of flask app
 NOMIC_MAP_NAME_PREFIX = 'Queries for '
 
-def log_query_to_nomic(course_name: str, search_query: str) -> str:
-  """
-  Logs user query and retrieved contexts to Nomic. Must have more than 20 queries to get a map, otherwise we'll show nothing for now.
-  """
-  project_name = NOMIC_MAP_NAME_PREFIX + course_name
-  start_time = time.monotonic()
-
-  embeddings_model = OpenAIEmbeddings() # type: ignore
-  embeddings = np.array(embeddings_model.embed_query(search_query)).reshape(1, 1536)
-  
-  data = [{'course_name': course_name, 'query': search_query, 'id': time.time()}]
-
-  try:
-    # slow call, about 0.6 sec
-    project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-    # mostly async call (0.35 to 0.5 sec)
-    project.add_embeddings(embeddings=embeddings, data=data)
-
-    # required to keep maps fresh (or we could put on fetch side, but then our UI is slow)
-    project.rebuild_maps()
-  except Exception as e:
-    # if project doesn't exist, create it
-    result = create_nomic_map(course_name, embeddings, data)
-    if result is None:
-      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
-    else:
-      print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
-      return f"Successfully logged for {course_name}"
-  
-  print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
-  return f"Successfully logged for {course_name}"
-
-def log_query_response_to_nomic(course_name: str, search_query: str, response: str) -> str:
-  """
-  Logs user query and model responses to Nomic. Must have more than 20 queries to get a map, 
-  otherwise we'll show nothing for now.
-  """
-  project_name = NOMIC_MAP_NAME_PREFIX + course_name
-  start_time = time.monotonic()
-
-  embeddings_model = OpenAIEmbeddings() # type: ignore
-  embeddings = np.array(embeddings_model.embed_query(search_query)).reshape(1, 1536)
-  
-  data = [{'course_name': course_name, 'query': search_query, 'response': response, 'id': time.time()}]
-
-  try:
-    # slow call, about 0.6 sec
-    project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-    # mostly async call (0.35 to 0.5 sec)
-    project.add_embeddings(embeddings=embeddings, data=data)
-
-    # required to keep maps fresh (or we could put on fetch side, but then our UI is slow)
-    project.rebuild_maps()
-  except Exception as e:
-    # if project doesn't exist, create it
-    result = create_nomic_map(course_name, embeddings, data)
-    if result is None:
-      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
-    else:
-      print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
-      return f"Successfully logged for {course_name}"
-  
-  print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
-  return f"Successfully logged for {course_name}"
-
-def log_convo_to_nomic(response: dict) -> str:
+def log_convo_to_nomic(course_name: str, conversation) -> str:
   """
   Logs conversation to Nomic.
   1. Check if map exists for given course
@@ -84,51 +20,90 @@ def log_convo_to_nomic(response: dict) -> str:
     - if no, add new data point
   3. Keep current logic for map doesn't exist - update metadata
   """
-  print("\n--------------------------------------------\n")
   print("in log_convo_to_nomic()")
-  print("response: ", type(response))
-  #print(response[0])
-  print("\n--------------------------------------------\n")
-  print(response['course_name'])
-  for key, value in response.items():
-    print(key + "----->" + value)
-    print(key)
-    print("\n--------------------------------------------\n")
-
-  print(response['conversation']['messages'][0]['content'])
-  print("\n--------------------------------------------\n")
-
-  course_name = response['course_name']
-  user_email = response['user_email']
-  conversation = response['conversation']
-  messages = conversation['messages']
-  conversation_id = conversation['id']
-
-  print("course_name: ", course_name)
-  print("user_email: ", user_email)
-  print("conversation: ", conversation)
-
+  
+  messages = conversation['conversation']['messages']
+  user_email = conversation['conversation']['user_email']
+  conversation_id = conversation['conversation']['id']
+  
   # we have to upload whole conversations
-
+  # check what the fetched data looks like - pandas df or pyarrow table
   # check if conversation ID exists in Nomic, if yes fetch all data from it and delete it. 
   # will have current QA and historical QA from Nomic, append new data and add_embeddings()
 
+  project_name = NOMIC_MAP_NAME_PREFIX + course_name
+  start_time = time.monotonic()
   project_name = "Conversation Map for NCSA"
   try:
+    # fetch project metadata and embbeddings
+    project = AtlasProject(name=project_name, add_datums_if_exists=True)
+    map_metadata_df = project.maps[1].data.df
+    map_embeddings_df = project.maps[1].embeddings.latent
+    
+    if conversation_id in map_metadata_df.values:
+      print("conversation_id exists")
+
+      # store that convo metadata locally
+      prev_data = map_metadata_df[map_metadata_df['conversation_id'] == conversation_id]
+      prev_index = prev_data.index.values[0]
+      prev_convo = prev_data['conversation'].values[0]
+      prev_id = prev_data['id'].values[0]
+      embeddings = map_embeddings_df[prev_index-1].reshape(1, 1536)
+      
+      # delete that convo data point from Nomic
+      print("Prev point deleted: ", project.delete_data([prev_id]))
+      
+      # prep for new point
+      first_message = prev_convo.split("\n")[1].split(": ")[1]
+    
+      # append new convo to prev convo
+      for message in messages:
+        prev_convo += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
+
+      # update metadata
+      metadata = [{"course": course_name, "conversation": prev_convo, "conversation_id": conversation_id, 
+                    "id": len(map_metadata_df)+1, "user_email": user_email, "first_query": first_message}]
+      
+    else:
+      print("conversation_id does not exist")
+
+      # add new data point
+      user_queries = []
+      conversation_string = ""
+      first_message = messages[0]['content']
+      user_queries.append(first_message)
+
+      for message in messages:
+        conversation_string += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
+
+      metadata = [{"course": course_name, "conversation": conversation_string, "conversation_id": conversation_id, 
+                    "id": len(map_metadata_df)+1, "user_email": user_email, "first_query": first_message}]
+
+      print("metadata: ", metadata)
+      print("user_queries: ", user_queries)
+      print(len(metadata))
+      print(len(user_queries))
+
+      # create embeddings
+      embeddings_model = OpenAIEmbeddings()
+      embeddings = embeddings_model.embed_documents(user_queries)
+      
+    # add embeddings to project
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-    map = project.maps[0]
-    data = map.data
-
-    print("map: ", map)
-    print("2nd map: ", project.maps[1])
-    print("data: ", data)
-
+    project.add_embeddings(embeddings=np.array(embeddings), data=pd.DataFrame(metadata))
+    project.rebuild_maps()
+    
   except Exception as e:
-    print(e)
+    # if project doesn't exist, create it
+    result = create_nomic_map(course_name, embeddings, pd.DataFrame(metadata))
+    if result is None:
+      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+    else:
+      print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
+      return f"Successfully logged for {course_name}"
 
-
+  print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
   return f"Successfully logged for {course_name}"
-
 
 
 def get_nomic_map(course_name: str):
