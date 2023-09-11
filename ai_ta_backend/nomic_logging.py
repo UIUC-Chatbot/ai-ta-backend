@@ -37,6 +37,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
   project_name = NOMIC_MAP_NAME_PREFIX + course_name
   start_time = time.monotonic()
+  emoji = ""
   
   try:
     # fetch project metadata and embbeddings
