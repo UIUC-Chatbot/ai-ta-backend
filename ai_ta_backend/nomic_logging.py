@@ -95,6 +95,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     
   except Exception as e:
     # if project doesn't exist, create it
+    print(e)
     result = create_nomic_map(course_name, conversation)
     if result is None:
       print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
