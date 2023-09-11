@@ -217,6 +217,7 @@ def create_nomic_map(course_name: str, log_data: list):
                                    id_field='id', build_topic_model=True, topic_label_field='first_query',
                                    name=project_name, colorable_fields=['conversation_id', 'first_query'])
     project.create_index(index_name, build_topic_model=True)
+    print("project: ", project)
     return f"Successfully created Nomic map for {course_name}"
 
 if __name__ == '__main__':
