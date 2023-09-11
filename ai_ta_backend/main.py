@@ -11,10 +11,9 @@ from flask_cors import CORS
 from flask_executor import Executor
 from sqlalchemy import JSON
 
-from ai_ta_backend.nomic_logging import get_nomic_map, log_query_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
-from ai_ta_backend.nomic_logging import log_query_to_nomic, get_nomic_map, log_convo_to_nomic
+from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from flask_executor import Executor
 
 app = Flask(__name__)
@@ -149,7 +148,7 @@ def getTopContexts() -> Response:
   del ingester
 
   # background execution of tasks!! 
-  executor.submit(log_query_to_nomic, course_name, search_query)
+  #executor.submit(log_query_to_nomic, course_name, search_query)
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -400,17 +399,23 @@ def nomic_map():
 def logToNomic():
   course_name: str = request.args.get('course_name', default='', type=str)
   conversation: str = request.args.get('conversation', default='', type=str)
-
   print("In /onResponseCompletion")
-  
+
+  if course_name == '' or conversation == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
+    )
+
   conversation_json = json.loads(conversation)
   
   # background execution of tasks!! 
   response = executor.submit(log_convo_to_nomic, course_name, conversation_json)
-  
-  #response = jsonify(response)
-  #response.headers.add('Access-Control-Allow-Origin', '*')
-  return "response"
+  response = jsonify(response)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 
 if __name__ == '__main__':

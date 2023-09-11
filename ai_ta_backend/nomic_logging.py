@@ -9,7 +9,7 @@ import pandas as pd
 import supabase
 
 nomic.login(os.getenv('NOMIC_API_KEY')) # login during start of flask app
-NOMIC_MAP_NAME_PREFIX = 'Queries for '
+NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
 
 def log_convo_to_nomic(course_name: str, conversation) -> str:
   """
@@ -25,6 +25,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
+
+  print("conversation: ", conversation)
   
   # we have to upload whole conversations
   # check what the fetched data looks like - pandas df or pyarrow table
@@ -33,37 +35,40 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
   project_name = NOMIC_MAP_NAME_PREFIX + course_name
   start_time = time.monotonic()
-  project_name = "Conversation Map for NCSA"
+  
   try:
     # fetch project metadata and embbeddings
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
     map_metadata_df = project.maps[1].data.df
     map_embeddings_df = project.maps[1].embeddings.latent
+    last_id = int(map_metadata_df['id'].values[-1])
+    print("last_id: ", last_id)
     
     if conversation_id in map_metadata_df.values:
       print("conversation_id exists")
-
+      
       # store that convo metadata locally
       prev_data = map_metadata_df[map_metadata_df['conversation_id'] == conversation_id]
       prev_index = prev_data.index.values[0]
+      embeddings = map_embeddings_df[prev_index-1].reshape(1, 1536)
       prev_convo = prev_data['conversation'].values[0]
       prev_id = prev_data['id'].values[0]
-      embeddings = map_embeddings_df[prev_index-1].reshape(1, 1536)
       
       # delete that convo data point from Nomic
-      print("Prev point deleted: ", project.delete_data([prev_id]))
+      project.delete_data([prev_id])
       
       # prep for new point
       first_message = prev_convo.split("\n")[1].split(": ")[1]
+      print("first_message: ", first_message)
     
-      # append new convo to prev convo
-      for message in messages:
+      # select the last 2 messages and append new convo to prev convo
+      messages_to_be_logged = messages[-2:]
+      for message in messages_to_be_logged:
         prev_convo += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
 
       # update metadata
       metadata = [{"course": course_name, "conversation": prev_convo, "conversation_id": conversation_id, 
-                    "id": len(map_metadata_df)+1, "user_email": user_email, "first_query": first_message}]
-      
+                    "id": last_id+1, "user_email": user_email, "first_query": first_message}]
     else:
       print("conversation_id does not exist")
 
@@ -77,25 +82,20 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         conversation_string += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
 
       metadata = [{"course": course_name, "conversation": conversation_string, "conversation_id": conversation_id, 
-                    "id": len(map_metadata_df)+1, "user_email": user_email, "first_query": first_message}]
-
-      print("metadata: ", metadata)
-      print("user_queries: ", user_queries)
-      print(len(metadata))
-      print(len(user_queries))
-
+                    "id": last_id+1, "user_email": user_email, "first_query": first_message}]
+      
       # create embeddings
       embeddings_model = OpenAIEmbeddings()
       embeddings = embeddings_model.embed_documents(user_queries)
       
-    # add embeddings to project
+    # add embeddings to the project
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
     project.add_embeddings(embeddings=np.array(embeddings), data=pd.DataFrame(metadata))
     project.rebuild_maps()
     
   except Exception as e:
     # if project doesn't exist, create it
-    result = create_nomic_map(course_name, embeddings, pd.DataFrame(metadata))
+    result = create_nomic_map(course_name, conversation)
     if result is None:
       print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
     else:
@@ -135,7 +135,7 @@ def get_nomic_map(course_name: str):
   return {"map_id": f"iframe{map.id}",
           "map_link": map.map_link}
 
-def create_nomic_map(course_name: str, log_embeddings: np.ndarray, log_data: list):
+def create_nomic_map(course_name: str, log_data: list):
   """
   Creates a Nomic map for new courses and those which previously had < 20 queries.
   1. fetches supabase conversations for course
@@ -150,6 +150,7 @@ def create_nomic_map(course_name: str, log_embeddings: np.ndarray, log_data: lis
   # fetch all conversations with this new course (we expect <=20 conversations, because otherwise the map should be made already)
   response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
   data = response.data
+  df = pd.DataFrame(data)
   
   if len(data) < 19:
     return None
@@ -157,36 +158,61 @@ def create_nomic_map(course_name: str, log_embeddings: np.ndarray, log_data: lis
     # get all queries for course and create metadata
     user_queries = []
     metadata = []
-    course_df = pd.DataFrame(data)
-    course_df = course_df['convo']
-
     i = 1
-    for convo in course_df:
-      # extract all messages from convo
+    conversation_exists = False
+
+    # current log details
+    log_messages = log_data['conversation']['messages']
+    log_user_email = log_data['conversation']['user_email']
+    log_conversation_id = log_data['conversation']['id']
+
+    for index, row in df.iterrows():
+      user_email = row['user_email']
+      convo = row['convo']
       messages = convo['messages']
+      first_message = messages[0]['content']
+      user_queries.append(first_message)
 
-      # extract queries for user role from messages
+      # create metadata for multi-turn conversation
+      conversation = ""
       for message in messages:
-        if message['role'] == 'user' and message['content'] != '':
-          user_queries.append(message['content'])
-          metadata.append({'course_name': course_name, 'query': message['content'], 'id': i})
-          i += 1
+        # string of role: content, role: content, ...
+        conversation += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
+      
+      # append current chat to previous chat if convo already exists
+      if convo['id'] == log_conversation_id:
+        conversation_exists = True
+        for m in log_messages:
+          conversation += "\n>>> " + m['role'] + ": " + m['content'] + "\n"
 
-    # convert query and context to embeddings
-    metadata.append(log_data[0])
+      # add to metadata
+      metadata_row = {"course": row['course_name'], "conversation": conversation, "conversation_id": convo['id'], 
+                      "id": i, "user_email": user_email, "first_query": first_message}
+      metadata.append(metadata_row)
+      i += 1
+
+    # add current log as a new data point if convo doesn't exist
+    if not conversation_exists:
+      user_queries.append(log_messages[0]['content'])
+      conversation = ""
+      for message in log_messages:
+        conversation += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
+      metadata_row = {"course": course_name, "conversation": conversation, "conversation_id": log_conversation_id, 
+                      "id": i, "user_email": log_user_email, "first_query": log_messages[0]['content']}
+      metadata.append(metadata_row)
+
+    print(len(metadata))
     metadata = pd.DataFrame(metadata)
 
     embeddings_model = OpenAIEmbeddings() # type: ignore
     embeddings = embeddings_model.embed_documents(user_queries)
-    embeddings = np.array(embeddings)
-    final_embeddings = np.concatenate((embeddings, log_embeddings), axis=0)
 
     # create Atlas project
     project_name = NOMIC_MAP_NAME_PREFIX + course_name
-    index_name = course_name + "_index"
-    project = atlas.map_embeddings(embeddings=final_embeddings, data=metadata, # type: ignore -- this is actually the correc type, the function signature from Nomic is incomplete
-                                   id_field='id', build_topic_model=True, topic_label_field='query',
-                                   name=project_name, colorable_fields=['query'])
+    index_name = course_name + "_convo_index"
+    project = atlas.map_embeddings(embeddings=np.array(embeddings), data=metadata, # type: ignore -- this is actually the correc type, the function signature from Nomic is incomplete
+                                   id_field='id', build_topic_model=True, topic_label_field='first_query',
+                                   name=project_name, colorable_fields=['conversation_id', 'first_query'])
     project.create_index(index_name, build_topic_model=True)
     return f"Successfully created Nomic map for {course_name}"
 
