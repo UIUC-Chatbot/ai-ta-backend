@@ -401,6 +401,9 @@ def logToNomic():
   conversation: str = request.args.get('conversation', default='', type=str)
   print("In /onResponseCompletion")
 
+  print("course_name: ", course_name)
+  print("conversation: ", conversation)
+
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
     abort(
