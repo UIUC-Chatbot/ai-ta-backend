@@ -423,10 +423,10 @@ def logToNomic():
         f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
     )
 
-  conversation_json = json.loads(conversation)
+  #conversation_json = json.loads(conversation)
   
   # background execution of tasks!! 
-  response = executor.submit(log_convo_to_nomic, course_name, conversation_json)
+  response = executor.submit(log_convo_to_nomic, course_name, data)
   response = jsonify(response)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
