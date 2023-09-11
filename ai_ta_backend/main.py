@@ -404,6 +404,8 @@ def logToNomic():
   print("course_name: ", course_name)
   print("conversation: ", conversation)
 
+  print(request.get_json())
+
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
     abort(
