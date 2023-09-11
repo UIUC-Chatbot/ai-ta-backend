@@ -2,32 +2,25 @@ import asyncio
 import inspect
 import logging
 import mimetypes
-# import json
 import os
 import shutil
 import subprocess
 import time
 import traceback
-import uuid  # Literal
+import uuid
 from pathlib import Path
-from tempfile import NamedTemporaryFile  # TemporaryFile
+from tempfile import NamedTemporaryFile
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import boto3
-# import requests
 import fitz
-import numpy as np
 import openai
-import requests
 import supabase
 from bs4 import BeautifulSoup
-
-from langchain.document_loaders import (Docx2txtLoader, PythonLoader,
-                                        SRTLoader, 
-                                        UnstructuredPowerPointLoader, TextLoader, GitLoader)
-
-from git import Repo
-
+from git.repo import Repo
+from langchain.document_loaders import (Docx2txtLoader, GitLoader,
+                                        PythonLoader, SRTLoader, TextLoader,
+                                        UnstructuredPowerPointLoader)
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -39,16 +32,6 @@ from qdrant_client.models import PointStruct
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
-
-# from arize.api import Client
-# from arize.pandas.embeddings import EmbeddingGenerator, UseCases
-# from arize.utils import ModelTypes
-# from arize.utils.ModelTypes import GENERATIVE_LLM
-# # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
-# #                                Metrics, ModelTypes, Schema)
-
-
-
 
 
 class Ingest():
@@ -70,7 +53,7 @@ class Ingest():
 
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
-        collection_name=os.getenv('QDRANT_COLLECTION_NAME'), # type: ignore
+        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
         embeddings=OpenAIEmbeddings()) # type: ignore
 
     # S3
@@ -82,8 +65,8 @@ class Ingest():
 
     # Create a Supabase client
     self.supabase_client = supabase.create_client(  # type: ignore
-        supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+        supabase_url=os.environ['SUPABASE_URL'],
+        supabase_key=os.environ['SUPABASE_API_KEY'])
     return None
 
   def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
@@ -149,9 +132,9 @@ class Ingest():
         # no useful text, it replied with a summary of "None"
         continue
       if text is not None:
-        if "pagenumber" not in results[i][-1].keys():
-          results[i][-1]['pagenumber'] = results[i][-1].get('pagenumber_or_timestamp')
-        num_tokens, prompt_cost = count_tokens_and_cost(text)
+        if "pagenumber" not in results[i][-1].keys(): # type: ignore
+          results[i][-1]['pagenumber'] = results[i][-1].get('pagenumber_or_timestamp') # type: ignore
+        num_tokens, prompt_cost = count_tokens_and_cost(text) # type: ignore
         if token_counter + num_tokens > max_tokens:
           print(f"Total tokens yet in loop {i} is {num_tokens}")
           break  # Stop building the string if it exceeds the maximum number of tokens
@@ -262,6 +245,7 @@ Now please respond to my question: {user_question}"""
                 ingest(file_ext_mapping, s3_path, course_name, kwargs=kwargs)
 
         return success_status
+      
     except Exception as e:
         success_status['failure_ingest'].append(f"MAJOR ERROR IN /bulk_ingest: Error: {str(e)}")
         return success_status
@@ -269,8 +253,6 @@ Now please respond to my question: {user_question}"""
 
   def _ingest_single_py(self, s3_path: str, course_name: str):
     try:
-      print("in ingest_py")
-
       file_name = s3_path.split("/")[-1]
       file_path = "media/" + file_name # download from s3 to local folder for ingest
 
@@ -718,14 +700,12 @@ Now please respond to my question: {user_question}"""
     Returns:
         _type_: Success or error message.
     """
-    print("in ingest_github")
-
     try:
       repo_path = "media/cloned_repo"
       repo = Repo.clone_from(github_url, to_path=repo_path, depth=1, clone_submodules=False)
       branch = repo.head.reference
 
-      loader = GitLoader(repo_path="media/cloned_repo", branch=branch)
+      loader = GitLoader(repo_path="media/cloned_repo", branch=str(branch))
       data = loader.load()
       shutil.rmtree("media/cloned_repo")
       # create metadata for each file in data 
@@ -755,31 +735,17 @@ Now please respond to my question: {user_question}"""
         metadatas (List[Dict[str, Any]]): _description_
     """
     print("In split and upload")
-    print(f"Texts: {texts}")
     print(f"metadatas: {metadatas}")
-    print(type(texts))
-    assert len(texts) == len(metadatas), 'must have equal number of text strings and metadata dicts'
-
+    print(f"Texts: {texts}")
+    assert len(texts) == len(metadatas), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
 
     try:
-      # generate AI summary
-      # summary = self.ai_summary(texts, metadatas)
-      # for i in range(len(summary)):
-      #   metadatas[i]['summary'] = summary[i]
-
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
-          separators=". ",  # try to split on sentences... 
+          separators=[". ", "\n\n", "\n", " ", ""]  # try to split on sentences... fallback to others to ensure we always fit in context window
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
-
-      def remove_small_contexts(contexts: List[Document]) -> List[Document]:
-        # Remove TextSplit contexts with fewer than 50 chars.
-        return [doc for doc in contexts if len(doc.page_content) > 50]
-
-      contexts = remove_small_contexts(contexts=contexts)
-
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
 
       oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
@@ -807,12 +773,9 @@ Now please respond to my question: {user_question}"""
             ))
 
       self.qdrant_client.upsert(
-          collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+          collection_name=os.environ['QDRANT_COLLECTION_NAME'],  # type: ignore
           points=vectors  # type: ignore
       )
-      # # replace with Qdrant
-      # self.vectorstore.add_texts([doc.page_content for doc in documents], [doc.metadata for doc in documents])
-
       ### Supabase SQL ###
       contexts_for_supa = [{
           "text": context.page_content,
@@ -821,14 +784,14 @@ Now please respond to my question: {user_question}"""
           "embedding": embeddings_dict[context.page_content]
       } for context in contexts]
 
-      document = {
-          "course_name": contexts[0].metadata.get('course_name'),
-          "s3_path": contexts[0].metadata.get('s3_path'),
-          "readable_filename": contexts[0].metadata.get('readable_filename'),
-          "url": contexts[0].metadata.get('url'),
-          "base_url": contexts[0].metadata.get('base_url'),
-          "contexts": contexts_for_supa,
-      }
+      document = [{
+        "course_name": context.metadata.get('course_name'),
+          "s3_path": context.metadata.get('s3_path'),
+          "readable_filename": context.metadata.get('readable_filename'),
+          "url": context.metadata.get('url'),
+          "base_url": context.metadata.get('base_url'),
+          "contexts": contexts_for_supa,  # should ideally be just one context but getting JSON serialization error when I do that
+      } for context in contexts]
 
       count = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
       print("successful END OF split_and_upload")
@@ -864,7 +827,7 @@ Now please respond to my question: {user_question}"""
       # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
       print("deleting from qdrant")
       self.qdrant_client.delete(
-          collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
+          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
           points_selector=models.Filter(must=[
               models.FieldCondition(
                   key="metadata.course_name",
@@ -880,7 +843,7 @@ Now please respond to my question: {user_question}"""
     try:
       # Delete from Supabase
       print("deleting from supabase")
-      response = self.supabase_client.from_(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).delete().eq('course_name', course_name).execute()
+      response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('course_name', course_name).execute()
       print("supabase response: ", response)
       return "Success"
     except Exception as e:
@@ -902,7 +865,7 @@ Now please respond to my question: {user_question}"""
       # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
       # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
       self.qdrant_client.delete(
-          collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
+          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
           points_selector=models.Filter(must=[
               models.FieldCondition(
                   key="metadata.s3_path",
@@ -912,7 +875,7 @@ Now please respond to my question: {user_question}"""
       )
 
       # Delete from Supabase
-      response = self.supabase_client.from_(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).delete().eq('s3_path', s3_path).eq(
+      response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('s3_path', s3_path).eq(
           'course_name', course_name).execute()
       return "Success"
     except Exception as e:
@@ -932,7 +895,7 @@ Now please respond to my question: {user_question}"""
     """
 
     response = self.supabase_client.table(
-        os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, s3_path, readable_filename, url, base_url').eq(  # type: ignore
+        os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select('course_name, s3_path, readable_filename, url, base_url').eq(
             'course_name', course_name).execute()
 
     data = response.data
@@ -949,7 +912,7 @@ Now please respond to my question: {user_question}"""
 
   def vector_search(self, search_query, course_name):
       top_n = 80
-      o = OpenAIEmbeddings()
+      o = OpenAIEmbeddings() # type: ignore
       user_query_embedding = o.embed_query(search_query)
       myfilter = models.Filter(
               must=[
@@ -970,12 +933,12 @@ Now please respond to my question: {user_question}"""
       print("search_results", search_results)
       found_docs: list[Document] = []
       for d in search_results:
-        metadata = d.payload.get('metadata')
-        if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys():
+        metadata = d.payload.get('metadata') # type: ignore
+        if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
             # aiding in the database migration...
-            metadata["pagenumber"] = metadata["pagenumber_or_timestamp"]
+            metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
         
-        found_docs.append(Document(page_content=d.payload.get('page_content'), metadata=metadata))
+        found_docs.append(Document(page_content=d.payload.get('page_content'), metadata=metadata)) # type: ignore
       
       # found_docs: list[Document] = [Document(page_content=str(d.payload.get('page_content')), metadata=d.payload.get('metadata')) for d in search_results]
       print("found_docs", found_docs)
@@ -1000,13 +963,13 @@ Now please respond to my question: {user_question}"""
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
-      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
+      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
 
       valid_docs = []
       num_tokens = 0
       for doc in found_docs:
         doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
-        num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
+        num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
         
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
         if token_counter + num_tokens <= token_limit:
@@ -1036,8 +999,8 @@ Now please respond to my question: {user_question}"""
     try:
       top_n = 150
       start_time_overall = time.monotonic()
-      o = OpenAIEmbeddings()
-      user_query_embedding = o.embed_documents(search_query)[0]
+      o = OpenAIEmbeddings() # type: ignore
+      user_query_embedding = o.embed_documents(search_query)[0] # type: ignore
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
@@ -1060,19 +1023,19 @@ Now please respond to my question: {user_question}"""
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
 
       # count tokens at start and end, then also count each context.
-      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)
+      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
       valid_docs = []
       for d in found_docs:
-        if "pagenumber" not in d.payload["metadata"].keys():
-          d.payload["metadata"]["pagenumber"] = d.payload["metadata"]["pagenumber_or_timestamp"]
-        doc_string = f"---\nDocument: {d.payload['metadata']['readable_filename']}{', page: ' + str(d.payload['metadata']['pagenumber']) if d.payload['metadata']['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"
-        num_tokens, prompt_cost = count_tokens_and_cost(doc_string)
+        if "pagenumber" not in d.payload["metadata"].keys(): # type: ignore
+          d.payload["metadata"]["pagenumber"] = d.payload["metadata"]["pagenumber_or_timestamp"] # type: ignore
+        doc_string = f"---\nDocument: {d.payload['metadata']['readable_filename']}{', page: ' + str(d.payload['metadata']['pagenumber']) if d.payload['metadata']['pagenumber'] else ''}\n{d.payload.get('page_content')}\n" # type: ignore
+        num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
 
-        print(f"Page: {d.payload.get('page_content')[:100]}...")
+        print(f"Page: {d.payload.get('page_content')[:100]}...") # type: ignore
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
-          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload.get('metadata')))
+          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload.get('metadata'))) # type: ignore
         else:
           continue
           print("running continue")
@@ -1086,7 +1049,7 @@ Now please respond to my question: {user_question}"""
       # Create the stuffedPrompt
       stuffedPrompt = (pre_prompt + context_text + '\n\nNow please respond to my query: ' + search_query)
 
-      TOTAL_num_tokens, prompt_cost = count_tokens_and_cost(stuffedPrompt, openai_model_name='gpt-4')
+      TOTAL_num_tokens, prompt_cost = count_tokens_and_cost(stuffedPrompt, openai_model_name='gpt-4') # type: ignore
       print(f"Total tokens: {TOTAL_num_tokens}, prompt_cost: {prompt_cost}")
       print("total docs: ", len(found_docs))
       print("num docs used: ", len(valid_docs))
@@ -1129,3 +1092,6 @@ Now please respond to my question: {user_question}"""
     } for doc in found_docs]
 
     return contexts
+
+if __name__ == '__main__':
+  pass

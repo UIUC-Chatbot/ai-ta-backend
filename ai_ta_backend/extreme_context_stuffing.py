@@ -274,19 +274,9 @@ def extract_context_from_results(results: List[Any]) -> List[str]:
               assistant_contents.append(choice['message']['content'])
               total_prompt_tokens += item['usage']['prompt_tokens']
               total_completion_tokens += item['usage']['completion_tokens']
+  # Note: I don't think the prompt_tokens or completion_tokens is working quite right... 
 
-  # print("Assistant Contents:", assistant_contents)
-  print("Total Prompt Tokens:", total_prompt_tokens)
-  print("Total Completion Tokens:", total_completion_tokens)
-  turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
-  print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ",
-        turbo_total_cost)
-
-  gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
-  print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ",
-        gpt4_total_cost)
-  print("GPT-4 cost premium: ", (gpt4_total_cost / max(turbo_total_cost, 1)), "x")
-  return assistant_contents  #, total_prompt_tokens, total_completion_tokens
+  return assistant_contents
 
 
 # dataclasses
@@ -442,6 +432,8 @@ def task_id_generator_function():
     yield task_id
     task_id += 1
 
+if __name__ == '__main__':
+  pass
 
 # run script
 # if __name__ == "__main__":
