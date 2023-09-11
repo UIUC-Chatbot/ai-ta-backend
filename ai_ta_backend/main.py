@@ -404,7 +404,7 @@ def logToNomic():
   print("course_name: ", course_name)
   print("conversation: ", conversation)
 
-  print("print json: ", request.get_json())
+  # print("print json: ", request.get_json())
   data = request.get_json()
   print(len(data))
   print(type(data))
@@ -412,8 +412,8 @@ def logToNomic():
   course_name = data['course_name']
   conversation = data['conversation']
 
-  print("course_name: ", course_name)
-  print("conversation: ", conversation)
+  # print("course_name: ", course_name)
+  # print("conversation: ", conversation)
 
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"

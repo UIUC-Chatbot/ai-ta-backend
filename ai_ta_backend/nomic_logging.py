@@ -26,7 +26,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
 
-  print("conversation: ", conversation)
+  #print("conversation: ", conversation)
   
   # we have to upload whole conversations
   # check what the fetched data looks like - pandas df or pyarrow table
@@ -142,6 +142,7 @@ def create_nomic_map(course_name: str, log_data: list):
   2. appends current embeddings and metadata to it
   2. creates map if there are at least 20 queries
   """
+  print("in create_nomic_map()")
   # initialize supabase
   supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
