@@ -21,6 +21,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   3. Keep current logic for map doesn't exist - update metadata
   """
   print("in log_convo_to_nomic()")
+
+  print("conversation: ", conversation)
   
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
@@ -64,7 +66,12 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       # select the last 2 messages and append new convo to prev convo
       messages_to_be_logged = messages[-2:]
       for message in messages_to_be_logged:
-        prev_convo += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
+        if message['role'] == 'user':
+          emoji = "🙋"
+        else:
+          emoji = "🤖"
+        
+        prev_convo += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
       # update metadata
       metadata = [{"course": course_name, "conversation": prev_convo, "conversation_id": conversation_id, 
@@ -79,7 +86,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       user_queries.append(first_message)
 
       for message in messages:
-        conversation_string += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
+        conversation_string += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
       metadata = [{"course": course_name, "conversation": conversation_string, "conversation_id": conversation_id, 
                     "id": last_id+1, "user_email": user_email, "first_query": first_message}]
@@ -177,15 +184,23 @@ def create_nomic_map(course_name: str, log_data: list):
 
       # create metadata for multi-turn conversation
       conversation = ""
+      if message['role'] == 'user':
+          emoji = "🙋"
+      else:
+          emoji = "🤖"
       for message in messages:
         # string of role: content, role: content, ...
-        conversation += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
+        conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
       
       # append current chat to previous chat if convo already exists
       if convo['id'] == log_conversation_id:
         conversation_exists = True
+        if m['role'] == 'user':
+          emoji = "🙋"
+        else:
+          emoji = "🤖"
         for m in log_messages:
-          conversation += "\n>>> " + m['role'] + ": " + m['content'] + "\n"
+          conversation += "\n>>> " + emoji + m['role'] + ": " + m['content'] + "\n"
 
       # add to metadata
       metadata_row = {"course": row['course_name'], "conversation": conversation, "conversation_id": convo['id'], 
@@ -198,7 +213,11 @@ def create_nomic_map(course_name: str, log_data: list):
       user_queries.append(log_messages[0]['content'])
       conversation = ""
       for message in log_messages:
-        conversation += "\n>>> " + message['role'] + ": " + message['content'] + "\n"
+        if message['role'] == 'user':
+          emoji = "🙋"
+        else:
+          emoji = "🤖"
+        conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
       metadata_row = {"course": course_name, "conversation": conversation, "conversation_id": log_conversation_id, 
                       "id": i, "user_email": log_user_email, "first_query": log_messages[0]['content']}
       metadata.append(metadata_row)
