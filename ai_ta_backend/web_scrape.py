@@ -240,7 +240,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
         url_contents.append((url, s, filetype))
       else:
         _invalid_urls.append(url)
-  
+  print("existing urls", _existing_urls)
   url_contents = remove_duplicates(url_contents, _existing_urls)
   max_urls = max_urls - len(url_contents)
   print(max_urls, "urls left")
@@ -251,6 +251,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
       if max_urls > 0:
         if _depth < max_depth:
           temp_data = crawler(url[0], max_urls, max_depth, timeout, _invalid_urls, _depth, url[1], url[2])
+          print("existing urls", _existing_urls)
           temp_data = remove_duplicates(temp_data, _existing_urls)
           max_urls = max_urls - len(temp_data)
           print(max_urls, "urls left")
@@ -274,12 +275,12 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   print(len(url_contents), "urls found")
   
   # Free up memory
-  del url_contents[:]
-  del urls[:]
-  if _invalid_urls is not None:
-    del _invalid_urls[:]
-  if _existing_urls is not None:
-    del _existing_urls[:]
+  # del url_contents[:]
+  # del urls[:]
+  # if _invalid_urls is not None:
+  #   del _invalid_urls[:]
+  # if _existing_urls is not None:
+  #   del _existing_urls[:]
   # gc.collect()
   
   return url_contents
@@ -322,22 +323,28 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     del ingester
     return results
   else:
-    print("Gathering existing urls from Supabase")
-    supabase_client = supabase.create_client(  # type: ignore
-    supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-    supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
-    urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
-    del supabase_client
-    if urls.data == []:
+    try:
+      print("Gathering existing urls from Supabase")
+      supabase_client = supabase.create_client(  # type: ignore
+      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+      urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
+      del supabase_client
+      if urls.data == []:
+        existing_urls = None
+      else:
+        existing_urls = []
+        for thing in urls.data:
+          whole = ''
+          for t in thing['contexts']:
+            whole += t['text']
+          existing_urls.append((thing['url'], whole))
+        print("Finished gathering existing urls from Supabase")
+    except Exception as e:
+      print("Error:", e)
+      print("Could not gather existing urls from Supabase")
       existing_urls = None
-    else:
-      existing_urls = []
-      for thing in urls.data:
-        whole = ''
-        for t in thing['contexts']:
-          whole += t['text']
-        existing_urls.append((thing['url'], whole))
-    print("Finished gathering existing urls from Supabase")
+    
     print("Begin Ingesting Web page")
     data = crawler(url=url, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=stay_on_baseurl, _existing_urls=existing_urls)
 
@@ -373,6 +380,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     if value == "403_Forbidden":
       print("Found Forbidden Key, deleting data")
       del data[counter]
+      counter -= 1
     else:
       path_name.append(value)
       counter += 1
