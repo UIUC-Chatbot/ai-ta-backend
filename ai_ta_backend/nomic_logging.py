@@ -202,7 +202,7 @@ def create_nomic_map(course_name: str, log_data: list):
                       "id": i, "user_email": log_user_email, "first_query": log_messages[0]['content']}
       metadata.append(metadata_row)
 
-    print(len(metadata))
+    print("length of metadata: ", len(metadata))
     metadata = pd.DataFrame(metadata)
 
     embeddings_model = OpenAIEmbeddings() # type: ignore
@@ -211,6 +211,7 @@ def create_nomic_map(course_name: str, log_data: list):
     # create Atlas project
     project_name = NOMIC_MAP_NAME_PREFIX + course_name
     index_name = course_name + "_convo_index"
+    print("project_name: ", project_name)
     project = atlas.map_embeddings(embeddings=np.array(embeddings), data=metadata, # type: ignore -- this is actually the correc type, the function signature from Nomic is incomplete
                                    id_field='id', build_topic_model=True, topic_label_field='first_query',
                                    name=project_name, colorable_fields=['conversation_id', 'first_query'])
