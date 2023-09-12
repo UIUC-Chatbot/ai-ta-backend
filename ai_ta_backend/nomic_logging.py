@@ -87,6 +87,10 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       user_queries.append(first_message)
 
       for message in messages:
+        if message['role'] == 'user':
+          emoji = "🙋"
+        else:
+          emoji = "🤖"
         conversation_string += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
       metadata = [{"course": course_name, "conversation": conversation_string, "conversation_id": conversation_id, 
