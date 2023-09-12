@@ -76,7 +76,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
       # update metadata
       metadata = [{"course": course_name, "conversation": prev_convo, "conversation_id": conversation_id, 
-                    "id": last_id+1, "user_email": user_email, "first_query": first_message}]
+                    "id": time.time(), "user_email": user_email, "first_query": first_message}]
     else:
       print("conversation_id does not exist")
 
@@ -94,7 +94,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         conversation_string += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
       metadata = [{"course": course_name, "conversation": conversation_string, "conversation_id": conversation_id, 
-                    "id": last_id+1, "user_email": user_email, "first_query": first_message}]
+                    "id": time.time(), "user_email": user_email, "first_query": first_message}]
       
       # create embeddings
       embeddings_model = OpenAIEmbeddings()
