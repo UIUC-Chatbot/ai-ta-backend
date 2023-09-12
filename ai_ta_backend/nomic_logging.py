@@ -44,7 +44,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
     map_metadata_df = project.maps[1].data.df
     map_embeddings_df = project.maps[1].embeddings.latent
-    last_id = int(map_metadata_df['id'].values[-1])
+    map_metadata_df['id'] = map_metadata_df['id'].astype(int)
+    last_id = map_metadata_df['id'].max()
     print("last_id: ", last_id)
     
     if conversation_id in map_metadata_df.values:
@@ -76,7 +77,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
       # update metadata
       metadata = [{"course": course_name, "conversation": prev_convo, "conversation_id": conversation_id, 
-                    "id": time.time(), "user_email": user_email, "first_query": first_message}]
+                    "id": last_id+1, "user_email": user_email, "first_query": first_message}]
     else:
       print("conversation_id does not exist")
 
@@ -94,7 +95,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         conversation_string += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
       metadata = [{"course": course_name, "conversation": conversation_string, "conversation_id": conversation_id, 
-                    "id": time.time(), "user_email": user_email, "first_query": first_message}]
+                    "id": last_id+1, "user_email": user_email, "first_query": first_message}]
       
       # create embeddings
       embeddings_model = OpenAIEmbeddings()
