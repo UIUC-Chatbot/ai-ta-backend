@@ -251,6 +251,7 @@ Now please respond to my question: {user_question}"""
                 self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
                 mime_type = mimetypes.guess_type(tmpfile.name)[0]
                 category, _ = mime_type.split('/')
+                match_file_ext = "." + _
 
             if category in ['video', 'audio']:
                 ret = self._ingest_single_video(s3_path, course_name)
@@ -258,6 +259,13 @@ Now please respond to my question: {user_question}"""
                     success_status['failure_ingest'].append(s3_path)
                 else:
                     success_status['success_ingest'].append(s3_path)
+            elif category == 'text' and match_file_ext not in file_ext_mapping.keys():
+              print(category, match_file_ext)
+              ret = self._ingest_single_txt(s3_path, course_name)
+              if ret != "Success":
+                  success_status['failure_ingest'].append(s3_path)
+              else:
+                success_status['success_ingest'].append(s3_path)
             else:
                 ingest(file_ext_mapping, s3_path, course_name, kwargs=kwargs)
 
