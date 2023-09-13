@@ -58,7 +58,10 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       embeddings = map_embeddings_df[prev_index-1].reshape(1, 1536)
       prev_convo = prev_data['conversation'].values[0]
       prev_id = prev_data['id'].values[0]
+      print("prev_id: ", prev_id)
       prev_created_at = prev_data['created_at'].values[0]
+      print("prev_created_at: ", prev_created_at)
+      print("before delete")
       
       # delete that convo data point from Nomic
       project.delete_data([prev_id])

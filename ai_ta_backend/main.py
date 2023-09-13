@@ -427,10 +427,10 @@ def logToNomic():
   
   # background execution of tasks!! 
   response = executor.submit(log_convo_to_nomic, course_name, data)
-  #response = jsonify(response)
-  #response.headers.add('Access-Control-Allow-Origin', '*')
-  print(response)
-  return "response"
+  response = jsonify({'outcome': 'success'})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  
+  return response
 
 
 if __name__ == '__main__':
