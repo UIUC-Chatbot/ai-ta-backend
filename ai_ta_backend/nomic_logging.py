@@ -5,6 +5,7 @@ from nomic import AtlasProject
 from langchain.embeddings import OpenAIEmbeddings
 import numpy as np
 import time
+import datetime
 import pandas as pd
 import supabase
 
@@ -57,6 +58,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       embeddings = map_embeddings_df[prev_index-1].reshape(1, 1536)
       prev_convo = prev_data['conversation'].values[0]
       prev_id = prev_data['id'].values[0]
+      prev_created_at = prev_data['created_at'].values[0]
       
       # delete that convo data point from Nomic
       project.delete_data([prev_id])
@@ -69,15 +71,21 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       messages_to_be_logged = messages[-2:]
       for message in messages_to_be_logged:
         if message['role'] == 'user':
-          emoji = "🙋"
+          emoji = "🙋 "
         else:
-          emoji = "🤖"
+          emoji = "🤖 "
         
         prev_convo += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
+      # modified timestamp
+      current_time = time.time()
+      dt_object = datetime.datetime.fromtimestamp(current_time)
+      current_timestamp = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
+
       # update metadata
       metadata = [{"course": course_name, "conversation": prev_convo, "conversation_id": conversation_id, 
-                    "id": last_id+1, "user_email": user_email, "first_query": first_message}]
+                    "id": last_id+1, "user_email": user_email, "first_query": first_message, "created_at": prev_created_at,
+                    "modified_at": current_timestamp}]
     else:
       print("conversation_id does not exist")
 
@@ -89,13 +97,19 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
       for message in messages:
         if message['role'] == 'user':
-          emoji = "🙋"
+          emoji = "🙋 "
         else:
-          emoji = "🤖"
+          emoji = "🤖 "
         conversation_string += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
+      # modified timestamp
+      current_time = time.time()
+      dt_object = datetime.datetime.fromtimestamp(current_time)
+      current_timestamp = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
+
       metadata = [{"course": course_name, "conversation": conversation_string, "conversation_id": conversation_id, 
-                    "id": last_id+1, "user_email": user_email, "first_query": first_message}]
+                    "id": last_id+1, "user_email": user_email, "first_query": first_message, "created_at": current_timestamp,
+                    "modified_at": current_timestamp}]
       
       # create embeddings
       embeddings_model = OpenAIEmbeddings()
@@ -183,6 +197,7 @@ def create_nomic_map(course_name: str, log_data: list):
 
     for index, row in df.iterrows():
       user_email = row['user_email']
+      created_at = row['created_at']
       convo = row['convo']
       messages = convo['messages']
       first_message = messages[0]['content']
@@ -191,9 +206,9 @@ def create_nomic_map(course_name: str, log_data: list):
       # create metadata for multi-turn conversation
       conversation = ""
       if message['role'] == 'user':
-          emoji = "🙋"
+          emoji = "🙋 "
       else:
-          emoji = "🤖"
+          emoji = "🤖 "
       for message in messages:
         # string of role: content, role: content, ...
         conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
@@ -202,15 +217,21 @@ def create_nomic_map(course_name: str, log_data: list):
       if convo['id'] == log_conversation_id:
         conversation_exists = True
         if m['role'] == 'user':
-          emoji = "🙋"
+          emoji = "🙋 "
         else:
-          emoji = "🤖"
+          emoji = "🤖 "
         for m in log_messages:
           conversation += "\n>>> " + emoji + m['role'] + ": " + m['content'] + "\n"
 
+      # adding timestamp
+      current_time = time.time()
+      dt_object = datetime.datetime.fromtimestamp(current_time)
+      current_timestamp = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
+      
       # add to metadata
       metadata_row = {"course": row['course_name'], "conversation": conversation, "conversation_id": convo['id'], 
-                      "id": i, "user_email": user_email, "first_query": first_message}
+                      "id": i, "user_email": user_email, "first_query": first_message, "created_at": created_at,
+                      "modified_at": current_timestamp}
       metadata.append(metadata_row)
       i += 1
 
@@ -220,12 +241,19 @@ def create_nomic_map(course_name: str, log_data: list):
       conversation = ""
       for message in log_messages:
         if message['role'] == 'user':
-          emoji = "🙋"
+          emoji = "🙋 "
         else:
-          emoji = "🤖"
+          emoji = "🤖 "
         conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+
+      # adding timestamp
+      current_time = time.time()
+      dt_object = datetime.datetime.fromtimestamp(current_time)
+      current_timestamp = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
+
       metadata_row = {"course": course_name, "conversation": conversation, "conversation_id": log_conversation_id, 
-                      "id": i, "user_email": log_user_email, "first_query": log_messages[0]['content']}
+                      "id": i, "user_email": log_user_email, "first_query": log_messages[0]['content'], "created_at": current_timestamp,
+                      "modified_at": current_timestamp}
       metadata.append(metadata_row)
 
     print("length of metadata: ", len(metadata))
