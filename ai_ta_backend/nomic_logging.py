@@ -64,7 +64,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       print("before delete")
       
       # delete that convo data point from Nomic
-      project.delete_data([prev_id])
+      print(project.delete_data([prev_id]))
       
       # prep for new point
       first_message = prev_convo.split("\n")[1].split(": ")[1]
