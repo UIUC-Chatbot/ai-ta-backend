@@ -60,8 +60,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       prev_convo = prev_data['conversation'].values[0]
       prev_id = prev_data['id'].values[0]
       print("prev_id: ", prev_id)
-      prev_created_at = prev_data['created_at'].values[0]
-      print("prev_created_at: ", prev_created_at)
+      created_at = pd.to_datetime(prev_data['created_at'].values[0]).strftime('%Y-%m-%d %H:%M:%S')
+      print("prev_created_at: ", created_at)
       print("before delete")
       
       # delete that convo data point from Nomic
@@ -82,14 +82,12 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         prev_convo += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
       # modified timestamp
-      current_time = time.time()
-      dt_object = datetime.datetime.fromtimestamp(current_time)
-      current_timestamp = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
+      current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
       # update metadata
       metadata = [{"course": course_name, "conversation": prev_convo, "conversation_id": conversation_id, 
-                    "id": last_id+1, "user_email": user_email, "first_query": first_message, "created_at": prev_created_at,
-                    "modified_at": current_timestamp}]
+                    "id": last_id+1, "user_email": user_email, "first_query": first_message, "created_at": created_at,
+                    "modified_at": current_time}]
     else:
       print("conversation_id does not exist")
 
@@ -107,13 +105,11 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         conversation_string += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
       # modified timestamp
-      current_time = time.time()
-      dt_object = datetime.datetime.fromtimestamp(current_time)
-      current_timestamp = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
+      current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
       metadata = [{"course": course_name, "conversation": conversation_string, "conversation_id": conversation_id, 
-                    "id": last_id+1, "user_email": user_email, "first_query": first_message, "created_at": current_timestamp,
-                    "modified_at": current_timestamp}]
+                    "id": last_id+1, "user_email": user_email, "first_query": first_message, "created_at": current_time,
+                    "modified_at": current_time}]
       
       # create embeddings
       embeddings_model = OpenAIEmbeddings()
@@ -201,7 +197,7 @@ def create_nomic_map(course_name: str, log_data: list):
 
     for index, row in df.iterrows():
       user_email = row['user_email']
-      created_at = row['created_at']
+      created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')  
       convo = row['convo']
       messages = convo['messages']
       first_message = messages[0]['content']
@@ -227,15 +223,13 @@ def create_nomic_map(course_name: str, log_data: list):
         for m in log_messages:
           conversation += "\n>>> " + emoji + m['role'] + ": " + m['content'] + "\n"
 
-      # adding timestamp
-      current_time = time.time()
-      dt_object = datetime.datetime.fromtimestamp(current_time)
-      current_timestamp = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
+      # adding modified timestamp
+      current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
       
       # add to metadata
       metadata_row = {"course": row['course_name'], "conversation": conversation, "conversation_id": convo['id'], 
                       "id": i, "user_email": user_email, "first_query": first_message, "created_at": created_at,
-                      "modified_at": current_timestamp}
+                      "modified_at": current_time}
       metadata.append(metadata_row)
       i += 1
 
@@ -251,13 +245,11 @@ def create_nomic_map(course_name: str, log_data: list):
         conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
       # adding timestamp
-      current_time = time.time()
-      dt_object = datetime.datetime.fromtimestamp(current_time)
-      current_timestamp = dt_object.strftime("%Y-%m-%d %H:%M:%S.%f+00:00")
+      current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
       metadata_row = {"course": course_name, "conversation": conversation, "conversation_id": log_conversation_id, 
-                      "id": i, "user_email": log_user_email, "first_query": log_messages[0]['content'], "created_at": current_timestamp,
-                      "modified_at": current_timestamp}
+                      "id": i, "user_email": log_user_email, "first_query": log_messages[0]['content'], "created_at": current_time,
+                      "modified_at": current_time}
       metadata.append(metadata_row)
 
     print("length of metadata: ", len(metadata))
