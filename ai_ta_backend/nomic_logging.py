@@ -55,6 +55,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       # store that convo metadata locally
       prev_data = map_metadata_df[map_metadata_df['conversation_id'] == conversation_id]
       prev_index = prev_data.index.values[0]
+      print("prev_index: ", prev_index)
       embeddings = map_embeddings_df[prev_index-1].reshape(1, 1536)
       prev_convo = prev_data['conversation'].values[0]
       prev_id = prev_data['id'].values[0]
