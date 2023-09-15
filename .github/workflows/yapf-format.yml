@@ -14,7 +14,7 @@ jobs:
       - name: pip install yapf
         run: pip install yapf
       - name: Format code with yapf
-        run: yapf --in-place --recursive --parallel --style="{based_on_style: google, column_limit: 140, indent_width: 2}" --exclude '*.env' .
+        run: yapf --in-place --recursive --parallel --style='{based_on_style: google, column_limit: 140, indent_width: 2}' --exclude '*.env' .
       - name: Commit changes
         uses: EndBug/add-and-commit@v4
         with:
