@@ -145,9 +145,6 @@ def getTopContexts() -> Response:
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
   del ingester
 
-  # background execution of tasks!! 
-  #executor.submit(log_query_to_nomic, course_name, search_query)
-
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
