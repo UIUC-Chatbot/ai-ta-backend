@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import re
 import shutil
@@ -7,13 +8,12 @@ from zipfile import ZipFile
 
 import boto3  # type: ignore
 import requests
-from bs4 import BeautifulSoup
-
 import supabase
+from bs4 import BeautifulSoup
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
-import mimetypes
+
 
 def get_file_extension(filename):
     match = re.search(r'\.([a-zA-Z0-9]+)$', filename)
@@ -286,15 +286,16 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   return url_contents
 
 def is_github_repo(url):
-    pattern = re.compile(r'^https://github\.com/[^/]+/[^/]+$')
-    if not pattern.match(url):
-      return False
-
-    response = requests.head(url)
-    if response.status_code == 200 and response.headers['Content-Type'].startswith('text/html'):
-      return url
-    else:
-      return False
+  # Split the URL by '?' to ignore any parameters
+  base_url = url.split('?')[0]
+  
+  # The regular expression now allows for optional 'http', 'https', and 'www' prefixes.
+  # It also accounts for optional trailing slashes.
+  # The pattern is also case-insensitive.
+  pattern = re.compile(r'^(https?://)?(www\.)?github\.com/[^/?]+/[^/?]+/?$', re.IGNORECASE)
+  
+  # The function returns True or False based on whether the pattern matches the base_url
+  return bool(pattern.match(base_url))
 
 def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=False):
   """
@@ -317,7 +318,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   stay_on_baseurl = bool(stay_on_baseurl)
   if stay_on_baseurl:
     baseurl = base_url(url)
-    print(baseurl)
+    print("baseurl:", baseurl)
 
   ingester = Ingest()
   s3_client = boto3.client(
