@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import re
 import shutil
@@ -7,13 +8,12 @@ from zipfile import ZipFile
 
 import boto3  # type: ignore
 import requests
-from bs4 import BeautifulSoup
-
 import supabase
+from bs4 import BeautifulSoup
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
-import mimetypes
+
 
 def get_file_extension(filename):
     match = re.search(r'\.([a-zA-Z0-9]+)$', filename)
@@ -151,7 +151,7 @@ def remove_duplicates(urls:list, supabase_urls:list=None):
   print("deleted", og_len-len(not_repeated_files), "duplicate files")
   return urls
 
-def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup:BeautifulSoup=None, _filetype:str=None,  _invalid_urls:list=[], _existing_urls:list=None):
+def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup:BeautifulSoup=None, _filetype:str=None,  _invalid_urls:list=[], _existing_urls:list=[]):
   '''Function gets titles of urls and the urls themselves'''
   # Prints the depth of the current search
   print("depth: ", _depth)
@@ -181,7 +181,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
     url, s, filetype = valid_url(url)
     time.sleep(timeout)
     url_contents.append((url,s, filetype))
-    print("Scraped:", url)
+    print("✅Scraped:", url, "✅")
   if url: 
     if filetype == '.html':
       try:
@@ -227,7 +227,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
       if url.startswith(site):
         url, s, filetype = valid_url(url)
         if url:
-          print("Scraped:", url)
+          print("✅Scraped:", url, "✅")
           url_contents.append((url, s, filetype))
         else:
           _invalid_urls.append(url)
@@ -236,7 +236,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
     else:
       url, s, filetype = valid_url(url)
       if url:
-        print("Scraped:", url)
+        print("✅Scraped:", url, "✅")
         url_contents.append((url, s, filetype))
       else:
         _invalid_urls.append(url)
@@ -285,6 +285,18 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   
   return url_contents
 
+def is_github_repo(url):
+  # Split the URL by '?' to ignore any parameters
+  base_url = url.split('?')[0]
+  
+  # The regular expression now allows for optional 'http', 'https', and 'www' prefixes.
+  # It also accounts for optional trailing slashes.
+  # The pattern is also case-insensitive.
+  pattern = re.compile(r'^(https?://)?(www\.)?github\.com/[^/?]+/[^/?]+/?$', re.IGNORECASE)
+  
+  # The function returns True or False based on whether the pattern matches the base_url
+  return bool(pattern.match(base_url))
+
 def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=False):
   """
   Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
@@ -305,8 +317,8 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   timeout = int(timeout)
   stay_on_baseurl = bool(stay_on_baseurl)
   if stay_on_baseurl:
-    stay_on_baseurl = base_url(url)
-    print(stay_on_baseurl)
+    baseurl = base_url(url)
+    print("baseurl:", baseurl)
 
   ingester = Ingest()
   s3_client = boto3.client(
@@ -316,7 +328,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     )
 
   # Check for GitHub repository coming soon
-  if url.startswith("https://github.com/"):
+  if is_github_repo(url):
     print("Begin Ingesting GitHub page")
     results = ingester.ingest_github(url, course_name)
     print("Finished ingesting GitHub page")
@@ -331,7 +343,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
       del supabase_client
       if urls.data == []:
-        existing_urls = None
+        existing_urls = []
       else:
         existing_urls = []
         for thing in urls.data:
@@ -340,13 +352,13 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
             whole += t['text']
           existing_urls.append((thing['url'], whole))
         print("Finished gathering existing urls from Supabase")
+        print("Length of existing urls:", len(existing_urls))
     except Exception as e:
       print("Error:", e)
       print("Could not gather existing urls from Supabase")
-      existing_urls = None
-    
+      existing_urls = []
     print("Begin Ingesting Web page")
-    data = crawler(url=url, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=stay_on_baseurl, _existing_urls=existing_urls)
+    data = crawler(url=url, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=baseurl, _existing_urls=existing_urls)
 
   # Clean some keys for a proper file name
   # todo: have a default title
