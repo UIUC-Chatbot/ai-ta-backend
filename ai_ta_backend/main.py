@@ -1,20 +1,18 @@
 import gc
-import gc
+import json
 import os
 import time
 from typing import List
-import json
 
 from dotenv import load_dotenv
-from flask import Flask, Response, Response, abort, jsonify, request
+from flask import Flask, Response, abort, jsonify, request
 from flask_cors import CORS
 from flask_executor import Executor
 from sqlalchemy import JSON
 
+from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
-from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
-from flask_executor import Executor
 
 app = Flask(__name__)
 CORS(app)
@@ -397,21 +395,9 @@ def nomic_map():
 
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic():
-  course_name: str = request.args.get('course_name', default='', type=str)
-  conversation: str = request.args.get('conversation', default='', type=str)
-  print("In /onResponseCompletion")
-
-  # print("print json: ", request.get_json())
   data = request.get_json()
-  print(len(data))
-  print(type(data))
-
   course_name = data['course_name']
   conversation = data['conversation']
-
-  # print("course_name: ", course_name)
-  # print("conversation: ", conversation)
-
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
     abort(
@@ -419,14 +405,12 @@ def logToNomic():
         description=
         f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
     )
+  print(f"In /onResponseCompletion for course: {course_name}")
 
-  #conversation_json = json.loads(conversation)
-  
   # background execution of tasks!! 
   response = executor.submit(log_convo_to_nomic, course_name, data)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
-  
   return response
 
 
