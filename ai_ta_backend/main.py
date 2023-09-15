@@ -292,22 +292,22 @@ def delete():
   Delete a single file from all our database: S3, Qdrant, and Supabase (for now).
   Note, of course, we still have parts of that file in our logs.
   """
-
   course_name: str = request.args.get('course_name', default='', type=str)
   s3_path: str = request.args.get('s3_path', default='', type=str)
+  source_url: str = request.args.get('source_url', default='', type=str)
 
-  if course_name == '' or s3_path == '':
+  if course_name == '' and (s3_path == '' or source_url == ''):
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing one or more required parameters: 'course_name' and 's3_path' must be provided. Course name: `{course_name}`, S3 path: `{s3_path}`"
+        f"Missing one or more required parameters: 'course_name' and ('s3_path' or 'source_url') must be provided. Course name: `{course_name}`, S3 path: `{s3_path}`, source_url: `{source_url}`"
     )
 
   start_time = time.monotonic()
   ingester = Ingest()
   # background execution of tasks!! 
-  executor.submit(ingester.delete_data, s3_path, course_name)
+  executor.submit(ingester.delete_data, course_name, s3_path, source_url)
   print(f"From {course_name}, deleted file: {s3_path}")
   print(f"⏰ Runtime of FULL delete func: {(time.monotonic() - start_time):.2f} seconds")
   del ingester

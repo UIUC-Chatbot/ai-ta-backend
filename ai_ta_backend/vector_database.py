@@ -681,13 +681,14 @@ Now please respond to my question: {user_question}"""
       data = loader.load()
       shutil.rmtree("media/cloned_repo")
       # create metadata for each file in data 
+
       for doc in data:
         texts = doc.page_content
         metadatas: Dict[str, Any] = {
                 'course_name': course_name,
                 's3_path': '',
                 'readable_filename': doc.metadata['file_name'],
-                'url': github_url,
+                'url': f"{github_url}/blob/main/{doc.metadata['file_path']}",
                 'pagenumber': '', 
                 'timestamp': '',
             }
@@ -834,31 +835,62 @@ Now please respond to my question: {user_question}"""
     # todo: delete from Vercel KV to fully make the coure not exist. Last db to delete from (as of now, Aug 15)
 
 
-  # Create a method to delete file from s3, delete vector from qdrant, and delete row from supabase
-  def delete_data(self, s3_path: str, course_name: str):
+  def delete_data(self, course_name: str, s3_path: str, source_url: str):
     """Delete file from S3, Qdrant, and Supabase."""
     print(f"Deleting {s3_path} from S3, Qdrant, and Supabase for course {course_name}")
     try:
       # Delete file from S3
       bucket_name = os.getenv('S3_BUCKET_NAME')
-      self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
 
-      # Delete from Qdrant
-      # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
-      # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
-      self.qdrant_client.delete(
-          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-          points_selector=models.Filter(must=[
-              models.FieldCondition(
-                  key="metadata.s3_path",
-                  match=models.MatchValue(value=s3_path),
-              ),
-          ]),
-      )
+      # Delete files by S3 path
+      if s3_path: 
+        try:
+          self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
+        except Exception as e:
+          print("Error in deleting file from s3:", e)
+        # Delete from Qdrant
+        # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
+        # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training  ...
+        try: 
+          self.qdrant_client.delete(
+              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+              points_selector=models.Filter(must=[
+                  models.FieldCondition(
+                      key="metadata.s3_path",
+                      match=models.MatchValue(value=s3_path),
+                  ),
+              ]),
+          )
+        except Exception as e:
+          print("Error in deleting file from Qdrant:", e)
+        try: 
+          response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('s3_path', s3_path).eq(
+              'course_name', course_name).execute()
+        except Exception as e:
+          print("Error in deleting file from supabase:", e)
+      
+      # Delete files by their URL identifier
+      elif source_url:
+        try:
+          # Delete from Qdrant
+          self.qdrant_client.delete(
+              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+              points_selector=models.Filter(must=[
+                  models.FieldCondition(
+                      key="metadata.url",
+                      match=models.MatchValue(value=source_url),
+                  ),
+              ]),
+          )
+        except Exception as e:
+          print("Error in deleting file from Qdrant:", e)
+        try: 
+          response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('url', source_url).eq(
+              'course_name', course_name).execute()
+        except Exception as e:
+          print("Error in deleting file from supabase:", e)
 
       # Delete from Supabase
-      response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('s3_path', s3_path).eq(
-          'course_name', course_name).execute()
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore

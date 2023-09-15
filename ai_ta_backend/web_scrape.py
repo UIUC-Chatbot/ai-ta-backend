@@ -295,7 +295,7 @@ def is_github_repo(url):
   pattern = re.compile(r'^(https?://)?(www\.)?github\.com/[^/?]+/[^/?]+/?$', re.IGNORECASE)
   
   # The function returns True or False based on whether the pattern matches the base_url
-  return bool(pattern.match(base_url))
+  return base_url if pattern.match(base_url) else None
 
 def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=False):
   """
@@ -328,9 +328,10 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     )
 
   # Check for GitHub repository coming soon
-  if is_github_repo(url):
+  cleaned_repo_url = is_github_repo(url)
+  if cleaned_repo_url:
     print("Begin Ingesting GitHub page")
-    results = ingester.ingest_github(url, course_name)
+    results = ingester.ingest_github(cleaned_repo_url, course_name)
     print("Finished ingesting GitHub page")
     del ingester
     return results
