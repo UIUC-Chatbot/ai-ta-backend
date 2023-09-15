@@ -1,4 +1,5 @@
 import gc
+import json
 import os
 import time
 from typing import List
@@ -9,7 +10,7 @@ from flask_cors import CORS
 from flask_executor import Executor
 from sqlalchemy import JSON
 
-from ai_ta_backend.nomic_logging import get_nomic_map, log_query_to_nomic
+from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
 
@@ -137,15 +138,12 @@ def getTopContexts() -> Response:
     abort(
         400,
         description=
-        f"Missing one or me required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
+        f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
   del ingester
-
-  # background execution of tasks!! 
-  executor.submit(log_query_to_nomic, course_name, search_query)
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -342,6 +340,7 @@ def scrape() -> Response:
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
   print(f"Timeout in Seconds ⏰: {timeout}")
+  print(f"Stay on baseurl: {stay_on_baseurl}")
 
   success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl)
 
@@ -349,7 +348,6 @@ def scrape() -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   gc.collect() # manually invoke garbage collection, try to reduce memory on Railway $$$
   return response
-
 
 @app.route('/mit-download', methods=['GET'])
 def mit_download_course() -> Response:
@@ -389,6 +387,26 @@ def nomic_map():
   print("nomic map\n", map_id)
 
   response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/onResponseCompletion', methods=['POST'])
+def logToNomic():
+  data = request.get_json()
+  course_name = data['course_name']
+  conversation = data['conversation']
+  if course_name == '' or conversation == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
+    )
+  print(f"In /onResponseCompletion for course: {course_name}")
+
+  # background execution of tasks!! 
+  response = executor.submit(log_convo_to_nomic, course_name, data)
+  response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
