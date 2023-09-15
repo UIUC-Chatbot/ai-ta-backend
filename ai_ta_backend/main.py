@@ -1,6 +1,7 @@
 import gc
 import os
 import time
+from concurrent.futures import wait
 from typing import List
 
 from dotenv import load_dotenv
@@ -16,7 +17,8 @@ from ai_ta_backend.web_scrape import main_crawler, mit_course_download
 app = Flask(__name__)
 CORS(app)
 executor = Executor(app)
-# app.config['EXECUTOR_MAX_WORKERS'] = 5 nothing == picks defaults for me
+app.config['EXECUTOR_TYPE'] = 'thread' # thread is default, or 'process'
+app.config['EXECUTOR_MAX_WORKERS'] = 5
 
 # load API keys from globally-availabe .env file
 load_dotenv()
