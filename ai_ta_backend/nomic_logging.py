@@ -9,8 +9,9 @@ import datetime
 import pandas as pd
 import supabase
 
-nomic.login(os.getenv('NOMIC_API_KEY')) # login during start of flask app
+nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
 NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+
 
 def log_convo_to_nomic(course_name: str, conversation) -> str:
   """
@@ -24,22 +25,22 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   print("in log_convo_to_nomic()")
 
   print("conversation: ", conversation)
-  
+
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
 
   #print("conversation: ", conversation)
-  
+
   # we have to upload whole conversations
   # check what the fetched data looks like - pandas df or pyarrow table
-  # check if conversation ID exists in Nomic, if yes fetch all data from it and delete it. 
+  # check if conversation ID exists in Nomic, if yes fetch all data from it and delete it.
   # will have current QA and historical QA from Nomic, append new data and add_embeddings()
 
   project_name = NOMIC_MAP_NAME_PREFIX + course_name
   start_time = time.monotonic()
   emoji = ""
-  
+
   try:
     # fetch project metadata and embbeddings
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
@@ -48,29 +49,29 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     map_metadata_df['id'] = map_metadata_df['id'].astype(int)
     last_id = map_metadata_df['id'].max()
     print("last_id: ", last_id)
-    
+
     if conversation_id in map_metadata_df.values:
       print("conversation_id exists")
-      
+
       # store that convo metadata locally
       prev_data = map_metadata_df[map_metadata_df['conversation_id'] == conversation_id]
       prev_index = prev_data.index.values[0]
       print("prev_index: ", prev_index)
-      embeddings = map_embeddings_df[prev_index-1].reshape(1, 1536)
+      embeddings = map_embeddings_df[prev_index - 1].reshape(1, 1536)
       prev_convo = prev_data['conversation'].values[0]
       prev_id = prev_data['id'].values[0]
       print("prev_id: ", prev_id)
       created_at = pd.to_datetime(prev_data['created_at'].values[0]).strftime('%Y-%m-%d %H:%M:%S')
       print("prev_created_at: ", created_at)
       print("before delete")
-      
+
       # delete that convo data point from Nomic
       print(project.delete_data([str(prev_id)]))
-      
+
       # prep for new point
       first_message = prev_convo.split("\n")[1].split(": ")[1]
       print("first_message: ", first_message)
-    
+
       # select the last 2 messages and append new convo to prev convo
       messages_to_be_logged = messages[-2:]
       for message in messages_to_be_logged:
@@ -78,16 +79,23 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
           emoji = "🙋 "
         else:
           emoji = "🤖 "
-        
+
         prev_convo += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
 
       # modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
       # update metadata
-      metadata = [{"course": course_name, "conversation": prev_convo, "conversation_id": conversation_id, 
-                    "id": last_id+1, "user_email": user_email, "first_query": first_message, "created_at": created_at,
-                    "modified_at": current_time}]
+      metadata = [{
+          "course": course_name,
+          "conversation": prev_convo,
+          "conversation_id": conversation_id,
+          "id": last_id + 1,
+          "user_email": user_email,
+          "first_query": first_message,
+          "created_at": created_at,
+          "modified_at": current_time
+      }]
     else:
       print("conversation_id does not exist")
 
@@ -107,19 +115,26 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       # modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-      metadata = [{"course": course_name, "conversation": conversation_string, "conversation_id": conversation_id, 
-                    "id": last_id+1, "user_email": user_email, "first_query": first_message, "created_at": current_time,
-                    "modified_at": current_time}]
-      
+      metadata = [{
+          "course": course_name,
+          "conversation": conversation_string,
+          "conversation_id": conversation_id,
+          "id": last_id + 1,
+          "user_email": user_email,
+          "first_query": first_message,
+          "created_at": current_time,
+          "modified_at": current_time
+      }]
+
       # create embeddings
       embeddings_model = OpenAIEmbeddings()
       embeddings = embeddings_model.embed_documents(user_queries)
-      
+
     # add embeddings to the project
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
     project.add_embeddings(embeddings=np.array(embeddings), data=pd.DataFrame(metadata))
     project.rebuild_maps()
-    
+
   except Exception as e:
     # if project doesn't exist, create it
     print(e)
@@ -155,13 +170,13 @@ def get_nomic_map(course_name: str):
   # Moved this to the logging function to keep our UI fast.
   # with project.wait_for_project_lock() as project:
   #   project.rebuild_maps()
-  
+
   map = project.get_map(project_name)
 
   print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
 
-  return {"map_id": f"iframe{map.id}",
-          "map_link": map.map_link}
+  return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
+
 
 def create_nomic_map(course_name: str, log_data: list):
   """
@@ -173,14 +188,14 @@ def create_nomic_map(course_name: str, log_data: list):
   print("in create_nomic_map()")
   # initialize supabase
   supabase_client = supabase.create_client(  # type: ignore
-        supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
   # fetch all conversations with this new course (we expect <=20 conversations, because otherwise the map should be made already)
   response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
   data = response.data
   df = pd.DataFrame(data)
-  
+
   if len(data) < 19:
     return None
   else:
@@ -197,7 +212,7 @@ def create_nomic_map(course_name: str, log_data: list):
 
     for index, row in df.iterrows():
       user_email = row['user_email']
-      created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')  
+      created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
       convo = row['convo']
       messages = convo['messages']
       first_message = messages[0]['content']
@@ -206,13 +221,13 @@ def create_nomic_map(course_name: str, log_data: list):
       # create metadata for multi-turn conversation
       conversation = ""
       if message['role'] == 'user':
-          emoji = "🙋 "
+        emoji = "🙋 "
       else:
-          emoji = "🤖 "
+        emoji = "🤖 "
       for message in messages:
         # string of role: content, role: content, ...
         conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
-      
+
       # append current chat to previous chat if convo already exists
       if convo['id'] == log_conversation_id:
         conversation_exists = True
@@ -225,11 +240,18 @@ def create_nomic_map(course_name: str, log_data: list):
 
       # adding modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-      
+
       # add to metadata
-      metadata_row = {"course": row['course_name'], "conversation": conversation, "conversation_id": convo['id'], 
-                      "id": i, "user_email": user_email, "first_query": first_message, "created_at": created_at,
-                      "modified_at": current_time}
+      metadata_row = {
+          "course": row['course_name'],
+          "conversation": conversation,
+          "conversation_id": convo['id'],
+          "id": i,
+          "user_email": user_email,
+          "first_query": first_message,
+          "created_at": created_at,
+          "modified_at": current_time
+      }
       metadata.append(metadata_row)
       i += 1
 
@@ -247,27 +269,40 @@ def create_nomic_map(course_name: str, log_data: list):
       # adding timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-      metadata_row = {"course": course_name, "conversation": conversation, "conversation_id": log_conversation_id, 
-                      "id": i, "user_email": log_user_email, "first_query": log_messages[0]['content'], "created_at": current_time,
-                      "modified_at": current_time}
+      metadata_row = {
+          "course": course_name,
+          "conversation": conversation,
+          "conversation_id": log_conversation_id,
+          "id": i,
+          "user_email": log_user_email,
+          "first_query": log_messages[0]['content'],
+          "created_at": current_time,
+          "modified_at": current_time
+      }
       metadata.append(metadata_row)
 
     print("length of metadata: ", len(metadata))
     metadata = pd.DataFrame(metadata)
 
-    embeddings_model = OpenAIEmbeddings() # type: ignore
+    embeddings_model = OpenAIEmbeddings()  # type: ignore
     embeddings = embeddings_model.embed_documents(user_queries)
 
     # create Atlas project
     project_name = NOMIC_MAP_NAME_PREFIX + course_name
     index_name = course_name + "_convo_index"
     print("project_name: ", project_name)
-    project = atlas.map_embeddings(embeddings=np.array(embeddings), data=metadata, # type: ignore -- this is actually the correc type, the function signature from Nomic is incomplete
-                                   id_field='id', build_topic_model=True, topic_label_field='first_query',
-                                   name=project_name, colorable_fields=['conversation_id', 'first_query'])
+    project = atlas.map_embeddings(
+        embeddings=np.array(embeddings),
+        data=metadata,  # type: ignore -- this is actually the correc type, the function signature from Nomic is incomplete
+        id_field='id',
+        build_topic_model=True,
+        topic_label_field='first_query',
+        name=project_name,
+        colorable_fields=['conversation_id', 'first_query'])
     project.create_index(index_name, build_topic_model=True)
     print("project: ", project)
     return f"Successfully created Nomic map for {course_name}"
+
 
 if __name__ == '__main__':
   pass
