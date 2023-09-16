@@ -157,125 +157,71 @@ Now please respond to my question: {user_question}"""
     # "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
 
     return stuffed_prompt
-  
-  # def ai_summary(self, text: List[str], metadata: List[Dict[str, Any]]) -> List[str]:
-  #   """
-  #   Given a textual input, return a summary of the text.
-  #   """
-  #   #print("in AI SUMMARY")
-  #   requests = []
-  #   for i in range(len(text)):
-  #     dictionary = {
-  #           "model": "gpt-3.5-turbo",
-  #           "messages": [{
-  #               "role":
-  #                   "system",
-  #               "content":
-  #                   "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
-  #           }, {
-  #               "role":
-  #                   "user",
-  #               "content":
-  #                   f"Provide a descriptive summary of the given text:\n{text[i]}\nThe summary should cover all the key points, while also condensing the information into a concise format. The length of the summary should not exceed 3 sentences.",
-  #           }],
-  #           "n": 1,
-  #           "max_tokens": 600,
-  #           "metadata": metadata[i]
-  #       }
-  #     requests.append(dictionary)
-
-  #   oai = OpenAIAPIProcessor(input_prompts_list=requests,
-  #                            request_url='https://api.openai.com/v1/chat/completions',
-  #                            api_key=os.getenv("OPENAI_API_KEY"),
-  #                            max_requests_per_minute=1500,
-  #                            max_tokens_per_minute=90000,
-  #                            token_encoding_name='cl100k_base',
-  #                            max_attempts=5,
-  #                            logging_level=20)
-
-  #   asyncio.run(oai.process_api_requests_from_file())
-  #   #results: list[str] = oai.results
-  #   #print(f"Cleaned results: {oai.cleaned_results}")
-  #   summary = oai.cleaned_results
-  #   return summary
 
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
-    # https://python.langchain.com/en/latest/modules/indexes/document_loaders/examples/microsoft_word.html
-    success_status = {"success_ingest": [], "failure_ingest": []}
+    def _ingest_single(file_ingest_methods, s3_path, *args, **kwargs):
+      """Handle running an arbitrary ingest function for an individual file."""
+      handler = file_ingest_methods.get(Path(s3_path).suffix)
+      if handler:
+        # RUN INGEST METHOD
+        ret = handler(s3_path, *args, **kwargs)
+        if ret != "Success":
+          success_status['failure_ingest'].append(s3_path)
+        else:
+          success_status['success_ingest'].append(s3_path)
 
+    # 👇👇👇👇 ADD NEW INGEST METHODSE E  HER👇👇👇👇🎉
+    file_ingest_methods = {
+        '.html': self._ingest_html,
+        '.py': self._ingest_single_py,
+        '.vtt': self._ingest_single_vtt,
+        '.pdf': self._ingest_single_pdf,
+        '.txt': self._ingest_single_txt,
+        '.md': self._ingest_single_txt,
+        '.srt': self._ingest_single_srt,
+        '.docx': self._ingest_single_docx,
+        '.ppt': self._ingest_single_ppt,
+        '.pptx': self._ingest_single_ppt,
+    }
+
+    # Ingest methods via MIME type (more general than filetype)
+    mimetype_ingest_methods = {
+      'video': self._ingest_single_video,
+      'audio': self._ingest_single_video,
+      'text': self._ingest_single_txt,
+    }
+    # 👆👆👆👆 ADD NEW INGEST METHODS ERE 👆👆👇�DS 👇�🎉
+
+    success_status = {"success_ingest": [], "failure_ingest": []}
     try:
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
 
+      
       for s3_path in s3_paths:
-        ext = Path(s3_path).suffix  # check mimetype of file
-        # TODO: no need to download, just guess_type against the s3_path...
-        with NamedTemporaryFile(suffix=ext) as tmpfile:
+        with NamedTemporaryFile(suffix=Path(s3_path).suffix) as tmpfile:
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-          mime_type = str(mimetypes.guess_type(tmpfile.name)[0])
-          category, subcategory = mime_type.split('/') 
+          mime_type = mimetypes.guess_type(tmpfile.name, strict=False)[0]
+          mime_category, extension = mime_type.split('/')
+          file_ext = "." + extension
 
-          # TODO: if mime-type is text, we should handle that via .txt ingest
-        
-        if s3_path.endswith('.html'):
-          ret = self._ingest_html(s3_path, course_name, kwargs=kwargs)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.py'):
-          ret = self._ingest_single_py(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.vtt'):
-          ret = self._ingest_single_vtt(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.pdf'):
-          ret = self._ingest_single_pdf(s3_path, course_name, kwargs=kwargs)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.txt') or s3_path.endswith('.md'):
-          ret = self._ingest_single_txt(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.srt'):
-          ret = self._ingest_single_srt(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.docx'):
-          ret = self._ingest_single_docx(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif s3_path.endswith('.ppt') or s3_path.endswith('.pptx'):
-          ret = self._ingest_single_ppt(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
-        elif category == 'video' or category == 'audio':
-          ret = self._ingest_single_video(s3_path, course_name)
-          if ret != "Success":
-            success_status['failure_ingest'].append(s3_path)
-          else:
-            success_status['success_ingest'].append(s3_path)
+        if file_ext in file_ingest_methods:
+          # Use specialized functions when possible, fallback to mimetype. Else raise error.
+          _ingest_single(file_ingest_methods, s3_path, course_name, kwargs=kwargs)
+        elif mime_category in mimetype_ingest_methods:
+          # mime type
+          _ingest_single(mimetype_ingest_methods, s3_path, course_name, kwargs=kwargs)
+        else:
+          # failure
+          success_status['failure_ingest'].append(f"File ingest not supported for Mimetype: {mime_type}, with MimeCategory: {mime_category}, with file extension: {file_ext} for s3_path: {s3_path}")
+          continue
+      
       return success_status
     except Exception as e:
-      success_status['failure_ingest'].append("MAJOR ERROR IN /bulk_ingest: Error: " + str(e))
-      return success_status
+        success_status['failure_ingest'].append(f"MAJOR ERROR IN /bulk_ingest: Error: {str(e)}")
+        return success_status
+
 
   def _ingest_single_py(self, s3_path: str, course_name: str):
     try:
@@ -735,16 +681,18 @@ Now please respond to my question: {user_question}"""
       data = loader.load()
       shutil.rmtree("media/cloned_repo")
       # create metadata for each file in data 
-      texts = [doc.page_content for doc in data]
-      metadatas: List[Dict[str, Any]] = [{
-              'course_name': course_name,
-              's3_path': '',
-              'readable_filename': doc.metadata['file_name'],
-              'url': github_url,
-              'pagenumber': '', 
-              'timestamp': '',
-          } for doc in data]
-      self.split_and_upload(texts=texts, metadatas=metadatas)
+
+      for doc in data:
+        texts = doc.page_content
+        metadatas: Dict[str, Any] = {
+                'course_name': course_name,
+                's3_path': '',
+                'readable_filename': doc.metadata['file_name'],
+                'url': f"{github_url}/blob/main/{doc.metadata['file_path']}",
+                'pagenumber': '', 
+                'timestamp': '',
+            }
+        self.split_and_upload(texts=[texts], metadatas=[metadatas])
       return "Success"
     except Exception as e:
       print(f"ERROR IN GITHUB INGEST {e}")
@@ -810,14 +758,23 @@ Now please respond to my question: {user_question}"""
           "embedding": embeddings_dict[context.page_content]
       } for context in contexts]
 
-      document = [{
-        "course_name": context.metadata.get('course_name'),
-          "s3_path": context.metadata.get('s3_path'),
-          "readable_filename": context.metadata.get('readable_filename'),
-          "url": context.metadata.get('url'),
-          "base_url": context.metadata.get('base_url'),
-          "contexts": contexts_for_supa,  # should ideally be just one context but getting JSON serialization error when I do that
-      } for context in contexts]
+      document = {
+          "course_name": contexts[0].metadata.get('course_name'),
+          "s3_path": contexts[0].metadata.get('s3_path'),
+          "readable_filename": contexts[0].metadata.get('readable_filename'),
+          "url": contexts[0].metadata.get('url'),
+          "base_url": contexts[0].metadata.get('base_url'),
+          "contexts": contexts_for_supa,
+      }
+
+      # document = [{
+      #   "course_name": context.metadata.get('course_name'),
+      #     "s3_path": context.metadata.get('s3_path'),
+      #     "readable_filename": context.metadata.get('readable_filename'),
+      #     "url": context.metadata.get('url'),
+      #     "base_url": context.metadata.get('base_url'),
+      #     "contexts": contexts_for_supa,  # should ideally be just one context but getting JSON serialization error when I do that
+      # } for context in contexts]
 
       count = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
       print("successful END OF split_and_upload")
@@ -878,31 +835,62 @@ Now please respond to my question: {user_question}"""
     # todo: delete from Vercel KV to fully make the coure not exist. Last db to delete from (as of now, Aug 15)
 
 
-  # Create a method to delete file from s3, delete vector from qdrant, and delete row from supabase
-  def delete_data(self, s3_path: str, course_name: str):
+  def delete_data(self, course_name: str, s3_path: str, source_url: str):
     """Delete file from S3, Qdrant, and Supabase."""
     print(f"Deleting {s3_path} from S3, Qdrant, and Supabase for course {course_name}")
     try:
       # Delete file from S3
       bucket_name = os.getenv('S3_BUCKET_NAME')
-      self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
 
-      # Delete from Qdrant
-      # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
-      # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training studies in \nclassrooms than in the laboratory, given the nature of the time \ncommitment for students. Even some of the studies that did \nnot involve training were conducted outside the laboratory; for \nexample, in the Bednall and Kehoe (2011) study on learning \nabout logical fallacies from Web modules (see data in Table 3), \nthe modules were actually completed as a homework assign-\nment. Overall, benefits can be observed in classroom settings; \nthe real constraint is whether students have the skill to suc-\ncessfully summarize, not whether summarization occurs in the \nlab or the classroom.\n3.4 Issues for implementation. Summarization would be \nfeasible for undergraduates or other learners who already \nknow how to summarize. For these students, summarization \nwould constitute an easy-to-implement technique that would \nnot take a lot of time to complete or understand. The only \nconcern would be whether these students might be better \nserved by some other strategy, but certainly summarization \nwould be better than the study strategies students typically \nfavor, such as highlighting and rereading (as we discuss in the \nsections on those strategies below). A trickier issue would \nconcern implementing the strategy with students who are not \nskilled summarizers. Relatively intensive training programs \nare required for middle school students or learners with learn-\ning disabilities to benefit from summarization. Such efforts \nare not misplaced; training has been shown to benefit perfor-\nmance on a range of measures, although the training proce-\ndures do raise practical issues (e.g., Gajria & Salvia, 1992: \n6.511 hours of training used for sixth through ninth graders \nwith learning disabilities; Malone & Mastropieri, 1991: 2 \ndays of training used for middle school students with learning \ndisabilities; Rinehart et al., 1986: 4550 minutes of instruc-\ntion per day for 5 days used for sixth graders). Of course, \ninstructors may want students to summarize material because \nsummarization itself is a goal, not because they plan to use \nsummarization as a study technique, and that goal may merit \nthe efforts of training.\nHowever, if the goal is to use summarization as a study \ntechnique, our question is whether training students would be \nworth the amount of time it would take, both in terms of the \ntime required on the part of the instructor and in terms of the \ntime taken away from students other activities. For instance, \nin terms of efficacy, summarization tends to fall in the middle \nof the pack when compared to other techniques. In direct \ncomparisons, it was sometimes more useful than rereading \n(Rewey, Dansereau, & Peel, 1991) and was as useful as note-\ntaking (e.g., Bretzing & Kulhavy, 1979) but was less powerful \nthan generating explanations (e.g., Bednall & Kehoe, 2011) or \nself-questioning (A. King, 1992).\n3.5 Summarization: Overall assessment. On the basis of the \navailable evidence, we rate summarization as low utility. It can \nbe an effective learning strategy for learners who are already \nskilled at summarizing; however, many learners (including \nchildren, high school students, and even some undergraduates) \nwill require extensive training, which makes this strategy less \nfeasible. Our enthusiasm is further dampened by mixed find-\nings regarding which tasks summarization actually helps. \nAlthough summarization has been examined with a wide \nrange of text materials, many researchers have pointed to fac-\ntors of these texts that seem likely to moderate the effects of \nsummarization (e.g'}, vector=None),
-      self.qdrant_client.delete(
-          collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-          points_selector=models.Filter(must=[
-              models.FieldCondition(
-                  key="metadata.s3_path",
-                  match=models.MatchValue(value=s3_path),
-              ),
-          ]),
-      )
+      # Delete files by S3 path
+      if s3_path: 
+        try:
+          self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
+        except Exception as e:
+          print("Error in deleting file from s3:", e)
+        # Delete from Qdrant
+        # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
+        # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training  ...
+        try: 
+          self.qdrant_client.delete(
+              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+              points_selector=models.Filter(must=[
+                  models.FieldCondition(
+                      key="metadata.s3_path",
+                      match=models.MatchValue(value=s3_path),
+                  ),
+              ]),
+          )
+        except Exception as e:
+          print("Error in deleting file from Qdrant:", e)
+        try: 
+          response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('s3_path', s3_path).eq(
+              'course_name', course_name).execute()
+        except Exception as e:
+          print("Error in deleting file from supabase:", e)
+      
+      # Delete files by their URL identifier
+      elif source_url:
+        try:
+          # Delete from Qdrant
+          self.qdrant_client.delete(
+              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+              points_selector=models.Filter(must=[
+                  models.FieldCondition(
+                      key="metadata.url",
+                      match=models.MatchValue(value=source_url),
+                  ),
+              ]),
+          )
+        except Exception as e:
+          print("Error in deleting file from Qdrant:", e)
+        try: 
+          response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('url', source_url).eq(
+              'course_name', course_name).execute()
+        except Exception as e:
+          print("Error in deleting file from supabase:", e)
 
       # Delete from Supabase
-      response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('s3_path', s3_path).eq(
-          'course_name', course_name).execute()
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
