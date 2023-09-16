@@ -296,7 +296,7 @@ def delete():
   s3_path: str = request.args.get('s3_path', default='', type=str)
   source_url: str = request.args.get('source_url', default='', type=str)
 
-  if course_name == '' and (s3_path == '' or source_url == ''):
+  if course_name == '' or (s3_path == '' and source_url == ''):
     # proper web error "400 Bad request"
     abort(
         400,
