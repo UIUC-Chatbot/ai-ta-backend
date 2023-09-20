@@ -171,18 +171,23 @@ def remove_duplicates(urls:list=[], _existing_urls:list=[]):
 # Delete repeated sites, with different URLs and keeping one
   # Making sure we don't have duplicate urls from Supabase
   og_len = len(urls)
-  not_repeated_files = [url[1] for url in _existing_urls]
-  not_repeated_files.extend([url[1] for url in urls])
+  existing_files = [url[1] for url in _existing_urls]
+  existing_urls = [url[0] for url in _existing_urls]
 
   if urls: 
     print("deleting duplicate files")
     for row in urls:
-      if row[1] not in not_repeated_files:
-        not_repeated_files.append(row[1])
-      else:
+      if row[0] in existing_urls:
         urls.remove(row)
         print("❌ Removed", row[0], "from urls because it is a duplicate ❌")
         continue
+      elif row[1] in existing_files:
+        urls.remove(row)
+        print("❌ Removed", row[0], "from urls because it is a duplicate ❌")
+        continue
+      else:
+        existing_urls.append(row[0])
+        existing_files.append(row[1])
     print("deleted", og_len-len(urls), "duplicate files")
   else:
     print("No urls to delete")
@@ -203,10 +208,10 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
   max_urls = int(max_urls)
   _depth = int(_depth)
   max_depth = int(max_depth)
-  # Perhaps use the Counter class to keep track of the number of urls
+  # Counts the number of repeated urls and if it is too high, it will exit the web scraper
   counted_urls = Counter(_existing_urls.extend(_invalid_urls))
   if len(counted_urls) != 0:
-    if sum(counted_urls.values())/len(counted_urls) > 3 and _depth > 0:
+    if sum(counted_urls.values())/len(counted_urls) > 4:
       print("Too many repeated urls, exiting web scraper")
       return []
   ingester = Ingest()
@@ -220,7 +225,6 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
 
   amount = max_urls
   
-  # Get rid of double slashes in url
   # Create a base site for incomplete hrefs
   base = base_url(url)
   if base == []:
@@ -230,50 +234,54 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
 
   urls= set()
 
+  # For the first URL
   if _soup:
     s = _soup
     filetype = _filetype
   else:
     url, s, filetype = valid_url(url)
-    time.sleep(timeout)
-    url_content = (url, s, filetype)
-    path_name = title_path_name(url_content)
-    url_contents.append(url_content)
-    url_contents = remove_duplicates(url_contents, _existing_urls)
-    if check_file_not_exists(_existing_urls, url_content):
-      ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
-      print("Scraped:", url)
-      max_urls = max_urls - 1
-  if url: 
-    if filetype == '.html':
-      try:
-        body = s.find("body")
-        header = s.find("head") 
-      except Exception as e:
-        print("Error:", e)
-        body = ""
-        header = ""
-
-      # Check for 403 Forbidden urls
-      try:
-        if s.title.string.lower() == "403 forbidden" or s.title.string.lower() == 'page not found': # type: ignore
-          print("403 Forbidden")
-          _invalid_urls.append(url)
-        else:
-          pass
-      except Exception as e:
-        print("Error:", e)
-        pass 
-      if body != "" and header != "":
-        urls = find_urls(body, urls, site)
-        urls = find_urls(header, urls, site)
+    if url:
+      time.sleep(timeout)
+      url_content = (url, s, filetype)
+      if check_file_not_exists(_existing_urls, url_content):
+        path_name = title_path_name(url_content)
+        url_contents.append(url_content)
+        _existing_urls.append(url_content)
+        url_contents = remove_duplicates(url_contents, _existing_urls)
+        ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
+        print("Scraped:", url)
+        max_urls = max_urls - 1
       else:
-        urls = find_urls(s, urls, site)
+        print("Your entered URL is already existing in the database")
+        return []
     else:
-      pass
-  else:
-    _invalid_urls.append(url)
-    return []
+      print("Your entered URL is invalid")
+      return []
+
+  if filetype == '.html':
+    try:
+      body = s.find("body")
+      header = s.find("head") 
+    except Exception as e:
+      print("Error:", e)
+      body = ""
+      header = ""
+
+    # Check for 403 Forbidden urls
+    try:
+      if s.title.string.lower() == "403 forbidden" or s.title.string.lower() == 'page not found': # type: ignore
+        print("403 Forbidden")
+        _invalid_urls.append(url)
+      else:
+        pass
+    except Exception as e:
+      print("Error:", e)
+      pass 
+    if body != "" and header != "":
+      urls = find_urls(body, urls, site)
+      urls = find_urls(header, urls, site)
+    else:
+      urls = find_urls(s, urls, site)
 
   urls = list(urls)
   if max_urls > len(urls):
@@ -292,11 +300,11 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
         if url:
           time.sleep(timeout)
           url_content = (url, s, filetype)
-          path_name = title_path_name(url_content)
-          url_contents.append(url_content)
-          url_contents = remove_duplicates(url_contents, _existing_urls)
-
           if check_file_not_exists(_existing_urls, url_content):
+            path_name = title_path_name(url_content)
+            url_contents.append(url_content)
+            _existing_urls.append(url_content)
+            url_contents = remove_duplicates(url_contents, _existing_urls)
             ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
             print("Scraped:", url)
             max_urls = max_urls - 1
@@ -307,15 +315,16 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
     else:
       url, s, filetype = valid_url(url)
       if url:
-        time.sleep(timeout)
-        url_content = (url, s, filetype)
-        path_name = title_path_name(url_content)
-        url_contents.append(url_content)
-        url_contents = remove_duplicates(url_contents, _existing_urls)
-        if check_file_not_exists(_existing_urls, url_content):
-          ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
-          print("Scraped:", url)
-          max_urls = max_urls - 1
+          time.sleep(timeout)
+          url_content = (url, s, filetype)
+          if check_file_not_exists(_existing_urls, url_content):
+            path_name = title_path_name(url_content)
+            url_contents.append(url_content)
+            _existing_urls.append(url_content)
+            url_contents = remove_duplicates(url_contents, _existing_urls)
+            ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
+            print("Scraped:", url)
+            max_urls = max_urls - 1
       else:
         _invalid_urls.append(url)
   # recursively go through crawler until we reach the max amount of urls. 
@@ -323,9 +332,8 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
     if url[0] not in _invalid_urls and url[0] not in _existing_urls:
       if max_urls > 0:
         if _depth < max_depth:
-          temp_data = crawler(url[0], course_name, max_urls, max_depth, timeout, base_url_on, _depth, url[1], url[2], _invalid_urls, _existing_urls, url_contents)
           og_len = len(url_contents)
-          url_contents.extend(temp_data)
+          url_contents = crawler(url[0], course_name, max_urls, max_depth, timeout, base_url_on, _depth, url[1], url[2], _invalid_urls, _existing_urls, url_contents)
           url_contents = remove_duplicates(url_contents, _existing_urls)
           diff = len(url_contents) - og_len
           max_urls = max_urls - diff
