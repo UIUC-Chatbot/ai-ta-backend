@@ -39,7 +39,7 @@ def valid_url(url):
       # Check for permanent redirect
       if redirect_loop_counter > 3:
         print("❌ Redirect loop (on 301 error) exceeded redirect limit of:", redirect_loop_counter, "❌")
-        return False
+        return (False, False, False)
       redirect_url = response.headers['Location']
       response = requests.head(redirect_url)
       redirect_loop_counter += 1
@@ -60,7 +60,7 @@ def valid_url(url):
       else:
         return (False, False, False)
       if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
-        print("Filetype not supported:", filetype)
+        print("⛔️⛔️ Filetype not supported:", filetype, "⛔️⛔️")
       return (response.url, content, filetype)
     else:
       print("🚫🚫 URL is invalid:", response.url, "Return code:", response.status_code, "🚫🚫")
@@ -196,7 +196,8 @@ def remove_duplicates(urls:list=[], _existing_urls:list=[]):
 
 def check_file_not_exists(urls:list, file):
   contents = [url[1] for url in urls]
-  if file[1] in contents:
+  urls = [url[0] for url in urls]
+  if file[1] in contents or file[0] in urls:
     return False
   else:
     return True
@@ -228,7 +229,7 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
   # Create a base site for incomplete hrefs
   base = base_url(url)
   if base == []:
-    return []
+    return url_contents
   else:
     site = base
 
@@ -247,16 +248,16 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
         path_name = title_path_name(url_content)
         url_contents.append(url_content)
         _existing_urls.append(url_content)
-        url_contents = remove_duplicates(url_contents, _existing_urls)
+        # url_contents = remove_duplicates(url_contents, _existing_urls=_existing_urls)
         ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
-        print("Scraped:", url)
+        print("✅✅ Scraped:", url, "✅✅")
         max_urls = max_urls - 1
       else:
         print("Your entered URL is already existing in the database")
-        return []
+        return url_contents
     else:
       print("Your entered URL is invalid")
-      return []
+      return url_contents
 
   if filetype == '.html':
     try:
@@ -304,15 +305,18 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
             path_name = title_path_name(url_content)
             url_contents.append(url_content)
             _existing_urls.append(url_content)
-            url_contents = remove_duplicates(url_contents, _existing_urls)
+            # url_contents = remove_duplicates(url_contents, _existing_urls)
             ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
-            print("Scraped:", url)
+            print("✅✅ Scraped:", url, "✅✅")
             max_urls = max_urls - 1
+          else:
+            print("This URL is already existing in the database")
         else:
           _invalid_urls.append(url)
       else:
         pass
     else:
+      # Check if url is already in the database before scraping
       url, s, filetype = valid_url(url)
       if url:
           time.sleep(timeout)
@@ -321,10 +325,12 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
             path_name = title_path_name(url_content)
             url_contents.append(url_content)
             _existing_urls.append(url_content)
-            url_contents = remove_duplicates(url_contents, _existing_urls)
+            # url_contents = remove_duplicates(url_contents, _existing_urls)
             ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
-            print("Scraped:", url)
+            print("✅✅ Scraped:", url, "✅✅")
             max_urls = max_urls - 1
+          else:
+            print("This URL is already existing in the database")
       else:
         _invalid_urls.append(url)
   # recursively go through crawler until we reach the max amount of urls. 
@@ -333,11 +339,11 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
       if max_urls > 0:
         if _depth < max_depth:
           og_len = len(url_contents)
-          url_contents = crawler(url[0], course_name, max_urls, max_depth, timeout, base_url_on, _depth, url[1], url[2], _invalid_urls, _existing_urls, url_contents)
-          url_contents = remove_duplicates(url_contents, _existing_urls)
+          url_contents = crawler(url[0], course_name, max_urls, max_depth, timeout, base_url_on, _depth+1, url[1], url[2], _invalid_urls, _existing_urls, url_contents)
+          # url_contents = remove_duplicates(url_contents, _existing_urls)
           diff = len(url_contents) - og_len
           max_urls = max_urls - diff
-          print("Technically don't have to remove here, but here is what it is:", diff)
+          # print("Technically don't have to remove here, but here is what it is:", diff)
           print(max_urls, "urls left")
         else:
           print("Depth exceeded:", _depth+1, "out of", max_depth)
@@ -383,15 +389,12 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   timeout = int(timeout)
   stay_on_baseurl = bool(stay_on_baseurl)
   if stay_on_baseurl:
-    stay_on_baseurl = base_url(url)
-    print(stay_on_baseurl)
+    base_url_str = base_url(url)
+    print(base_url_str)
+  else:
+    base_url_str = ''
 
   ingester = Ingest()
-  s3_client = boto3.client(
-        's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    )
 
   # Check for GitHub repository coming soon
   if url.startswith("https://github.com/"):
@@ -423,7 +426,7 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       print("Could not gather existing urls from Supabase")
       existing_urls = []
     print("Begin Ingesting Web page")
-    data = crawler(url=url, course_name=course_name, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=stay_on_baseurl, _existing_urls=existing_urls)
+    data = crawler(url=url, course_name=course_name, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=base_url_str, _existing_urls=existing_urls)
     del ingester
 
   print(f"Successfully uploaded files to s3: {len(data)}")
