@@ -14,6 +14,7 @@ import supabase
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
 import mimetypes
+from collections import Counter
 
 def get_file_extension(filename):
     match = re.search(r'\.([a-zA-Z0-9]+)$', filename)
@@ -116,49 +117,104 @@ def find_urls(soup:BeautifulSoup, urls:set, site:str):
 
   return urls
 
-def remove_duplicates(urls:list, supabase_urls:list=None):
+def title_path_name(value):
+  try:
+    title = value[1].title.string
+  except AttributeError as e:
+    # if no title
+    try:
+      title = re.findall(pattern=r'[a-zA-Z0-9.]*[a-z]', string=value[0])[1]
+    except Exception as e:
+      title = "Title Not Found"
+    print(f"URL is missing a title, using this title instead: {title}")
+
+  try:
+    clean = re.match(r"[a-zA-Z0-9\s]*", title).group(0) # type: ignore
+  except Exception as e:
+    print("Error:", e)
+    clean = title
+  print("title names after regex before cleaning", clean)
+  if clean: 
+    clean = clean.strip() 
+  else:
+    clean = ""
+  clean = clean.replace(" ", "_")
+  if clean == "403_Forbidden" or clean == "Page_Not_Found":
+    print("Found Forbidden Key, deleting data")
+    return None
+  else:
+    print("Cleaned title name:", clean)
+    return clean
+
+def ingest_file(key, course_name, path_name, base_url, ingester, s3_client):
+  try:
+    with NamedTemporaryFile(suffix=key[2]) as temp_file:
+        if key[1] != "" or key[1] != None:
+          if key[2] == ".html":
+            print("Writing", key[2] ,"to temp file")
+            temp_file.write(key[1].encode('utf-8'))
+          else:
+            print("Writing", key[2] ,"to temp file")
+            temp_file.write(key[1])
+          temp_file.seek(0)
+          s3_upload_path = "courses/"+ course_name + "/" + path_name + key[2]
+          with open(temp_file.name, 'rb') as f:
+            print("Uploading", key[2] ,"to S3")
+            s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+            ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=base_url)
+        else:
+          print("No", key[2] ,"to upload", key[1])
+  except Exception as e:
+    print("Error in upload:", e)
+
+def remove_duplicates(urls:list=[], _existing_urls:list=[]):
 # Delete repeated sites, with different URLs and keeping one
   # Making sure we don't have duplicate urls from Supabase
-  if supabase_urls:
-    supa_urls = [url[0] for url in supabase_urls]
-    supa_content = [url[1] for url in supabase_urls]
-    print("supa_urls", supa_urls)
-  else:
-    print("No supabase urls")
-
   og_len = len(urls)
-  
-  if supabase_urls:
-    for row in urls:
-      if row[2] == '.html':
-        if row[1].get_text() in supa_content:
-          urls.remove(row)
-          print("❌ Removed", row[0], "from urls because it is in supa ❌")
-      else:
-        if row[0] in supa_urls:
-          urls.remove(row)
-          print("❌ Removed", row[0], "from urls because it is in supa ❌")
+  not_repeated_files = [url[1] for url in _existing_urls]
+  not_repeated_files.extend([url[1] for url in urls])
 
-  not_repeated_files = []
-  print("deleting duplicate files")
-  for row in urls:
-    if row[1] not in not_repeated_files:
-      not_repeated_files.append(row[1])
-    else:
-      urls.remove(row)
-      print("❌ Removed", row[0], "from urls because it is a duplicate ❌")
-      continue
-  print("deleted", og_len-len(not_repeated_files), "duplicate files")
+  if urls: 
+    print("deleting duplicate files")
+    for row in urls:
+      if row[1] not in not_repeated_files:
+        not_repeated_files.append(row[1])
+      else:
+        urls.remove(row)
+        print("❌ Removed", row[0], "from urls because it is a duplicate ❌")
+        continue
+    print("deleted", og_len-len(urls), "duplicate files")
+  else:
+    print("No urls to delete")
+
   return urls
 
-def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup:BeautifulSoup=None, _filetype:str=None,  _invalid_urls:list=[], _existing_urls:list=None):
+def check_file_not_exists(urls:list, file):
+  contents = [url[1] for url in urls]
+  if file[1] in contents:
+    return False
+  else:
+    return True
+
+def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str='', _depth:int=0, _soup=None, _filetype:str='',  _invalid_urls:list=[], _existing_urls:list=[], url_contents:list=[]):
   '''Function gets titles of urls and the urls themselves'''
   # Prints the depth of the current search
   print("depth: ", _depth)
-  url_contents = []
   max_urls = int(max_urls)
   _depth = int(_depth)
   max_depth = int(max_depth)
+  # Perhaps use the Counter class to keep track of the number of urls
+  counted_urls = Counter(_existing_urls.extend(_invalid_urls))
+  if len(counted_urls) != 0:
+    if sum(counted_urls.values())/len(counted_urls) > 3 and _depth > 0:
+      print("Too many repeated urls, exiting web scraper")
+      return []
+  ingester = Ingest()
+  s3_client = boto3.client(
+        's3',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    )
   if base_url_on:
     base_url_on = str(base_url_on)
 
@@ -167,7 +223,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   # Get rid of double slashes in url
   # Create a base site for incomplete hrefs
   base = base_url(url)
-  if base ==[]:
+  if base == []:
     return []
   else:
     site = base
@@ -180,8 +236,14 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   else:
     url, s, filetype = valid_url(url)
     time.sleep(timeout)
-    url_contents.append((url,s, filetype))
-    print("Scraped:", url)
+    url_content = (url, s, filetype)
+    path_name = title_path_name(url_content)
+    url_contents.append(url_content)
+    url_contents = remove_duplicates(url_contents, _existing_urls)
+    if check_file_not_exists(_existing_urls, url_content):
+      ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
+      print("Scraped:", url)
+      max_urls = max_urls - 1
   if url: 
     if filetype == '.html':
       try:
@@ -196,6 +258,7 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
       try:
         if s.title.string.lower() == "403 forbidden" or s.title.string.lower() == 'page not found': # type: ignore
           print("403 Forbidden")
+          _invalid_urls.append(url)
         else:
           pass
       except Exception as e:
@@ -227,8 +290,16 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
       if url.startswith(site):
         url, s, filetype = valid_url(url)
         if url:
-          print("Scraped:", url)
-          url_contents.append((url, s, filetype))
+          time.sleep(timeout)
+          url_content = (url, s, filetype)
+          path_name = title_path_name(url_content)
+          url_contents.append(url_content)
+          url_contents = remove_duplicates(url_contents, _existing_urls)
+
+          if check_file_not_exists(_existing_urls, url_content):
+            ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
+            print("Scraped:", url)
+            max_urls = max_urls - 1
         else:
           _invalid_urls.append(url)
       else:
@@ -236,31 +307,35 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
     else:
       url, s, filetype = valid_url(url)
       if url:
-        print("Scraped:", url)
-        url_contents.append((url, s, filetype))
+        time.sleep(timeout)
+        url_content = (url, s, filetype)
+        path_name = title_path_name(url_content)
+        url_contents.append(url_content)
+        url_contents = remove_duplicates(url_contents, _existing_urls)
+        if check_file_not_exists(_existing_urls, url_content):
+          ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
+          print("Scraped:", url)
+          max_urls = max_urls - 1
       else:
         _invalid_urls.append(url)
-  print("existing urls", _existing_urls)
-  url_contents = remove_duplicates(url_contents, _existing_urls)
-  max_urls = max_urls - len(url_contents)
-  print(max_urls, "urls left")
-
   # recursively go through crawler until we reach the max amount of urls. 
   for url in url_contents:
-    if url[0] not in _invalid_urls:
+    if url[0] not in _invalid_urls and url[0] not in _existing_urls:
       if max_urls > 0:
         if _depth < max_depth:
-          temp_data = crawler(url[0], max_urls, max_depth, timeout, _invalid_urls, _depth, url[1], url[2])
-          print("existing urls", _existing_urls)
-          temp_data = remove_duplicates(temp_data, _existing_urls)
-          max_urls = max_urls - len(temp_data)
-          print(max_urls, "urls left")
+          temp_data = crawler(url[0], course_name, max_urls, max_depth, timeout, base_url_on, _depth, url[1], url[2], _invalid_urls, _existing_urls, url_contents)
+          og_len = len(url_contents)
           url_contents.extend(temp_data)
           url_contents = remove_duplicates(url_contents, _existing_urls)
+          diff = len(url_contents) - og_len
+          max_urls = max_urls - diff
+          print("Technically don't have to remove here, but here is what it is:", diff)
+          print(max_urls, "urls left")
         else:
           print("Depth exceeded:", _depth+1, "out of", max_depth)
           break
       else:
+        print("Max urls reached:", len(url_contents), "out of", amount) 
         break
     else:
       pass
@@ -275,13 +350,8 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   print(len(url_contents), "urls found")
   
   # Free up memory
-  # del url_contents[:]
-  # del urls[:]
-  # if _invalid_urls is not None:
-  #   del _invalid_urls[:]
-  # if _existing_urls is not None:
-  #   del _existing_urls[:]
-  # gc.collect()
+  del ingester
+  del s3_client
   
   return url_contents
 
@@ -328,94 +398,27 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
       supabase_client = supabase.create_client(  # type: ignore
       supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
       supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
-      urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute()
+      urls = supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute() # type: ignore
       del supabase_client
       if urls.data == []:
-        existing_urls = None
+        existing_urls = []
       else:
         existing_urls = []
         for thing in urls.data:
           whole = ''
           for t in thing['contexts']:
             whole += t['text']
-          existing_urls.append((thing['url'], whole))
+          existing_urls.append((thing['url'], whole, 'supa'))
         print("Finished gathering existing urls from Supabase")
     except Exception as e:
       print("Error:", e)
       print("Could not gather existing urls from Supabase")
-      existing_urls = None
-    
+      existing_urls = []
     print("Begin Ingesting Web page")
-    data = crawler(url=url, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=stay_on_baseurl, _existing_urls=existing_urls)
-
-  # Clean some keys for a proper file name
-  # todo: have a default title
-  # titles = [value[1][1].title.string for value in data]
-
-  titles = []
-  for value in data:
-    try:
-      titles.append(value[1].title.string)  
-    except AttributeError as e:
-      # if no title
-      try:
-        placeholder_title = re.findall(pattern=r'[a-zA-Z0-9.]*[a-z]', string=value[0])[1]
-      except Exception as e:
-        placeholder_title = "Title Not Found"
-      titles.append(placeholder_title)
-      print(f"URL is missing a title, using this title instead: {placeholder_title}")
-
-  try:
-    clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles] # type: ignore
-  except Exception as e:
-    print("Error:", e)
-    clean = titles
-  print("title names after regex before cleaning", clean)
-  path_name = []
-  counter = 0
-  for value in clean:
-    value = value.strip() if value else ""
-    # value = value.strip()
-    value = value.replace(" ", "_")
-    if value == "403_Forbidden":
-      print("Found Forbidden Key, deleting data")
-      del data[counter]
-      counter -= 1
-    else:
-      path_name.append(value)
-      counter += 1
-  print("Cleaned title names", path_name)
-
-  # Upload each html to S3
-  print("Uploading files to S3")
-  paths = []
-  counter = 0
-  try:
-    for i, key in enumerate(data):
-      with NamedTemporaryFile(suffix=key[2]) as temp_file:
-          if key[1] != "" or key[1] != None:
-            if key[2] == ".html":
-              print("Writing", key[2] ,"to temp file")
-              temp_file.write(key[1].encode('utf-8'))
-            else:
-              print("Writing", key[2] ,"to temp file")
-              temp_file.write(key[1])
-            temp_file.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + key[2]
-            paths.append(s3_upload_path)
-            with open(temp_file.name, 'rb') as f:
-              print("Uploading", key[2] ,"to S3")
-              s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-              ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=url)
-              counter += 1
-          else:
-            print("No", key[2] ,"to upload", key[1])
-  except Exception as e:
-    print("Error in upload:", e)
-  finally:
+    data = crawler(url=url, course_name=course_name, max_urls=max_urls, max_depth=max_depth, timeout=timeout, base_url_on=stay_on_baseurl, _existing_urls=existing_urls)
     del ingester
 
-  print(f"Successfully uploaded files to s3: {counter}")
+  print(f"Successfully uploaded files to s3: {len(data)}")
   print("Finished /web-scrape")
 
 # Download an MIT course using its url
