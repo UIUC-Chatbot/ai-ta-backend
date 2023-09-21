@@ -5,8 +5,8 @@
     "nixpacksPlan": {
       "phases": {
         "myPhase": {
-          "name": "myPhase",
-          "aptPkgs": ["ffmpeg"]
+          "name": "ffmpeg and libcrypt1",
+          "aptPkgs": ["ffmpeg", "libcrypt1"]
         }
       }
     }

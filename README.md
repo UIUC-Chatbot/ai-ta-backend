@@ -18,3 +18,16 @@ Automatic [API Reference](https://uiuc-chatbot.github.io/ai-ta-backend/reference
 
 The docs are auto-built and deployed to [our docs website](https://uiuc-chatbot.github.io/ai-ta-backend/) on every push. Or you can build the docs locally when writing:
 - `mkdocs serve`
+
+
+### Course metadata structure
+```
+'text': doc.page_content,
+'readable_filename': doc.metadata['readable_filename'],
+'course_name ': doc.metadata['course_name'],
+'s3_path': doc.metadata['s3_path'],
+'pagenumber': doc.metadata['pagenumber_or_timestamp'], # this is the recent breaking change!! 
+# OPTIONAL properties
+'url': doc.metadata.get('url'), # wouldn't this error out?
+'base_url': doc.metadata.get('base_url'),
+```
