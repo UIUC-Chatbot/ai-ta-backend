@@ -202,8 +202,12 @@ def check_file_not_exists(urls:list, file):
   else:
     return True
   
-def count_hard_stop(_existing_urls:list=[], _invalid_urls:list=[], average:int=4):
+def count_hard_stop(_existing_urls:list=None, _invalid_urls:list=None, average:int=4):
   # Counts the number of repeated urls and if it is too high, it will exit the web scraper
+  if _existing_urls == None:
+    _existing_urls = []
+  if _invalid_urls == None:
+    _invalid_urls = []
   _existing_urls.extend(_invalid_urls)
   counted_urls = Counter(_existing_urls)
   if len(counted_urls) != 0:
@@ -222,7 +226,33 @@ def remove_falses(urls:list=[]):
   return urls
 
 
-def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str='', _depth:int=0, _soup=None, _filetype:str='',  _invalid_urls:list=None, _existing_urls:list=None, url_contents:list=None, urls_count:int=0):
+def check_and_ingest(url:str, course_name:str, max_urls:int, timeout:int, base_url_on:str, _invalid_urls:list, _existing_urls:list, url_contents:list, ingester, s3_client):
+  if url not in _invalid_urls and url not in _existing_urls:
+    url, s, filetype = valid_url(url)
+  else:
+    url = False
+    print("This URL is invalid or already existing in the database")
+  
+  if url:
+    time.sleep(timeout)
+    url_content = (url, s, filetype)
+    if check_file_not_exists(_existing_urls, url_content):
+      path_name = title_path_name(url_content)
+      url_contents.append(url_content)
+      _existing_urls.append(url_content)
+      # url_contents = remove_duplicates(url_contents, _existing_urls)
+      ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
+      print("✅✅ Scraped:", url, "✅✅")
+      max_urls -= 1
+    else:
+      print("This URL is already existing in the database")
+  else:
+    _invalid_urls.append(url)
+  return url_contents, _invalid_urls, _existing_urls, max_urls
+  
+
+
+def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup=None, _filetype:str=None,  _invalid_urls:list=None, _existing_urls:list=None, url_contents:list=None, urls_count:int=0):
   '''Function gets titles of urls and the urls themselves'''
   # Prints the depth of the current search
   print("depth: ", _depth)
@@ -264,28 +294,14 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
     s = _soup
     filetype = _filetype
   else:
-    if url not in _invalid_urls and url not in _existing_urls:
-      url, s, filetype = valid_url(url)
-      if url:
-        time.sleep(timeout)
-        url_content = (url, s, filetype)
-        if check_file_not_exists(_existing_urls, url_content):
-          path_name = title_path_name(url_content)
-          url_contents.append(url_content)
-          _existing_urls.append(url_content)
-          # url_contents = remove_duplicates(url_contents, _existing_urls=_existing_urls)
-          ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
-          print("✅✅ Scraped:", url, "✅✅")
-          max_urls -= 1
-        else:
-          print("Your entered URL is already existing in the database")
-          return url_contents, _invalid_urls, _existing_urls, max_urls
-      else:
-        print("Your entered URL is invalid")
-        return url_contents, _invalid_urls, _existing_urls, max_urls
-    else:
-      print("Your entered URL is invalid")
+    og_max = max_urls
+    url_contents, _invalid_urls, _existing_urls, max_urls = check_and_ingest(url, course_name, max_urls, timeout, base_url_on, _invalid_urls, _existing_urls, url_contents, ingester, s3_client)
+    if count_hard_stop(_existing_urls, _invalid_urls, 4):
       return url_contents, _invalid_urls, _existing_urls, max_urls
+    if max_urls > max_urls:
+      return url_contents, _invalid_urls, _existing_urls, max_urls
+    
+    url, s, filetype = url_contents[-1]
 
   if filetype == '.html':
     try:
@@ -318,52 +334,19 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
     if max_urls > 0:
       if base_url_on:
         if url.startswith(site):
-          if url not in _invalid_urls and url not in _existing_urls:
-            url, s, filetype = valid_url(url)
-            if url:
-              time.sleep(timeout)
-              url_content = (url, s, filetype)
-              if check_file_not_exists(_existing_urls, url_content):
-                path_name = title_path_name(url_content)
-                url_contents.append(url_content)
-                _existing_urls.append(url_content)
-                # url_contents = remove_duplicates(url_contents, _existing_urls)
-                ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
-                print("✅✅ Scraped:", url, "✅✅")
-                max_urls = max_urls - 1
-                if count_hard_stop(_existing_urls, _invalid_urls, 4):
-                  return url_contents, _invalid_urls, _existing_urls, max_urls
-              else:
-                print("This URL is already existing in the database")
-            else:
-              _invalid_urls.append(url)
+          url_contents, _invalid_urls, _existing_urls, max_urls = check_and_ingest(url, course_name, max_urls, timeout, base_url_on, _invalid_urls, _existing_urls, url_contents, ingester, s3_client)
+          if count_hard_stop(_existing_urls, _invalid_urls, 4):
+            return url_contents, _invalid_urls, _existing_urls, max_urls
           else:
-            print("This URL is invalid or already existing in the database")
+            print("This URL is already existing in the database")
         else:
           pass
       else:
-        # Check if url is already in the database before scraping
-        if url not in _invalid_urls and url not in _existing_urls:
-          url, s, filetype = valid_url(url)
-          if url:
-              time.sleep(timeout)
-              url_content = (url, s, filetype)
-              if check_file_not_exists(_existing_urls, url_content):
-                path_name = title_path_name(url_content)
-                url_contents.append(url_content)
-                _existing_urls.append(url_content)
-                # url_contents = remove_duplicates(url_contents, _existing_urls)
-                ingest_file(url_content, course_name, path_name, base_url_on, ingester, s3_client)
-                print("✅✅ Scraped:", url, "✅✅")
-                max_urls = max_urls - 1
-                if count_hard_stop(_existing_urls, _invalid_urls, 4):
-                  return url_contents, _invalid_urls, _existing_urls, max_urls
-              else:
-                print("This URL is already existing in the database")
-          else:
-            _invalid_urls.append(url)
+        url_contents, _invalid_urls, _existing_urls, max_urls = check_and_ingest(url, course_name, max_urls, timeout, base_url_on, _invalid_urls, _existing_urls, url_contents, ingester, s3_client)
+        if count_hard_stop(_existing_urls, _invalid_urls, 4):
+          return url_contents, _invalid_urls, _existing_urls, max_urls
         else:
-          print("This URL is invalid or already existing in the database")
+          print("This URL is already existing in the database")        
     else:
       print("Max URLs reached")
       return url_contents, _invalid_urls, _existing_urls, max_urls
