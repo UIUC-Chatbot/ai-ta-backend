@@ -11,10 +11,21 @@
             "libc6"
           ]
         },
+        "debugInfo": {
+          "name": "Show system info",
+          "commands": [
+            "uname -a",
+            "lsb_release -a"
+          ],
+          "dependsOn": [
+            "baseDependencies"
+          ]
+        },
         "installFfmpeg": {
           "name": "Install ffmpeg",
           "dependsOn": [
-            "baseDependencies"
+            "baseDependencies",
+            "debugInfo"
           ],
           "aptPkgs": [
             "ffmpeg"
