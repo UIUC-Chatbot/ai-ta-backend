@@ -107,7 +107,6 @@ class CanvasAPI():
                 os.mkdir(canvas_dir + "/" + folder_name)
                 print("Course folder created")
 
-                
             # Download course content
             self.download_course_content(canvas_course_id, folder_path, content_to_ingest)
             
@@ -135,16 +134,38 @@ class CanvasAPI():
         """
         print("In update_course_content")
 
-        api_path = "https://canvas.illinois.edu/api/v1/courses/" + str(canvas_course_id)
-        headers = {"Authorization": "Bearer " + os.getenv('CANVAS_ACCESS_TOKEN')}
-
         try:
-            # Download course content
-            folder_name = "canvas_course_" + str(canvas_course_id) + "_update"
-            folder_path = os.path.join(os.getcwd(), "canvas_materials/" + folder_name)
-            self.download_course_content(canvas_course_id, folder_path)
-            print("Downloaded and extracted canvas materials")
+            # a dictionary of all contents we want to ingest - files, pages, modules, syllabus, assignments, discussions.
+            content_to_ingest = {
+                'files': True,
+                'pages': True,
+                'modules': True,
+                'syllabus': True,
+                'assignments': True,
+                'discussions': True
+            }
 
+            # Create a canvas directory with a course folder inside it.
+            canvas_dir = "canvas_materials"
+            folder_name = "canvas_course_" + str(canvas_course_id) + "_ingest"
+            folder_path = canvas_dir + "/" + folder_name
+
+            if os.path.exists(canvas_dir):
+                print("Canvas directory already exists")
+            else:
+                os.mkdir(canvas_dir)
+                print("Canvas directory created")
+
+            if os.path.exists(canvas_dir + "/" + folder_name):
+                print("Course folder already exists")
+            else:
+                os.mkdir(canvas_dir + "/" + folder_name)
+                print("Course folder created")
+
+            # Download course content
+            self.download_course_content(canvas_course_id, folder_path, content_to_ingest)
+            print("Downloaded and extracted canvas materials")
+            
             # Call diff function
             response = update_materials.update_files(folder_path, course_name)
             print(response)
