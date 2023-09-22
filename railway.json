@@ -7,7 +7,6 @@
         "baseDependencies": {
           "name": "Install build-essential and libc6",
           "aptPkgs": [
-            "build-essential",
             "libc6"
           ]
         },
