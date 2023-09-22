@@ -6,7 +6,9 @@
       "phases": {
         "myPhase": {
           "name": "ffmpeg (removed: libcrypt1, started to break)",
-          "aptPkgs": []
+          "aptPkgs": [
+            "ffmpeg"
+          ]
         }
       }
     }
