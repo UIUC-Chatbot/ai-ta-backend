@@ -230,8 +230,7 @@ def check_and_ingest(url:str, course_name:str, max_urls:int, timeout:int, base_u
   if url not in _invalid_urls and url not in _existing_urls:
     url, s, filetype = valid_url(url)
   else:
-    url = False
-    print("This URL is invalid or already existing in the database")
+    raise ValueError("This URL is invalid or already existing in the database")
   
   if url:
     time.sleep(timeout)
@@ -250,7 +249,7 @@ def check_and_ingest(url:str, course_name:str, max_urls:int, timeout:int, base_u
     _invalid_urls.append(url)
   return url_contents, _invalid_urls, _existing_urls, max_urls
 
-def scrape_user_provided_page(self, ):
+def scrape_user_provided_page(url:str, course_name:str, max_urls:int, timeout:int, base_url_on:str, _invalid_urls:list, _existing_urls:list, url_contents:list, ingester, s3_client):
   if base_url_on:
     base_url_on = str(base_url_on)
 
@@ -264,19 +263,14 @@ def scrape_user_provided_page(self, ):
     site = base
 
   urls= set()
+  try:
+    url_contents, _invalid_urls, _existing_urls, max_urls = check_and_ingest(url, course_name, max_urls, timeout, base_url_on, _invalid_urls, _existing_urls, url_contents, ingester, s3_client)
+    if count_hard_stop(_existing_urls, _invalid_urls, 4):
+      return url_contents, _invalid_urls, _existing_urls, max_urls
+  except ValueError as e:
+    raise e
 
-  # For the first URL
-    # s = _soup
-    # filetype = _filetype
-  
-  url_contents, _invalid_urls, _existing_urls, max_urls = check_and_ingest(url, course_name, max_urls, timeout, base_url_on, _invalid_urls, _existing_urls, url_contents, ingester, s3_client)
-  if count_hard_stop(_existing_urls, _invalid_urls, 4):
-    return url_contents, _invalid_urls, _existing_urls, max_urls
-  if max_urls > max_urls:
-    return url_contents, _invalid_urls, _existing_urls, max_urls
-  
   url, s, filetype = url_contents[-1]
-
   if filetype == '.html':
     try:
       body = s.find("body")
@@ -302,7 +296,8 @@ def scrape_user_provided_page(self, ):
     else:
       urls = find_urls(s, urls, site)
   
-  # TODO: return 
+  return url_contents, _invalid_urls, _existing_urls, max_urls, urls
+  # TODO: return    
 
 
 def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup=None, _filetype:str=None,  _invalid_urls:list=None, _existing_urls:list=None, url_contents:list=None, urls_count:int=0):
@@ -328,6 +323,10 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
   if count_hard_stop(_existing_urls, _invalid_urls, 4):
     return url_contents, _invalid_urls, _existing_urls, max_urls
   
+  try:
+    scrape_user_provided_page(url, course_name, max_urls, timeout, base_url_on, _invalid_urls, _existing_urls, url_contents, ingester, s3_client)
+  except ValueError as e:
+    raise e
   
   # We grab content out of these urls
 
