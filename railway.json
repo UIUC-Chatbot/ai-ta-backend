@@ -4,11 +4,19 @@
     "builder": "NIXPACKS",
     "nixpacksPlan": {
       "phases": {
-        "myPhase": {
-          "name": "ffmpeg (removed: libcrypt1, started to break)",
+        "baseDependencies": {
+          "name": "Install build-essential and libc6",
           "aptPkgs": [
             "build-essential",
-            "libc6",
+            "libc6"
+          ]
+        },
+        "installFfmpeg": {
+          "name": "Install ffmpeg",
+          "dependsOn": [
+            "baseDependencies"
+          ],
+          "aptPkgs": [
             "ffmpeg"
           ]
         }
