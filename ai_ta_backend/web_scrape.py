@@ -1,20 +1,20 @@
+import mimetypes
 import os
 import re
 import shutil
 import time
+from collections import Counter
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile
 
 import boto3  # type: ignore
 import requests
-from bs4 import BeautifulSoup
-
 import supabase
+from bs4 import BeautifulSoup
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
-import mimetypes
-from collections import Counter
+
 
 def get_file_extension(filename):
     match = re.search(r'\.([a-zA-Z0-9]+)$', filename)
@@ -167,32 +167,32 @@ def ingest_file(key, course_name, path_name, base_url, ingester, s3_client):
   except Exception as e:
     print("Error in upload:", e)
 
-def remove_duplicates(urls:list=[], _existing_urls:list=[]):
-# Delete repeated sites, with different URLs and keeping one
-  # Making sure we don't have duplicate urls from Supabase
-  og_len = len(urls)
-  existing_files = [url[1] for url in _existing_urls if url!=False]
-  existing_urls = [url[0] for url in _existing_urls if url!=False]
+# def remove_duplicates(urls:list=[], _existing_urls:list=[]):
+# # Delete repeated sites, with different URLs and keeping one
+#   # Making sure we don't have duplicate urls from Supabase
+#   og_len = len(urls)
+#   existing_files = [url[1] for url in _existing_urls if url!=False]
+#   existing_urls = [url[0] for url in _existing_urls if url!=False]
 
-  if urls: 
-    print("deleting duplicate files")
-    for row in urls:
-      if row[0] in existing_urls:
-        urls.remove(row)
-        print("❌ Removed", row[0], "from urls because it is a duplicate ❌")
-        continue
-      elif row[1] in existing_files:
-        urls.remove(row)
-        print("❌ Removed", row[0], "from urls because it is a duplicate ❌")
-        continue
-      else:
-        existing_urls.append(row[0])
-        existing_files.append(row[1])
-    print("deleted", og_len-len(urls), "duplicate files")
-  else:
-    print("No urls to delete")
+#   if urls: 
+#     print("deleting duplicate files")
+#     for row in urls:
+#       if row[0] in existing_urls:
+#         urls.remove(row)
+#         print("❌ Removed", row[0], "from urls because it is a duplicate ❌")
+#         continue
+#       elif row[1] in existing_files:
+#         urls.remove(row)
+#         print("❌ Removed", row[0], "from urls because it is a duplicate ❌")
+#         continue
+#       else:
+#         existing_urls.append(row[0])
+#         existing_files.append(row[1])
+#     print("deleted", og_len-len(urls), "duplicate files")
+#   else:
+#     print("No urls to delete")
 
-  return urls
+#   return urls
 
 def check_file_not_exists(urls:list, file):
   contents = [url[1] for url in urls if url!=False]
@@ -249,32 +249,8 @@ def check_and_ingest(url:str, course_name:str, max_urls:int, timeout:int, base_u
   else:
     _invalid_urls.append(url)
   return url_contents, _invalid_urls, _existing_urls, max_urls
-  
 
-
-def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup=None, _filetype:str=None,  _invalid_urls:list=None, _existing_urls:list=None, url_contents:list=None, urls_count:int=0):
-  '''Function gets titles of urls and the urls themselves'''
-  # Prints the depth of the current search
-  print("depth: ", _depth)
-  if _invalid_urls == None:
-    _invalid_urls = []
-  if _existing_urls == None:
-    _existing_urls = []
-  if url_contents == None:
-    url_contents = []
-  max_urls = int(max_urls)
-  _depth = int(_depth)
-  max_depth = int(max_depth)
-  ingester = Ingest()
-  s3_client = boto3.client(
-        's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    )
-  
-  if count_hard_stop(_existing_urls, _invalid_urls, 4):
-    return url_contents, _invalid_urls, _existing_urls, max_urls
-  
+def scrape_user_provided_page(self, ):
   if base_url_on:
     base_url_on = str(base_url_on)
 
@@ -290,18 +266,16 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
   urls= set()
 
   # For the first URL
-  if _soup:
-    s = _soup
-    filetype = _filetype
-  else:
-    og_max = max_urls
-    url_contents, _invalid_urls, _existing_urls, max_urls = check_and_ingest(url, course_name, max_urls, timeout, base_url_on, _invalid_urls, _existing_urls, url_contents, ingester, s3_client)
-    if count_hard_stop(_existing_urls, _invalid_urls, 4):
-      return url_contents, _invalid_urls, _existing_urls, max_urls
-    if max_urls > max_urls:
-      return url_contents, _invalid_urls, _existing_urls, max_urls
-    
-    url, s, filetype = url_contents[-1]
+    # s = _soup
+    # filetype = _filetype
+  
+  url_contents, _invalid_urls, _existing_urls, max_urls = check_and_ingest(url, course_name, max_urls, timeout, base_url_on, _invalid_urls, _existing_urls, url_contents, ingester, s3_client)
+  if count_hard_stop(_existing_urls, _invalid_urls, 4):
+    return url_contents, _invalid_urls, _existing_urls, max_urls
+  if max_urls > max_urls:
+    return url_contents, _invalid_urls, _existing_urls, max_urls
+  
+  url, s, filetype = url_contents[-1]
 
   if filetype == '.html':
     try:
@@ -327,7 +301,34 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
       urls = find_urls(header, urls, site)
     else:
       urls = find_urls(s, urls, site)
+  
+  # TODO: return 
 
+
+def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup=None, _filetype:str=None,  _invalid_urls:list=None, _existing_urls:list=None, url_contents:list=None, urls_count:int=0):
+  '''Function gets titles of urls and the urls themselves'''
+  # Prints the depth of the current search
+  print("depth: ", _depth)
+  if _invalid_urls == None:
+    _invalid_urls = []
+  if _existing_urls == None:
+    _existing_urls = []
+  if url_contents == None:
+    url_contents = []
+  max_urls = int(max_urls)
+  _depth = int(_depth)
+  max_depth = int(max_depth)
+  ingester = Ingest()
+  s3_client = boto3.client(
+        's3',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    )
+  
+  if count_hard_stop(_existing_urls, _invalid_urls, 4):
+    return url_contents, _invalid_urls, _existing_urls, max_urls
+  
+  
   # We grab content out of these urls
 
   for url in urls:
@@ -339,8 +340,6 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
             return url_contents, _invalid_urls, _existing_urls, max_urls
           else:
             print("This URL is already existing in the database")
-        else:
-          pass
       else:
         url_contents, _invalid_urls, _existing_urls, max_urls = check_and_ingest(url, course_name, max_urls, timeout, base_url_on, _invalid_urls, _existing_urls, url_contents, ingester, s3_client)
         if count_hard_stop(_existing_urls, _invalid_urls, 4):
@@ -350,6 +349,7 @@ def crawler(url:str, course_name:str, max_urls:int=1000, max_depth:int=3, timeou
     else:
       print("Max URLs reached")
       return url_contents, _invalid_urls, _existing_urls, max_urls
+  
   # recursively go through crawler until we reach the max amount of urls. 
   for url in url_contents:
     if url[0] not in _invalid_urls and url[0] not in _existing_urls:
