@@ -20,16 +20,6 @@
           "dependsOn": [
             "baseDependencies"
           ]
-        },
-        "installFfmpeg": {
-          "name": "Install ffmpeg",
-          "dependsOn": [
-            "baseDependencies",
-            "debugInfo"
-          ],
-          "aptPkgs": [
-            "ffmpeg"
-          ]
         }
       }
     }
