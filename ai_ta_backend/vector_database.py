@@ -301,8 +301,6 @@ Now please respond to my question: {user_question}"""
       #print(texts)
       os.remove(file_path)
 
-      os.remove(file_path)
-
       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
       return success_or_failure
 
