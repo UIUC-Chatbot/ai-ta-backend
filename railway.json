@@ -8,6 +8,7 @@
           "name": "ffmpeg (removed: libcrypt1, started to break)",
           "aptPkgs": [
             "build-essential",
+            "libc6",
             "ffmpeg"
           ]
         }
