@@ -86,6 +86,7 @@ class WebScrape():
           return (False, False, False)
         if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
           print("⛔️⛔️ Filetype not supported:", filetype, "⛔️⛔️")
+          return (False, False, False)
         return (response.url, content, filetype)
       else:
         print("🚫🚫 URL is invalid:", response.url, "Return code:", response.status_code, "🚫🚫")
@@ -134,6 +135,7 @@ class WebScrape():
           href = site+href
         else:
           href = site+'/'+href
+        print("HREFS:", href)
         urls.add(href)
 
     except Exception as e:
@@ -226,19 +228,25 @@ class WebScrape():
       return False
     else:
       return True
-    
-  def count_hard_stop(self, average:int=4):
-    # Counts the number of repeated urls and if it is too high, it will exit the web scraper
-    if self.existing_urls == None:
-      self.existing_urls = []
-    if self.invalid_urls == None:
-      self.invalid_urls = []
-    self.existing_urls.extend(self.invalid_urls)
-    counted_urls = Counter(self.existing_urls)
-    if len(counted_urls) != 0:
-      print(counted_urls[False], "False stuff")
-      print("📈📈 Counted URLs", sum(counted_urls.values())/len(counted_urls), "📈📈")
-      if sum(counted_urls.values())/len(counted_urls) > average:
+  
+  # # Counts the average number of repeated urls and if it is too high, it will exit the web scraper
+  # def count_hard_stop_avg(self, average:int=4):
+  #   # Counts the number of repeated urls and if it is too high, it will exit the web scraper
+  #   all_urls = self.existing_urls + self.invalid_urls
+  #   counted_urls = Counter(all_urls)
+  #   if len(counted_urls) != 0:
+  #     print(counted_urls[False], "False stuff")
+  #     print("📈📈 Counted URLs", sum(counted_urls.values())/len(counted_urls), "📈📈")
+  #     if sum(counted_urls.values())/len(counted_urls) > average:
+  #       print("Too many repeated urls, exiting web scraper")
+  #       return True
+  #     else:
+  #       return False
+
+  def count_hard_stop_len(self):
+    all_urls = self.existing_urls + self.invalid_urls
+    if all_urls != []:
+      if len(all_urls) > self.max_urls:
         print("Too many repeated urls, exiting web scraper")
         return True
       else:
@@ -253,65 +261,61 @@ class WebScrape():
 
   def check_and_ingest(self, url:str, course_name:str, timeout:int, base_url_on:str):
     if url not in self.invalid_urls and url not in self.existing_urls:
-      url, content, filetype = self.valid_url(url)
+      second_url, content, filetype = self.valid_url(url)
     else:
-      raise ValueError("This URL is invalid or already existing in the database")
+      print("This URL is invalid or already existing in the database")
+      self.existing_urls.append((url))
+      return '', '', ''
     
-    if url:
+    if second_url:
       time.sleep(timeout)
-      url_content = (url, content, filetype)
+      url_content = (second_url, content, filetype)
       if self.check_file_not_exists(url_content):
         path_name = self.title_path_name(url_content)
         self.url_contents.append(url_content)
         self.existing_urls.append(url_content)
         # url_contents = remove_duplicates(url_contents, _existing_urls)
         self.ingest_file(url_content, course_name, path_name, base_url_on)
-        print("✅✅ Scraped:", url, "✅✅")
+        print("✅✅ Scraped:", second_url, "✅✅")
         self.max_urls -= 1
       else:
-        raise ValueError("This URL is already existing in the database")
+        print("This URL is already existing in the database")
+        self.existing_urls.append((second_url, content, filetype))
     else:
       self.invalid_urls.append(url)
-      raise ValueError("This URL is invalid")
+      print("This URL is invalid")
     
     return url, content, filetype
 
   def scrape_user_provided_page(self, url:str, course_name:str, timeout:int, base_url_on:str, base:str):
-
     urls= set()
-    try:
-      url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
-    except ValueError as e:
-      raise e
-    
-    if filetype == '.html':
-      try:
-        body = content.find("body")
-        header = content.find("head") 
-      except Exception as e:
-        print("Error:", e)
-        body = ""
-        header = ""
-    else:
-      body = ""
-      header = ""
+    url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
 
-      # Check for 403 Forbidden urls
-      try:
-        if content.title.string.lower() == "403 forbidden" or content.title.string.lower() == 'page not found': # type: ignore
-          print("403 Forbidden")
-          self.invalid_urls.append(url)
+    if url:
+      if filetype == '.html':
+        try:
+          body = content.find("body")
+          header = content.find("head") 
+        except Exception as e:
+          print("Error:", e)
+          body = ""
+          header = ""
+        # Check for 403 Forbidden urls
+        try:
+          if content.title.string.lower() == "403 forbidden" or content.title.string.lower() == 'page not found': # type: ignore
+            print("403 Forbidden")
+            self.invalid_urls.append(url)
+          else:
+            pass
+        except Exception as e:
+          print("Error:", e)
+          pass 
+        if body != "" and header != "":
+          urls = self.find_urls(body, base, urls) # type: ignore
+          urls = self.find_urls(header, base, urls)# type: ignore
         else:
-          pass
-      except Exception as e:
-        print("Error:", e)
-        pass 
-      if body != "" and header != "":
-        urls = self.find_urls(body, base, urls)
-        urls = self.find_urls(header, base, urls)
-      else:
-        urls = self.find_urls(content, base, urls)
-    
+          urls = self.find_urls(content, base, urls)# type: ignore
+
     return urls
   
   def non_user_provided_page_urls(self, url:str, base:str, soup, filetype:str):
@@ -355,7 +359,7 @@ class WebScrape():
     if base == "":
       raise ValueError("This URL is invalid")
     
-    if self.count_hard_stop(4):
+    if self.count_hard_stop_len():
       raise ValueError("Too many repeated urls, exiting web scraper")
     
     try:
@@ -374,18 +378,16 @@ class WebScrape():
           if base_url_on:
             if url.startswith(base):
               url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
-              temp_urls.append((url, content, filetype))
-              if self.count_hard_stop(average):
+              if url:
+                temp_urls.append((url, content, filetype))
+              if self.count_hard_stop_len():
                 raise ValueError("Too many repeated urls, exiting web scraper")
-              else:
-                print("This URL is already existing in the database")
           else:
             url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
-            temp_urls.append((url, content, filetype))
-            if self.count_hard_stop(average):
-              raise ValueError("Too many repeated urls, exiting web scraper")
-            else:
-              print("This URL is already existing in the database")        
+            if url:
+              temp_urls.append((url, content, filetype))
+            if self.count_hard_stop_len():
+              raise ValueError("Too many repeated urls, exiting web scraper")     
         else:
           print("Max URLs reached")
           raise ValueError("Max URLs reached")
@@ -398,10 +400,8 @@ class WebScrape():
         if self.max_urls > 0:
           if _depth < max_depth:
             self.crawler(url[0], course_name, max_depth, timeout, base_url_on, _depth+1, url[1], url[2], average)
-            # url_contents = remove_duplicates(url_contents, _existing_urls)
-            # print("Technically don't have to remove here, but here is what it is:", diff)
             print(self.max_urls, "urls left")
-            if self.count_hard_stop(average):
+            if self.count_hard_stop_len():
               raise ValueError("Too many repeated urls, exiting web scraper")
           else:
             print("Depth exceeded:", _depth+1, "out of", max_depth)
