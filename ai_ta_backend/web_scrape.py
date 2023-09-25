@@ -360,34 +360,37 @@ class WebScrape():
     
     try:
       if _soup:
-        urls = self.scrape_user_provided_page(url, course_name, timeout, base_url_on, base)
-      else:
         urls = self.non_user_provided_page_urls(url, base, _soup, _filetype)
+      else:
+        urls = self.scrape_user_provided_page(url, course_name, timeout, base_url_on, base)
     except ValueError as e:
       raise e
     
     temp_urls = []
     # We grab content out of these urls
-    for url in urls:
-      if self.max_urls > 0:
-        if base_url_on:
-          if url.startswith(base):
+    try:
+      for url in urls:
+        if self.max_urls > 0:
+          if base_url_on:
+            if url.startswith(base):
+              url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
+              temp_urls.append((url, content, filetype))
+              if self.count_hard_stop(average):
+                raise ValueError("Too many repeated urls, exiting web scraper")
+              else:
+                print("This URL is already existing in the database")
+          else:
             url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
             temp_urls.append((url, content, filetype))
             if self.count_hard_stop(average):
               raise ValueError("Too many repeated urls, exiting web scraper")
             else:
-              print("This URL is already existing in the database")
+              print("This URL is already existing in the database")        
         else:
-          url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
-          temp_urls.append((url, content, filetype))
-          if self.count_hard_stop(average):
-            raise ValueError("Too many repeated urls, exiting web scraper")
-          else:
-            print("This URL is already existing in the database")        
-      else:
-        print("Max URLs reached")
-        raise ValueError("Max URLs reached")
+          print("Max URLs reached")
+          raise ValueError("Max URLs reached")
+    except ValueError as e:
+      print("Error:", e)
     
     # recursively go through crawler until we reach the max amount of urls. 
     for url in temp_urls:
@@ -463,8 +466,11 @@ class WebScrape():
         print("Error:", e)
         print("Could not gather existing urls from Supabase")
         self.existing_urls = []
-      print("Begin Ingesting Web page")
-      self.crawler(url=url, course_name=course_name, max_depth=max_depth, timeout=timeout, base_url_on=base_url_str)
+      try:
+        print("Begin Ingesting Web page")
+        self.crawler(url=url, course_name=course_name, max_depth=max_depth, timeout=timeout, base_url_on=base_url_str)
+      except ValueError as e:
+        print("Error:", e)
 
 
     if len(self.url_contents) < self.original_amount:
