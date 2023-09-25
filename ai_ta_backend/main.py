@@ -324,7 +324,7 @@ def scrape() -> Response:
   max_urls: int = request.args.get('max_urls', default=100, type=int)
   max_depth: int = request.args.get('max_depth', default=2, type=int)
   timeout: int = request.args.get('timeout', default=3, type=int)
-  stay_on_baseurl: bool | None = request.args.get('`stay_on_baseurl`', default=True, type=bool)
+  stay_on_baseurl: bool | None = request.args.get('stay_on_baseurl', default=True, type=bool)
 
   if url == '' or max_urls == -1 or max_depth == -1 or timeout == -1 or course_name == '' or stay_on_baseurl is None:
     # proper web error "400 Bad request"
