@@ -39,6 +39,7 @@ class WebScrape():
     self.existing_urls = []
     self.max_urls = 0
     self.original_amount = 0
+    self.supa_urls = 0
 
     return None
 
@@ -136,7 +137,6 @@ class WebScrape():
           href = site+href
         else:
           href = site+'/'+href
-        print("HREFS:", href)
         urls.add(href)
 
     except Exception as e:
@@ -246,8 +246,10 @@ class WebScrape():
 
   def count_hard_stop_len(self):
     all_urls = self.existing_urls + self.invalid_urls
+    count = len(all_urls) - self.supa_urls
     if all_urls != []:
-      if len(all_urls) > self.max_urls:
+      print("📈📈 Counted URLs", count, "out of", self.original_amount, "📈📈" )
+      if len(all_urls) > self.original_amount:
         print("Too many repeated urls, exiting web scraper")
         return True
       else:
@@ -469,6 +471,7 @@ class WebScrape():
         self.existing_urls = []
       try:
         print("Begin Ingesting Web page")
+        self.supa_urls = len(self.existing_urls)
         self.crawler(url=url, course_name=course_name, max_depth=max_depth, timeout=timeout, base_url_on=base_url_str)
       except ValueError as e:
         print("Error:", e)
