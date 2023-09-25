@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
 
+
 class WebScrape():
 
   def __init__(self) -> None:
@@ -483,50 +484,66 @@ class WebScrape():
     print(f"Successfully uploaded files to s3: {len(self.url_contents)}")
     print("Finished /web-scrape")
 
-# Download an MIT course using its url
+
+def is_github_repo(url):
+  # Split the URL by '?' to ignore any parameters
+  base_url = url.split('?')[0]
+  
+  # The regular expression now allows for optional 'http', 'https', and 'www' prefixes.
+  # It also accounts for optional trailing slashes.
+  # The pattern is also case-insensitive.
+  pattern = re.compile(r'^(https?://)?(www\.)?github\.com/[^/?]+/[^/?]+/?$', re.IGNORECASE)
+  
+  # The function returns True or False based on whether the pattern matches the base_url
+  return base_url if pattern.match(base_url) else None
+
+
 def mit_course_download(url:str, course_name:str, local_dir:str):
-    ingester = Ingest()
-    base = "https://ocw.mit.edu"
-    if url.endswith("download"):
-        pass
-    else:
-        url = url + "download"
+  '''
+  Download an MIT course using its url
+  '''
+  ingester = Ingest()
+  base = "https://ocw.mit.edu"
+  if url.endswith("download"):
+    pass
+  else:
+    url = url + "download"
 
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text,"html.parser")
+  r = requests.get(url)
+  soup = BeautifulSoup(r.text,"html.parser")
 
-    zip = ''
-    for ref in soup.find_all("a"):
-        if ref.attrs['href'].endswith("zip"):
-            zip = ref.attrs['href']
-    
-    site =  zip
-    print('site', site)
-    r = requests.get(url=site, stream=True)
+  zip = ''
+  for ref in soup.find_all("a"):
+    if ref.attrs['href'].endswith("zip"):
+      zip = ref.attrs['href']
 
-    zip_file = local_dir + ".zip"
+  site =  zip
+  print('site', site)
+  r = requests.get(url=site, stream=True)
 
-    try:
-        with open(zip_file, 'wb') as fd:
-            for chunk in r.iter_content(chunk_size=128):
-                fd.write(chunk)
-        print("course downloaded!")
-    except Exception as e:
-        print("Error:", e, site)
+  zip_file = local_dir + ".zip"
 
-    with ZipFile(zip_file, 'r') as zObject:
-      zObject.extractall(
-        path=local_dir)
-    
-    shutil.move(local_dir+"/"+"robots.txt", local_dir+"/static_resources")
-    s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
-    success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
+  try:
+    with open(zip_file, 'wb') as fd:
+      for chunk in r.iter_content(chunk_size=128):
+        fd.write(chunk)
+    print("course downloaded!")
+  except Exception as e:
+    print("Error:", e, site)
 
-    shutil.move(zip_file, local_dir)
-    shutil.rmtree(local_dir)
-    del ingester
-    print("Finished Ingest")
-    return success_fail
+  with ZipFile(zip_file, 'r') as zObject:
+    zObject.extractall(
+      path=local_dir)
+  
+  shutil.move(local_dir+"/"+"robots.txt", local_dir+"/static_resources")
+  s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
+  success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
+
+  shutil.move(zip_file, local_dir)
+  shutil.rmtree(local_dir)
+  del ingester
+  print("Finished Ingest")
+  return success_fail
 
 if __name__ == '__main__':
   pass
