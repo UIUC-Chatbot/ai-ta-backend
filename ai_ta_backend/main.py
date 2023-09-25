@@ -11,7 +11,7 @@ from sqlalchemy import JSON
 
 from ai_ta_backend.nomic_logging import get_nomic_map, log_query_to_nomic
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend.web_scrape import main_crawler, mit_course_download
+from ai_ta_backend.web_scrape import mit_course_download, WebScrape
 
 app = Flask(__name__)
 CORS(app)
@@ -342,8 +342,9 @@ def scrape() -> Response:
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
   print(f"Timeout in Seconds ⏰: {timeout}")
-
-  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl)
+  
+  scraper = WebScrape()
+  success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl)
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
