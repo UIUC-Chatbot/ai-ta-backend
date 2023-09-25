@@ -12,7 +12,7 @@ from sqlalchemy import JSON
 
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend.web_scrape import mit_course_download, WebScrape
+from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 
 app = Flask(__name__)
 CORS(app)
@@ -324,7 +324,8 @@ def scrape() -> Response:
   max_urls: int = request.args.get('max_urls', default=100, type=int)
   max_depth: int = request.args.get('max_depth', default=2, type=int)
   timeout: int = request.args.get('timeout', default=3, type=int)
-  stay_on_baseurl: bool | None = request.args.get('stay_on_baseurl', default=True, type=bool)
+  # stay_on_baseurl = request.args.get('stay_on_baseurl', default='', type=str)
+  stay_on_baseurl: bool = request.args.get('stay_on_baseurl', default=True, type=lambda x: x.lower() == 'true')
 
   if url == '' or max_urls == -1 or max_depth == -1 or timeout == -1 or course_name == '' or stay_on_baseurl is None:
     # proper web error "400 Bad request"
@@ -335,10 +336,10 @@ def scrape() -> Response:
     )
 
   # print all input params
-  print(f"Web scrape!")
-  print(f"Url: {url}")
+  print(f"Web scrape: {url}")
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
+  print(f"Stay on BaseURL: {stay_on_baseurl}")
   print(f"Timeout in Seconds ⏰: {timeout}")
   
   scraper = WebScrape()
