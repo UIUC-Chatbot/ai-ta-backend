@@ -164,6 +164,7 @@ Now please respond to my question: {user_question}"""
     def _ingest_single(file_ingest_methods, s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
       handler = file_ingest_methods.get(Path(s3_path).suffix)
+      print(f"Using ingest method: {handler} ||| for file: {s3_path}")
       if handler:
         # RUN INGEST METHOD
         ret = handler(s3_path, *args, **kwargs)
@@ -179,7 +180,6 @@ Now please respond to my question: {user_question}"""
         '.vtt': self._ingest_single_vtt,
         '.pdf': self._ingest_single_pdf,
         '.txt': self._ingest_single_txt,
-        '.md': self._ingest_single_txt,
         '.srt': self._ingest_single_srt,
         '.docx': self._ingest_single_docx,
         '.ppt': self._ingest_single_ppt,
@@ -234,7 +234,7 @@ Now please respond to my question: {user_question}"""
         return success_status
 
 
-  def _ingest_single_py(self, s3_path: str, course_name: str):
+  def _ingest_single_py(self, s3_path: str, course_name: str, **kwargs):
     try:
       file_name = s3_path.split("/")[-1]
       file_path = "media/" + file_name # download from s3 to local folder for ingest
@@ -264,7 +264,7 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       print(f"ERROR IN py READING {e}")
 
-  def _ingest_single_vtt(self, s3_path: str, course_name: str):
+  def _ingest_single_vtt(self, s3_path: str, course_name: str, **kwargs):
     """
     Ingest a single .vtt file from S3.
     """
@@ -336,7 +336,7 @@ Now please respond to my question: {user_question}"""
       print(err)
       return f"_ingest_html Error: {e}"
 
-  def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_video(self, s3_path: str, course_name: str, **kwargs) -> str:
     """
     Ingest a single video file from S3.
     """
@@ -412,7 +412,7 @@ Now please respond to my question: {user_question}"""
       print(e)
       return f"Error {e}"
 
-  def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_docx(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
@@ -442,7 +442,7 @@ Now please respond to my question: {user_question}"""
       print(f"ERROR IN DOCX {e}")
       return f"Error: {e}"
 
-  def _ingest_single_srt(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_srt(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
@@ -540,7 +540,7 @@ Now please respond to my question: {user_question}"""
       return f"Error {e}"
     return "Success"
 
-  def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_txt(self, s3_path: str, course_name: str, **kwargs) -> str:
     """Ingest a single .txt or .md file from S3.
     Args:
         s3_path (str): A path to a .txt file in S3
@@ -574,7 +574,7 @@ Now please respond to my question: {user_question}"""
       print(f"ERROR IN TXT READING {e}")
       return f"Error: {e}"
 
-  def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_ppt(self, s3_path: str, course_name: str, **kwargs) -> str:
     """
     Ingest a single .ppt or .pptx file from S3.
     """
