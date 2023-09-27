@@ -194,6 +194,10 @@ Now please respond to my question: {user_question}"""
     }
     # 👆👆👆👆 ADD NEW INGEST METHODS ERE 👆👆👇�DS 👇�🎉
 
+    print(f"Top of bulk_ingest. S3 paths {s3_paths}")
+    print(f"Top of bulk_ingest. Course_name {course_name}")
+    print(f"Top of bulk_ingest. kwargs {kwargs}")
+
     success_status = {"success_ingest": [], "failure_ingest": []}
     try:
       if isinstance(s3_paths, str):
@@ -203,14 +207,20 @@ Now please respond to my question: {user_question}"""
       for s3_path in s3_paths:
         with NamedTemporaryFile(suffix=Path(s3_path).suffix) as tmpfile:
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
+          print("tmpfile.name", tmpfile.name)
           mime_type = mimetypes.guess_type(tmpfile.name, strict=False)[0]
           mime_category, extension = mime_type.split('/')
           file_ext = "." + extension
+          print(f"Mime mime_category: {mime_category}")
+          print(f"Mime type: {mime_type}")
+          print(f"file extension: {file_ext}")
 
         if file_ext in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
+          print(f"Using SPECIFIC file ingest methods")
           _ingest_single(file_ingest_methods, s3_path, course_name, kwargs=kwargs)
         elif mime_category in mimetype_ingest_methods:
+          print(f"Using GENERAL Mimetype ingest methods")
           # mime type
           _ingest_single(mimetype_ingest_methods, s3_path, course_name, kwargs=kwargs)
         else:
