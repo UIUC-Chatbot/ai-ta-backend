@@ -263,6 +263,12 @@ class WebScrape():
 
 
   def check_and_ingest(self, url:str, course_name:str, timeout:int, base_url_on:str):
+    if is_github_repo(url):
+      print("Found GitHub repo, ingesting")
+      self.ingester.ingest_github(url, course_name)
+      print("Finished ingesting GitHub page")
+      return '', '', ''
+    
     if url not in self.invalid_urls and url not in self.existing_urls:
       second_url, content, filetype = self.valid_url(url)
     else:
@@ -445,7 +451,7 @@ class WebScrape():
       base_url_str = ''
 
     # Check for GitHub repository coming soon
-    if url.startswith("https://github.com/"):
+    if is_github_repo(url):
       print("Begin Ingesting GitHub page")
       results = self.ingester.ingest_github(url, course_name)
       print("Finished ingesting GitHub page")
