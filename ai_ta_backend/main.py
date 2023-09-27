@@ -209,6 +209,7 @@ def ingest() -> Response:
   """
   s3_paths: List[str] | str = request.args.get('s3_paths', default='')
   course_name: List[str] | str = request.args.get('course_name', default='')
+  print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}")
 
   if course_name == '' or s3_paths == '':
     # proper web error "400 Bad request"
@@ -220,6 +221,7 @@ def ingest() -> Response:
 
   ingester = Ingest()
   success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+  print(f"In /ingest route. success or fail dict: {success_fail_dict}")
   del ingester
 
   response = jsonify(success_fail_dict)
