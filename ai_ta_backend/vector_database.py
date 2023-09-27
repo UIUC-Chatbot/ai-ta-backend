@@ -8,6 +8,7 @@ import subprocess
 import time
 import traceback
 import uuid
+from importlib import metadata
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -537,10 +538,13 @@ Now please respond to my question: {user_question}"""
     Returns:
         str: "Success" or an error message
     """
+    print("In text ingest")
     try:
       # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
+      print("s3 Resonse:", response)
       text = response['Body'].read().decode('utf-8')
+      print("Text from s3:", text)
       text = [text]
     
       metadatas: List[Dict[str, Any]] = [{
@@ -552,6 +556,7 @@ Now please respond to my question: {user_question}"""
           'url': '',
           'base_url': '',
       }]
+      print("Prior to ingest", metadatas)
 
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
