@@ -205,17 +205,17 @@ Now please respond to my question: {user_question}"""
 
       
       for s3_path in s3_paths:
-        with NamedTemporaryFile(suffix=Path(s3_path).suffix) as tmpfile:
+        file_extension = Path(s3_path).suffix
+        with NamedTemporaryFile(suffix=file_extension) as tmpfile:
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-          print("tmpfile.name", tmpfile.name)
           mime_type = mimetypes.guess_type(tmpfile.name, strict=False)[0]
           mime_category, extension = mime_type.split('/')
-          file_ext = "." + extension
+          # file_ext = "." + extension
           print(f"Mime mime_category: {mime_category}")
           print(f"Mime type: {mime_type}")
-          print(f"file extension: {file_ext}")
+          print(f"file extension: {file_extension}")
 
-        if file_ext in file_ingest_methods:
+        if file_extension in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
           print(f"Using SPECIFIC file ingest methods")
           _ingest_single(file_ingest_methods, s3_path, course_name, kwargs=kwargs)
