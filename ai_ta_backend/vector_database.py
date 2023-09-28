@@ -163,7 +163,7 @@ Now please respond to my question: {user_question}"""
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
     def _ingest_single(ingest_method: Callable | None, s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
-      if ingest_method is None:
+      if ingest_method == None:
           success_status['failure_ingest'].append(f"We don't have a ingest method for this filetype: {s3_path}")
           print(f"NO INGEST METHOD!! {success_status}")
       else:
