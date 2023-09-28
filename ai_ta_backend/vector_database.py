@@ -161,18 +161,14 @@ Now please respond to my question: {user_question}"""
 
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
-    def _ingest_single(ingest_method: Callable | None, s3_path, *args, **kwargs):
+    def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
-      if ingest_method == None:
-          success_status['failure_ingest'].append(f"We don't have a ingest method for this filetype: {s3_path}")
-          print(f"NO INGEST METHOD!! {success_status}")
+      # RUN INGEST METHOD
+      ret = ingest_method(s3_path, *args, **kwargs)
+      if ret == "Success":
+        success_status['success_ingest'].append(s3_path)
       else:
-        # RUN INGEST METHOD
-        ret = ingest_method(s3_path, *args, **kwargs)
-        if ret == "Success":
-          success_status['success_ingest'].append(s3_path)
-        else:
-          success_status['failure_ingest'].append(s3_path)
+        success_status['failure_ingest'].append(s3_path)
 
     # 👇👇👇👇 ADD NEW INGEST METHODSE E  HER👇👇👇👇🎉
     file_ingest_methods = {
@@ -210,15 +206,15 @@ Now please respond to my question: {user_question}"""
 
         if file_extension in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
-          ingest_method = file_ingest_methods.get(file_extension)
+          ingest_method = file_ingest_methods[file_extension]
           _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
         elif mime_category in mimetype_ingest_methods:
-          # mime type
-          ingest_method = file_ingest_methods.get(mime_category)
+          # fallback to MimeType
+          ingest_method = file_ingest_methods[mime_category]
           _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
         else:
           # failure
-          success_status['failure_ingest'].append(f"File ingest not supported for Mimetype: {mime_type}, with MimeCategory: {mime_category}, with file extension: {file_ext} for s3_path: {s3_path}")
+          success_status['failure_ingest'].append(f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}")
           continue
       
       return success_status
