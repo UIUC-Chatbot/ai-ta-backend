@@ -210,7 +210,8 @@ Now please respond to my question: {user_question}"""
           _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
         elif mime_category in mimetype_ingest_methods:
           # fallback to MimeType
-          ingest_method = file_ingest_methods[mime_category]
+          print("mime category", mime_category)
+          ingest_method = mimetype_ingest_methods[mime_category]
           _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
         else:
           # failure
@@ -329,11 +330,10 @@ Now please respond to my question: {user_question}"""
     """
     Ingest a single video file from S3.
     """
+    print("Starting ingest video or audio")
     try:
       # check for file extension
       file_ext = Path(s3_path).suffix
-      print(file_ext[1:])
-
       openai.api_key = os.getenv('OPENAI_API_KEY')
       transcript_list = []
       with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:

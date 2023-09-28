@@ -221,7 +221,7 @@ def ingest() -> Response:
 
   ingester = Ingest()
   success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
-  print(f"In /ingest route. success or fail dict: {success_fail_dict}")
+  print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
   del ingester
 
   response = jsonify(success_fail_dict)
