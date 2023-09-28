@@ -1,7 +1,7 @@
 wheel
 click
 Flask==2.3.3
-protobuf<=4.24.1
+protobuf<=4.24.3
 gunicorn==21.2.0
 aiohttp
 tiktoken
