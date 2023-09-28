@@ -161,15 +161,14 @@ Now please respond to my question: {user_question}"""
 
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
-    def _ingest_single(ingest_methods: Dict[str, Callable], s3_path, *args, **kwargs):
+    def _ingest_single(ingest_method: Callable | None, s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
-      handler = ingest_methods.get(Path(s3_path).suffix)
-      if handler is None:
+      if ingest_method is None:
           success_status['failure_ingest'].append(f"We don't have a ingest method for this filetype: {s3_path}")
           print(f"NO INGEST METHOD!! {success_status}")
       else:
         # RUN INGEST METHOD
-        ret = handler(s3_path, *args, **kwargs)
+        ret = ingest_method(s3_path, *args, **kwargs)
         if ret == "Success":
           success_status['success_ingest'].append(s3_path)
         else:
@@ -206,15 +205,17 @@ Now please respond to my question: {user_question}"""
         file_extension = Path(s3_path).suffix
         with NamedTemporaryFile(suffix=file_extension) as tmpfile:
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-          mime_type = mimetypes.guess_type(tmpfile.name, strict=False)[0]
-          mime_category, extension = mime_type.split('/')
+          mime_type = str(mimetypes.guess_type(tmpfile.name, strict=False)[0])
+          mime_category, mime_subcategory = mime_type.split('/')
 
         if file_extension in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
-          _ingest_single(file_ingest_methods, s3_path, course_name, kwargs=kwargs)
+          ingest_method = file_ingest_methods.get(file_extension)
+          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
         elif mime_category in mimetype_ingest_methods:
           # mime type
-          _ingest_single(mimetype_ingest_methods, s3_path, course_name, kwargs=kwargs)
+          ingest_method = file_ingest_methods.get(mime_category)
+          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
         else:
           # failure
           success_status['failure_ingest'].append(f"File ingest not supported for Mimetype: {mime_type}, with MimeCategory: {mime_category}, with file extension: {file_ext} for s3_path: {s3_path}")
