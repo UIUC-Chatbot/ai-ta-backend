@@ -164,13 +164,16 @@ Now please respond to my question: {user_question}"""
     def _ingest_single(ingest_methods: Dict[str, Callable], s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
       handler = ingest_methods.get(Path(s3_path).suffix)
-      if handler:
+      if handler is None:
+          success_status['failure_ingest'].append(f"We don't have a ingest method for this filetype: {s3_path}")
+          print(f"NO INGEST METHOD!! {success_status}")
+      else:
         # RUN INGEST METHOD
         ret = handler(s3_path, *args, **kwargs)
-        if ret != "Success":
-          success_status['failure_ingest'].append(s3_path)
-        else:
+        if ret == "Success":
           success_status['success_ingest'].append(s3_path)
+        else:
+          success_status['failure_ingest'].append(s3_path)
 
     # 👇👇👇👇 ADD NEW INGEST METHODSE E  HER👇👇👇👇🎉
     file_ingest_methods = {
