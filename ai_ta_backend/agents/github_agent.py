@@ -36,8 +36,8 @@ from langchain.tools.playwright.utils import \
 from langchain.tools.playwright.utils import create_async_playwright_browser
 from langchain.utilities.github import GitHubAPIWrapper
 from langchain.vectorstores import Qdrant
-from langchain_experimental.autonomous_agents.autogpt.agent import AutoGPT
-from langchain_experimental.autonomous_agents.baby_agi import BabyAGI
+# from langchain_experimental.autonomous_agents.autogpt.agent import AutoGPT
+# from langchain_experimental.autonomous_agents.baby_agi import BabyAGI
 from langchain_experimental.plan_and_execute.agent_executor import \
     PlanAndExecute
 from langchain_experimental.plan_and_execute.executors.agent_executor import \

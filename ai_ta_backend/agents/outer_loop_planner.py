@@ -48,15 +48,16 @@ from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
 
 # Our own imports 
-from tools import get_shell_tool, get_tools
-from vector_db import count_tokens_and_cost, get_top_contexts_uiuc_chatbot
-from agents import get_docstore_agent
+from ai_ta_backend.agents.agents import get_docstore_agent
+from ai_ta_backend.agents.tools import get_shell_tool, get_tools
+from ai_ta_backend.agents.vector_db import (count_tokens_and_cost,
+                                            get_top_contexts_uiuc_chatbot)
 
 load_dotenv(override=True, dotenv_path='.env')
 
 
-from langchain_experimental.autonomous_agents.autogpt.agent import AutoGPT
-from langchain_experimental.autonomous_agents.baby_agi import BabyAGI
+# from langchain_experimental.autonomous_agents.autogpt.agent import AutoGPT
+# from langchain_experimental.autonomous_agents.baby_agi import BabyAGI
 from langchain_experimental.plan_and_execute.agent_executor import \
     PlanAndExecute
 from langchain_experimental.plan_and_execute.executors.agent_executor import \
