@@ -4,7 +4,7 @@
 import os
 from dis import Instruction
 
-from github import Auth, GithubException, GithubIntegration
+from github import Auth, GithubIntegration
 from github.Issue import Issue
 from github.PullRequest import PullRequest
 from github.Repository import Repository
@@ -78,9 +78,10 @@ def handle_issue_opened(payload):
     messageForNewIssues = "Thanks for opening a new issue! I'll now try to finish this implementation and open a PR for you to review. I'll comment if I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
     issue.create_comment(messageForNewIssues)
 
-    print("Creating branch name")
-    proposed_branch_name = github_agent.convert_issue_to_branch_name(issue)
-    unique_branch_name = ensure_unique_branch_name(repo, proposed_branch_name)
+    unique_branch_name = 'main'
+    # print("Creating branch name")
+    # unique_branch_name = github_agent.generate_branch_name(issue)
+    #  = ensure_unique_branch_name(repo, proposed_branch_name)
 
     print("LAUNCHING BOT")
     bot = github_agent.GH_Agent(branch_name=unique_branch_name)
@@ -155,22 +156,3 @@ def handle_comment_opened(payload):
     print(f"Error: {e}")
     issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {e}")
 
-def ensure_unique_branch_name(repo, proposed_branch_name):
-  # Attempt to create the branch, appending _v{i} if the name already exists
-  i = 0
-  new_branch_name = proposed_branch_name
-  base_branch = repo.get_branch(repo.default_branch)
-  while True:
-    try:
-      repo.create_git_ref(ref=f"refs/heads/{new_branch_name}", sha=base_branch.commit.sha)
-      print(f"Branch '{new_branch_name}' created successfully!")
-      return new_branch_name
-    except GithubException as e:
-      if e.status == 422 and "Reference already exists" in e.data['message']:
-        i += 1
-        new_branch_name = f"{proposed_branch_name}_v{i}"
-        print(f"Branch name already exists. Trying with {new_branch_name}...")
-      else:
-        # Handle any other exceptions
-        print(f"Failed to create branch. Error: {e}")
-        raise Exception(f"Unable to create branch name from proposed_branch_name: {proposed_branch_name}")

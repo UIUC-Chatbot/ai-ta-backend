@@ -1,3 +1,7 @@
+"""
+Env for Kastan: openai_3
+"""
+
 import inspect
 import os
 import traceback
@@ -6,12 +10,16 @@ from typing import List, Sequence, Tuple
 import langchain
 # from ai_ta_backend.agents import get_docstore_agent
 from dotenv import load_dotenv
-from langchain.agents import AgentType, Tool, initialize_agent, load_tools
+from github import GithubException
+from github.Issue import Issue
+from langchain.agents import (AgentExecutor, AgentType, Tool, initialize_agent,
+                              load_tools)
 from langchain.agents.agent_toolkits import PlayWrightBrowserToolkit
 from langchain.agents.agent_toolkits.github.toolkit import GitHubToolkit
 from langchain.agents.openai_functions_multi_agent.base import \
     OpenAIMultiFunctionsAgent
 from langchain.agents.react.base import DocstoreExplorer
+from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.chains import RetrievalQA
 from langchain.chat_models import ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
@@ -75,7 +83,7 @@ class GH_Agent():
   def __init__(self, branch_name: str = ''):
     self.branch_name = branch_name
     self.github_api_wrapper = GitHubAPIWrapper(active_branch=branch_name, github_base_branch='main')  # type: ignore
-    self.pr_agent = self.make_bot()
+    self.pr_agent: AgentExecutor = self.make_bot()
 
   def make_bot(self):
     # LLMs
@@ -89,7 +97,7 @@ class GH_Agent():
     memory = ConversationSummaryBufferMemory(memory_key="chat_history", return_messages=True, llm=summarizer_llm, max_token_limit=2_000)
 
     # TOOLS
-    toolkit = GitHubToolkit.from_github_api_wrapper(self.github_api_wrapper)
+    toolkit: GitHubToolkit = GitHubToolkit.from_github_api_wrapper(self.github_api_wrapper)
     github_tools: list[BaseTool] = toolkit.get_tools()
     human_tools: List[BaseTool] = load_tools(["human"], llm=human_llm, input_func=get_human_input)
     # todo: add tools for documentation search... unless I have a separate code author.
@@ -115,32 +123,14 @@ class GH_Agent():
         })
 
   def launch_gh_agent(self, instruction: str, active_branch='bot-branch'):
-    self.github_api_wrapper.set_active_branch(active_branch)
+    # self.github_api_wrapper.set_active_branch(active_branch)
     return self.bot_runner_with_retries(self.pr_agent, instruction)
 
-  def set_active_branch(self, branch_name):
-    self.github_api_wrapper.set_active_branch(branch_name)
-
-  # TODO: these 3 functions can probably be consolidated to "launch GH agent w/ custom prompt, make the caller's responsibility to use GH agents for a task"
-  # def on_new_pr(self, number: int):
-  #   pr = self.github_api_wrapper.get_pull_request(number)
-  #   print(f"PR {number}: {pr}")
-  #   instruction = f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr)}"
-  #   self.bot_runner_with_retries(self.pr_agent, instruction)
-
-  # def on_new_issue(self, number: int):
-  #   issue = self.github_api_wrapper.get_issue(number)
-  #   instruction = f"Please implement these changes by creating or editing the necessary files. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. The last step is to create a PR with a clear and concise title and description, list any concerns or final changes necessary in the PR body. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest assignment: {str(issue)}"
-  #   self.bot_runner_with_retries(self.pr_agent, instruction)
-  
-  # def on_pr_comment(self, number: int):
-  #   issue = self.github_api_wrapper.get_issue(number)
-  #   instruction = f"Please complete this work-in-progress pull request by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue)}"
-  #   self.bot_runner_with_retries(self.pr_agent, instruction)
-  
-  def bot_runner_with_retries(self, bot, run_instruction, total_retries=3):
+  def bot_runner_with_retries(self, bot: AgentExecutor, run_instruction, total_retries=1):
     """Runs the given bot with attempted retries. First prototype.
     """  
+
+    print("LIMITING TOTAL RETRIES TO 0, wasting too much money....")
     runtime_exceptions = []
     result = ''
     for num_retries in range(1,total_retries+1):
@@ -149,8 +139,9 @@ class GH_Agent():
         warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
       
       try:
-          result = bot.run(f"{run_instruction}\n{warning_to_bot}")
-          break
+          with tracing_v2_enabled(project_name="Github Agent Dev"):
+            result = bot.run(f"{run_instruction}\n{warning_to_bot}")
+          break # no error, so break retry loop
       except Exception as e:
           print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
           print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # print function name in error.
@@ -165,12 +156,11 @@ class GH_Agent():
     return result
 
 
-def convert_issue_to_branch_name(issue):
-
-  system_template = "You are a helpful assistant that writes clear and concise github branch names for new pull requests."
+def generate_branch_name(issue: Issue):
+  """Generate a meaningful branch name that the Agent will use to commit it's new code against. Later, it can use this branch to open a pull request."""
+  system_template = "You are a helpful assistant that writes clear and concise GitHub branch names for new pull requests."
   system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
-
-  example_issue = {"title": "Implement an Integral function in C", "body": "This request includes a placeholder for a C program that calculates an integral and a Makefile to compile it. Closes issue #6.", "comments": [{'body': 'Please finish the implementation, these are just placeholder files.', 'user': 'KastanDay'}]}
+  example_issue = {"title": "Implement an Integral function in C", "body": "This request includes a placeholder for a C program that calculates an integral and a Makefile to compile it. Closes issue #6."}
 
   prompt = HumanMessagePromptTemplate.from_template(
       '''Given this issue, please return a single string that would be a suitable branch name on which to implement this feature request. Use common software development best practices to name the branch.
@@ -189,13 +179,14 @@ def convert_issue_to_branch_name(issue):
   llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
   output = llm(formatted_messages)
   print(f"SUGGESTED_BRANCH_NAME: <<{output.content}>>")
-  print(f"Cleaned branch name: <<{strip_n_clean_text(output.content)}>>")
+  print(f"Cleaned branch name: <<{sanitize_branch_name(output.content)}>>")
 
-  return strip_n_clean_text(output.content)
+  return ensure_unique_branch_name(issue.repository, sanitize_branch_name(output.content))
 
 
-def strip_n_clean_text(text):
+def sanitize_branch_name(text):
   """
+  # Remove non-alphanumeric characters, use underscores. 
   Example:
     cleaned_text = strip_n_clean_text("Hello, World! This is an example.")
     print(cleaned_text)  # Output: "Hello_World_This_is_an_example"
@@ -203,20 +194,29 @@ def strip_n_clean_text(text):
   Returns:
       str: cleaned_text
   """
-  # Split the text into words using a space as a separator
-  words = text.split()
+  cleaned_words = [''.join(c for c in word if c.isalnum() or c == '_') for word in text.split()]
+  return '_'.join(cleaned_words)
 
-  # Remove any non-alphanumeric characters from each word
-  cleaned_words = [''.join(c for c in word if c.isalnum() or c == '_') for word in words]
-
-  # Join the cleaned words with an underscore
-  result = '_'.join(cleaned_words)
-
-  return result
+def ensure_unique_branch_name(repo, proposed_branch_name):
+  # Attempt to create the branch, appending _v{i} if the name already exists
+  i = 0
+  new_branch_name = proposed_branch_name
+  base_branch = repo.get_branch(repo.default_branch)
+  while True:
+    try:
+      repo.create_git_ref(ref=f"refs/heads/{new_branch_name}", sha=base_branch.commit.sha)
+      print(f"Branch '{new_branch_name}' created successfully!")
+      return new_branch_name
+    except GithubException as e:
+      if e.status == 422 and "Reference already exists" in e.data['message']:
+        i += 1
+        new_branch_name = f"{proposed_branch_name}_v{i}"
+        print(f"Branch name already exists. Trying with {new_branch_name}...")
+      else:
+        # Handle any other exceptions
+        print(f"Failed to create branch. Error: {e}")
+        raise Exception(f"Unable to create branch name from proposed_branch_name: {proposed_branch_name}")
 
 
 if __name__ == "__main__":
   print("No code.")
-  # hard coded placeholders for now. TODO: watch PRs for changes via "Github App" api.
-  # b = GH_Agent(branch_name='bot-branch')
-  # b.on_new_pr(number=7)
