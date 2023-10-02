@@ -1,4 +1,5 @@
 import gc
+import json
 import os
 import time
 from typing import List
@@ -9,7 +10,7 @@ from flask_cors import CORS
 from flask_executor import Executor
 from sqlalchemy import JSON
 
-from ai_ta_backend.nomic_logging import get_nomic_map, log_query_to_nomic
+from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
 from ai_ta_backend.canvas import CanvasAPI
@@ -138,15 +139,12 @@ def getTopContexts() -> Response:
     abort(
         400,
         description=
-        f"Missing one or me required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
+        f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
   del ingester
-
-  # background execution of tasks!! 
-  executor.submit(log_query_to_nomic, course_name, search_query)
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -212,6 +210,7 @@ def ingest() -> Response:
   """
   s3_paths: List[str] | str = request.args.get('s3_paths', default='')
   course_name: List[str] | str = request.args.get('course_name', default='')
+  print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}")
 
   if course_name == '' or s3_paths == '':
     # proper web error "400 Bad request"
@@ -223,6 +222,7 @@ def ingest() -> Response:
 
   ingester = Ingest()
   success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+  print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
   del ingester
 
   response = jsonify(success_fail_dict)
@@ -295,22 +295,22 @@ def delete():
   Delete a single file from all our database: S3, Qdrant, and Supabase (for now).
   Note, of course, we still have parts of that file in our logs.
   """
-
   course_name: str = request.args.get('course_name', default='', type=str)
   s3_path: str = request.args.get('s3_path', default='', type=str)
+  source_url: str = request.args.get('url', default='', type=str)
 
-  if course_name == '' or s3_path == '':
+  if course_name == '' or (s3_path == '' and source_url == ''):
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing one or more required parameters: 'course_name' and 's3_path' must be provided. Course name: `{course_name}`, S3 path: `{s3_path}`"
+        f"Missing one or more required parameters: 'course_name' and ('s3_path' or 'source_url') must be provided. Course name: `{course_name}`, S3 path: `{s3_path}`, source_url: `{source_url}`"
     )
 
   start_time = time.monotonic()
   ingester = Ingest()
   # background execution of tasks!! 
-  executor.submit(ingester.delete_data, s3_path, course_name)
+  executor.submit(ingester.delete_data, course_name, s3_path, source_url)
   print(f"From {course_name}, deleted file: {s3_path}")
   print(f"⏰ Runtime of FULL delete func: {(time.monotonic() - start_time):.2f} seconds")
   del ingester
@@ -327,7 +327,7 @@ def scrape() -> Response:
   max_urls: int = request.args.get('max_urls', default=100, type=int)
   max_depth: int = request.args.get('max_depth', default=2, type=int)
   timeout: int = request.args.get('timeout', default=3, type=int)
-  stay_on_baseurl: bool | None = request.args.get('`stay_on_baseurl`', default=True, type=bool)
+  stay_on_baseurl: bool | None = request.args.get('stay_on_baseurl', default=True, type=bool)
 
   if url == '' or max_urls == -1 or max_depth == -1 or timeout == -1 or course_name == '' or stay_on_baseurl is None:
     # proper web error "400 Bad request"
@@ -343,6 +343,7 @@ def scrape() -> Response:
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
   print(f"Timeout in Seconds ⏰: {timeout}")
+  print(f"Stay on baseurl: {stay_on_baseurl}")
 
   success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl)
 
@@ -350,7 +351,6 @@ def scrape() -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   gc.collect() # manually invoke garbage collection, try to reduce memory on Railway $$$
   return response
-
 
 @app.route('/mit-download', methods=['GET'])
 def mit_download_course() -> Response:
@@ -452,6 +452,26 @@ def nomic_map():
   print("nomic map\n", map_id)
 
   response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/onResponseCompletion', methods=['POST'])
+def logToNomic():
+  data = request.get_json()
+  course_name = data['course_name']
+  conversation = data['conversation']
+  if course_name == '' or conversation == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
+    )
+  print(f"In /onResponseCompletion for course: {course_name}")
+
+  # background execution of tasks!! 
+  response = executor.submit(log_convo_to_nomic, course_name, data)
+  response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
