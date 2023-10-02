@@ -414,29 +414,6 @@ def ingest_canvas():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@app.route('/updateCanvas', methods=['GET'])
-def update_canvas():
-  """
-  Update course content from Canvas
-  """
-  canvas = CanvasAPI()
-  canvas_course_id: str = request.args.get('course_id')
-  course_name: str = request.args.get('course_name')
-
-  if canvas_course_id == '' or course_name == '':
-    # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'course_id' and 'course_name' must be provided. course_id: `{canvas_course_id}`, course_name: `{course_name}`"
-    )
-
-  success_or_failure = canvas.update_course_content(canvas_course_id, course_name)
-  response = jsonify({"outcome": success_or_failure})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
 @app.route('/getNomicMap', methods=['GET'])
 def nomic_map():
   course_name: str = request.args.get('course_name', default='', type=str)

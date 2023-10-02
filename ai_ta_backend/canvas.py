@@ -125,54 +125,6 @@ class CanvasAPI():
             print(e)
             return "Failed"
         
-    def update_course_content(self, canvas_course_id: int, course_name: str) -> str:
-        """
-        Updates all Canvas course materials through the course ID.
-        1. Download zip file from Canvas
-        2. Perform diff between downloaded files and existing S3 files
-        3. Replace the changed files in S3 and QDRANT
-        """
-        print("In update_course_content")
-
-        try:
-            # a dictionary of all contents we want to ingest - files, pages, modules, syllabus, assignments, discussions.
-            content_to_ingest = {
-                'files': True,
-                'pages': True,
-                'modules': True,
-                'syllabus': True,
-                'assignments': True,
-                'discussions': True
-            }
-
-            # Create a canvas directory with a course folder inside it.
-            canvas_dir = "canvas_materials"
-            folder_name = "canvas_course_" + str(canvas_course_id) + "_ingest"
-            folder_path = canvas_dir + "/" + folder_name
-
-            if os.path.exists(canvas_dir):
-                print("Canvas directory already exists")
-            else:
-                os.mkdir(canvas_dir)
-                print("Canvas directory created")
-
-            if os.path.exists(canvas_dir + "/" + folder_name):
-                print("Course folder already exists")
-            else:
-                os.mkdir(canvas_dir + "/" + folder_name)
-                print("Course folder created")
-
-            # Download course content
-            self.download_course_content(canvas_course_id, folder_path, content_to_ingest)
-            print("Downloaded and extracted canvas materials")
-            
-            # Call diff function
-            response = update_materials.update_files(folder_path, course_name)
-            print(response)
-            return response
-        except Exception as e:
-            return "Failed! Error: " + str(e)
-        
     def download_files(self, dest_folder: str, api_path: str) -> str:
         """
         Downloads all files in a Canvas course into given folder.
