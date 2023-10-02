@@ -40,7 +40,7 @@ class WebScrape():
     self.max_urls = 0
     self.original_amount = 0
     self.supa_urls = 0
-    self.queue = []
+    self.queue = {}
 
     return None
 
@@ -250,7 +250,7 @@ class WebScrape():
     count = len(all_urls) - self.supa_urls
     if all_urls != []:
       print("📈📈 Counted URLs", count, "out of", self.original_amount, "📈📈" )
-      if len(all_urls) > self.original_amount:
+      if count > self.original_amount:
         print("Too many repeated urls, exiting web scraper")
         return True
       else:
@@ -421,7 +421,8 @@ class WebScrape():
   
     return None
   
-  def breadth_crawler(self, url:str, course_name:str, timeout:int=1, base_url_on:str=None,): # type: ignore
+  def breadth_crawler(self, url:str, course_name:str, timeout:int=1, base_url_on:str=None, max_depth:int=3): # type: ignore
+    depth = 1
     if base_url_on:
       base_url_on = str(base_url_on)
     
@@ -430,24 +431,40 @@ class WebScrape():
     if base == "":
       raise ValueError("This URL is invalid")
     
-    self.queue = self.scrape_user_provided_page(url, course_name, timeout,  base)
+    self.queue[depth] = self.scrape_user_provided_page(url, course_name, timeout,  base)
+    self.queue[depth+1] = []
     print("queue", self.queue)
+    print("len", len(self.queue[depth]), len(self.queue[depth+1]))
     
     while self.count_hard_stop_len() == False:
-      url = self.queue.pop(0)
+      print("queue", len(self.queue[depth]), len(self.queue[depth+1]))
+
+      if self.queue[depth] == []:
+        depth += 1
+        print("depth:", depth)
+        self.queue[depth+1] = []
+        if depth > max_depth:
+          print("Depth exceeded:", depth, "out of", max_depth)
+          raise ValueError("Depth exceeded")
+
+      url = self.queue[depth].pop(0)
       print(url)
       if self.max_urls > 0:
-        if base_url_on:
-          if url.startswith(base):
+        if depth <= max_depth:
+          if base_url_on:
+            if url.startswith(base):
+              new_url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
+              self.queue[depth+1] += self.non_user_provided_page_urls(new_url, base, content, filetype)
+              if self.count_hard_stop_len():
+                raise ValueError("Too many repeated urls, exiting web scraper")
+          else:
             new_url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
-            self.queue = self.queue + self.non_user_provided_page_urls(new_url, base, content, filetype)
+            self.queue[depth+1] += self.non_user_provided_page_urls(new_url, base, content, filetype)
             if self.count_hard_stop_len():
-              raise ValueError("Too many repeated urls, exiting web scraper")
+              raise ValueError("Too many repeated urls, exiting web scraper")     
         else:
-          new_url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
-          self.queue = self.queue + self.non_user_provided_page_urls(new_url, base, content, filetype)
-          if self.count_hard_stop_len():
-            raise ValueError("Too many repeated urls, exiting web scraper")     
+          print("Depth exceeded:", depth+1, "out of", max_depth)
+          break
       else:
         print("Max URLs reached")
         raise ValueError("Max URLs reached")
@@ -512,8 +529,7 @@ class WebScrape():
         if depth_or_breadth.lower() == 'depth':
           self.depth_crawler(url=url, course_name=course_name, max_depth=max_depth, timeout=timeout, base_url_on=base_url_str)
         elif depth_or_breadth.lower() == 'breadth':
-          print("breadth")
-          self.breadth_crawler(url=url, course_name=course_name, timeout=timeout, base_url_on=base_url_str)
+          self.breadth_crawler(url=url, course_name=course_name, timeout=timeout, base_url_on=base_url_str, max_depth=max_depth)
         else:
           raise ValueError("Invalid depth_or_breadth argument")
       except ValueError as e:
