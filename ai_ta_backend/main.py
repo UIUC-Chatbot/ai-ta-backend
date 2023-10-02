@@ -326,6 +326,7 @@ def scrape() -> Response:
   timeout: int = request.args.get('timeout', default=3, type=int)
   # stay_on_baseurl = request.args.get('stay_on_baseurl', default='', type=str)
   stay_on_baseurl: bool = request.args.get('stay_on_baseurl', default=True, type=lambda x: x.lower() == 'true')
+  depth_or_breadth:str = request.args.get('depth_or_breadth', default='breadth', type=str)
 
   if url == '' or max_urls == -1 or max_depth == -1 or timeout == -1 or course_name == '' or stay_on_baseurl is None:
     # proper web error "400 Bad request"
@@ -343,7 +344,7 @@ def scrape() -> Response:
   print(f"Timeout in Seconds ⏰: {timeout}")
   
   scraper = WebScrape()
-  success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl)
+  success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl, depth_or_breadth)
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
