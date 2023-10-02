@@ -15,6 +15,7 @@ def generate_checksum(file_path):
             md5_hash.update(byte_block)
     return md5_hash.hexdigest()
 
+# need to modify this function - switch to Supabase instead of S3
 def update_files(source_path: str, course_name: str):
     """
     Compares and updates files in S3 and QDRANT
