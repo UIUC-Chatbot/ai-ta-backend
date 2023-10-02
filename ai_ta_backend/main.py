@@ -2,7 +2,6 @@ import gc
 import os
 import time
 from typing import List
-import json
 
 from dotenv import load_dotenv
 from flask import Flask, Response, abort, jsonify, request
@@ -401,6 +400,15 @@ def ingest_canvas():
   canvas = CanvasAPI()
   canvas_course_id: str = request.args.get('course_id')
   course_name: str = request.args.get('course_name')
+
+  if canvas_course_id == '' or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_id' and 'course_name' must be provided. course_id: `{canvas_course_id}`, course_name: `{course_name}`"
+    )
+
   success_or_failure = canvas.ingest_course_content(canvas_course_id, course_name)
   response = jsonify({"outcome": success_or_failure})
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -414,6 +422,15 @@ def update_canvas():
   canvas = CanvasAPI()
   canvas_course_id: str = request.args.get('course_id')
   course_name: str = request.args.get('course_name')
+
+  if canvas_course_id == '' or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_id' and 'course_name' must be provided. course_id: `{canvas_course_id}`, course_name: `{course_name}`"
+    )
+
   success_or_failure = canvas.update_course_content(canvas_course_id, course_name)
   response = jsonify({"outcome": success_or_failure})
   response.headers.add('Access-Control-Allow-Origin', '*')
