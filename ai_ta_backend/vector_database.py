@@ -8,9 +8,10 @@ import subprocess
 import time
 import traceback
 import uuid
+from importlib import metadata
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import boto3
 import fitz
@@ -160,16 +161,14 @@ Now please respond to my question: {user_question}"""
 
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
-    def _ingest_single(file_ingest_methods, s3_path, *args, **kwargs):
+    def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
-      handler = file_ingest_methods.get(Path(s3_path).suffix)
-      if handler:
-        # RUN INGEST METHOD
-        ret = handler(s3_path, *args, **kwargs)
-        if ret != "Success":
-          success_status['failure_ingest'].append(s3_path)
-        else:
-          success_status['success_ingest'].append(s3_path)
+      # RUN INGEST METHOD
+      ret = ingest_method(s3_path, *args, **kwargs)
+      if ret == "Success":
+        success_status['success_ingest'].append(s3_path)
+      else:
+        success_status['failure_ingest'].append(s3_path)
 
     # 👇👇👇👇 ADD NEW INGEST METHODSE E  HER👇👇👇👇🎉
     file_ingest_methods = {
@@ -178,7 +177,6 @@ Now please respond to my question: {user_question}"""
         '.vtt': self._ingest_single_vtt,
         '.pdf': self._ingest_single_pdf,
         '.txt': self._ingest_single_txt,
-        '.md': self._ingest_single_txt,
         '.srt': self._ingest_single_srt,
         '.docx': self._ingest_single_docx,
         '.ppt': self._ingest_single_ppt,
@@ -193,28 +191,31 @@ Now please respond to my question: {user_question}"""
     }
     # 👆👆👆👆 ADD NEW INGEST METHODS ERE 👆👆👇�DS 👇�🎉
 
+    print(f"Top of ingest, Course_name {course_name}. S3 paths {s3_paths}")
     success_status = {"success_ingest": [], "failure_ingest": []}
     try:
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
-
       
       for s3_path in s3_paths:
-        with NamedTemporaryFile(suffix=Path(s3_path).suffix) as tmpfile:
+        file_extension = Path(s3_path).suffix
+        with NamedTemporaryFile(suffix=file_extension) as tmpfile:
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-          mime_type = mimetypes.guess_type(tmpfile.name, strict=False)[0]
-          mime_category, extension = mime_type.split('/')
-          file_ext = "." + extension
+          mime_type = str(mimetypes.guess_type(tmpfile.name, strict=False)[0])
+          mime_category, mime_subcategory = mime_type.split('/')
 
-        if file_ext in file_ingest_methods:
+        if file_extension in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
-          _ingest_single(file_ingest_methods, s3_path, course_name, kwargs=kwargs)
+          ingest_method = file_ingest_methods[file_extension]
+          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
         elif mime_category in mimetype_ingest_methods:
-          # mime type
-          _ingest_single(mimetype_ingest_methods, s3_path, course_name, kwargs=kwargs)
+          # fallback to MimeType
+          print("mime category", mime_category)
+          ingest_method = mimetype_ingest_methods[mime_category]
+          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
         else:
           # failure
-          success_status['failure_ingest'].append(f"File ingest not supported for Mimetype: {mime_type}, with MimeCategory: {mime_category}, with file extension: {file_ext} for s3_path: {s3_path}")
+          success_status['failure_ingest'].append(f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}")
           continue
       
       return success_status
@@ -223,7 +224,7 @@ Now please respond to my question: {user_question}"""
         return success_status
 
 
-  def _ingest_single_py(self, s3_path: str, course_name: str):
+  def _ingest_single_py(self, s3_path: str, course_name: str, **kwargs):
     try:
       file_name = s3_path.split("/")[-1]
       file_path = "media/" + file_name # download from s3 to local folder for ingest
@@ -253,7 +254,7 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       print(f"ERROR IN py READING {e}")
 
-  def _ingest_single_vtt(self, s3_path: str, course_name: str):
+  def _ingest_single_vtt(self, s3_path: str, course_name: str, **kwargs):
     """
     Ingest a single .vtt file from S3.
     """
@@ -325,15 +326,14 @@ Now please respond to my question: {user_question}"""
       print(err)
       return f"_ingest_html Error: {e}"
 
-  def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_video(self, s3_path: str, course_name: str, **kwargs) -> str:
     """
     Ingest a single video file from S3.
     """
+    print("Starting ingest video or audio")
     try:
       # check for file extension
       file_ext = Path(s3_path).suffix
-      print(file_ext[1:])
-
       openai.api_key = os.getenv('OPENAI_API_KEY')
       transcript_list = []
       with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
@@ -401,7 +401,7 @@ Now please respond to my question: {user_question}"""
       print(e)
       return f"Error {e}"
 
-  def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_docx(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
@@ -431,7 +431,7 @@ Now please respond to my question: {user_question}"""
       print(f"ERROR IN DOCX {e}")
       return f"Error: {e}"
 
-  def _ingest_single_srt(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_srt(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
@@ -529,7 +529,7 @@ Now please respond to my question: {user_question}"""
       return f"Error {e}"
     return "Success"
 
-  def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_txt(self, s3_path: str, course_name: str, **kwargs) -> str:
     """Ingest a single .txt or .md file from S3.
     Args:
         s3_path (str): A path to a .txt file in S3
@@ -537,10 +537,13 @@ Now please respond to my question: {user_question}"""
     Returns:
         str: "Success" or an error message
     """
+    print("In text ingest")
     try:
       # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
+      print("s3 Resonse:", response)
       text = response['Body'].read().decode('utf-8')
+      print("Text from s3:", text)
       text = [text]
     
       metadatas: List[Dict[str, Any]] = [{
@@ -552,6 +555,7 @@ Now please respond to my question: {user_question}"""
           'url': '',
           'base_url': '',
       }]
+      print("Prior to ingest", metadatas)
 
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
@@ -559,7 +563,7 @@ Now please respond to my question: {user_question}"""
       print(f"ERROR IN TXT READING {e}")
       return f"Error: {e}"
 
-  def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_ppt(self, s3_path: str, course_name: str, **kwargs) -> str:
     """
     Ingest a single .ppt or .pptx file from S3.
     """
