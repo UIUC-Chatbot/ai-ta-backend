@@ -21,6 +21,8 @@ def get_cost(course_name: str)-> List:
     df = pd.DataFrame(data)
     convo_df = df['convo']
 
+    print(df.head())
+
     total_queries = 0
     list_of_prompt_costs = []
     list_of_prompt_token_lengths = []
@@ -28,6 +30,7 @@ def get_cost(course_name: str)-> List:
     list_of_response_token_lengths = []
 
     for row in convo_df:
+        print(row)
         
         messages = row['messages']
         model_name = row['model']['id']
@@ -69,22 +72,24 @@ def get_tokens_and_cost(text: str, std_prompt: str, model_name: str, flag: str =
     # initialize tokenizer
     tokenizer = tiktoken.encoding_for_model("gpt-3.5-turbo")
     if model_name.startswith('gpt-4'):
-        # 8k context
-        prompt_cost_per_token: float = 0.03/1000
-        completion_cost_per_token: float = 0.06/1000
-
-        # 32k context
-        # prompt_cost_per_token: float = 0.06/1000
-        # completion_cost_per_token: float = 0.12/1000
+        if "32k" in model_name:
+            # 32k context
+            prompt_cost_per_token: float = 0.06/1000
+            completion_cost_per_token: float = 0.12/1000
+        else:
+            # 8k context
+            prompt_cost_per_token: float = 0.03/1000
+            completion_cost_per_token: float = 0.06/1000
 
     elif model_name.startswith('gpt-3.5-turbo'):
-        # 4k context
-        prompt_cost_per_token: float = 0.0015/1000
-        completion_cost_per_token: float = 0.002/1000
-
-        # 16k context
-        # prompt_cost_per_token: float = 0.003/1000
-        # completion_cost_per_token: float = 0.004/1000
+        if "16k" in model_name:
+            # 16k context
+            prompt_cost_per_token: float = 0.003/1000
+            completion_cost_per_token: float = 0.004/1000
+        else:
+            # 4k context
+            prompt_cost_per_token: float = 0.0015/1000
+            completion_cost_per_token: float = 0.002/1000
 
     else:
         print(f"No idea of cost! Pricing not supported for model: `{model_name}`")
