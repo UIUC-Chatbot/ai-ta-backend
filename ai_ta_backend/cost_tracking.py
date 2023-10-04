@@ -24,8 +24,8 @@ def get_cost(course_name: str)-> List:
     total_queries = 0
     list_of_prompt_costs = []
     list_of_prompt_token_lengths = []
-
-
+    list_of_response_costs = []
+    list_of_response_token_lengths = []
 
     for row in convo_df:
         
@@ -37,27 +37,34 @@ def get_cost(course_name: str)-> List:
             if message['role'] == 'user': 
                 # prompt cost
                 total_queries += 1
-                query_cost, query_tokens = get_tokens_and_cost(content, prompt, model_name)
+                query_cost, query_tokens = get_tokens_and_cost(content, prompt, model_name, flag='query')
                 list_of_prompt_costs.append(query_cost)
                 list_of_prompt_token_lengths.append(query_tokens)
             else:
                 # completion cost
-                pass
+                response_cost, response_tokens = get_tokens_and_cost(content, prompt, model_name, flag='response')
+                list_of_response_costs.append(response_cost)
+                list_of_response_token_lengths.append(response_tokens)
 
-    total_course_cost = round(sum(list_of_prompt_costs), 4)
+    # total cost = prompt cost + response cost
+    total_course_cost = round(sum(list_of_prompt_costs) + sum(list_of_response_costs), 4)
     avg_course_cost = round(total_course_cost/total_queries, 4)
 
     print("Total queries: ", total_queries)
-    print("Total tokens: ", round(sum(list_of_prompt_token_lengths), 4))
+    print("Total prompt tokens: ", round(sum(list_of_prompt_token_lengths), 4))
+    print("Total response tokens: ", round(sum(list_of_response_token_lengths), 4))
+    print("Total prompt cost: ", round(sum(list_of_prompt_costs), 4))
+    print("Total response cost: ", round(sum(list_of_response_costs), 4))
     print("Total cost: ", total_course_cost)
     print("Average cost: ", avg_course_cost)
 
     return [total_queries, total_course_cost, avg_course_cost]
 
-def get_tokens_and_cost(query: str, std_prompt: str, model_name: str):
+def get_tokens_and_cost(text: str, std_prompt: str, model_name: str, flag: str = 'query'):
     """
     Takes an input query and returns the cost.
     1. Cost of encoding query + prompt
+    2. Cost of answer generation by the model
     """
     # initialize tokenizer
     tokenizer = tiktoken.encoding_for_model("gpt-3.5-turbo")
@@ -82,9 +89,15 @@ def get_tokens_and_cost(query: str, std_prompt: str, model_name: str):
     else:
         print(f"No idea of cost! Pricing not supported for model: `{model_name}`")
 
-    # get cost of encoding query + prompt
-    input_str = std_prompt + " " + query
-    num_of_input_tokens = len(tokenizer.encode(input_str))
-    prompt_cost = round(float(prompt_cost_per_token * num_of_input_tokens),4)
+    if flag == 'query':
+        input_str = std_prompt + " " + text
+        num_of_input_tokens = len(tokenizer.encode(input_str))
+        prompt_cost = round(float(prompt_cost_per_token * num_of_input_tokens),4)
+        return prompt_cost, num_of_input_tokens
+    else:
+        output_str = text
+        num_of_output_tokens = len(tokenizer.encode(output_str))
+        response_cost = round(float(completion_cost_per_token * num_of_output_tokens),4)
+        return response_cost, num_of_output_tokens
 
-    return prompt_cost, num_of_input_tokens
+    
