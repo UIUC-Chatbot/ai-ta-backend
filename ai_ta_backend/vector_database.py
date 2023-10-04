@@ -23,6 +23,7 @@ from langchain.document_loaders import (Docx2txtLoader, GitLoader,
                                         PythonLoader, SRTLoader, TextLoader,
                                         UnstructuredExcelLoader,
                                         UnstructuredPowerPointLoader)
+from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -184,6 +185,7 @@ Now please respond to my question: {user_question}"""
         '.pptx': self._ingest_single_ppt,
         '.xlsx': self._ingest_single_excel,
         '.xls': self._ingest_single_excel,
+        '.csv': self._ingest_single_csv,
     }
 
     # Ingest methods via MIME type (more general than filetype)
@@ -484,7 +486,33 @@ Now please respond to my question: {user_question}"""
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"SRT ERROR {e}")
+      print(f"Excel ERROR {e}")
+      return f"Error: {e}"
+  
+  def _ingest_single_csv(self, s3_path: str, course_name: str, **kwargs) -> str:
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
+
+        loader = CSVLoader(file_path=tmpfile.name)
+        documents = loader.load()
+
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).name,
+            'pagenumber': '',
+            'timestamp': '',
+            'url': '',
+            'base_url': '',
+        } for doc in documents]
+
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"CSV ERROR {e}")
       return f"Error: {e}"
 
   def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
