@@ -24,6 +24,7 @@ from langchain.document_loaders import (Docx2txtLoader, GitLoader,
                                         UnstructuredExcelLoader,
                                         UnstructuredPowerPointLoader)
 from langchain.document_loaders.csv_loader import CSVLoader
+from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -72,95 +73,6 @@ class Ingest():
         supabase_key=os.environ['SUPABASE_API_KEY'])
     return None
 
-  def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
-    """
-    Get a stuffed prompt for a given user question and course name.
-    Args : 
-      user_question (str)
-      course_name (str) : used for metadata filtering
-    Returns : str
-      a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
-    """
-    # MMR with metadata filtering based on course_name
-    vec_start_time = time.monotonic()
-    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
-    print(
-        f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds"
-    )
-
-    requests = []
-    for i, doc in enumerate(found_docs):
-      print("doc", doc)
-      dictionary = {
-          "model": "gpt-3.5-turbo",
-          "messages": [{
-              "role":
-                  "system",
-              "content":
-                  "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
-          }, {
-              "role":
-                  "user",
-              "content":
-                  f"Provide a comprehensive summary of the given text, based on this question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write 'None' and nothing else.",
-          }],
-          "n": 1,
-          "max_tokens": 600,
-          "metadata": doc.metadata
-      }
-      requests.append(dictionary)
-
-    oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                             request_url='https://api.openai.com/v1/chat/completions',
-                             api_key=os.getenv("OPENAI_API_KEY"),
-                             max_requests_per_minute=1500,
-                             max_tokens_per_minute=90000,
-                             token_encoding_name='cl100k_base',
-                             max_attempts=5,
-                             logging_level=20)
-
-    chain_start_time = time.monotonic()
-    asyncio.run(oai.process_api_requests_from_file())
-    results: list[str] = oai.results
-    print(f"⏰ EXTREME context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
-
-    print(f"Cleaned results: {oai.cleaned_results}")
-
-    all_texts = ""
-    separator = '---'  # between each context
-    token_counter = 0  #keeps track of tokens in each summarization
-    max_tokens = 7_500  #limit, will keep adding text to string until 8000 tokens reached.
-    for i, text in enumerate(oai.cleaned_results):
-      if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
-        # no useful text, it replied with a summary of "None"
-        continue
-      if text is not None:
-        if "pagenumber" not in results[i][-1].keys(): # type: ignore
-          results[i][-1]['pagenumber'] = results[i][-1].get('pagenumber_or_timestamp') # type: ignore
-        num_tokens, prompt_cost = count_tokens_and_cost(text) # type: ignore
-        if token_counter + num_tokens > max_tokens:
-          print(f"Total tokens yet in loop {i} is {num_tokens}")
-          break  # Stop building the string if it exceeds the maximum number of tokens
-        token_counter += num_tokens
-        filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
-        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber', ''))  # type: ignore
-        pagenumber = f", page: {pagenumber_or_timestamp}" if pagenumber_or_timestamp else ''
-        doc = f"Document : filename: {filename}" + pagenumber
-        summary = f"\nSummary: {text}"
-        all_texts += doc + summary + '\n' + separator + '\n'
-
-    stuffed_prompt = f"""Please answer the following question.
-Use the context below, called 'your documents', only if it's helpful and don't use parts that are very irrelevant.
-It's good to quote 'your documents' directly using informal citations, like "in document X it says Y". Try to avoid giving false or misleading information. Feel free to say you don't know.
-Try to be helpful, polite, honest, sophisticated, emotionally aware, and humble-but-knowledgeable.
-That said, be practical and really do your best, and don't let caution get too much in the way of being useful.
-To help answer the question, here's a few passages of high quality documents:\n{all_texts}
-Now please respond to my question: {user_question}"""
-
-    # "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
-
-    return stuffed_prompt
-
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
     def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
@@ -172,20 +84,23 @@ Now please respond to my question: {user_question}"""
       else:
         success_status['failure_ingest'].append(s3_path)
 
-    # 👇👇👇👇 ADD NEW INGEST METHODSE E  HER👇👇👇👇🎉
+    # 👇👇👇👇 ADD NEW INGEST METHODS HERE 👇👇👇👇🎉
     file_ingest_methods = {
         '.html': self._ingest_html,
         '.py': self._ingest_single_py,
-        '.vtt': self._ingest_single_vtt,
         '.pdf': self._ingest_single_pdf,
         '.txt': self._ingest_single_txt,
+        '.md': self._ingest_single_txt,
         '.srt': self._ingest_single_srt,
+        '.vtt': self._ingest_single_vtt,
         '.docx': self._ingest_single_docx,
         '.ppt': self._ingest_single_ppt,
         '.pptx': self._ingest_single_ppt,
         '.xlsx': self._ingest_single_excel,
         '.xls': self._ingest_single_excel,
         '.csv': self._ingest_single_csv,
+        '.png': self._ingest_single_image,
+        '.jpg': self._ingest_single_image,
     }
 
     # Ingest methods via MIME type (more general than filetype)
@@ -193,8 +108,9 @@ Now please respond to my question: {user_question}"""
       'video': self._ingest_single_video,
       'audio': self._ingest_single_video,
       'text': self._ingest_single_txt,
+      'image': self._ingest_single_image,
     }
-    # 👆👆👆👆 ADD NEW INGEST METHODS ERE 👆👆👇�DS 👇�🎉
+    # 👆👆👆👆 ADD NEW INGEST METHODhe 👆👆👆👆🎉
 
     print(f"Top of ingest, Course_name {course_name}. S3 paths {s3_paths}")
     success_status = {"success_ingest": [], "failure_ingest": []}
@@ -219,9 +135,14 @@ Now please respond to my question: {user_question}"""
           ingest_method = mimetype_ingest_methods[mime_category]
           _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
         else:
-          # failure
-          success_status['failure_ingest'].append(f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}")
-          continue
+          # No supported ingest... Fallback to attempting utf-8 decoding, otherwise fail. 
+          try: 
+            self._ingest_single_txt(s3_path, course_name)
+            success_status['success_ingest'].append(s3_path)
+            print("✅ FALLBACK TO UTF-8 INGEST WAS SUCCESSFUL :) ")
+          except Exception as e:
+            print(f"We don't have a ingest method for this filetype: {file_extension}. As a last-ditch effort, we tried to ingest the file as utf-8 text, but that failed too. File is unsupported: {s3_path}. UTF-8 ingest error: {e}")
+            success_status['failure_ingest'].append(f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}")
       
       return success_status
     except Exception as e:
@@ -487,6 +408,32 @@ Now please respond to my question: {user_question}"""
         return "Success"
     except Exception as e:
       print(f"Excel ERROR {e}")
+      return f"Error: {e}"
+  
+  def _ingest_single_image(self, s3_path: str, course_name: str, **kwargs) -> str:
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
+
+        loader = UnstructuredImageLoader(tmpfile.name, unstructured_kwargs={'strategy': "auto"})
+        documents = loader.load()
+
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
+            's3_path': s3_path,
+            'readable_filename': Path(s3_path).name,
+            'pagenumber': '',
+            'timestamp': '',
+            'url': '',
+            'base_url': '',
+        } for doc in documents]
+
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"Image ingest error (png/jpg) ERROR {e}")
       return f"Error: {e}"
   
   def _ingest_single_csv(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -1066,6 +1013,96 @@ Now please respond to my question: {user_question}"""
       err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
       print(err)
       return err
+
+  def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
+    """
+    Get a stuffed prompt for a given user question and course name.
+    Args : 
+      user_question (str)
+      course_name (str) : used for metadata filtering
+    Returns : str
+      a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
+    """
+    # MMR with metadata filtering based on course_name
+    vec_start_time = time.monotonic()
+    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
+    print(
+        f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds"
+    )
+
+    requests = []
+    for i, doc in enumerate(found_docs):
+      print("doc", doc)
+      dictionary = {
+          "model": "gpt-3.5-turbo",
+          "messages": [{
+              "role":
+                  "system",
+              "content":
+                  "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+          }, {
+              "role":
+                  "user",
+              "content":
+                  f"Provide a comprehensive summary of the given text, based on this question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write 'None' and nothing else.",
+          }],
+          "n": 1,
+          "max_tokens": 600,
+          "metadata": doc.metadata
+      }
+      requests.append(dictionary)
+
+    oai = OpenAIAPIProcessor(input_prompts_list=requests,
+                             request_url='https://api.openai.com/v1/chat/completions',
+                             api_key=os.getenv("OPENAI_API_KEY"),
+                             max_requests_per_minute=1500,
+                             max_tokens_per_minute=90000,
+                             token_encoding_name='cl100k_base',
+                             max_attempts=5,
+                             logging_level=20)
+
+    chain_start_time = time.monotonic()
+    asyncio.run(oai.process_api_requests_from_file())
+    results: list[str] = oai.results
+    print(f"⏰ EXTREME context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+
+    print(f"Cleaned results: {oai.cleaned_results}")
+
+    all_texts = ""
+    separator = '---'  # between each context
+    token_counter = 0  #keeps track of tokens in each summarization
+    max_tokens = 7_500  #limit, will keep adding text to string until 8000 tokens reached.
+    for i, text in enumerate(oai.cleaned_results):
+      if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
+        # no useful text, it replied with a summary of "None"
+        continue
+      if text is not None:
+        if "pagenumber" not in results[i][-1].keys(): # type: ignore
+          results[i][-1]['pagenumber'] = results[i][-1].get('pagenumber_or_timestamp') # type: ignore
+        num_tokens, prompt_cost = count_tokens_and_cost(text) # type: ignore
+        if token_counter + num_tokens > max_tokens:
+          print(f"Total tokens yet in loop {i} is {num_tokens}")
+          break  # Stop building the string if it exceeds the maximum number of tokens
+        token_counter += num_tokens
+        filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
+        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber', ''))  # type: ignore
+        pagenumber = f", page: {pagenumber_or_timestamp}" if pagenumber_or_timestamp else ''
+        doc = f"Document : filename: {filename}" + pagenumber
+        summary = f"\nSummary: {text}"
+        all_texts += doc + summary + '\n' + separator + '\n'
+
+    stuffed_prompt = f"""Please answer the following question.
+Use the context below, called 'your documents', only if it's helpful and don't use parts that are very irrelevant.
+It's good to quote 'your documents' directly using informal citations, like "in document X it says Y". Try to avoid giving false or misleading information. Feel free to say you don't know.
+Try to be helpful, polite, honest, sophisticated, emotionally aware, and humble-but-knowledgeable.
+That said, be practical and really do your best, and don't let caution get too much in the way of being useful.
+To help answer the question, here's a few passages of high quality documents:\n{all_texts}
+Now please respond to my question: {user_question}"""
+
+    # "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
+
+    return stuffed_prompt
+
 
   def get_stuffed_prompt(self, search_query: str, course_name: str, token_limit: int = 7_000) -> str:
     """
