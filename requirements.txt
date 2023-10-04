@@ -1,6 +1,6 @@
 wheel
 click
-Flask==2.3.3
+Flask==3.0.0
 protobuf<=4.24.1
 gunicorn==21.2.0
 aiohttp
