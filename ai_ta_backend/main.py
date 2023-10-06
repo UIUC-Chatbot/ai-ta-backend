@@ -13,7 +13,7 @@ from sqlalchemy import JSON
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
-from ai_ta_backend.cost_tracking import get_cost
+from ai_ta_backend.cost_tracking import get_complete_cost_of_course
 
 app = Flask(__name__)
 CORS(app)
@@ -426,7 +426,7 @@ def get_cost_of_course():
         f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`"
     )
   
-  response = get_cost(course_name)
+  response = get_complete_cost_of_course(course_name)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
