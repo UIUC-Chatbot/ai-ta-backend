@@ -246,9 +246,8 @@ class WebScrape():
   #       return False
 
   def count_hard_stop_len(self):
-    all_urls = self.existing_urls + self.invalid_urls
-    count = len(all_urls) - self.supa_urls
-    if all_urls != []:
+    count = len(self.url_contents)
+    if self.url_contents != []:
       print("📈📈 Counted URLs", count, "out of", self.original_amount, "📈📈" )
       if count > self.original_amount:
         print("Too many repeated urls, exiting web scraper")
@@ -264,12 +263,6 @@ class WebScrape():
 
 
   def check_and_ingest(self, url:str, course_name:str, timeout:int, base_url_on:str):
-    if is_github_repo(url):
-      print("Found GitHub repo, ingesting")
-      self.ingester.ingest_github(url, course_name)
-      print("Finished ingesting GitHub page")
-      return '', '', ''
-    
     if url not in self.invalid_urls and url not in self.existing_urls:
       second_url, content, filetype = self.valid_url(url)
     else:
@@ -457,6 +450,10 @@ class WebScrape():
               self.queue[depth+1] += self.non_user_provided_page_urls(new_url, base, content, filetype)
               if self.count_hard_stop_len():
                 raise ValueError("Too many repeated urls, exiting web scraper")
+            else:
+              new_url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
+              if self.count_hard_stop_len():
+                raise ValueError("Too many repeated urls, exiting web scraper")
           else:
             new_url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
             self.queue[depth+1] += self.non_user_provided_page_urls(new_url, base, content, filetype)
@@ -471,7 +468,7 @@ class WebScrape():
     
     return None
   
-  def main_crawler(self, url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=False, depth_or_breadth:str='breadth'):
+  def main_crawler(self, url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=True, depth_or_breadth:str='breadth'):
     """
     Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
 
