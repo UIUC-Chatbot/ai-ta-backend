@@ -726,7 +726,7 @@ class Ingest():
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
-          separators=[". ", "\n\n", "\n", " ", ""]  # try to split on sentences... fallback to others to ensure we always fit in context window
+          separators=["\n\n", "\n", ". ", " ", ""]  # try to split on paragraphs... fallback to sentences, then chars, ensure we always fit in context window
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
