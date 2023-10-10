@@ -496,7 +496,7 @@ class Ingest():
                 self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
 
           # Extract text
-          text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
+          text = page.get_text().encode("utf8").decode("utf8", errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
         if kwargs['kwargs'] == {}:
