@@ -29,32 +29,15 @@ from langchain.utilities.github import GitHubAPIWrapper
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
 
+from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
+from ai_ta_backend.vector_database import Ingest
+
 load_dotenv(override=True, dotenv_path='../.env')
 
 os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
 langchain.debug = True
 VERBOSE = True
 
-### MAIN ###
-# def get_tools(llm, sync=False):
-#   '''Main function to assemble tools for ML for Bio project.'''
-#   # TOOLS
-#   browser_toolkit = None
-#   if sync:
-#     sync_browser = create_sync_playwright_browser()
-#     browser_toolkit = PlayWrightBrowserToolkit.from_browser(sync_browser=sync_browser)
-#   else:
-#     async_browser = create_async_playwright_browser()
-#     browser_toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=async_browser)
-#   browser_tools = browser_toolkit.get_tools()
-
-#   human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)
-
-#   shell = get_shell_tool()
-
-
-#   tools: list[BaseTool] = browser_tools + human_tools + [shell]
-#   return tools
 def get_tools(llm, sync=True):
   '''Main function to assemble tools for ML for Bio project.'''
   # WEB BROWSER
@@ -80,30 +63,21 @@ def get_tools(llm, sync=True):
   toolkit = GitHubToolkit.from_github_api_wrapper(github)
   github_tools: list[BaseTool] = toolkit.get_tools()
 
-  #TODO: VectorStoreQATool, VectorStoreQAWithSourcesTool, WikipediaQueryRun, WolframAlphaQueryRun, PubmedQueryRun, ArxivQueryRun
-
   # ARXIV SEARCH
-  arxiv_qa_llm = OpenAIChat(model_name="gpt-4", temperature=0)  # type: ignore
-  arxiv_tool = ArxivQueryRun(llm=arxiv_qa_llm)
+  arxiv_tool = ArxivQueryRun()
 
-  # TODO: Agent to search docs and pull out helpful sections, code & examples
+  #TODO:WikipediaQueryRun, WolframAlphaQueryRun, PubmedQueryRun, ArxivQueryRun
+
   # Tool to search Langchain Docs. Can make this more sophisticated with time..
+  # TODO: more vector stores per Bio package: fastqc, multiqc, trimmomatic, STAR, gffread, samtools, salmon, DESeq2 and ggpubr
+  Langchain_QAtool: VectorStoreQATool = get_vectorstore_retriever_tool(course_name='langchain-docs')
 
-  # TODO BUG: This is not a collection, is a filter for `course_name`
-  # TODO: Make a custom tool for this purpose?? Already have implementation... Use a list of available package names to request documentation for. Super cool!
-  # qdrant_client = QdrantClient(url=os.getenv('QDRANT_URL'), api_key=os.getenv('QDRANT_API_KEY'))
-  # langchain_docs_vectorstore = Qdrant(
-  #     client=qdrant_client,
-  #     collection_name=os.getenv('QDRANT_LANGCHAIN_DOCS'),  # type: ignore
-  #     embeddings=OpenAIEmbeddings())  # type: ignore
-  # # docs_agent = get_docstore_agent()
-  # langchain_qa_llm = OpenAIChat(model_name="gpt-4", temperature=0)  # type: ignore
-  # langchain_docs_tool = VectorStoreQATool(vectorstore=langchain_docs_vectorstore, llm=langchain_qa_llm, description="Search Langchain Docs", name="langchain_docs_tool")
 
   tools: list[BaseTool] = human_tools + browser_tools + github_tools + search + [
       shell,
       PythonREPLTool(),
       arxiv_tool,
+      Langchain_QAtool
   ]  # langchain_docs_tool
   return tools
 

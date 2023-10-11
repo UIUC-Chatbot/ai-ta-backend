@@ -54,9 +54,9 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
     completion_token_cost = 0.0001 / 1_000
   else: 
     # no idea of cost
-    print(f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`")
-    prompt_token_cost = 0 
-    completion_token_cost = 0
+    print(f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`. (Defaulting to GPT-4 pricing...)")
+    prompt_token_cost = 0.03 / 1_000
+    completion_token_cost = 0.06 / 1_000
   
   if completion == '':
     num_tokens_prompt: int = len(encoding.encode(prompt))
