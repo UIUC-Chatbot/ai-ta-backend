@@ -714,11 +714,16 @@ Now please respond to my question: {user_question}"""
         metadatas (List[Dict[str, Any]]): _description_
     """
     print("In split and upload")
-    print(f"metadatas: {metadatas}")
-    print(f"Texts: {texts}")
+    # print(f"metadatas: {metadatas}")
+    # print(f"Texts: {texts}")
     assert len(texts) == len(metadatas), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
 
     try:
+      # check for duplicates
+      is_duplicate = self.check_for_duplicates(texts, metadatas)
+      if is_duplicate:
+        return "🚫🚫 Duplicate, ingest skipped.🚫🚫"
+
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
@@ -1111,6 +1116,67 @@ Now please respond to my question: {user_question}"""
     } for doc in found_docs]
 
     return contexts
+  
+  def check_for_duplicates(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> bool:
+    """
+    For given metadata, fetch docs from Supabase based on S3 path or URL. 
+    If docs exists, concatenate the texts and compare with current texts, if same, return True.
+    """
+    doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')
+    course_name = metadatas[0]['course_name']
+    s3_path = metadatas[0]['s3_path']
+    url = metadatas[0]['url']
+    
+    print("--------------------Checking for duplicates------------------------")
+    # print("METADATAS: ", metadatas)
+    # print("S3_PATH: ", s3_path)
+    # print("URL: ", url)
+
+    if s3_path:
+      filename = s3_path
+      supabase_contents = self.supabase_client.table(doc_table).select('contexts').eq('course_name', course_name).eq('s3_path', s3_path).execute()
+    elif url:
+      filename = url
+      supabase_contents = self.supabase_client.table(doc_table).select('contexts').eq('course_name', course_name).eq('url', url).execute()
+    else:
+      filename = None
+      supabase_contents = []
+    
+    supabase_whole_text = ""
+    if  len(supabase_contents.data) > 0:
+      # concatenate texts
+      supabase_contexts = supabase_contents.data[0]
+      
+      for text in supabase_contexts['contexts']:
+        supabase_whole_text = supabase_whole_text + " " + text['text']
+      print("supabase_whole_text length: ", len(supabase_whole_text.split()))
+      supabase_whole_text = " ".join(supabase_whole_text.split())
+        
+      # compare with current texts
+      current_whole_text = ""
+      for text in texts:
+        current_whole_text = current_whole_text + " " + text
+      print("current_whole_text length: ", len(current_whole_text.split()))
+      current_whole_text = " ".join(current_whole_text.split())
+
+      if supabase_whole_text == current_whole_text:
+        print(f"The file 📄: {filename} is a duplicate!")
+        return True
+      else:
+        print(f"The file 📄: {filename} is NOT a duplicate!")
+        print("supabase_whole_text: ", len(supabase_whole_text))
+        print("\n\n")
+        print("current_whole_text: ", len(current_whole_text))
+        print("\n\n")
+        with open("supabase_whole_text.txt", "w") as f:
+          f.write(supabase_whole_text)  
+        with open("current_whole_text.txt", "w") as f:
+          f.write(current_whole_text)
+        return False
+    else:
+      print(f"File 📄: {filename} is NOT a duplicate!")
+      return False
+    
 
 if __name__ == '__main__':
   pass
