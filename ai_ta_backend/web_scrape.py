@@ -138,6 +138,7 @@ class WebScrape():
           href = site+href
         else:
           href = site+'/'+href
+        href = self.no_hash_url(href)
         urls.append(href)
 
     except Exception as e:
@@ -223,10 +224,19 @@ class WebScrape():
 
   #   return urls
 
+  def no_hash_url(self, url:str):
+    match = re.search(r'^(.*?)#', url)
+    if match:
+        retrieved_url = match.group(1)
+    else:
+        print("No match")
+        retrieved_url = url
+    return retrieved_url
+
   def check_file_not_exists(self, file):
     contents = [url[1] for url in self.existing_urls]
-    urls = [url[0] for url in self.existing_urls]
-    if file[1] in contents or file[0] in urls:
+    urls = [self.no_hash_url(url[0]) for url in self.existing_urls]
+    if file[0] in urls:
       return False
     else:
       return True
@@ -254,13 +264,6 @@ class WebScrape():
         return True
       else:
         return False
-
-  def remove_falses(self):
-    for url in self.url_contents:
-      if url == False or url == True or type(url) != tuple:
-        self.url_contents.remove(url)
-    return None
-
 
   def check_and_ingest(self, url:str, course_name:str, timeout:int, base_url_on:str):
     if url not in self.invalid_urls and url not in self.existing_urls:
@@ -415,7 +418,7 @@ class WebScrape():
     return None
   
   def breadth_crawler(self, url:str, course_name:str, timeout:int=1, base_url_on:str=None, max_depth:int=3): # type: ignore
-    depth = 1
+    depth = 0
     if base_url_on:
       base_url_on = str(base_url_on)
     
@@ -440,6 +443,10 @@ class WebScrape():
           print("Depth exceeded:", depth, "out of", max_depth)
           raise ValueError("Depth exceeded")
 
+      if self.queue[depth] == []:
+        print("queue is empty")
+        raise ValueError("Queue is empty")
+      
       url = self.queue[depth].pop(0)
       print(url)
       if self.max_urls > 0:
@@ -504,17 +511,17 @@ class WebScrape():
     else:
       try:
         print("Gathering existing urls from Supabase")
-        urls = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute() # type: ignore
+        urls = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url').eq('course_name', course_name).execute() # type: ignore
 
         if urls.data == []:
           self.existing_urls = []
         else:
           self.existing_urls = []
           for row in urls.data:
-            whole = ''
-            for text in row['contexts']:
-              whole += text['text']
-            self.existing_urls.append((row['url'], whole, 'supa'))
+          #   whole = ''
+          #   for text in row['contexts']:
+          #     whole += text['text']
+            self.existing_urls.append((row['url'], 'whole', 'supa'))
           print("Finished gathering existing urls from Supabase")
       except Exception as e:
         print("Error:", e)
