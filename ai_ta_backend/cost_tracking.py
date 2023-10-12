@@ -12,12 +12,37 @@ def get_complete_cost_of_course(course_name: str)-> List:
     # initialize supabase
     supabase_client = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'), 
                                              supabase_key=os.getenv('SUPABASE_API_KEY'))
-    
+
     try: 
-        response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
-        data = response.data
-        df = pd.DataFrame(data)
-        convo_df = df['convo']
+        # get IDs and count of conversations for the course
+        response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).order('id', desc=False).execute()
+        total_count = response.count
+        id_data = response.data
+        # get the first conversation ID
+        min_id = id_data[0]['id']
+        current_items = []
+        print("Total count: ", total_count)
+        print("First ID: ", min_id)
+
+        # get conversations in batches of 25
+        while len(current_items) < total_count:
+            try:
+                if len(current_items) == 0: # first iteration
+                    response = supabase_client.table("llm-convo-monitor").select("id, convo", count='exact').eq("course_name", course_name).gte('id', min_id).order('id', desc=False).limit(25).execute()
+                else:
+                    response = supabase_client.table("llm-convo-monitor").select("id, convo", count='exact').eq("course_name", course_name).gt('id', min_id).order('id', desc=False).limit(25).execute()
+                current_items += response.data
+                min_id = response.data[-1]['id']
+                print("Length of current items: ", len(current_items))
+            except Exception as e:
+                print("Error in fetching conversations: ", e)
+                break
+
+        # all data is in current_items here
+        print("Final length of current items: ", len(current_items))
+        convo_df = pd.DataFrame(current_items)
+        convo_df = convo_df['convo']
+        #print(convo_df.head())
 
         total_queries = 0
         list_of_prompt_costs = []
@@ -26,69 +51,71 @@ def get_complete_cost_of_course(course_name: str)-> List:
         list_of_response_token_lengths = []
 
         for row in convo_df:
+        
             messages = row['messages']
-            model_name = row['model']['id']
+            model_id = row['model']['id']
             prompt = row['prompt']
+
             for message in messages:
                 content = message['content']
-                if message['role'] == 'user': 
-                    # prompt cost
+                
+                if message['role'] == 'user':
+                    # calculate prompt costs
+                    # adding context only to input (user) messages
                     if 'contexts' in message:
-                        print("user context is present")
                         contexts = message['contexts']
                         for context in contexts:
-                            content = content + " " + context['text']
+                            if 'text' in context: # some contexts don't have text
+                                content = content + " " + context['text']
+
                     total_queries += 1
-                    query_cost, query_tokens = get_tokens_and_cost(content, prompt, model_name, flag='query')
+                    query_cost, query_tokens = get_tokens_and_cost(content, prompt, model_id, flag='query')
                     list_of_prompt_costs.append(query_cost)
                     list_of_prompt_token_lengths.append(query_tokens)
                 else:
-                    # completion cost
-                    if 'contexts' in message:
-                        print("assistant context is present")
-                        contexts = message['contexts']
-                        for context in contexts:
-                            content = content + " " + context['text']
-                    
-                    response_cost, response_tokens = get_tokens_and_cost(content, prompt, model_name, flag='response')
+                    # calculate response costs
+                    response_cost, response_tokens = get_tokens_and_cost(content, prompt, model_id, flag='response')
                     list_of_response_costs.append(response_cost)
                     list_of_response_token_lengths.append(response_tokens)
-
-        # total cost = prompt cost + response cost
+        print("all costs collected")
+        # at this point, we have tokens and costs for all conversations
         total_prompt_cost = round(sum(list_of_prompt_costs), 4)
         total_response_cost = round(sum(list_of_response_costs), 4)
-        total_embeddings_cost = 0.0
         total_course_cost = round(sum(list_of_prompt_costs) + sum(list_of_response_costs), 4)
-        avg_course_cost = round(total_course_cost/total_queries, 4)
-        total_tokens = round(sum(list_of_prompt_token_lengths) + sum(list_of_response_token_lengths), 4)
+        total_embeddings_cost = 0.0
+        total_tokens = sum(list_of_prompt_token_lengths) + sum(list_of_response_token_lengths)
+        print("total prompt cost: ", total_prompt_cost)
+        print("total response cost: ", total_response_cost)
+        print("total course cost: ", total_course_cost)
+        print("total queries: ", total_queries)
+        print("total prompt tokens: ", sum(list_of_prompt_token_lengths))
+        print("total response tokens: ", sum(list_of_response_token_lengths))
+        print("total tokens: ", total_tokens)
+        print("-------------------------------------")
 
-        print("Total queries: ", total_queries)
-        print("Total prompt tokens: ", sum(list_of_prompt_token_lengths))
-        print("Total response tokens: ", sum(list_of_response_token_lengths))
-        print("Total tokens: ", total_tokens)
-        print("Total prompt cost: ", total_prompt_cost)
-        print("Total response cost: ", total_response_cost)
-        
-
-        # check if entry exists in the table
+        # add the costs to the table
         response = supabase_client.table("uiuc-course-table").select("*").eq("course_name", course_name).execute()
-        data = response.data
+
+        if len(response.data) == 0:
+            # entry does not exist, insert new row
+            print("Course entry does not exist. Creating a new entry...")
+            insert_data, count = supabase_client.table("uiuc-course-table").insert([{"total_tokens": total_tokens, 
+                                                                                     "total_prompt_price": total_prompt_cost,
+                                                                                     "total_completions_price": total_response_cost,
+                                                                                     "total_embeddings_price": total_embeddings_cost,
+                                                                                     "total_queries": total_queries,
+                                                                                     "course_name": course_name}]).execute()
+
+        else: 
+            # entry exists, update the row
+            print("Course entry exists. Updating the entry...")
+            update_data, count = supabase_client.table("uiuc-course-table").update([{"total_tokens": total_tokens, 
+                                                                                     "total_prompt_price": total_prompt_cost,
+                                                                                     "total_completions_price": total_response_cost,
+                                                                                     "total_embeddings_price": total_embeddings_cost,
+                                                                                     "total_queries": total_queries}]).eq("course_name", course_name).execute()
+
         
-        if len(data) == 0:
-            print("Price tracking entry does not exist. Creating a new entry...")
-            insert_data, count = supabase_client.table("uiuc-course-table").insert([{"total_tokens": total_tokens,
-                                                                            "total_prompt_price": total_prompt_cost,
-                                                                            "total_completions_price": total_response_cost,
-                                                                            "total_embeddings_price": total_embeddings_cost,
-                                                                            "total_queries": total_queries,
-                                                                            "course_name": course_name}]).execute()
-        else:
-            print("Price tracking entry exists. Updating the entry...")
-            update_data, count = supabase_client.table("uiuc-course-table").update({"total_tokens": total_tokens,
-                                                                            "total_prompt_price": total_prompt_cost,
-                                                                            "total_completions_price": total_response_cost,
-                                                                            "total_embeddings_price": total_embeddings_cost,
-                                                                            "total_queries": total_queries}).eq("course_name", course_name).execute()
         return "Success!"
     except Exception as e:
         print("Error in cost calculation and logging: ", e)
@@ -100,6 +127,7 @@ def get_tokens_and_cost(text: str, std_prompt: str, model_name: str, flag: str =
     1. Cost of encoding query + prompt
     2. Cost of answer generation by the model
     """
+    #print("in get_tokens_and_cost")
     # initialize tokenizer
     tokenizer = tiktoken.encoding_for_model("gpt-3.5-turbo")
     if model_name.startswith('gpt-4'):
