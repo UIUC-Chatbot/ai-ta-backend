@@ -509,7 +509,7 @@ class WebScrape():
         print("Gathering existing urls from Supabase")
         urls = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute() # type: ignore
         
-        if urls == []:
+        if urls.data == []:
           self.existing_urls = []
         else:
           self.existing_urls = []
