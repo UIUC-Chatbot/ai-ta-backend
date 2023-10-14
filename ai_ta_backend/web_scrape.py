@@ -104,13 +104,13 @@ class WebScrape():
       # Get rid of double slashes in url
       # Create a base site for incomplete hrefs
       if url.startswith("https:"):
-        site= re.match(pattern=r'https:\/\/.+[.a-zA-Z0-9]*\.[a-z]{3}', string=url).group(0) # type: ignore
+        site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
         url = re.sub(pattern=r"https:\/\/", repl="", string=url)
         url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
         url = "https://"+url
         return site
       elif url.startswith("http:"):
-        site = re.match(pattern=r'http:\/\/.+[.a-zA-Z0-9]*\.[a-z]{3}', string=url).group(0) # type: ignore
+        site = re.match(pattern=r'http:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
         url = re.sub(pattern=r"http:\/\/", repl="", string=url)
         url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
         url = "http://"+url
@@ -120,20 +120,8 @@ class WebScrape():
     except Exception as e:
       print("Error:", e)
       return ""
-    
-  def base_requirements(self, url:str, base:str):
-    match = re.search(r'\.(.*[.][\w]{3})', url)
-    if match:
-        required_part = match.group(1)
-    else:
-        required_part = "No base part in URL"
-    
-    if required_part in base:
-      return True
-    
-    return False
 
-  def find_urls(self, soup:BeautifulSoup, site:str, urls:list=[]):
+  def find_urls(self, soup:BeautifulSoup, site:str, urls:list):
     try:
       for i in soup.find_all("a"): # type: ignore
         try:
@@ -150,7 +138,6 @@ class WebScrape():
           href = site+href
         else:
           href = site+'/'+href
-        href = self.no_hash_url(href)
         urls.append(href)
 
     except Exception as e:
@@ -236,18 +223,10 @@ class WebScrape():
 
   #   return urls
 
-  def no_hash_url(self, url:str):
-    match = re.search(r'^(.*?)#', url)
-    if match:
-        retrieved_url = match.group(1)
-    else:
-        retrieved_url = url
-    return retrieved_url
-
   def check_file_not_exists(self, file):
     contents = [url[1] for url in self.existing_urls]
-    urls = [self.no_hash_url(url[0]) for url in self.existing_urls]
-    if file[0] in urls:
+    urls = [url[0] for url in self.existing_urls]
+    if file[1] in contents or file[0] in urls:
       return False
     else:
       return True
@@ -267,8 +246,9 @@ class WebScrape():
   #       return False
 
   def count_hard_stop_len(self):
-    count = len(self.url_contents)
-    if self.url_contents != []:
+    all_urls = self.existing_urls + self.invalid_urls
+    count = len(all_urls) - self.supa_urls
+    if all_urls != []:
       print("📈📈 Counted URLs", count, "out of", self.original_amount, "📈📈" )
       if count > self.original_amount:
         print("Too many repeated urls, exiting web scraper")
@@ -276,7 +256,20 @@ class WebScrape():
       else:
         return False
 
+  def remove_falses(self):
+    for url in self.url_contents:
+      if url == False or url == True or type(url) != tuple:
+        self.url_contents.remove(url)
+    return None
+
+
   def check_and_ingest(self, url:str, course_name:str, timeout:int, base_url_on:str):
+    if is_github_repo(url):
+      print("Found GitHub repo, ingesting")
+      self.ingester.ingest_github(url, course_name)
+      print("Finished ingesting GitHub page")
+      return '', '', ''
+    
     if url not in self.invalid_urls and url not in self.existing_urls:
       second_url, content, filetype = self.valid_url(url)
     else:
@@ -313,8 +306,6 @@ class WebScrape():
         try:
           body = content.find("body")
           header = content.find("head") 
-          footer = content.find("footer")
-          nav = content.find("nav")
         except Exception as e:
           print("Error:", e)
           body = ""
@@ -332,8 +323,6 @@ class WebScrape():
         if body != "" and header != "":
           urls = self.find_urls(body, base, urls) # type: ignore
           urls = self.find_urls(header, base, urls)# type: ignore
-          self.invalid_urls.append(self.find_urls(footer, base)) # type: ignore
-          self.invalid_urls.append(self.find_urls(nav, base)) # type: ignore
         else:
           urls = self.find_urls(content, base, urls)# type: ignore
 
@@ -345,8 +334,6 @@ class WebScrape():
       try:
         body = soup.find("body")
         header = soup.find("head") 
-        footer = soup.find("footer")
-        nav = soup.find("nav")
       except Exception as e:
         print("Error:", e)
         body = ""
@@ -365,8 +352,6 @@ class WebScrape():
       if body != "" and header != "":
         urls = self.find_urls(body, base, urls)
         urls = self.find_urls(header, base, urls)
-        self.invalid_urls.append(self.find_urls(footer, base)) # type: ignore
-        self.invalid_urls.append(self.find_urls(nav, base)) # type: ignore
       else:
         urls = self.find_urls(soup, base, urls)
     
@@ -437,7 +422,7 @@ class WebScrape():
     return None
   
   def breadth_crawler(self, url:str, course_name:str, timeout:int=1, base_url_on:str=None, max_depth:int=3): # type: ignore
-    depth = 0
+    depth = 1
     if base_url_on:
       base_url_on = str(base_url_on)
     
@@ -462,23 +447,14 @@ class WebScrape():
           print("Depth exceeded:", depth, "out of", max_depth)
           raise ValueError("Depth exceeded")
 
-      if self.queue[depth] == []:
-        print("queue is empty")
-        raise ValueError("Queue is empty")
-      
       url = self.queue[depth].pop(0)
+      print(url)
       if self.max_urls > 0:
         if depth <= max_depth:
           if base_url_on:
-            if self.base_requirements(url, base_url_on):
-              print("url", url)
-              print("requirements", self.base_requirements(url, base_url_on))
+            if url.startswith(base):
               new_url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
               self.queue[depth+1] += self.non_user_provided_page_urls(new_url, base, content, filetype)
-              if self.count_hard_stop_len():
-                raise ValueError("Too many repeated urls, exiting web scraper")
-            else:
-              new_url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
               if self.count_hard_stop_len():
                 raise ValueError("Too many repeated urls, exiting web scraper")
           else:
@@ -495,7 +471,7 @@ class WebScrape():
     
     return None
   
-  def main_crawler(self, url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=True, depth_or_breadth:str='breadth'):
+  def main_crawler(self, url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=False, depth_or_breadth:str='breadth'):
     """
     Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
 
@@ -531,17 +507,17 @@ class WebScrape():
     else:
       try:
         print("Gathering existing urls from Supabase")
-        urls = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url').eq('course_name', course_name).execute() # type: ignore
+        urls = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url, contexts').eq('course_name', course_name).execute() # type: ignore
 
         if urls.data == []:
           self.existing_urls = []
         else:
           self.existing_urls = []
           for row in urls.data:
-          #   whole = ''
-          #   for text in row['contexts']:
-          #     whole += text['text']
-            self.existing_urls.append((row['url'], 'whole', 'supa'))
+            whole = ''
+            for text in row['contexts']:
+              whole += text['text']
+            self.existing_urls.append((row['url'], whole, 'supa'))
           print("Finished gathering existing urls from Supabase")
       except Exception as e:
         print("Error:", e)
