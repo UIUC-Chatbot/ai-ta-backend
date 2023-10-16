@@ -16,6 +16,35 @@ from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
 
 
+#### added setup code for selenium ####
+# from selenium import webdriver
+from seleniumwire import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+# webdriver.DesiredCapabilities.CHROME['loggingPrefs'] = {'performance': 'OFF'}
+
+# set the default Download directory
+options = webdriver.ChromeOptions()
+# set the download path
+download_dir = os.path.abspath("pdf_files")
+options.add_experimental_option("prefs", {
+    "download.default_directory": download_dir,
+    "download.prompt_for_download": False,
+    "download.directory_upgrade": True,
+    "plugins.always_open_pdf_externally": True})
+# options2 = {'ca_key': r'C:\Users\chopr\Desktop\Part-Time\AgGPT\raw.githubusercontent.com_wkeeling_selenium-wire_master_seleniumwire_ca.crt'}
+
+driver = webdriver.Chrome(options=options)
+
+import logging
+logging.basicConfig(level=logging.DEBUG)  # Main app runs at DEBUG level
+logger = logging.getLogger('seleniumwire')
+logger.setLevel(logging.ERROR)  # Run selenium wire at ERROR level
+
+#### setup added for selenium ###
+
 class WebScrape():
 
   def __init__(self) -> None:
@@ -60,43 +89,115 @@ class WebScrape():
   def valid_url(self, url):
     '''Returns the URL and it's content if it's good, otherwise returns false. Prints the status code.'''
     try:
-      response = requests.get(url, allow_redirects=True, timeout=20)
+      driver.set_page_load_timeout(100) # adjust this as according
+      # get the URL
+      driver.get(url)
+      response_code = 404
+      print("THE URL WE ARE SEARCHING FOR IS - >>>>" ,url)
+      for request in driver.requests:
+        if request.url==url:
+              response_code = request.response.status_code
+      print("=======================RESPONSE CODE IS GIVEN HERE================", response_code)
 
+      # handle the redirect case
       redirect_loop_counter = 0
-      while response.status_code == 301:
-        # Check for permanent redirect
+      while response_code == 301:
+        # check for permanent redirectr
         if redirect_loop_counter > 3:
           print("❌ Redirect loop (on 301 error) exceeded redirect limit of:", redirect_loop_counter, "❌")
           return (False, False, False)
-        redirect_url = response.headers['Location']
-        response = requests.head(redirect_url)
-        redirect_loop_counter += 1
-      if response.status_code == 200:
-        filetype = self.get_file_extension(response.url)
+        # check for the redirected url
+        new_url = driver.current_url
+        driver.get(new_url)
+        # check the status code for the new url
+        for request in driver.requests:
+          if request.url==new_url:
+            response_code = request.response.status_code
+        redirect_loop_counter+=1
+        
+      # handle the 200 case 
+      if response_code == 200:
+        filetype = self.get_file_extension(url)
         print("file extension:", filetype)
+
+        # handle the case when the file is html
         if filetype == '.html':
-          content = BeautifulSoup(response.content, "html.parser")
-          if "<!doctype html" not in str(response.text).lower():
-            print("⛔️⛔️ Filetype not supported:", response.url, "⛔️⛔️")
-            return (False, False, False)
+          print("THE FILETYPE IS HEREAAAAAAAAAAAAAAAAAAAAAAA - ", filetype)
+          # this basically takes the source of the html
+          # and then loads it to bful soup
+          page_source = driver.page_source
+          content = BeautifulSoup(page_source, "html.parser")
+          # check why was this needed in any case?
+          # if "<!doctype html" not in str(content).lower():
+          #   print("⛔️⛔️ Filetype not supported:", url, "⛔️⛔️")
+          #   return (False, False, False)
+          return (url, content, filetype)
+          
+        # handle the other cases
         elif filetype in ['.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
-          if "<!doctype html" in str(response.text).lower():
-            content = BeautifulSoup(response.text, "html.parser")
+          with NamedTemporaryFile(delete=True) as temp_file:
+            temp_file.write(driver.page_source.encode())
+            temp_file.seek(0)
+            # content = temp_file.read()
+            # page_source = driver.page_source
+          if "<!doctype html" in str(page_source).lower():
+            content = BeautifulSoup(page_source, "html.parser")
             filetype = '.html'
           else:
-            content = response.content
+            content = temp_file.read()
+            # content = page_source
         else:
           return (False, False, False)
         if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
           print("⛔️⛔️ Filetype not supported:", filetype, "⛔️⛔️")
-          return (False, False, False)
-        return (response.url, content, filetype)
+        return (url, content, filetype)
       else:
-        print("🚫🚫 URL is invalid:", response.url, "Return code:", response.status_code, "🚫🚫")
+        print("🚫🚫 URL is invalid:", url, "Return code:", response_code, "🚫🚫")
         return (False, False, False)
     except requests.RequestException as e:
       print("🚫🚫 URL is invalid:", url, "Error:", e, "🚫🚫")
-      return (False, False, False)
+      return (False, False, False)   
+    
+
+    # '''Returns the URL and it's content if it's good, otherwise returns false. Prints the status code.'''
+    # try:
+    #   response = requests.get(url, allow_redirects=True, timeout=20)
+
+    #   redirect_loop_counter = 0
+    #   while response.status_code == 301:
+    #     # Check for permanent redirect
+    #     if redirect_loop_counter > 3:
+    #       print("❌ Redirect loop (on 301 error) exceeded redirect limit of:", redirect_loop_counter, "❌")
+    #       return (False, False, False)
+    #     redirect_url = response.headers['Location']
+    #     response = requests.head(redirect_url)
+    #     redirect_loop_counter += 1
+    #   if response.status_code == 200:
+    #     filetype = self.get_file_extension(response.url)
+    #     print("file extension:", filetype)
+    #     if filetype == '.html':
+    #       content = BeautifulSoup(response.content, "html.parser")
+    #       if "<!doctype html" not in str(response.text).lower():
+    #         print("⛔️⛔️ Filetype not supported:", response.url, "⛔️⛔️")
+    #         return (False, False, False)
+    #     elif filetype in ['.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
+    #       if "<!doctype html" in str(response.text).lower():
+    #         content = BeautifulSoup(response.text, "html.parser")
+    #         filetype = '.html'
+    #       else:
+    #         content = response.content
+    #     else:
+    #       return (False, False, False)
+    #     if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
+    #       print("⛔️⛔️ Filetype not supported:", filetype, "⛔️⛔️")
+    #       return (False, False, False)
+    #     return (response.url, content, filetype)
+    #   else:
+    #     print("🚫🚫 URL is invalid:", response.url, "Return code:", response.status_code, "🚫🚫")
+    #     return (False, False, False)
+    # except requests.RequestException as e:
+    #   print("🚫🚫 URL is invalid:", url, "Error:", e, "🚫🚫")
+    #   return (False, False, False)
 
   # Ensures url is in the correct format
   def base_url(self, url:str):
