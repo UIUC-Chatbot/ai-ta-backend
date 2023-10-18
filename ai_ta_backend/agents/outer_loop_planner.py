@@ -50,8 +50,10 @@ from qdrant_client import QdrantClient
 # Our own imports 
 from ai_ta_backend.agents.agents import get_docstore_agent
 from ai_ta_backend.agents.tools import get_shell_tool, get_tools
-from ai_ta_backend.agents.vector_db import (count_tokens_and_cost,
-                                            get_top_contexts_uiuc_chatbot)
+from ai_ta_backend.utils_tokenization import count_tokens_and_cost
+from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
+import traceback
+import inspect
 
 load_dotenv(override=True, dotenv_path='.env')
 
@@ -91,7 +93,7 @@ class OuterLoopPlanner:
     #     embeddings=OpenAIEmbeddings())  # type: ignore
 
     # write a function to search against the UIUC database
-    get_top_contexts_uiuc_chatbot(search_query='', course_name='', token_limit=8_000)
+    get_vectorstore_retriever_tool(course_name='', token_limit=8_000)
 
     print("after __init__")
     # todo: try babyagi
@@ -245,47 +247,53 @@ def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> Lis
     Returns:
         List[Tuple[AgentAction, str]]: A list of the most recent actions that fit within the token limit.
     """
+  try:
+    def count_tokens(action: AgentAction) -> int:
+      return sum(count_tokens_and_cost(str(getattr(action, attr)))[0] for attr in ['tool', 'tool_input', 'log'])
 
-  def count_tokens(action: AgentAction) -> int:
-    return sum(count_tokens_and_cost(str(getattr(action, attr)))[0] for attr in ['tool', 'tool_input', 'log'])
-
-  token_limit = 4_000
-  total_tokens = sum(count_tokens(action) for action, _ in steps)
-
-  # Remove the logs if over the limit
-  if total_tokens > token_limit:
-    for action, _ in steps:
-      action.log = ''
-      total_tokens = sum(count_tokens(action) for action, _ in steps)
-      if total_tokens <= token_limit:
-        break
-
-  # Remove the tool_input if over the limit
-  if total_tokens > token_limit:
-    for action, _ in steps:
-      action.tool_input = ''
-      total_tokens = sum(count_tokens(action) for action, _ in steps)
-      if total_tokens <= token_limit:
-        break
-
-  # Remove the tool if over the limit
-  if total_tokens > token_limit:
-    for action, _ in steps:
-      action.tool = ''
-      total_tokens = sum(count_tokens(action) for action, _ in steps)
-      if total_tokens <= token_limit:
-        break
-
-  # Remove the oldest actions if over the limit
-  while total_tokens > token_limit:
-    steps.pop(0)
+    token_limit = 4_000
     total_tokens = sum(count_tokens(action) for action, _ in steps)
 
-  # print("In fancier_trim_latest_3_actions!! 👇👇👇👇👇👇👇👇👇👇👇👇👇👇 ")
-  # print(steps)
-  # print("Tokens used: ", total_tokens)
-  # print("👆👆👆👆👆👆👆👆👆👆👆👆👆")
-  return steps
+    # Remove the logs if over the limit
+    if total_tokens > token_limit:
+      for action, _ in steps:
+        action.log = ''
+        total_tokens = sum(count_tokens(action) for action, _ in steps)
+        if total_tokens <= token_limit:
+          break
+
+    # Remove the tool_input if over the limit
+    if total_tokens > token_limit:
+      for action, _ in steps:
+        action.tool_input = ''
+        total_tokens = sum(count_tokens(action) for action, _ in steps)
+        if total_tokens <= token_limit:
+          break
+
+    # Remove the tool if over the limit
+    if total_tokens > token_limit:
+      for action, _ in steps:
+        action.tool = ''
+        total_tokens = sum(count_tokens(action) for action, _ in steps)
+        if total_tokens <= token_limit:
+          break
+
+    # Remove the oldest actions if over the limit
+    while total_tokens > token_limit:
+      steps.pop(0)
+      total_tokens = sum(count_tokens(action) for action, _ in steps)
+
+    # print("In fancier_trim_latest_3_actions!! 👇👇👇👇👇👇👇👇👇👇👇👇👇👇 ")
+    # print(steps)
+    # print("Tokens used: ", total_tokens)
+    # print("👆👆👆👆👆👆👆👆👆👆👆👆👆")
+    return steps
+  except Exception as e:
+    print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
+    print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # print function name in error.
+    print(f"Traceback:")
+    traceback.print_exc()
+    return [steps[-1]]
 
 # agents.agent.LLMSingleActionAgent
 # 1. collect relevant code documentation

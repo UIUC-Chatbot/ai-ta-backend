@@ -57,8 +57,6 @@ from typing_extensions import runtime
 
 from ai_ta_backend.agents.tools import (get_human_input, get_shell_tool,
                                         get_tools)
-from ai_ta_backend.agents.vector_db import (count_tokens_and_cost,
-                                            get_top_contexts_uiuc_chatbot)
 
 # load_dotenv(override=True, dotenv_path='.env')
 

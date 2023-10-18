@@ -10,6 +10,7 @@ from github.PullRequest import PullRequest
 from github.Repository import Repository
 
 from ai_ta_backend.agents import github_agent
+from ai_ta_backend.agents.workflow_agent import WorkflowAgent
 
 
 def handle_pull_request_opened(payload):
@@ -38,10 +39,11 @@ def handle_pull_request_opened(payload):
     issue.create_comment(messageForNewPRs)
     
     print("LAUNCHING BOT")
-    bot = github_agent.GH_Agent(branch_name=branch_name)
-    pr_description = bot.github_api_wrapper.get_pull_request(number)
-    instruction = f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr_description)}"
-    result = bot.launch_gh_agent(instruction, active_branch=branch_name)
+    bot = WorkflowAgent()
+    # pr_description = bot.github_api_wrapper.get_pull_request(number)
+    # instruction = f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr_description)}"
+    # result = bot.launch_gh_agent(instruction, active_branch=branch_name)
+    result = bot.run(comment)
     issue.create_comment(result)
   except Exception as e:
     print(f"Error: {e}")
@@ -84,10 +86,12 @@ def handle_issue_opened(payload):
     #  = ensure_unique_branch_name(repo, proposed_branch_name)
 
     print("LAUNCHING BOT")
-    bot = github_agent.GH_Agent(branch_name=unique_branch_name)
-    issue_description = bot.github_api_wrapper.get_issue(number)
-    instruction = f"Please implement these changes by creating or editing the necessary files. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. The last step is to create a PR with a clear and concise title and description, list any concerns or final changes necessary in the PR body. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest assignment: {str(issue_description)}"
-    result = bot.launch_gh_agent(instruction, active_branch=unique_branch_name)
+    # bot = github_agent.GH_Agent(branch_name=unique_branch_name)
+    # issue_description = bot.github_api_wrapper.get_issue(number)
+    # instruction = f"Please implement these changes by creating or editing the necessary files. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. The last step is to create a PR with a clear and concise title and description, list any concerns or final changes necessary in the PR body. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest assignment: {str(issue_description)}"
+    # result = bot.launch_gh_agent(instruction, active_branch=unique_branch_name)
+    bot = WorkflowAgent()
+    result = bot.run(comment)
     issue.create_comment(result)
   except Exception as e:
     print(f"Error: {e}")
@@ -147,10 +151,12 @@ def handle_comment_opened(payload):
       issue.create_comment(messageForIssues)
 
       unique_branch_name = ensure_unique_branch_name(repo, "bot-branch")
-      bot = github_agent.GH_Agent()
-      issue_description = bot.github_api_wrapper.get_issue(number)
-      instruction = f"Your boss has just commented on the Github issue that was assigned to you, please review their latest comments and complete the work assigned. There may or may not be an open PR related to this already. Open or complete that PR by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automatically on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's your latest PR assignment: {str(issue_description)}"
-      result = bot.launch_gh_agent(instruction, active_branch=unique_branch_name)
+      # bot = github_agent.GH_Agent()
+      # issue_description = bot.github_api_wrapper.get_issue(number)
+      # instruction = f"Your boss has just commented on the Github issue that was assigned to you, please review their latest comments and complete the work assigned. There may or may not be an open PR related to this already. Open or complete that PR by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automatically on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's your latest PR assignment: {str(issue_description)}"
+      # result = bot.launch_gh_agent(instruction, active_branch=unique_branch_name)
+      bot = WorkflowAgent()
+      result = bot.run(comment)
       issue.create_comment(result)
   except Exception as e:
     print(f"Error: {e}")
