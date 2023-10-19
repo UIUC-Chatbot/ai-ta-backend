@@ -44,6 +44,7 @@ cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called 
 GitPython
 nomic
 flask-executor
+pypdf
 
 # No arize for now, huge build size with these additions.
 # arize[AutoEmbeddings, LLM_Evaluation]
