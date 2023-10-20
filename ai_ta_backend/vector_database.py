@@ -250,6 +250,7 @@ Now please respond to my question: {user_question}"""
       os.remove(file_path)
 
       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+      print("Python ingest: ", success_or_failure)
       return success_or_failure
 
     except Exception as e:
@@ -406,7 +407,7 @@ Now please respond to my question: {user_question}"""
   def _ingest_single_docx(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
-        # download from S3 into pdf_tmpfile
+        # download from S3 into tmpfile
         print("Bucket: ", os.getenv('S3_BUCKET_NAME'))
         print("Key: ", s3_path)
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
@@ -459,29 +460,29 @@ Now please respond to my question: {user_question}"""
       print(f"SRT ERROR {e}")
       return f"Error: {e}"
     
+  
   def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
     """
-    Grab the first page as an image and upload to S3.
-    Extract text from the doc.
+    Both OCR the PDF. And grab the first image as a PNG. 
+      LangChain `Documents` have .metadata and .page_content attributes.
+    Be sure to use TemporaryFile() to avoid memory leaks!
     """
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
+        # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
-        reader = PdfReader(pdf_tmpfile.name)
-        no_of_pages = len(reader.pages)
-        page = reader.pages[0]
-        text = page.extract_text()
-        print("len of text: ", len(text))
-
-        # uploading the 1st page as a PNG file
-        doc = fitz.open(pdf_tmpfile.name)
+        ### READ OCR of PDF
+        doc = fitz.open(pdf_tmpfile.name)  # type: ignore
 
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
         zoom_y = 2.0  # vertical zoom
         mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
 
-        for i, page in enumerate(doc):
+        pdf_pages_OCRed: List[Dict] = []
+        for i, page in enumerate(doc):  # type: ignore
+
+          # UPLOAD FIRST PAGE IMAGE to S3
           if i == 0:
             with NamedTemporaryFile(suffix=".png") as first_page_png:
               pix = page.get_pixmap(matrix=mat)
@@ -492,15 +493,10 @@ Now please respond to my question: {user_question}"""
               with open(first_page_png.name, 'rb') as f:
                 print("Uploading image png to S3")
                 self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-          else:
-            break
-          
-        # extracting text from the file
-        pdf_pages_extracted: List[Dict] = []
-        pages = reader.pages
-        for i, page in enumerate(pages):
-          text = page.extract_text()
-          pdf_pages_extracted.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
+
+          # Extract text
+          text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
+          pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
         if kwargs['kwargs'] == {}:
           url = ''
@@ -514,100 +510,30 @@ Now please respond to my question: {user_question}"""
             base_url = kwargs['kwargs']['base_url']
           else:
             base_url = ''
-
-        metadata: List[Dict[str, Any]] = [{
-          'course_name': course_name,
-          's3_path': s3_path,
-          'pagenumber': page['page_number'] + 1,  # +1 for human indexing
-          'timestamp': '',
-          'readable_filename': page['readable_filename'],
-          'url': url,
-          'base_url': base_url,} 
-          for page in pdf_pages_extracted]
-        
-        pdf_texts = [page['text'] for page in pdf_pages_extracted]
-
-        self.split_and_upload(texts=pdf_texts, metadatas=metadata)
-        print("Success pdf ingest")
-
-    except Exception as e:
-      print(f"ERROR IN PDF READING {e}")
-      return f"Error: {e}"
-
-  # def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
-  #   """
-  #   Both OCR the PDF. And grab the first image as a PNG. 
-  #     LangChain `Documents` have .metadata and .page_content attributes.
-  #   Be sure to use TemporaryFile() to avoid memory leaks!
-  #   """
-  #   try:
-  #     with NamedTemporaryFile() as pdf_tmpfile:
-  #       # download from S3 into pdf_tmpfile
-  #       self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
-  #       ### READ OCR of PDF
-  #       doc = fitz.open(pdf_tmpfile.name)  # type: ignore
-
-  #       # improve quality of the image
-  #       zoom_x = 2.0  # horizontal zoom
-  #       zoom_y = 2.0  # vertical zoom
-  #       mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
-
-  #       pdf_pages_OCRed: List[Dict] = []
-  #       for i, page in enumerate(doc):  # type: ignore
-
-  #         # UPLOAD FIRST PAGE IMAGE to S3
-  #         if i == 0:
-  #           with NamedTemporaryFile(suffix=".png") as first_page_png:
-  #             pix = page.get_pixmap(matrix=mat)
-  #             pix.save(first_page_png)  # store image as a PNG
-
-  #             s3_upload_path = str(Path(s3_path)).rsplit('.pdf')[0] + "-pg1-thumb.png"
-  #             first_page_png.seek(0)  # Seek the file pointer back to the beginning
-  #             with open(first_page_png.name, 'rb') as f:
-  #               print("Uploading image png to S3")
-  #               self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-
-  #         # Extract text
-  #         text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
-  #         print("len of text: ", len(text))
-  #         #exit()
-  #         pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
-
-  #       if kwargs['kwargs'] == {}:
-  #         url = ''
-  #         base_url = ''
-  #       else:
-  #         if 'url' in kwargs['kwargs'].keys():
-  #           url = kwargs['kwargs']['url']
-  #         else:
-  #           url = ''
-  #         if 'base_url' in kwargs['kwargs'].keys():
-  #           base_url = kwargs['kwargs']['base_url']
-  #         else:
-  #           base_url = ''
           
         
-  #       metadatas: List[Dict[str, Any]] = [
-  #           {
-  #               'course_name': course_name,
-  #               's3_path': s3_path,
-  #               'pagenumber': page['page_number'] + 1,  # +1 for human indexing
-  #               'timestamp': '',
-  #               'readable_filename': page['readable_filename'],
-  #               'url': url,
-  #               'base_url': base_url,
-  #           } for page in pdf_pages_OCRed
-  #       ]
-  #       pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+        metadatas: List[Dict[str, Any]] = [
+            {
+                'course_name': course_name,
+                's3_path': s3_path,
+                'pagenumber': page['page_number'] + 1,  # +1 for human indexing
+                'timestamp': '',
+                'readable_filename': page['readable_filename'],
+                'url': url,
+                'base_url': base_url,
+            } for page in pdf_pages_OCRed
+        ]
+        pdf_texts = [page['text'] for page in pdf_pages_OCRed]
 
-  #       self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
-  #       print("Success pdf ingest")
-  #   except Exception as e:
-  #     print("ERROR IN PDF READING ")
-  #     print(e)
-  #     return f"Error {e}"
-  #   return "Success"
+        success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        print("PDF message: ", success_or_failure)
+        return success_or_failure
+    except Exception as e:
+      print("ERROR IN PDF READING ")
+      print(e)
+      return f"Error {e}"
 
+    
   def _ingest_single_txt(self, s3_path: str, course_name: str, **kwargs) -> str:
     """Ingest a single .txt or .md file from S3.
     Args:
@@ -797,11 +723,6 @@ Now please respond to my question: {user_question}"""
     assert len(texts) == len(metadatas), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
 
     try:
-      # check for duplicates
-      is_duplicate = self.check_for_duplicates(texts, metadatas)
-      if is_duplicate:
-        return "🚫🚫 Duplicate, ingest skipped.🚫🚫"
-
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
@@ -809,6 +730,15 @@ Now please respond to my question: {user_question}"""
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
+
+      # check for duplicates
+      is_duplicate = self.check_for_duplicates(input_texts, metadatas)
+      print("is_duplicate: ", is_duplicate)
+      if is_duplicate:
+        print("split_and_upload returning duplicate")
+        return "🚫🚫 Duplicate, ingest skipped.🚫🚫"
+      
+      print("split_and_upload continuing...")
 
       oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
                                request_url='https://api.openai.com/v1/embeddings',
@@ -1195,11 +1125,13 @@ Now please respond to my question: {user_question}"""
 
     return contexts
   
-  def check_for_duplicates(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> bool:
+  def check_for_duplicates(self, texts: List[Dict], metadatas: List[Dict[str, Any]]) -> bool:
     """
     For given metadata, fetch docs from Supabase based on S3 path or URL. 
     If docs exists, concatenate the texts and compare with current texts, if same, return True.
     """
+    print("in check_for_duplicates")
+    
     doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')
     course_name = metadatas[0]['course_name']
     s3_path = metadatas[0]['s3_path']
@@ -1224,35 +1156,19 @@ Now please respond to my question: {user_question}"""
     if  len(supabase_contents.data) > 0:
       # concatenate texts
       supabase_contexts = supabase_contents.data[0]
-      
       for text in supabase_contexts['contexts']:
         supabase_whole_text += text['text']
         
-      # print("supabase_whole_text length: ", len(supabase_whole_text.split()))
-      # supabase_whole_text = " ".join(supabase_whole_text.split())
-      print("supabase_whole_text: ", len(supabase_whole_text))
-        
-      # compare with current texts
       current_whole_text = ""
       for text in texts:
-        current_whole_text += text
-      # print("current_whole_text length: ", len(current_whole_text.split()))
-      # current_whole_text = " ".join(current_whole_text.split())
-      print("current_whole_text: ", len(current_whole_text))
-
+        current_whole_text += text['input']
+      
+      # compare with current texts
       if supabase_whole_text == current_whole_text:
         print(f"The file 📄: {filename} is a duplicate!")
         return True
       else:
         print(f"The file 📄: {filename} is NOT a duplicate!")
-        print("supabase_whole_text: ", len(supabase_whole_text))
-        print("\n\n")
-        print("current_whole_text: ", len(current_whole_text))
-        print("\n\n")
-        with open("supabase_whole_text.txt", "w") as f:
-          f.write(supabase_whole_text)  
-        with open("current_whole_text.txt", "w") as f:
-          f.write(current_whole_text)
         return False
     else:
       print(f"File 📄: {filename} is NOT a duplicate!")
