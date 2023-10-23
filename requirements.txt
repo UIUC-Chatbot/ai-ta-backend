@@ -37,8 +37,6 @@ ffmpeg-python
 ffprobe
 ffmpeg
 beautifulsoup4
-pypandoc
-pypandoc-binary
 canvasapi
 cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
 GitPython
