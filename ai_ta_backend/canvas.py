@@ -5,7 +5,6 @@ import requests
 from zipfile import ZipFile
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend import update_materials
 from pathlib import Path
 
 
