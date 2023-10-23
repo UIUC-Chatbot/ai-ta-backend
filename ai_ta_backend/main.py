@@ -399,6 +399,7 @@ def ingest_canvas():
   """
   Ingest course content from Canvas
   """
+  print("made it to ingest")
   canvas = CanvasAPI()
   canvas_course_id: str = request.args.get('course_id')
   course_name: str = request.args.get('course_name')
