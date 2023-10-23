@@ -29,7 +29,7 @@ unstructured
 tabulate
 pdf2image
 typing-inspect==0.9.0
-typing_extensions==4.7.1
+typing-extensions==4.7.1
 pysrt
 docx2txt
 pydub
@@ -37,6 +37,7 @@ ffmpeg-python
 ffprobe
 ffmpeg
 beautifulsoup4
+canvasapi
 cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
 GitPython
 nomic

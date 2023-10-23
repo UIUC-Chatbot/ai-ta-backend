@@ -171,7 +171,7 @@ class Ingest():
             'url': '',
             'base_url': '',
         } for doc in documents]
-
+      #print(texts)
       os.remove(file_path)
 
       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -234,6 +234,7 @@ class Ingest():
       
 
       text = [soup.get_text()]
+      
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
@@ -243,7 +244,7 @@ class Ingest():
           'pagenumber': '',
           'timestamp': '',
       }]
-
+      
       success_or_failure = self.split_and_upload(text, metadata)
       print(f"_ingest_html: {success_or_failure}")
       return success_or_failure

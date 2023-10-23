@@ -13,6 +13,7 @@ from sqlalchemy import JSON
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+from ai_ta_backend.canvas import CanvasAPI
 
 app = Flask(__name__)
 CORS(app)
@@ -375,6 +376,57 @@ def mit_download_course() -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/addCanvasUsers', methods=['GET'])
+def add_canvas_users():
+  """
+  Add users from canvas to the course
+  """
+  print("In /addCanvasUsers")
+
+  canvas = CanvasAPI()
+  canvas_course_id: str = request.args.get('course_id')
+  course_name: str = request.args.get('course_name')
+
+  success_or_failure = canvas.add_users(canvas_course_id, course_name)
+  
+  response = jsonify({"outcome": success_or_failure})
+
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/ingestCanvas', methods=['GET'])
+def ingest_canvas():
+  """
+  Ingest course content from Canvas
+  """
+  print("made it to ingest")
+  canvas = CanvasAPI()
+  canvas_course_id: str = request.args.get('course_id')
+  course_name: str = request.args.get('course_name')
+
+  # Retrieve the checkbox values from the request and create the content_ingest_dict
+  # Set default values to True if not provided in the request
+  content_ingest_dict = {
+      'files': request.args.get('files', 'true').lower() == 'true',
+      'pages': request.args.get('pages', 'true').lower() == 'true',
+      'modules': request.args.get('modules', 'true').lower() == 'true',
+      'syllabus': request.args.get('syllabus', 'true').lower() == 'true',
+      'assignments': request.args.get('assignments', 'true').lower() == 'true',
+      'discussions': request.args.get('discussions', 'true').lower() == 'true'
+  }
+
+  if canvas_course_id == '' or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_id' and 'course_name' must be provided. course_id: `{canvas_course_id}`, course_name: `{course_name}`"
+    )
+
+  success_or_failure = canvas.ingest_course_content(canvas_course_id, course_name, content_ingest_dict)
+  response = jsonify({"outcome": success_or_failure})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 @app.route('/getNomicMap', methods=['GET'])
 def nomic_map():
