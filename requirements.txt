@@ -44,6 +44,9 @@ cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called 
 GitPython
 nomic
 flask-executor
+xlrd # for excel ingest
+pdfminer # for image OCR
+pytesseract # for image OCR
 
 # No arize for now, huge build size with these additions.
 # arize[AutoEmbeddings, LLM_Evaluation]

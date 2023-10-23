@@ -120,8 +120,9 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
     # add embeddings to the project
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-    project.add_embeddings(embeddings=np.array(embeddings), data=pd.DataFrame(metadata))
-    project.rebuild_maps()
+    with project.wait_for_project_lock():
+      project.add_embeddings(embeddings=np.array(embeddings), data=pd.DataFrame(metadata))
+      project.rebuild_maps()
 
   except Exception as e:
     # if project doesn't exist, create it
