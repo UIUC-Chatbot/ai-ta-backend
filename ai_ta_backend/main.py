@@ -401,6 +401,17 @@ def ingest_canvas():
   canvas_course_id: str = request.args.get('course_id')
   course_name: str = request.args.get('course_name')
 
+  # Retrieve the checkbox values from the request and create the content_ingest_dict
+  # Set default values to True if not provided in the request
+  content_ingest_dict = {
+      'files': request.args.get('files', 'true').lower() == 'true',
+      'pages': request.args.get('pages', 'true').lower() == 'true',
+      'modules': request.args.get('modules', 'true').lower() == 'true',
+      'syllabus': request.args.get('syllabus', 'true').lower() == 'true',
+      'assignments': request.args.get('assignments', 'true').lower() == 'true',
+      'discussions': request.args.get('discussions', 'true').lower() == 'true'
+  }
+
   if canvas_course_id == '' or course_name == '':
     # proper web error "400 Bad request"
     abort(
@@ -409,7 +420,7 @@ def ingest_canvas():
         f"Missing one or more required parameters: 'course_id' and 'course_name' must be provided. course_id: `{canvas_course_id}`, course_name: `{course_name}`"
     )
 
-  success_or_failure = canvas.ingest_course_content(canvas_course_id, course_name)
+  success_or_failure = canvas.ingest_course_content(canvas_course_id, course_name, content_ingest_dict)
   response = jsonify({"outcome": success_or_failure})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response

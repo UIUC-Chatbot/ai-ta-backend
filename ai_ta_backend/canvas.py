@@ -69,7 +69,7 @@ class CanvasAPI():
             return "Failed! Error: " + str(e)
 
 
-    def ingest_course_content(self, canvas_course_id: int, course_name: str)-> str:
+    def ingest_course_content(self, canvas_course_id: int, course_name: str, content_ingest_dict: dict = None) -> str:
         """
         Ingests all Canvas course materials through the course ID.
         1. Download zip file from Canvas and store in local directory
@@ -81,14 +81,15 @@ class CanvasAPI():
         print("In ingest_course_content")
         try:
             # a dictionary of all contents we want to ingest - files, pages, modules, syllabus, assignments, discussions.
-            content_to_ingest = {
-                'files': True,
-                'pages': True,
-                'modules': True,
-                'syllabus': True,
-                'assignments': True,
-                'discussions': True
-            }
+            if content_ingest_dict is None:
+                content_ingest_dict = {
+                    'files': True,
+                    'pages': True,
+                    'modules': True,
+                    'syllabus': True,
+                    'assignments': True,
+                    'discussions': True
+                }
 
             # Create a canvas directory with a course folder inside it.
             canvas_dir = "canvas_materials"
@@ -108,7 +109,7 @@ class CanvasAPI():
                 print("Course folder created")
 
             # Download course content
-            self.download_course_content(canvas_course_id, folder_path, content_to_ingest)
+            self.download_course_content(canvas_course_id, folder_path, content_ingest_dict)
             
             # Upload files to S3
             s3_paths = upload_data_files_to_s3(course_name, folder_path)
