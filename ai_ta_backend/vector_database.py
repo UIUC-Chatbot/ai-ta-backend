@@ -935,7 +935,7 @@ class Ingest():
     return distinct_dicts
 
   def vector_search(self, search_query, course_name):
-      top_n = 80
+      top_n = 5
       o = OpenAIEmbeddings() # type: ignore
       user_query_embedding = o.embed_query(search_query)
       myfilter = models.Filter(
@@ -955,6 +955,11 @@ class Ingest():
       )
 
       print("search_results", search_results)
+      print("\n")
+      for i in search_results:
+        print("scores: ", i.score)
+        print("payload: ", i.payload['metadata'])
+      exit()
       found_docs: list[Document] = []
       for d in search_results:
         metadata = d.payload.get('metadata') # type: ignore
