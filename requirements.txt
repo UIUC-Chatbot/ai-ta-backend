@@ -45,6 +45,7 @@ flask-executor
 xlrd # for excel ingest
 pdfminer # for image OCR
 pytesseract # for image OCR
+newrelic
 
 # No arize for now, huge build size with these additions.
 # arize[AutoEmbeddings, LLM_Evaluation]
