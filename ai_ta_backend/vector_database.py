@@ -723,6 +723,12 @@ class Ingest():
     print(f"Texts: {texts}")
     assert len(texts) == len(metadatas), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
 
+    # add chunk index for Parent Document Retriever concept
+    for i, meta in enumerate(metadatas):
+      meta['chunk_index'] = i
+      # unique s3 path has to happen elsewhere, anytime we upload to S3 (mostly the front end + webscrape)
+      # meta['s3_path'] = str(uuid.uuid4()) + "-" + meta['s3_path']
+    
     try:
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
