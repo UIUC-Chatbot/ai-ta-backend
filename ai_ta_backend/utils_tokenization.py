@@ -2,7 +2,6 @@ import json
 import os
 from typing import Any, List
 
-import supabase
 import tiktoken
 
 
@@ -78,6 +77,7 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
 # load_dotenv()
 
 def analyze_conversations(supabase_client: Any = None):
+    import supabase
 
     if supabase_client is None:
       supabase_client = supabase.create_client( # type: ignore
