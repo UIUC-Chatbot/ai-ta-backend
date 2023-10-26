@@ -771,6 +771,7 @@ class Ingest():
           "text": context.page_content,
           "pagenumber": context.metadata.get('pagenumber'),
           "timestamp": context.metadata.get('timestamp'),
+          "chunk_index": context.metadata.get('chunk_index'),
           "embedding": embeddings_dict[context.page_content]
       } for context in contexts]
 
