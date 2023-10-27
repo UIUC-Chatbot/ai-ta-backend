@@ -986,7 +986,22 @@ class Ingest():
     4. Ensure no duplication takes place - top N will often have contexts belonging to the same doc.
     """
     print("inside context padding")
-    print("found_docs", found_docs)
+    print("found_docs", len(found_docs))
+
+    for doc in found_docs:
+      #print(doc.metadata)
+      
+      # if url present, query through that
+      if doc.metadata['url']:
+        url = doc.metadata['url']
+        print("url: ", url)
+
+      # else use s3_path
+      else: 
+        s3_path = doc.metadata['s3_path']
+        print("s3_path: ", s3_path)
+    
+
     exit()
 
   def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
@@ -1005,6 +1020,9 @@ class Ingest():
       start_time_overall = time.monotonic()
 
       found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
+      
+      # call context padding function here
+      final_docs = self.context_padding(found_docs, search_query, course_name)
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
