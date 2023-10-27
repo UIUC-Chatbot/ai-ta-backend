@@ -722,15 +722,6 @@ class Ingest():
     print(f"metadatas: {metadatas}")
     print(f"Texts: {texts}")
     assert len(texts) == len(metadatas), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
-
-    # # add chunk index for Parent Document Retriever concept
-    # for i, meta in enumerate(metadatas):
-    #   meta['chunk_index'] = i
-
-    #   # unique s3 path has to happen elsewhere, anytime we upload to S3 (mostly the front end + webscrape)
-    #   # meta['s3_path'] = str(uuid.uuid4()) + "-" + meta['s3_path']
-    # print("\n")
-    # print("METADATAS: ", len(metadatas))
     
     try:
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
@@ -740,11 +731,10 @@ class Ingest():
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
-
+      
+      # adding chunk index to metadata for parent doc retrieval
       for i, context in enumerate(contexts):
         context.metadata['chunk_index'] = i
-        
-      
 
       oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
                                request_url='https://api.openai.com/v1/embeddings',
