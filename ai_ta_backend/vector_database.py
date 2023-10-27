@@ -972,11 +972,7 @@ class Ingest():
       )
 
       print("search_results", search_results)
-      print("\n")
-      for i in search_results:
-        print("scores: ", i.score)
-        print("payload: ", i.payload['metadata'])
-      exit()
+      
       found_docs: list[Document] = []
       for d in search_results:
         metadata = d.payload.get('metadata') # type: ignore
@@ -989,6 +985,19 @@ class Ingest():
       # found_docs: list[Document] = [Document(page_content=str(d.payload.get('page_content')), metadata=d.payload.get('metadata')) for d in search_results]
       print("found_docs", found_docs)
       return found_docs
+
+  def context_padding(self, found_docs, search_query, course_name):
+    """
+    Takes top N contexts acquired from QRANT similarity search and pads them 
+    with context from the original document from Supabase.
+    1. Use s3_path as unique doc indentifier
+    2. Use s_path + chunk_index to locate chunk in the document.
+    3. Pad it with 3 contexts before and after it.
+    4. Ensure no duplication takes place - top N will often have contexts belonging to the same doc.
+    """
+    print("inside context padding")
+    print("found_docs", found_docs)
+    exit()
 
   def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
     """Here's a summary of the work.
