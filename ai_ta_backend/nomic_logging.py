@@ -124,20 +124,26 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       project.add_embeddings(embeddings=np.array(embeddings), data=pd.DataFrame(metadata))
       project.rebuild_maps()
 
+    print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
+    return f"Successfully logged for {course_name}"
+
   except Exception as e:
-    # if project doesn't exist, create it
-    print("ERROR in log_convo_to_nomic():", e)
-    result = create_nomic_map(course_name, conversation)
-    if result is None:
-      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+    # Error handling - the below error is for when the project does not exist
+    if str(e) == 'You must specify a unique_id_field when creating a new project.':
+      # project does not exist, so create it
+      result = create_nomic_map(course_name, conversation)
+      if result is None:
+        print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+        return f"Logging failed for {course_name}"
+      else:
+        print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
+        return f"Successfully logged for {course_name}"
     else:
-      print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
-      return f"Successfully logged for {course_name}"
-
-  print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
-  return f"Successfully logged for {course_name}"
-
-
+      # for rest of the errors - return fail
+      print("ERROR in log_convo_to_nomic():", e)
+      return f"Logging failed for {course_name}"
+    
+    
 def get_nomic_map(course_name: str):
   """
   Returns the variables necessary to construct an iframe of the Nomic map given a course name.
