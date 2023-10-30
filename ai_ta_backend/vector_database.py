@@ -947,7 +947,14 @@ class Ingest():
           query_filter=myfilter,
           with_vectors=False,
           query_vector=user_query_embedding,
-          limit=top_n  # Return n closest points
+          limit=top_n,  # Return n closest points
+          
+          # In a system with high disk latency, the re-scoring step may become a bottleneck: https://qdrant.tech/documentation/guides/quantization/
+          search_params=models.SearchParams(
+            quantization=models.QuantizationSearchParams(
+              rescore=False
+            )
+          )
       )
 
       found_docs: list[Document] = []
