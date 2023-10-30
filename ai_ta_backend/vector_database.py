@@ -988,21 +988,25 @@ class Ingest():
     print("inside context padding")
     print("found_docs", len(found_docs))
     documents_table = os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']
-    for doc in found_docs:
+    retrieved_contexts_identifiers = {}
+    for doc in found_docs: # top N from QDRANT
       print(doc.metadata)
+
+      # check if this particular url/s3_path has a chunk index or page number or none and create a dictionary
+
       
       # if url present, query through that
       if doc.metadata['url']:
-        url = doc.metadata['url']
-        print("url: ", url)
-        response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('url', url).execute()
-        
+        parent_doc_id = doc.metadata['url']
+        print("url: ", parent_doc_id)
+        response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('url', parent_doc_id).execute()
+        retrieved_contexts_identifiers[parent_doc_id] = []
       # else use s3_path
       else: 
-        s3_path = doc.metadata['s3_path']
-        print("s3_path: ", s3_path)
-        response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('s3_path', s3_path).execute()
-
+        parent_doc_id = doc.metadata['s3_path']
+        print("s3_path: ", parent_doc_id)
+        response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('s3_path', parent_doc_id).execute()
+        retrieved_contexts_identifiers[parent_doc_id] = []
       data = response.data
       # at this point, we have the parent document
       result_contexts = []
@@ -1011,14 +1015,15 @@ class Ingest():
         qdrant_chunk_index = doc.metadata['chunk_index']
         print("chunk_index: ", qdrant_chunk_index)
         print(len(data))
-
+        retrieved_indices = []
         contexts = data[0]['contexts']
         print("contexts: ", len(contexts))
 
         for context in contexts:
           chunk_index = context['chunk_index']
-          if (qdrant_chunk_index - 3 <= chunk_index <= qdrant_chunk_index + 3):
+          if (qdrant_chunk_index - 3 <= chunk_index <= qdrant_chunk_index + 3) and chunk_index not in retrieved_indices:
             result_contexts.append(context)
+            retrieved_indices.append(chunk_index)
 
         print(result_contexts)
 
