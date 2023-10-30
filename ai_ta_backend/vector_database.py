@@ -782,15 +782,6 @@ class Ingest():
           "contexts": contexts_for_supa,
       }
 
-      # document = [{
-      #   "course_name": context.metadata.get('course_name'),
-      #     "s3_path": context.metadata.get('s3_path'),
-      #     "readable_filename": context.metadata.get('readable_filename'),
-      #     "url": context.metadata.get('url'),
-      #     "base_url": context.metadata.get('base_url'),
-      #     "contexts": contexts_for_supa,  # should ideally be just one context but getting JSON serialization error when I do that
-      # } for context in contexts]
-
       count = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
       print("successful END OF split_and_upload")
       return "Success"
@@ -828,7 +819,7 @@ class Ingest():
           collection_name=os.environ['QDRANT_COLLECTION_NAME'],
           points_selector=models.Filter(must=[
               models.FieldCondition(
-                  key="metadata.course_name",
+                  key="course_name",
                   match=models.MatchValue(value=course_name),
               ),
           ]),
@@ -871,7 +862,7 @@ class Ingest():
               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
               points_selector=models.Filter(must=[
                   models.FieldCondition(
-                      key="metadata.s3_path",
+                      key="s3_path",
                       match=models.MatchValue(value=s3_path),
                   ),
               ]),
@@ -892,7 +883,7 @@ class Ingest():
               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
               points_selector=models.Filter(must=[
                   models.FieldCondition(
-                      key="metadata.url",
+                      key="url",
                       match=models.MatchValue(value=source_url),
                   ),
               ]),
