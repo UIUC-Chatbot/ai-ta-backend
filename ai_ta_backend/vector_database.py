@@ -933,13 +933,14 @@ class Ingest():
     return distinct_dicts
 
   def vector_search(self, search_query, course_name):
+      #top_n = 80
       top_n = 5
       o = OpenAIEmbeddings() # type: ignore
       user_query_embedding = o.embed_query(search_query)
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='metadata.course_name',
+                      key='course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -949,43 +950,48 @@ class Ingest():
           query_filter=myfilter,
           with_vectors=False,
           query_vector=user_query_embedding,
-          limit=top_n  # Return 5 closest points
+          limit=top_n,  # Return n closest points
+          
+          # In a system with high disk latency, the re-scoring step may become a bottleneck: https://qdrant.tech/documentation/guides/quantization/
+          search_params=models.SearchParams(
+            quantization=models.QuantizationSearchParams(
+              rescore=False
+            )
+          )
       )
 
-      print("search_results", search_results)
-      
       found_docs: list[Document] = []
       for d in search_results:
-        metadata = d.payload.get('metadata') # type: ignore
-        if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
-            # aiding in the database migration...
-            metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
-        
-        found_docs.append(Document(page_content=d.payload.get('page_content'), metadata=metadata)) # type: ignore
-      
-      # found_docs: list[Document] = [Document(page_content=str(d.payload.get('page_content')), metadata=d.payload.get('metadata')) for d in search_results]
-      #print("found_docs", found_docs)
+        try:
+          metadata = d.payload
+          page_content = metadata['page_content']
+          del metadata['page_content']
+          if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
+              # aiding in the database migration...
+              metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
+          
+          found_docs.append(Document(page_content=page_content, metadata=metadata)) # type: ignore
+        except Exception as e:
+          print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
+      print("found_docs", found_docs)
       return found_docs
 
   def context_padding(self, found_docs, search_query, course_name):
     """
     Takes top N contexts acquired from QRANT similarity search and pads them 
     with context from the original document from Supabase.
-    1. Use s3_path as unique doc indentifier
+    1. Use s3_path/url as unique doc indentifier
     2. Use s_path + chunk_index to locate chunk in the document.
     3. Pad it with 3 contexts before and after it.
-    4. Ensure no duplication takes place - top N will often have contexts belonging to the same doc.
+    4. If chunk_index is not present, use page number to locate the page in the document.
+    5. Ensure no duplication takes place - top N will often have contexts belonging to the same doc.
     """
     print("inside context padding")
-    print("found_docs", len(found_docs))
     documents_table = os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']
     retrieved_contexts_identifiers = {}
+    result_contexts = []
     for doc in found_docs: # top N from QDRANT
-      print(doc.metadata)
-
-      # check if this particular url/s3_path has a chunk index or page number or none and create a dictionary
-
-      
+    
       # if url present, query through that
       if doc.metadata['url']:
         parent_doc_id = doc.metadata['url']
@@ -998,37 +1004,43 @@ class Ingest():
         print("s3_path: ", parent_doc_id)
         response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('s3_path', parent_doc_id).execute()
         retrieved_contexts_identifiers[parent_doc_id] = []
-      data = response.data
-      # at this point, we have the parent document
-      result_contexts = []
+
+      data = response.data  # at this point, we have the origin parent document from Supabase
+      contexts = data[0]['contexts']
+      print("no of contexts within the og doc: ", len(contexts))
+
       if 'chunk_index' in doc.metadata:
         # retrieve by chunk index --> pad contexts
-        qdrant_chunk_index = doc.metadata['chunk_index']
-        print("chunk_index: ", qdrant_chunk_index)
-        print(len(data))
-        retrieved_indices = []
-        contexts = data[0]['contexts']
-        print("contexts: ", len(contexts))
-
+        target_chunk_index = doc.metadata['chunk_index']
+        print("target chunk_index: ", target_chunk_index)
+      
         for context in contexts:
-          chunk_index = context['chunk_index']
-          if (qdrant_chunk_index - 3 <= chunk_index <= qdrant_chunk_index + 3) and chunk_index not in retrieved_indices:
+          curr_chunk_index = context['chunk_index']
+          # collect between range of target index - 3 and target index + 3
+          if (target_chunk_index - 3 <= curr_chunk_index <= target_chunk_index + 3) and curr_chunk_index not in retrieved_contexts_identifiers[parent_doc_id]:
             result_contexts.append(context)
-            retrieved_indices.append(chunk_index)
-
-        print(result_contexts)
+            # add current index to retrieved_contexts_identifiers after each context is retrieved to avoid duplicates
+            retrieved_contexts_identifiers[parent_doc_id].append(curr_chunk_index)
 
       elif doc.metadata['pagenumber'] != '':
-        # retrieve by page number --> retrieve whole page?
+        # retrieve by page number --> retrieve the single whole page?
         pagenumber = doc.metadata['pagenumber']
-        print("pagenumber: ", pagenumber)
-      else:
-        # dont pad 
-        print("no chunk index or page number")
-      
-      break
+        print("target pagenumber: ", pagenumber)
 
-    exit()
+        for context in contexts:
+          if context['pagenumber'] == pagenumber:
+            result_contexts.append(context)
+        
+        # add page number to retrieved_contexts_identifiers after all contexts belonging to that page number have been retrieved
+        retrieved_contexts_identifiers[parent_doc_id].append(pagenumber)
+      else:
+        # dont pad, just append the doc object
+        print("no chunk index or page number, just appending the QDRANT context")
+        result_contexts.append(doc)
+      
+    print("length of final contexts: ", len(result_contexts))
+
+    return result_contexts
 
   def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
     """Here's a summary of the work.
@@ -1049,6 +1061,8 @@ class Ingest():
       
       # call context padding function here
       final_docs = self.context_padding(found_docs, search_query, course_name)
+
+      print("FINAL DOCS: ", final_docs)
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
