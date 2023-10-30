@@ -751,8 +751,8 @@ class Ingest():
       ### BULK upload to Qdrant ###
       vectors: list[PointStruct] = []
       for context in contexts:
-        # print({k: v for k, v in context.metadata.items() if k != 'embedding'})
-        upload_metadata = {"metadata":context.metadata, "page_content":context.page_content}
+        # !DONE: Updated the payload so each key is top level (no more payload.metadata.course_name. Instead, use payload.course_name), great for creating indexes.
+        upload_metadata = {**context.metadata, "page_content": context.page_content}
         vectors.append(
             PointStruct(
                 id=str(uuid.uuid4()),
@@ -946,7 +946,7 @@ class Ingest():
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='metadata.course_name',
+                      key='course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -956,20 +956,19 @@ class Ingest():
           query_filter=myfilter,
           with_vectors=False,
           query_vector=user_query_embedding,
-          limit=top_n  # Return 5 closest points
+          limit=top_n  # Return n closest points
       )
 
-      print("search_results", search_results)
       found_docs: list[Document] = []
       for d in search_results:
-        metadata = d.payload.get('metadata') # type: ignore
+        metadata = d.payload
+        del metadata['page_content']
         if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
             # aiding in the database migration...
             metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
         
         found_docs.append(Document(page_content=d.payload.get('page_content'), metadata=metadata)) # type: ignore
       
-      # found_docs: list[Document] = [Document(page_content=str(d.payload.get('page_content')), metadata=d.payload.get('metadata')) for d in search_results]
       print("found_docs", found_docs)
       return found_docs
 
@@ -1116,14 +1115,14 @@ Now please respond to my question: {user_question}"""
       String: A fully formatted prompt string.
     """
     try:
-      top_n = 150
+      top_n = 90
       start_time_overall = time.monotonic()
       o = OpenAIEmbeddings() # type: ignore
       user_query_embedding = o.embed_documents(search_query)[0] # type: ignore
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='metadata.course_name',
+                      key='course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -1145,19 +1144,18 @@ Now please respond to my question: {user_question}"""
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
       valid_docs = []
       for d in found_docs:
-        if "pagenumber" not in d.payload["metadata"].keys(): # type: ignore
-          d.payload["metadata"]["pagenumber"] = d.payload["metadata"]["pagenumber_or_timestamp"] # type: ignore
-        doc_string = f"---\nDocument: {d.payload['metadata']['readable_filename']}{', page: ' + str(d.payload['metadata']['pagenumber']) if d.payload['metadata']['pagenumber'] else ''}\n{d.payload.get('page_content')}\n" # type: ignore
+        if "pagenumber" not in d.payload.keys(): # type: ignore
+          d.payload["pagenumber"] = d.payload["pagenumber_or_timestamp"] # type: ignore
+        doc_string = f"---\nDocument: {d.payload['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n" # type: ignore
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
 
         print(f"Page: {d.payload.get('page_content')[:100]}...") # type: ignore
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
-          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload.get('metadata'))) # type: ignore
+          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload)) # type: ignore
         else:
           continue
-          print("running continue")
 
       # Convert the valid_docs to full prompt
       separator = '---\n'  # between each context
