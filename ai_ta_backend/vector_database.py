@@ -973,7 +973,7 @@ class Ingest():
         found_docs.append(Document(page_content=d.payload.get('page_content'), metadata=metadata)) # type: ignore
       
       # found_docs: list[Document] = [Document(page_content=str(d.payload.get('page_content')), metadata=d.payload.get('metadata')) for d in search_results]
-      print("found_docs", found_docs)
+      #print("found_docs", found_docs)
       return found_docs
 
   def context_padding(self, found_docs, search_query, course_name):
@@ -987,20 +987,50 @@ class Ingest():
     """
     print("inside context padding")
     print("found_docs", len(found_docs))
-
+    documents_table = os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']
     for doc in found_docs:
-      #print(doc.metadata)
+      print(doc.metadata)
       
       # if url present, query through that
       if doc.metadata['url']:
         url = doc.metadata['url']
         print("url: ", url)
-
+        response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('url', url).execute()
+        
       # else use s3_path
       else: 
         s3_path = doc.metadata['s3_path']
         print("s3_path: ", s3_path)
-    
+        response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('s3_path', s3_path).execute()
+
+      data = response.data
+      # at this point, we have the parent document
+      result_contexts = []
+      if 'chunk_index' in doc.metadata:
+        # retrieve by chunk index --> pad contexts
+        qdrant_chunk_index = doc.metadata['chunk_index']
+        print("chunk_index: ", qdrant_chunk_index)
+        print(len(data))
+
+        contexts = data[0]['contexts']
+        print("contexts: ", len(contexts))
+
+        for context in contexts:
+          chunk_index = context['chunk_index']
+          if (qdrant_chunk_index - 3 <= chunk_index <= qdrant_chunk_index + 3):
+            result_contexts.append(context)
+
+        print(result_contexts)
+
+      elif doc.metadata['pagenumber'] != '':
+        # retrieve by page number --> retrieve whole page?
+        pagenumber = doc.metadata['pagenumber']
+        print("pagenumber: ", pagenumber)
+      else:
+        # dont pad 
+        print("no chunk index or page number")
+      
+      break
 
     exit()
 
