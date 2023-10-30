@@ -961,16 +961,17 @@ class Ingest():
 
       found_docs: list[Document] = []
       for d in search_results:
-        print(f"------ Page content before metadata delete: {d.payload.get('page_content')}")
-        metadata = d.payload
-        del metadata['page_content']
-        print(f"------ Page content AFTERRR metadata delete: {d.payload.get('page_content')}")
-        if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
-            # aiding in the database migration...
-            metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
-        
-        found_docs.append(Document(page_content=d.payload.get('page_content'), metadata=metadata)) # type: ignore
-      
+        try:
+          metadata = d.payload
+          page_content = metadata['page_content']
+          del metadata['page_content']
+          if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
+              # aiding in the database migration...
+              metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
+          
+          found_docs.append(Document(page_content=page_content, metadata=metadata)) # type: ignore
+        except Exception as e:
+          print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
       print("found_docs", found_docs)
       return found_docs
 
