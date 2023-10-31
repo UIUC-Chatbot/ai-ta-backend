@@ -27,12 +27,14 @@ class AsyncActor:
   def __init__(self):
     pass
 
-  def filter_context(self, context, user_query):
+  def filter_context(self, context, user_query, langsmith_prompt_obj):
+    print("IN FILTER_CONTEXT")
 
-    obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr", api_url='https://smith.langchain.com')
-    final_prompt = str(obj.format(context=context, user_query=user_query))
+    # obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr", api_url='https://smith.langchain.com', api_key=os.environ['LANGCHAIN_API_KEY'])
+    final_prompt = str(langsmith_prompt_obj.format(context=context, user_query=user_query))
 
-    # print(f"-------\nfinal_prompt:\n{final_prompt}\n^^^^^^^^^^^^^")
+
+    print(f"-------\nfinal_prompt:\n{final_prompt}\n^^^^^^^^^^^^^")
     try: 
       completion = run_model(final_prompt)
       return {"completion": completion, "context": context}
@@ -54,7 +56,9 @@ def run_model(prompt, max_tokens=300, temp=0.3, **kwargs):
   }
 
   try: 
+    print("About to run model!!!")
     response = requests.post(url, headers=headers, data=json.dumps(data))
+    # print("Response here! ", response)
     return response.json()['choices'][0]['text']
   except Exception as e:
     # Probably cuda OOM error. 
@@ -71,9 +75,11 @@ def parse_result(result):
 def run(contexts, user_query, max_tokens_to_return=3000):
   actor = AsyncActor.options(max_concurrency=6).remote() #.options(max_concurrency=4) 
 
+  langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr", api_url='https://smith.langchain.com', api_key=os.environ['LANGCHAIN_API_KEY'])
+
   # result_futures = ray.get([actor.filter_context.remote(c, user_query) for c in contexts])
-  print(len(contexts))
-  result_futures = [actor.filter_context.remote(c, user_query) for c in contexts] # [0:5]
+  print("Num jobs to run:", len(contexts))
+  result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts] 
 
 
   final_passage_list = []
@@ -82,7 +88,10 @@ def run(contexts, user_query, max_tokens_to_return=3000):
   for i in range(0, len(result_futures)): 
     try: 
       ready, not_ready = ray.wait(result_futures)
-      result = ray.get(ready)[0]
+      print("READY!!! ", ready[0])
+      # result = ray.get(ready)
+      result = ray.get(ready[0])
+      print("Result!!! ", result)
       if result is None:
         print("RESULT WAS NONE, llm inference probably failed")
       
@@ -118,4 +127,4 @@ def run(contexts, user_query, max_tokens_to_return=3000):
 if __name__ == "__main__":
   ray.init() # f"ray://127.0.0.1:{LOCAL_PORT}"
   
-  run(contexts=CONTEXTS[0], user_query=USER_QUERY, )
+  run(contexts=CONTEXTS[0:4], user_query=USER_QUERY, )
