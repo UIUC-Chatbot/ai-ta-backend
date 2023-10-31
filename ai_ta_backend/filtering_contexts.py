@@ -53,13 +53,11 @@ def run_model(prompt, max_tokens=300, temp=0.3, **kwargs):
   }
 
   try: 
-    print("About to run model!!!")
     response = requests.post(url, headers=headers, data=json.dumps(data))
-    # print("Response here! ", response)
     return response.json()['choices'][0]['text']
   except Exception as e:
     # Probably cuda OOM error. 
-    raise ValueError(f"❌❌❌❌ Failed inference attempt for prompt: {prompt}")
+    raise ValueError(f"🚫🚫🚫 Failed inference attempt. Response: {response.json()}\nError: {e}\nPromt that caused error: {prompt}")
 
 
 def parse_result(result):
@@ -74,7 +72,7 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
 
   print("Num jobs to run:", len(contexts))
 
-  actor = AsyncActor.options(max_concurrency=4).remote()
+  actor = AsyncActor.options(max_concurrency=6).remote()
   result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts]
 
   start_time = time.time()
@@ -116,7 +114,7 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
 if __name__ == "__main__":
   ray.init() 
   start_time = time.monotonic()
-  final_passage_list = list(run(contexts=CONTEXTS[0:20], user_query=USER_QUERY, max_time_before_return=20))
+  final_passage_list = list(run(contexts=CONTEXTS[0:20], user_query=USER_QUERY, max_time_before_return=30))
 
   print("✅✅✅ FINAL RESULTS: \n" + '\n'.join(json.dumps(r, indent=2) for r in final_passage_list))
   print("✅✅✅ TOTAL RETURNED: ", len(final_passage_list))
