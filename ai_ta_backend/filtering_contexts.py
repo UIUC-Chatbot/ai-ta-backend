@@ -28,13 +28,8 @@ class AsyncActor:
     pass
 
   def filter_context(self, context, user_query, langsmith_prompt_obj):
-    print("IN FILTER_CONTEXT")
-
-    # obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr", api_url='https://smith.langchain.com', api_key=os.environ['LANGCHAIN_API_KEY'])
     final_prompt = str(langsmith_prompt_obj.format(context=context, user_query=user_query))
-
-
-    print(f"-------\nfinal_prompt:\n{final_prompt}\n^^^^^^^^^^^^^")
+    # print(f"-------\nfinal_prompt:\n{final_prompt}\n^^^^^^^^^^^^^")
     try: 
       completion = run_model(final_prompt)
       return {"completion": completion, "context": context}
@@ -42,7 +37,9 @@ class AsyncActor:
       print(f"Error: {e}")
 
 def run_model(prompt, max_tokens=300, temp=0.3, **kwargs):
-  ## Local LLMs  USAGE DOCS: https://kastanday.notion.site/LLM-Serving-on-prem-OpenAI-Clone-bb06028266d842b0872465f552684177 ## 
+  '''
+  Local LLMs  USAGE DOCS: https://kastanday.notion.site/LLM-Serving-on-prem-OpenAI-Clone-bb06028266d842b0872465f552684177 ## 
+  '''
 
   url = "http://api.kastan.ai/v1/completions?model=HuggingFaceH4/zephyr-7b-alpha"
   headers = {
@@ -72,59 +69,55 @@ def parse_result(result):
       return 'yes' in line.lower()
   return False
 
-def run(contexts, user_query, max_tokens_to_return=3000):
-  actor = AsyncActor.options(max_concurrency=6).remote() #.options(max_concurrency=4) 
+def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=None):
+  langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr")
 
-  langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr", api_url='https://smith.langchain.com', api_key=os.environ['LANGCHAIN_API_KEY'])
-
-  # result_futures = ray.get([actor.filter_context.remote(c, user_query) for c in contexts])
   print("Num jobs to run:", len(contexts))
-  result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts] 
 
-
-  final_passage_list = []
+  actor = AsyncActor.options(max_concurrency=4).remote()
+  result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts]
 
   start_time = time.time()
   for i in range(0, len(result_futures)): 
     try: 
       ready, not_ready = ray.wait(result_futures)
-      print("READY!!! ", ready[0])
-      # result = ray.get(ready)
       result = ray.get(ready[0])
-      print("Result!!! ", result)
+      
       if result is None:
         print("RESULT WAS NONE, llm inference probably failed")
+        continue
       
       if parse_result(result['completion']): 
-        final_passage_list.append(result['completion'])
+        yield result['context']
       
-      elapsed_time = (time.time() - start_time)/60
+      elapsed_time = (time.time() - start_time)
       avg_task_time = elapsed_time / (i+1)
       estimated_total_runtime = avg_task_time * len(contexts)
       
       print(f"📌 Completed {i+1} of {len(contexts)}")
-      print(f"⏰ Running total of elapsed time: {elapsed_time:.2f} minutes\n🔮 Estimated total runtime: {estimated_total_runtime:.2f} minutes.\n")
-      print(f"📜 Passage: {result['context']['text']}")
-      print(f"✅ Result: {result['completion']}")
+      print(f"⏰ Running total of elapsed time: {elapsed_time:.2f} seconds\n🔮 Estimated total runtime: {estimated_total_runtime:.2f} seconds.\n")
+      print(f"⏰👻 avg_task_time (s): {avg_task_time:.2f}")
+      # print(f"📜 Passage: {result['context']['text']}")
+      # print(f"✅ Result: {result['completion']}")
+      
+      if max_time_before_return is not None and elapsed_time >= max_time_before_return:
+        break
+      
     except Exception as e:
       print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
       print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # print function name in error.
       print(f"Traceback:")
       print(traceback.print_exc())
     finally: 
-      print("Len of accepted results so far: ", len(final_passage_list))
-      print("Proportion of accepted results: ", len(final_passage_list) / (max(len(contexts)-len(result_futures),1) ))
-
       result_futures = not_ready
       if not result_futures:
         break
 
-      if count_tokens_and_cost(''.join(final_passage_list))[0] >= max_tokens_to_return:
-        return final_passage_list
-
-
-
 if __name__ == "__main__":
-  ray.init() # f"ray://127.0.0.1:{LOCAL_PORT}"
-  
-  run(contexts=CONTEXTS[0:4], user_query=USER_QUERY, )
+  ray.init() 
+  start_time = time.monotonic()
+  final_passage_list = list(run(contexts=CONTEXTS[0:20], user_query=USER_QUERY, max_time_before_return=20))
+
+  print("✅✅✅ FINAL RESULTS: \n" + '\n'.join(json.dumps(r, indent=2) for r in final_passage_list))
+  print("✅✅✅ TOTAL RETURNED: ", len(final_passage_list))
+  print(f"⏰⏰⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
