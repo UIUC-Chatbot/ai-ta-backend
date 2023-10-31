@@ -45,5 +45,8 @@ xlrd # for excel ingest
 pdfminer # for image OCR
 pytesseract # for image OCR
 
+selenium-wire # for New Web Scraper
+selenium
+
 # No arize for now, huge build size with these additions.
 # arize[AutoEmbeddings, LLM_Evaluation]

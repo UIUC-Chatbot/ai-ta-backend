@@ -4,8 +4,10 @@ import re
 import shutil
 import time
 from collections import Counter
+import tempfile
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile
+import shutil
 
 import boto3  # type: ignore
 import requests
@@ -23,19 +25,21 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-# webdriver.DesiredCapabilities.CHROME['loggingPrefs'] = {'performance': 'OFF'}
-
 # set the default Download directory
 options = webdriver.ChromeOptions()
 # set the download path
-download_dir = os.path.abspath("pdf_files")
+download_dir = tempfile.mkdtemp()
+print(download_dir)
+time.sleep(3)
+# download_dir = os.path.abspath("pdf_files")
 options.add_experimental_option("prefs", {
     "download.default_directory": download_dir,
     "download.prompt_for_download": False,
     "download.directory_upgrade": True,
-    "plugins.always_open_pdf_externally": True})
+    "plugins.always_open_pdf_externally": True,
+    "safebrowsing.enabled": False,
+    "safebrowsing.disable_download_protection": True})
 # options2 = {'ca_key': r'C:\Users\chopr\Desktop\Part-Time\AgGPT\raw.githubusercontent.com_wkeeling_selenium-wire_master_seleniumwire_ca.crt'}
-
 driver = webdriver.Chrome(options=options)
 
 import logging
@@ -135,21 +139,32 @@ class WebScrape():
           
         # handle the other cases
         elif filetype in ['.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
-          with NamedTemporaryFile(delete=True) as temp_file:
-            temp_file.write(driver.page_source.encode())
-            temp_file.seek(0)
-            # content = temp_file.read()
-            # page_source = driver.page_source
+          page_source = driver.page_source
+          downloaded_file_path = os.path.join(download_dir, os.listdir(download_dir)[0])
+          print(downloaded_file_path)
+          # Read the content of the downloaded file
+
           if "<!doctype html" in str(page_source).lower():
             content = BeautifulSoup(page_source, "html.parser")
             filetype = '.html'
           else:
-            content = temp_file.read()
-            # content = page_source
+            with open(downloaded_file_path, 'rb') as file:
+              content = file.read()
+            time.sleep(6)
+            os.remove(downloaded_file_path)
+            #delete all files
+            for filename in os.listdir(download_dir):
+              file_path = os.path.join(download_dir, filename)
+              if os.path.isfile(file_path) or os.path.islink(file_path):
+                  os.unlink(file_path)
+              elif os.path.isdir(file_path):
+                  shutil.rmtree(file_path)
+          
         else:
           return (False, False, False)
         if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
           print("⛔️⛔️ Filetype not supported:", filetype, "⛔️⛔️")
+        print("The loaded content is ->", content)
         return (url, content, filetype)
       else:
         print("🚫🚫 URL is invalid:", url, "Return code:", response_code, "🚫🚫")
@@ -205,7 +220,7 @@ class WebScrape():
       # Get rid of double slashes in url
       # Create a base site for incomplete hrefs
       if url.startswith("https:"):
-        site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
+        site= re.match(pattern=r"https:\/\/[a-zA-Z0-9.']*[a-z]", string=url).group(0) # type: ignore
         url = re.sub(pattern=r"https:\/\/", repl="", string=url)
         url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
         url = "https://"+url
