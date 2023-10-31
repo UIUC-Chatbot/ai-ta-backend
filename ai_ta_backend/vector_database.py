@@ -1006,6 +1006,7 @@ class Ingest():
         retrieved_contexts_identifiers[parent_doc_id] = []
 
       data = response.data  # at this point, we have the origin parent document from Supabase
+      filename = data[0]['readable_filename']
       contexts = data[0]['contexts']
       print("no of contexts within the og doc: ", len(contexts))
 
@@ -1018,6 +1019,11 @@ class Ingest():
           curr_chunk_index = context['chunk_index']
           # collect between range of target index - 3 and target index + 3
           if (target_chunk_index - 3 <= curr_chunk_index <= target_chunk_index + 3) and curr_chunk_index not in retrieved_contexts_identifiers[parent_doc_id]:
+            context['readable_filename'] = filename
+            context['course_name'] = course_name
+            context['s3_path'] = data[0]['s3_path']
+            context['url'] = data[0]['url']
+            context['base_url'] = data[0]['base_url']
             result_contexts.append(context)
             # add current index to retrieved_contexts_identifiers after each context is retrieved to avoid duplicates
             retrieved_contexts_identifiers[parent_doc_id].append(curr_chunk_index)
@@ -1029,6 +1035,11 @@ class Ingest():
 
         for context in contexts:
           if context['pagenumber'] == pagenumber:
+            context['readable_filename'] = filename
+            context['course_name'] = course_name
+            context['s3_path'] = data[0]['s3_path']
+            context['url'] = data[0]['url']
+            context['base_url'] = data[0]['base_url']
             result_contexts.append(context)
         
         # add page number to retrieved_contexts_identifiers after all contexts belonging to that page number have been retrieved
@@ -1070,10 +1081,17 @@ class Ingest():
 
       valid_docs = []
       num_tokens = 0
-      for doc in found_docs:
-        doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
+      
+      for doc in final_docs:
+        print("\n DOC: ", type(doc))
+        if isinstance(doc, dict):
+          # dictionary flow
+          doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
+        else:
+          # langchain flow
+          doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
+
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
-        
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
@@ -1081,6 +1099,21 @@ class Ingest():
         else:
           # filled our token size, time to return
           break
+
+      
+
+      # for doc in found_docs:
+        
+      #   doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
+      #   num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
+        
+      #   print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
+      #   if token_counter + num_tokens <= token_limit:
+      #     token_counter += num_tokens
+      #     valid_docs.append(doc)
+      #   else:
+      #     # filled our token size, time to return
+      #     break
 
       print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
@@ -1268,21 +1301,47 @@ Now please respond to my question: {user_question}"""
     Returns:
         List[Dict]: _description_
     """
+    contexts = []
     for found_doc in found_docs:
-      if "pagenumber" not in found_doc.metadata.keys():
-        print("found no pagenumber")
-        found_doc.metadata['pagenumber'] = found_doc.metadata['pagenumber_or_timestamp']
+      
+      if isinstance(found_doc, dict): # supabase contexts
+        
+        contexts.append({
+            'text': found_doc['text'],
+            'readable_filename': found_doc['readable_filename'],
+            'course_name ': found_doc['course_name'],
+            's3_path': found_doc['s3_path'],
+            'url': found_doc['url'],
+            'base_url': found_doc['base_url'],
+        })
+      else: # QDRANT contexts
+        
+        contexts.append({
+          'text': found_doc.page_content,
+          'readable_filename': found_doc.metadata['readable_filename'],
+          'course_name ': found_doc.metadata['course_name'],
+          's3_path': found_doc.metadata['s3_path'],
+          'pagenumber': found_doc.metadata['pagenumber'], # this because vector db schema is older...
+          # OPTIONAL PARAMS...
+          'url': found_doc.metadata.get('url'), # wouldn't this error out?
+          'base_url': found_doc.metadata.get('base_url'),
+        })
 
-    contexts = [{
-        'text': doc.page_content,
-        'readable_filename': doc.metadata['readable_filename'],
-        'course_name ': doc.metadata['course_name'],
-        's3_path': doc.metadata['s3_path'],
-        'pagenumber': doc.metadata['pagenumber'], # this because vector db schema is older...
-        # OPTIONAL PARAMS...
-        'url': doc.metadata.get('url'), # wouldn't this error out?
-        'base_url': doc.metadata.get('base_url'),
-    } for doc in found_docs]
+    # for found_doc in found_docs:
+    #   if "pagenumber" not in found_doc.metadata.keys():
+    #     print("found no pagenumber")
+    #     found_doc.metadata['pagenumber'] = found_doc.metadata['pagenumber_or_timestamp']
+
+    # contexts = [{
+    #     'text': doc.page_content,
+    #     'readable_filename': doc.metadata['readable_filename'],
+    #     'course_name ': doc.metadata['course_name'],
+    #     's3_path': doc.metadata['s3_path'],
+    #     'pagenumber': doc.metadata['pagenumber'], # this because vector db schema is older...
+    #     # OPTIONAL PARAMS...
+    #     'url': doc.metadata.get('url'), # wouldn't this error out?
+    #     'base_url': doc.metadata.get('base_url'),
+    # } for doc in found_docs]
 
     return contexts
 
