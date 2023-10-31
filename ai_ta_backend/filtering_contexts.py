@@ -1,3 +1,4 @@
+import replicate
 import inspect
 import json
 import os
@@ -31,7 +32,8 @@ class AsyncActor:
     final_prompt = str(langsmith_prompt_obj.format(context=context, user_query=user_query))
     # print(f"-------\nfinal_prompt:\n{final_prompt}\n^^^^^^^^^^^^^")
     try: 
-      completion = run_model(final_prompt)
+      # completion = run_model(final_prompt)
+      completion = run_replicate(final_prompt)
       return {"completion": completion, "context": context}
     except Exception as e: 
       print(f"Error: {e}")
@@ -59,6 +61,20 @@ def run_model(prompt, max_tokens=300, temp=0.3, **kwargs):
     # Probably cuda OOM error. 
     raise ValueError(f"🚫🚫🚫 Failed inference attempt. Response: {response.json()}\nError: {e}\nPromt that caused error: {prompt}")
 
+def run_replicate(prompt):
+  output = replicate.run(
+    "tomasmcm/zephyr-7b-beta:961cd6665b811d0c43c0b9488b6dfa85ff5c7bfb875e93b4533e4c7f96c7c526",
+    input={
+      "top_k": 50,
+      "top_p": 0.95,
+      "prompt": prompt,
+      "temperature": 0.3,
+      "max_new_tokens": 250,
+      "presence_penalty": 1
+    }
+  )
+  print(output)
+  return output
 
 def parse_result(result):
   lines = result.split('\n')
@@ -67,12 +83,12 @@ def parse_result(result):
       return 'yes' in line.lower()
   return False
 
-def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=None):
+def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=None, max_concurrency=6):
   langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr")
 
   print("Num jobs to run:", len(contexts))
 
-  actor = AsyncActor.options(max_concurrency=6).remote()
+  actor = AsyncActor.options(max_concurrency=max_concurrency).remote()
   result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts]
 
   start_time = time.time()
@@ -111,10 +127,11 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
       if not result_futures:
         break
 
+# ! CONDA ENV: llm-serving
 if __name__ == "__main__":
   ray.init() 
   start_time = time.monotonic()
-  final_passage_list = list(run(contexts=CONTEXTS[0:20], user_query=USER_QUERY, max_time_before_return=30))
+  final_passage_list = list(run(contexts=CONTEXTS[0:12], user_query=USER_QUERY, max_time_before_return=20, max_concurrency=22))
 
   print("✅✅✅ FINAL RESULTS: \n" + '\n'.join(json.dumps(r, indent=2) for r in final_passage_list))
   print("✅✅✅ TOTAL RETURNED: ", len(final_passage_list))
