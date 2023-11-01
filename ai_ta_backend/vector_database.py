@@ -85,8 +85,8 @@ class Ingest():
     #   openai_api_key=os.getenv('AZURE_OPENAI_KEY'), #type:ignore
     #   openai_api_version=os.getenv('AZURE_OPENAI_API_VERSION'), #type:ignore
     #   ) 
-    # self.llm = OpenAI(temperature=0, openai_api_base='https://api.kastan.ai/v1')
-    self.llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo')
+    self.llm = OpenAI(temperature=0, openai_api_base='https://api.kastan.ai/v1')
+    # self.llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo')
     return None
 
 
@@ -991,6 +991,52 @@ class Ingest():
           print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
       print("found_docs", found_docs)
       return found_docs
+  
+  def batch_vector_search(self, search_queries: List[str], course_name: str):
+    from qdrant_client.http import models as rest
+    o = OpenAIEmbeddings()
+    # Prepare the filter for the course name
+    myfilter = rest.Filter(
+        must=[
+            rest.FieldCondition(
+                key='course_name',
+                match=rest.MatchValue(value=course_name)
+            ),
+        ])
+
+    # Prepare the search requests
+    search_requests = []
+    for query in search_queries:
+        user_query_embedding = o.embed_query(query)
+        search_requests.append(
+            rest.SearchRequest(vector=user_query_embedding, filter=myfilter, limit=5, with_payload=True)
+        )
+
+    # Perform the batch search
+    search_results = self.qdrant_client.search_batch(
+        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+        requests=search_requests
+    )
+    print(f"Search results: {search_results}")
+    # Process the search results
+    found_docs: list[list[Document]] = []
+    for result in search_results:
+        docs = []
+        for d in result:
+            try:
+                metadata = d.payload
+                page_content = metadata['page_content']
+                del metadata['page_content']
+                if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
+                    # aiding in the database migration...
+                    metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
+                docs.append(Document(page_content=page_content, metadata=metadata)) # type: ignore
+            except Exception as e:
+                # print(f"Error in batch_vector_search(), for course: `{course_name}`. Error: {e}")
+                print(traceback.print_exc())
+        found_docs.append(docs)
+
+    return found_docs
 
   def context_padding(self, found_docs, search_query, course_name):
     """
@@ -1079,7 +1125,8 @@ class Ingest():
                 fused_scores[doc_str] = 0
             previous_score = fused_scores[doc_str]
             fused_scores[doc_str] += 1 / (rank + k)
-            print(f"Change score for doc: {doc_str}, previous score: {previous_score}, updated score: {fused_scores[doc_str]} ")
+            # Uncomment for debugging
+            # print(f"Change score for doc: {doc_str}, previous score: {previous_score}, updated score: {fused_scores[doc_str]} ")
 
     reranked_results = [
         (loads(doc), score)
@@ -1102,7 +1149,9 @@ class Ingest():
       top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
 
+      # Vector search with ONLY original query
       # found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
+
       # Multi query retriever
       generate_queries = (
                 MULTI_QUERY_PROMPT
@@ -1112,23 +1161,29 @@ class Ingest():
                 | (lambda x: list(filter(None, x)))  # filter out non-empty strings
             )
       
-      retriever = self.vectorstore.as_retriever(
-          search_kwargs={"k": top_n, "filter": {"course_name": course_name}}
-      )
-      chain = generate_queries | retriever.map() | self.reciprocal_rank_fusion
-      docs = chain.invoke({"original_query": search_query})
-      print(f"Docs found with multiple queries: {docs}")
-      print(f"Number of docs found with multiple queries: {len(docs)}")
-      found_docs = self.vectorstore.similarity_search(
-          search_query, k=top_n, filter={"course_name": course_name}
-      )
+      generated_queries = generate_queries.invoke({"original_query": search_query})
 
-      print(f"\nDocs found with original query: {found_docs}")
-      print(f"Number of docs found with original query: {len(found_docs)}")
+      batch_found_docs: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries, course_name=course_name)
 
-      if len(docs) == 0:
+      found_docs = self.reciprocal_rank_fusion(batch_found_docs)
+
+      # LCEL implementation (need custom one for batch vector search since it doesn't implement langchain Runnable)
+      # retriever = self.vectorstore.as_retriever(
+      #     search_kwargs={"k": top_n, "filter": {"course_name": course_name}}
+      # )
+      # chain = generate_queries | retriever.map() | self.reciprocal_rank_fusion
+      # docs = chain.invoke({"original_query": search_query})
+
+      # Only for debugging
+      # print(f"Docs found with multiple queries: {found_docs}")
+      print(f"Number of docs found with multiple queries: {len(found_docs)}")
+
+      if len(found_docs) == 0:
           return []
       
+      # Extract only the Document objects from the tuples to pass them to context padding
+      found_docs = [doc for doc, score in found_docs]
+
       # call context padding function here
       final_docs = self.context_padding(found_docs, search_query, course_name)
 
@@ -1182,9 +1237,8 @@ class Ingest():
       return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
-      err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
-      # print(err)
-      print(traceback.print_exc())
+      err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.print_exc()}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
+      print(err)
       return err
 
   def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
