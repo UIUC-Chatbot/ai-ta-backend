@@ -28,7 +28,7 @@ from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Qdrant
+from langchain.vectorstores.qdrant import Qdrant
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
@@ -36,7 +36,13 @@ from qdrant_client.models import PointStruct
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
+from langchain import hub
+from langchain.llms.openai import OpenAI
+from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain.schema.output_parser import StrOutputParser
+from langchain.load import dumps, loads
 
+MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 
 class Ingest():
   """
@@ -47,7 +53,7 @@ class Ingest():
     """
     Initialize AWS S3, Qdrant, and Supabase.
     """
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    # openai.api_key = os.getenv("OPENAI_API_KEY")
 
     # vector DB
     self.qdrant_client = QdrantClient(
@@ -71,6 +77,16 @@ class Ingest():
     self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.environ['SUPABASE_URL'],
         supabase_key=os.environ['SUPABASE_API_KEY'])
+    
+    # self.llm = AzureChatOpenAI( 
+    #   temperature=0, 
+    #   deployment_name=os.getenv('AZURE_OPENAI_ENGINE'), #type:ignore
+    #   openai_api_base=os.getenv('AZURE_OPENAI_ENDPOINT'), #type:ignore
+    #   openai_api_key=os.getenv('AZURE_OPENAI_KEY'), #type:ignore
+    #   openai_api_version=os.getenv('AZURE_OPENAI_API_VERSION'), #type:ignore
+    #   ) 
+    # self.llm = OpenAI(temperature=0, openai_api_base='https://api.kastan.ai/v1')
+    self.llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo')
     return None
 
 
@@ -1052,6 +1068,24 @@ class Ingest():
     print("length of final contexts: ", len(result_contexts))
 
     return result_contexts
+  
+  def reciprocal_rank_fusion(self, results: list[list], k=60):
+    fused_scores = {}
+    for docs in results:
+        # Assumes the docs are returned in sorted order of relevance
+        for rank, doc in enumerate(docs):
+            doc_str = dumps(doc)
+            if doc_str not in fused_scores:
+                fused_scores[doc_str] = 0
+            previous_score = fused_scores[doc_str]
+            fused_scores[doc_str] += 1 / (rank + k)
+            print(f"Change score for doc: {doc_str}, previous score: {previous_score}, updated score: {fused_scores[doc_str]} ")
+
+    reranked_results = [
+        (loads(doc), score)
+        for doc, score in sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
+    ]
+    return reranked_results
 
   def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
     """Here's a summary of the work.
@@ -1068,7 +1102,32 @@ class Ingest():
       top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
 
-      found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
+      # found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
+      # Multi query retriever
+      generate_queries = (
+                MULTI_QUERY_PROMPT
+                | self.llm
+                | StrOutputParser()
+                | (lambda x: x.split("\n"))
+                | (lambda x: list(filter(None, x)))  # filter out non-empty strings
+            )
+      
+      retriever = self.vectorstore.as_retriever(
+          search_kwargs={"k": top_n, "filter": {"course_name": course_name}}
+      )
+      chain = generate_queries | retriever.map() | self.reciprocal_rank_fusion
+      docs = chain.invoke({"original_query": search_query})
+      print(f"Docs found with multiple queries: {docs}")
+      print(f"Number of docs found with multiple queries: {len(docs)}")
+      found_docs = self.vectorstore.similarity_search(
+          search_query, k=top_n, filter={"course_name": course_name}
+      )
+
+      print(f"\nDocs found with original query: {found_docs}")
+      print(f"Number of docs found with original query: {len(found_docs)}")
+
+      if len(docs) == 0:
+          return []
       
       # call context padding function here
       final_docs = self.context_padding(found_docs, search_query, course_name)
@@ -1124,7 +1183,8 @@ class Ingest():
     except Exception as e:
       # return full traceback to front end
       err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
-      print(err)
+      # print(err)
+      print(traceback.print_exc())
       return err
 
   def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
