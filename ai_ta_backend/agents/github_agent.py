@@ -10,7 +10,6 @@ import uuid
 from typing import List, Sequence, Tuple
 
 import langchain
-# from ai_ta_backend.agents import get_docstore_agent
 from dotenv import load_dotenv
 from github import GithubException
 from github.Issue import Issue
@@ -60,20 +59,15 @@ from typing_extensions import runtime
 
 from ai_ta_backend.agents.tools import (get_human_input, get_shell_tool,
                                         get_tools)
+from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 
 # load_dotenv(override=True, dotenv_path='.env')
 
-os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
-os.environ["LANGCHAIN_WANDB_TRACING"] = "false"  # TODO: https://docs.wandb.ai/guides/integrations/langchain
-
-langchain.debug = False  # True for more detailed logs
+# os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
+langchain.debug = True  # True for more detailed logs
 VERBOSE = True
 
-from ai_ta_backend.agents.outer_loop_planner import \
-    fancier_trim_intermediate_steps
-
 GH_Agent_SYSTEM_PROMPT = """You are a senior developer who helps others finish the work faster and to a higher quality than anyone else on the team. People often tag you on pull requests (PRs), and you will finish the PR to the best of your ability and commit your changes. If you're blocked or stuck, feel free to leave a comment on the PR and the rest of the team will help you out. Remember to keep trying, and reflecting on how you solved previous problems will usually help you fix the current issue. Please work hard, stay organized, and follow best practices.\nYou have access to the following tools:"""
-
 
 class GH_Agent():
 
@@ -84,17 +78,14 @@ class GH_Agent():
 
   def make_bot(self):
     # LLMs
-    SystemMessage(content=GH_Agent_SYSTEM_PROMPT)
-
-
-    if os.environ['OPENAI_API_TYPE'] != 'azure':
-      llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-      human_llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-      summarizer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-    else: 
+    if os.environ['OPENAI_API_TYPE'] == 'azure':
       llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
       human_llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
       summarizer_llm = AzureChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+    else: 
+      llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
+      human_llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
+      summarizer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
 
     # MEMORY
     chat_history = MessagesPlaceholder(variable_name="chat_history")
@@ -104,8 +95,6 @@ class GH_Agent():
     toolkit: GitHubToolkit = GitHubToolkit.from_github_api_wrapper(self.github_api_wrapper)
     github_tools: list[BaseTool] = toolkit.get_tools()
     human_tools: List[BaseTool] = load_tools(["human"], llm=human_llm, input_func=get_human_input)
-    # todo: add tools for documentation search... unless I have a separate code author.
-    # todo: tool for human. Maybe Arxiv too.
 
     return initialize_agent(
         tools=github_tools + human_tools,
@@ -138,7 +127,7 @@ class GH_Agent():
     runtime_exceptions = []
     result = ''
     for num_retries in range(1,total_retries+1):
-      with tracing_v2_enabled(project_name="ML4Bio", tags=['lil-jr-dev', str(run_id)]) as cb:
+      with tracing_v2_enabled(project_name="ML4Bio", tags=['lil-jr-dev']) as cb:
         try:
           #! MAIN RUN FUNCTION
           if len(runtime_exceptions) >= 1:

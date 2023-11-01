@@ -14,7 +14,7 @@ from langchain import hub
 from langchain.tools.github.utils import generate_branch_name
 
 from ai_ta_backend.agents import github_agent
-from ai_ta_backend.agents.workflow_agent import WorkflowAgent
+from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
 
 
 def handle_pull_request_opened(payload):
