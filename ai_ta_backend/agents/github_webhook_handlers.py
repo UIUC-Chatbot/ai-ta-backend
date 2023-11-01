@@ -1,13 +1,17 @@
 ######## GITHUB WEBHOOK HANDLERS ########
 
 # from github import Github
+import logging
 import os
 from dis import Instruction
+from typing import Union
 
 from github import Auth, GithubIntegration
 from github.Issue import Issue
 from github.PullRequest import PullRequest
 from github.Repository import Repository
+from langchain import hub
+from langchain.tools.github.utils import generate_branch_name
 
 from ai_ta_backend.agents import github_agent
 from ai_ta_backend.agents.workflow_agent import WorkflowAgent
@@ -59,7 +63,6 @@ def handle_issue_opened(payload):
   installation = gi.get_installations()[0]
   g = installation.get_github_for_installation()
 
-  # comment = payload['comment']
   issue = payload['issue']
   repo_name = payload["repository"]["full_name"]
   repo: Repository = g.get_repo(repo_name)
@@ -67,35 +70,71 @@ def handle_issue_opened(payload):
   number = payload.get('issue').get('number')
   issue: Issue = repo.get_issue(number=number)
   
-  # TODO:     comment_author = comment['user']['login'] TypeError: 'NoneType' object is not subscriptable
+  metadata = {"issue": issue, 'number': number, "repo_name": repo_name}
+  
+  # TODO BUG: comment_author = comment['user']['login'] TypeError: 'NoneType' object is not subscriptable
   comment = payload.get('comment')
   if comment:
     # not always have a comment.
+    # logging.debug(f"Comment: {comment}")
+    # logging.debug(f"comment['user']: {comment['user']}")
     comment_author = comment['user']['login']
     comment_made_by_bot = True if comment.get('performed_via_github_app') else False
   
 
-  print(f"New issue created: #{number}")
+  logging.info(f"New issue created: #{number}")
   try:
-    messageForNewIssues = "Thanks for opening a new issue! I'll now try to finish this implementation and open a PR for you to review. I'll comment if I get blocked or 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
-    issue.create_comment(messageForNewIssues)
-
+    # ! TODO: REENABLE
+    # unique_branch_name = generate_branch_name(issue)
     unique_branch_name = 'main'
-    # print("Creating branch name")
-    # unique_branch_name = github_agent.generate_branch_name(issue)
-    #  = ensure_unique_branch_name(repo, proposed_branch_name)
 
-    print("LAUNCHING BOT")
-    # bot = github_agent.GH_Agent(branch_name=unique_branch_name)
-    # issue_description = bot.github_api_wrapper.get_issue(number)
-    # instruction = f"Please implement these changes by creating or editing the necessary files. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. The last step is to create a PR with a clear and concise title and description, list any concerns or final changes necessary in the PR body. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest assignment: {str(issue_description)}"
-    # result = bot.launch_gh_agent(instruction, active_branch=unique_branch_name)
-    bot = WorkflowAgent()
-    result = bot.run(comment)
+    # ROHAN's version of the bot. TODO reennable
+    # bot = WorkflowAgent()
+    # result = bot.run(comment)
+
+
+    metadata['unique_branch_name'] = unique_branch_name
+    logging.info(f"New branch created for issue: #{number}.")
+    logging.info(metadata)
+
+    messageForNewIssues = f"""Thanks for opening a new issue! I'll now try to finish this implementation and open a PR for you to review.
+    
+{'You can monitor the [LangSmith trace here](https://smith.langchain.com/o/f7abb6a0-31f6-400c-8bc1-62ade4b67dc1/projects/p/c2ec9de2-71b4-4042-bea0-c706b38737e2).' if 'ML4Bio' in os.environ['LANGCHAIN_PROJECT'] else ''}
+
+I created a new branch for my work: `{unique_branch_name}`.
+
+Feel free to comment in this thread to give me additional instructions, or I'll tag you in a comment if I get stuck.
+If I think I'm successful I'll 'request your review' on the resulting PR. Just watch for emails while I work.
+"""
+    # TODO: put this in a background thread.
+    issue.create_comment(messageForNewIssues)
+    bot = github_agent.GH_Agent(branch_name=unique_branch_name)
+
+    # todo: filter out comment if comment 'performed_via_github_app'
+    metadata['issue_description'] = bot.github_api_wrapper.get_issue(number)
+    logging.info(metadata)
+
+    prompt = hub.pull("kastanday/new-github-issue").format(issue_description=metadata['issue_description'])
+
+    result = bot.launch_gh_agent(prompt, active_branch=unique_branch_name)
     issue.create_comment(result)
   except Exception as e:
     print(f"Error: {e}")
     issue.create_comment(f"{e}")
+
+
+def extract_key_info_from_issue_or_pr(issue_or_pr: Union[Issue, PullRequest]):
+  """Filter out useless info, format nicely. Especially filter out comment if comment 'performed_via_github_app'.
+  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
+
+  Maybe grab other issues if they're referenced.
+
+  Args:
+      issue_or_pr (Union[Issue, PullRequest]): Full object of the issue or PR.
+  Returns: 
+      full_description: str
+  """
+  pass
 
 
 def handle_comment_opened(payload):
@@ -150,6 +189,7 @@ def handle_comment_opened(payload):
       messageForIssues = "Thanks for opening a new or edited comment on an issue! We'll try to implement changes per your updated request, and will attempt to contribute to any existing PRs related to this or open a new PR if necessary."
       issue.create_comment(messageForIssues)
 
+      # todo: refactor with new branch name creation
       unique_branch_name = ensure_unique_branch_name(repo, "bot-branch")
       # bot = github_agent.GH_Agent()
       # issue_description = bot.github_api_wrapper.get_issue(number)

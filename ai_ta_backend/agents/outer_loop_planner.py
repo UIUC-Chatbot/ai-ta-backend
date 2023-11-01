@@ -10,9 +10,11 @@ On the command line
 '''
 
 import asyncio
+import inspect
 import os
 import threading
 import token
+import traceback
 from typing import List, Sequence, Tuple
 
 import langchain
@@ -50,10 +52,8 @@ from qdrant_client import QdrantClient
 # Our own imports 
 from ai_ta_backend.agents.agents import get_docstore_agent
 from ai_ta_backend.agents.tools import get_shell_tool, get_tools
-from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
-import traceback
-import inspect
+from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 
 load_dotenv(override=True, dotenv_path='.env')
 
@@ -93,7 +93,8 @@ class OuterLoopPlanner:
     #     embeddings=OpenAIEmbeddings())  # type: ignore
 
     # write a function to search against the UIUC database
-    get_vectorstore_retriever_tool(course_name='', token_limit=8_000)
+    # TODO: fetch proper vectorstore retriever
+    # get_vectorstore_retriever_tool(course_name='', token_limit=8_000)
 
     print("after __init__")
     # todo: try babyagi

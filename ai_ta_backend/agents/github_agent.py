@@ -1,10 +1,12 @@
 """
-Env for Kastan: openai_3
+Env for Kastan: openai_3 or flask10_py10
 """
 
 import inspect
+import logging
 import os
 import traceback
+import uuid
 from typing import List, Sequence, Tuple
 
 import langchain
@@ -21,7 +23,7 @@ from langchain.agents.openai_functions_multi_agent.base import \
 from langchain.agents.react.base import DocstoreExplorer
 from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.chains import RetrievalQA
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
 from langchain.chat_models.base import BaseChatModel
 from langchain.docstore.base import Docstore
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -52,6 +54,7 @@ from langchain_experimental.plan_and_execute.executors.agent_executor import \
     load_agent_executor
 from langchain_experimental.plan_and_execute.planners.chat_planner import \
     load_chat_planner
+from langsmith import Client
 from qdrant_client import QdrantClient
 from typing_extensions import runtime
 
@@ -61,11 +64,7 @@ from ai_ta_backend.agents.tools import (get_human_input, get_shell_tool,
 # load_dotenv(override=True, dotenv_path='.env')
 
 os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
-os.environ["LANGCHAIN_WANDB_TRACING"] = "true"  # TODO: https://docs.wandb.ai/guides/integrations/langchain
-os.environ["WANDB_PROJECT"] = "langchain-tracing"  # optionally set your wandb settings or configs
-# os.environ["LANGCHAIN_TRACING"] = "false"  # If you want to trace the execution of the program, set to "true"
-# os.environ["LANGCHAIN_WANDB_TRACING"] = "false"  # TODO: https://docs.wandb.ai/guides/integrations/langchain
-# os.environ["WANDB_PROJECT"] = ""  # optionally set your wandb settings or configs
+os.environ["LANGCHAIN_WANDB_TRACING"] = "false"  # TODO: https://docs.wandb.ai/guides/integrations/langchain
 
 langchain.debug = False  # True for more detailed logs
 VERBOSE = True
@@ -87,9 +86,16 @@ class GH_Agent():
     # LLMs
     SystemMessage(content=GH_Agent_SYSTEM_PROMPT)
 
-    llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-    human_llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-    summarizer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
+
+    if os.environ['OPENAI_API_TYPE'] != 'azure':
+      llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
+      human_llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
+      summarizer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
+    else: 
+      llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+      human_llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+      summarizer_llm = AzureChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+
     # MEMORY
     chat_history = MessagesPlaceholder(variable_name="chat_history")
     memory = ConversationSummaryBufferMemory(memory_key="chat_history", return_messages=True, llm=summarizer_llm, max_token_limit=2_000)
@@ -126,21 +132,23 @@ class GH_Agent():
 
   def bot_runner_with_retries(self, bot: AgentExecutor, run_instruction, total_retries=1):
     """Runs the given bot with attempted retries. First prototype.
-    """  
-
+    """
+    langsmith_client = Client()
     print("LIMITING TOTAL RETRIES TO 0, wasting too much money....")
     runtime_exceptions = []
     result = ''
     for num_retries in range(1,total_retries+1):
-      warning_to_bot = f"Keep in mind the last bot that tried to solve this problem faced a runtime error. Please learn from the mistakes of the last bot. The last bot's error was: {str(runtime_exceptions)}"
-      if len(runtime_exceptions) > 1:
-        warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
-      
-      try:
-          with tracing_v2_enabled(project_name="Github Agent Dev"):
+      with tracing_v2_enabled(project_name="ML4Bio", tags=['lil-jr-dev', str(run_id)]) as cb:
+        try:
+          #! MAIN RUN FUNCTION
+          if len(runtime_exceptions) >= 1:
+            warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
             result = bot.run(f"{run_instruction}\n{warning_to_bot}")
+          else:
+            result = bot.run(f"{run_instruction}")
           break # no error, so break retry loop
-      except Exception as e:
+
+        except Exception as e:
           print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
           print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # print function name in error.
           print(f"Traceback:")
@@ -148,72 +156,19 @@ class GH_Agent():
 
           runtime_exceptions.append(traceback.format_exc())
           print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
+        finally:
+          # Langsmith: can only get the URL after the bot starts..... 
+          private_url = cb.get_run_url()
+          logging.info(f'private_url: {private_url}')
+          # TODO: list runs, get runID, share run, comment on issue.
+          # sharable_url = langsmith_client.share_run(run_id=run_id)
+          # logging.info(f'⭐️ sharable_url: {sharable_url}')
+    
     if result == '':
-      result = f"{total_retries} agents ALL FAILED with runtime exceptions: runtime_exceptions: {runtime_exceptions}"
+      formatted_exceptions = '\n'.join([f'```\n{exc}\n```' for exc in runtime_exceptions])
+      result = f"{total_retries} agents ALL FAILED with runtime exceptions: \n{formatted_exceptions}"
     print(f"👇FINAL ANSWER 👇\n{result}")
     return result
-
-
-def generate_branch_name(issue: Issue):
-  """Generate a meaningful branch name that the Agent will use to commit it's new code against. Later, it can use this branch to open a pull request."""
-  system_template = "You are a helpful assistant that writes clear and concise GitHub branch names for new pull requests."
-  system_message_prompt = SystemMessagePromptTemplate.from_template(system_template)
-  example_issue = {"title": "Implement an Integral function in C", "body": "This request includes a placeholder for a C program that calculates an integral and a Makefile to compile it. Closes issue #6."}
-
-  prompt = HumanMessagePromptTemplate.from_template(
-      '''Given this issue, please return a single string that would be a suitable branch name on which to implement this feature request. Use common software development best practices to name the branch.
-    Follow this formatting exactly:
-    Issue: {example_issue}
-    Branch name: `add_integral_in_c`
-
-
-    Issue: {issue}
-    Branch name: `''')
-
-  # Combine into a Chat conversation
-  chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, prompt])
-  formatted_messages = chat_prompt.format_messages(issue=str(issue), example_issue=str(example_issue))
-
-  llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-  output = llm(formatted_messages)
-  print(f"SUGGESTED_BRANCH_NAME: <<{output.content}>>")
-  print(f"Cleaned branch name: <<{sanitize_branch_name(output.content)}>>")
-
-  return ensure_unique_branch_name(issue.repository, sanitize_branch_name(output.content))
-
-
-def sanitize_branch_name(text):
-  """
-  # Remove non-alphanumeric characters, use underscores. 
-  Example:
-    cleaned_text = strip_n_clean_text("Hello, World! This is an example.")
-    print(cleaned_text)  # Output: "Hello_World_This_is_an_example"
-
-  Returns:
-      str: cleaned_text
-  """
-  cleaned_words = [''.join(c for c in word if c.isalnum() or c == '_') for word in text.split()]
-  return '_'.join(cleaned_words)
-
-def ensure_unique_branch_name(repo, proposed_branch_name):
-  # Attempt to create the branch, appending _v{i} if the name already exists
-  i = 0
-  new_branch_name = proposed_branch_name
-  base_branch = repo.get_branch(repo.default_branch)
-  while True:
-    try:
-      repo.create_git_ref(ref=f"refs/heads/{new_branch_name}", sha=base_branch.commit.sha)
-      print(f"Branch '{new_branch_name}' created successfully!")
-      return new_branch_name
-    except GithubException as e:
-      if e.status == 422 and "Reference already exists" in e.data['message']:
-        i += 1
-        new_branch_name = f"{proposed_branch_name}_v{i}"
-        print(f"Branch name already exists. Trying with {new_branch_name}...")
-      else:
-        # Handle any other exceptions
-        print(f"Failed to create branch. Error: {e}")
-        raise Exception(f"Unable to create branch name from proposed_branch_name: {proposed_branch_name}")
 
 
 if __name__ == "__main__":
