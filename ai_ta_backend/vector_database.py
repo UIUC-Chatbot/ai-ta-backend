@@ -933,8 +933,7 @@ class Ingest():
     return distinct_dicts
 
   def vector_search(self, search_query, course_name):
-      #top_n = 80
-      top_n = 5
+      top_n = 80
       o = OpenAIEmbeddings() # type: ignore
       user_query_embedding = o.embed_query(search_query)
       myfilter = models.Filter(
@@ -1058,7 +1057,7 @@ class Ingest():
           'url': doc.metadata['url'],
           'base_url':doc.metadata['base_url']
         }
-
+        print("context_dict: ", context_dict)
         result_contexts.append(context_dict)
       
     print("length of final contexts: ", len(result_contexts))
@@ -1242,9 +1241,9 @@ Now please respond to my question: {user_question}"""
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
       valid_docs = []
       for d in found_docs:
-        if "pagenumber" not in d.payload["metadata"].keys(): # type: ignore
-          d.payload["metadata"]["pagenumber"] = d.payload["metadata"]["pagenumber_or_timestamp"] # type: ignore
-        doc_string = f"---\nDocument: {d.payload['metadata']['readable_filename']}{', page: ' + str(d.payload['metadata']['pagenumber']) if d.payload['metadata']['pagenumber'] else ''}\n{d.payload.get('page_content')}\n" # type: ignore
+        if "pagenumber" not in d.payload.keys(): # type: ignore
+          d.payload["pagenumber"] = d.payload["pagenumber_or_timestamp"] # type: ignore
+        doc_string = f"---\nDocument: {d.payload['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n" # type: ignore
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
 
         print(f"Page: {d.payload.get('page_content')[:100]}...") # type: ignore
