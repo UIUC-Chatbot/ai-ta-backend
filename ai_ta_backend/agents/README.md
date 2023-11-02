@@ -2,8 +2,17 @@
 
 To start, run this from the top level of git repo:
 ```bash
+conda create -n ai-ta-backend python=3.10 -y
+conda activate ai-ta-backend
 pip install -r requirements.txt
+
+# Run command
 flask --app ai_ta_backend.main:app --debug run --port 8000
+```
+
+```bash
+# run command w/ logging
+newrelic-admin run-program flask --app ai_ta_backend.main:app --debug run --port 8000
 ```
 
 **For debugging**, to run an individual file, use this syntax to maintain proper imports and .env vars: `python -m ai_ta_backend.agents.vectordb`
