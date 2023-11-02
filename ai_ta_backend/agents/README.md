@@ -6,6 +6,8 @@ conda create -n ai-ta-backend python=3.10 -y
 conda activate ai-ta-backend
 pip install -r requirements.txt
 
+install playwright # for the AI to brows the web
+
 # Run command
 flask --app ai_ta_backend.main:app --debug run --port 8000
 ```
