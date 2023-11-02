@@ -6,7 +6,13 @@
       "phases": {
         "myPhase": {
           "name": "myPhase",
-          "aptPkgs": ["ffmpeg"]
+          "aptPkgs": [
+            "ffmpeg"
+          ],
+          "cmds": [
+            "curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash",
+            "sudo NEW_RELIC_API_KEY=$NEW_RELIC_API_KEY NEW_RELIC_ACCOUNT_ID=4209060 /usr/local/bin/newrelic install -n logs-integration"
+          ]
         }
       }
     }

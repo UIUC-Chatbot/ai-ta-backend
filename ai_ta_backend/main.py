@@ -1,3 +1,9 @@
+import newrelic.agent
+
+newrelic.agent.initialize('newrelic.ini')
+
+
+import logging
 import os
 import re
 import time
@@ -20,6 +26,27 @@ CORS(app)
 
 # load API keys from globally-availabe .env file
 load_dotenv(dotenv_path='.env', override=True)
+
+# NewRelic logging
+
+metadata = {'startup time': time.time(), 'int val': 2}
+logging.info("Starting up server (separate metadata)", metadata)
+logging.info(f"Starting up server (fstring metadata): {metadata}")
+# logging.info("Starting up server (metadata=metadata):", metadata=metadata)
+
+# import structlog
+
+# # Configure structlog to output structured logs in JSON format 
+# structlog.configure( 
+# processors=[ structlog.stdlib.filter_by_level, structlog.processors.TimeStamper(fmt="iso"), structlog.processors.JSONRenderer() 
+# ], 
+# context_class=dict, logger_factory=structlog.stdlib.LoggerFactory(), 
+# )
+# # Get a logger 
+# logger = structlog.get_logger() 
+# # Now we can log structured messages! 
+# logger.info("STRUCTLOG User logged in", user_id="1234", ip="192.0.2.0")
+
 
 ray.init() 
 

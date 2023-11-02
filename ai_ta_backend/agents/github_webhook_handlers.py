@@ -19,6 +19,7 @@ from github.Repository import Repository
 from langchain import hub
 # from langchain.tools.github.utils import generate_branch_name
 from langchain.utilities.github import GitHubAPIWrapper
+from newrelic_telemetry_sdk import Log, LogClient, Span, SpanClient
 
 from ai_ta_backend.agents import github_agent
 from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
@@ -33,7 +34,11 @@ MESSAGE_HANDLE_ISSUE_OPENED = f"""Thanks for opening a new issue! I'll now try t
 Feel free to comment in this thread to give me additional instructions, or I'll tag you in a comment if I get stuck.
 If I think I'm successful I'll 'request your review' on the resulting PR. Just watch for emails while I work.
 """
+log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
 
+# app = newrelic.agent.application()
+
+# @newrelic.agent.background_task() 
 def handle_issue_opened(payload):
   """ This is the primary entry point to the app; Just open an issue!
 
@@ -54,11 +59,15 @@ def handle_issue_opened(payload):
   base_branch = repo.get_branch(payload["repository"]["default_branch"])
   number = payload.get('issue').get('number')
   issue: Issue = repo.get_issue(number=number)
-  langsmith_run_id = uuid.uuid4() # for Langsmith 
+  langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
 
-  metadata = {"issue": issue, 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
-  logging.info(f"New issue created: #{number}", metadata)
+  metadata = {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
+  # logging.info(f"New issue created: #{number}", metadata)
+  # logging.info(f"New issue created: #{number}. Metadata: {metadata}")
 
+  log = Log(message=f"New issue created: #{number}", metadata=metadata)
+  response = log_client.send(log)
+  response.raise_for_status()
 
   try:
 
@@ -89,10 +98,9 @@ def handle_issue_opened(payload):
         break
 
     # FIN: Conclusion & results comment
-    ray.get(post_comment.remote(issue_or_pr=issue, text=str(result), time_delay_s=0))
-    # issue.create_comment(result)
+    ray.get(post_comment.remote(issue_or_pr=issue, text=str(result['output']), time_delay_s=0))
   except Exception as e:
-    print(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())    
+    logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())    
     err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
     issue.create_comment(err_str)
 
@@ -102,6 +110,12 @@ def handle_pull_request_opened(payload):
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
   )
+
+
+  # TODO: 
+  #     File "/Users/kastanday/code/ncsa/ai-ta/ai-ta-backend/ai_ta_backend/agents/github_webhook_handlers.py", line 120, in handle_pull_request_opened
+  #     number = payload.get('issue').get('number') # AttributeError: 'NoneType' object has no attribute 'get'
+  # AttributeError: 'NoneType' object has no attribute 'get'
   gi = GithubIntegration(auth=auth)
   installation = gi.get_installations()[0]
   g = installation.get_github_for_installation()
@@ -109,7 +123,7 @@ def handle_pull_request_opened(payload):
   repo_name = payload["repository"]["full_name"]
   repo = g.get_repo(repo_name)
 
-  number = payload.get('issue').get('number') # AttributeError: 'NoneType' object has no attribute 'get'
+  number = payload.get('issue').get('number') # TODO: AttributeError: 'NoneType' object has no attribute 'get'
   comment = payload.get('comment')
   comment_author = comment['user']['login']
   issue: Issue = repo.get_issue(number=number)
@@ -131,7 +145,9 @@ def handle_pull_request_opened(payload):
     issue.create_comment(result)
   except Exception as e:
     print(f"Error: {e}")
-    issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{e}")
+    logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())
+    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
+    issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{err_str}")
 
 
 
@@ -196,13 +212,9 @@ def handle_comment_opened(payload):
       result = bot.run(comment)
       issue.create_comment(result)
   except Exception as e:
-    print(f"Error: {e}")
-    print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
-    print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # print function name in error.
-    print(f"Traceback:")
-    print(traceback.print_exc())
-
-    issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {e}")
+    logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())    
+    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
+    issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {err_str}")
 
 @ray.remote
 def post_comment(issue_or_pr: Union[Issue, PullRequest], text: str, time_delay_s: int):

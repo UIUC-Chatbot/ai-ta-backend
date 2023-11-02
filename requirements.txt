@@ -41,5 +41,8 @@ pygithub
 playwright
 google-search-results
 arxiv
+ray[default]
+newrelic
+newrelic-telemetry-sdk
 # No arize for now, huge build size with these additions.
 # arize[AutoEmbeddings, LLM_Evaluation]

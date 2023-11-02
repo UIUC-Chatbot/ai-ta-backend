@@ -139,3 +139,35 @@ def get_langsmith_trace_sharable_url(run_id_in_metadata, project_name='', time_d
     sharable_url = langsmith_client.read_run_shared_link(run_id=run.id)
   logging.info(f'⭐️ sharable_url: {sharable_url}')
   return sharable_url
+
+
+
+import os
+
+from newrelic_telemetry_sdk import Log, LogClient, Span, SpanClient
+
+# from dotenv import load_dotenv
+
+# load_dotenv(override=True)
+
+log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
+
+# log = Log(message="Message with metadata", **{'complex_metadata': 69.420, 'number_entry': 12, 'boolean_entry': False})
+
+# log = Log(message="Message with metadata",
+#           complex_metadata=69.420, 
+#           number_entry=12, 
+#           boolean_entry=False)
+# response = log_client.send(log)
+# response.raise_for_status()
+# print("Log sent successfully 2!")
+
+
+# Spans provide an easy way to time components of your code. The example code assumes you’ve set the following environment variables:
+# with Span(name="sleep") as span:
+#     time.sleep(0.5)
+
+# span_client = SpanClient(os.environ["NEW_RELIC_LICENSE_KEY"])
+# response = span_client.send(span)
+# response.raise_for_status()
+# print("Span sleep sent successfully!")
