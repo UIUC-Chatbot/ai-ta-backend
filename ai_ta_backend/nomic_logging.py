@@ -13,6 +13,9 @@ from nomic import AtlasProject, atlas
 def log_convo_to_nomic(course_name: str, conversation) -> str:
   nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
   NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+
+  print(f"in log_convo_to_nomic() for course: {course_name}")
+  print("conversation:", type(conversation))
   conversation = json.loads(conversation)
   """
   Logs conversation to Nomic.
@@ -22,7 +25,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     - if no, add new data point
   3. Keep current logic for map doesn't exist - update metadata
   """
-  print(f"in log_convo_to_nomic() for course: {course_name}")
+  
   print("user_email:", conversation['conversation']['user_email'])
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
