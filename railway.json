@@ -10,7 +10,7 @@
             "ffmpeg"
           ],
           "cmds": [
-            "pip install newrelic",
+            "pip3 install newrelic",
             "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program",
             "curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash",
             "sudo NEW_RELIC_API_KEY=$NEW_RELIC_API_KEY NEW_RELIC_ACCOUNT_ID=4209060 /usr/local/bin/newrelic install -n logs-integration"
