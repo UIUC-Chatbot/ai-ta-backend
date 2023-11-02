@@ -7,8 +7,10 @@ import traceback
 import uuid
 from typing import List, Tuple
 
+import langsmith
 import ray
 from langchain.schema import AgentAction
+from langsmith import Client
 from langsmith.schemas import Run
 
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
@@ -73,11 +75,6 @@ def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> Lis
     traceback.print_exc()
     return [steps[-1]]
 
-
-import langsmith
-from langsmith import Client
-
-
 def get_langsmit_run_from_metadata(metadata_value, metadata_key="run_id_in_metadata") -> langsmith.schemas.Run:
   """This will only return the FIRST match on single metadta field
 
@@ -89,7 +86,6 @@ def get_langsmit_run_from_metadata(metadata_value, metadata_key="run_id_in_metad
       Run: _description_
   """
   langsmith_client = Client()
-  print("Checking run (get_langsmit_run_from_metadata)", metadata_value)
   runs = langsmith_client.list_runs(project_name=os.environ['LANGCHAIN_PROJECT'])
 
   count = 0
@@ -141,7 +137,5 @@ def get_langsmith_trace_sharable_url(run_id_in_metadata, project_name='', time_d
     sharable_url = langsmith_client.share_run(run_id=run.id)
   else:
     sharable_url = langsmith_client.read_run_shared_link(run_id=run.id)
-
-
   logging.info(f'⭐️ sharable_url: {sharable_url}')
   return sharable_url
