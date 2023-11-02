@@ -1,6 +1,6 @@
 import newrelic.agent
 
-newrelic.agent.initialize('newrelic.ini')
+newrelic.agent.initialize()
 
 
 import logging
