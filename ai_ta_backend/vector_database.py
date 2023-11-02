@@ -1024,6 +1024,7 @@ class Ingest():
             context['s3_path'] = data[0]['s3_path']
             context['url'] = data[0]['url']
             context['base_url'] = data[0]['base_url']
+
             result_contexts.append(context)
             # add current index to retrieved_contexts_identifiers after each context is retrieved to avoid duplicates
             retrieved_contexts_identifiers[parent_doc_id].append(curr_chunk_index)
@@ -1045,9 +1046,20 @@ class Ingest():
         # add page number to retrieved_contexts_identifiers after all contexts belonging to that page number have been retrieved
         retrieved_contexts_identifiers[parent_doc_id].append(pagenumber)
       else:
-        # dont pad, just append the doc object
+        # dont pad, re-factor it to be like Supabase object
         print("no chunk index or page number, just appending the QDRANT context")
-        result_contexts.append(doc)
+        context_dict = {'text': doc.page_content,
+          'embedding': '',
+          'timestamp': doc.metadata['timestamp'],
+          'pagenumber': doc.metadata['pagenumber'],
+          'readable_filename': doc.metadata['readable_filename'],
+          'course_name': course_name,
+          's3_path': doc.metadata['s3_path'],
+          'url': doc.metadata['url'],
+          'base_url':doc.metadata['base_url']
+        }
+
+        result_contexts.append(context_dict)
       
     print("length of final contexts: ", len(result_contexts))
 
@@ -1073,25 +1085,18 @@ class Ingest():
       # call context padding function here
       final_docs = self.context_padding(found_docs, search_query, course_name)
 
-      print("FINAL DOCS: ", final_docs)
-
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
 
       valid_docs = []
       num_tokens = 0
-      
+        
       for doc in final_docs:
-        print("\n DOC: ", type(doc))
-        if isinstance(doc, dict):
-          # dictionary flow
-          doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
-        else:
-          # langchain flow
-          doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
-
+        
+        doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
+        
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
@@ -1099,21 +1104,6 @@ class Ingest():
         else:
           # filled our token size, time to return
           break
-
-      
-
-      # for doc in found_docs:
-        
-      #   doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
-      #   num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
-        
-      #   print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
-      #   if token_counter + num_tokens <= token_limit:
-      #     token_counter += num_tokens
-      #     valid_docs.append(doc)
-      #   else:
-      #     # filled our token size, time to return
-      #     break
 
       print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
@@ -1301,47 +1291,22 @@ Now please respond to my question: {user_question}"""
     Returns:
         List[Dict]: _description_
     """
-    contexts = []
+    
     for found_doc in found_docs:
-      
-      if isinstance(found_doc, dict): # supabase contexts
-        
-        contexts.append({
-            'text': found_doc['text'],
-            'readable_filename': found_doc['readable_filename'],
-            'course_name ': found_doc['course_name'],
-            's3_path': found_doc['s3_path'],
-            'url': found_doc['url'],
-            'base_url': found_doc['base_url'],
-        })
-      else: # QDRANT contexts
-        
-        contexts.append({
-          'text': found_doc.page_content,
-          'readable_filename': found_doc.metadata['readable_filename'],
-          'course_name ': found_doc.metadata['course_name'],
-          's3_path': found_doc.metadata['s3_path'],
-          'pagenumber': found_doc.metadata['pagenumber'], # this because vector db schema is older...
-          # OPTIONAL PARAMS...
-          'url': found_doc.metadata.get('url'), # wouldn't this error out?
-          'base_url': found_doc.metadata.get('base_url'),
-        })
+      if "pagenumber" not in found_doc.keys():
+        print("found no pagenumber")
+        found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
 
-    # for found_doc in found_docs:
-    #   if "pagenumber" not in found_doc.metadata.keys():
-    #     print("found no pagenumber")
-    #     found_doc.metadata['pagenumber'] = found_doc.metadata['pagenumber_or_timestamp']
-
-    # contexts = [{
-    #     'text': doc.page_content,
-    #     'readable_filename': doc.metadata['readable_filename'],
-    #     'course_name ': doc.metadata['course_name'],
-    #     's3_path': doc.metadata['s3_path'],
-    #     'pagenumber': doc.metadata['pagenumber'], # this because vector db schema is older...
-    #     # OPTIONAL PARAMS...
-    #     'url': doc.metadata.get('url'), # wouldn't this error out?
-    #     'base_url': doc.metadata.get('base_url'),
-    # } for doc in found_docs]
+    contexts = [{
+        'text': doc['text'],
+        'readable_filename': doc['readable_filename'],
+        'course_name ': doc['course_name'],
+        's3_path': doc['s3_path'],
+        'pagenumber': doc['pagenumber'], # this because vector db schema is older...
+        # OPTIONAL PARAMS...
+        'url': doc['url'], # wouldn't this error out?
+        'base_url': doc['base_url'],
+    } for doc in found_docs]
 
     return contexts
 
