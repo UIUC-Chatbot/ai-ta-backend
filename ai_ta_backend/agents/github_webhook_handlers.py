@@ -1,20 +1,100 @@
 ######## GITHUB WEBHOOK HANDLERS ########
-
 # from github import Github
+import inspect
 import logging
 import os
+import time
+import traceback
+import uuid
 from dis import Instruction
 from typing import Union
 
+import github
+import langchain
+import ray
 from github import Auth, GithubIntegration
 from github.Issue import Issue
 from github.PullRequest import PullRequest
 from github.Repository import Repository
 from langchain import hub
-from langchain.tools.github.utils import generate_branch_name
+# from langchain.tools.github.utils import generate_branch_name
+from langchain.utilities.github import GitHubAPIWrapper
 
 from ai_ta_backend.agents import github_agent
 from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
+from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
+
+langchain.debug = False  # True for more detailed logs
+
+MESSAGE_HANDLE_ISSUE_OPENED = f"""Thanks for opening a new issue! I'll now try to finish this implementation and open a PR for you to review.
+    
+{'You can monitor the [LangSmith trace here](https://smith.langchain.com/o/f7abb6a0-31f6-400c-8bc1-62ade4b67dc1/projects/p/c2ec9de2-71b4-4042-bea0-c706b38737e2).' if 'ML4Bio' in os.environ['LANGCHAIN_PROJECT'] else ''}
+
+Feel free to comment in this thread to give me additional instructions, or I'll tag you in a comment if I get stuck.
+If I think I'm successful I'll 'request your review' on the resulting PR. Just watch for emails while I work.
+"""
+
+def handle_issue_opened(payload):
+  """ This is the primary entry point to the app; Just open an issue!
+
+  Args:
+      payload (_type_): From github, see their webhook docs.
+  """
+  auth = Auth.AppAuth(
+      os.environ["GITHUB_APP_ID"],
+      os.environ["GITHUB_APP_PRIVATE_KEY"],
+  )
+  gi = GithubIntegration(auth=auth)
+  installation = gi.get_installations()[0]
+  g = installation.get_github_for_installation()
+
+  issue = payload['issue']
+  repo_name = payload["repository"]["full_name"]
+  repo: Repository = g.get_repo(repo_name)
+  base_branch = repo.get_branch(payload["repository"]["default_branch"])
+  number = payload.get('issue').get('number')
+  issue: Issue = repo.get_issue(number=number)
+  langsmith_run_id = uuid.uuid4() # for Langsmith 
+
+  metadata = {"issue": issue, 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
+  logging.info(f"New issue created: #{number}", metadata)
+
+
+  try:
+
+    # ! TODO: REENABLE: ROHAN's version of the bot.
+    # bot = WorkflowAgent()
+    # result = bot.run(comment)
+
+    result_futures = []
+
+    # 1. INTRO COMMENT
+    # issue.create_comment(messageForNewIssues)
+    result_futures.append(post_comment.remote(issue_or_pr=issue, text=MESSAGE_HANDLE_ISSUE_OPENED, time_delay_s=0))
+
+    # 2. SHARABLE URL (in background)
+    result_futures.append(post_sharable_url.remote(issue=issue, run_id_in_metadata=langsmith_run_id, time_delay_s=30))
+
+    # 3. RUN BOT
+    bot = github_agent.GH_Agent.remote()
+    prompt = hub.pull("kastanday/new-github-issue").format(issue_description=format_issue(issue))
+    result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, run_id_in_metadata=langsmith_run_id))
+
+    # COLLECT PARALLEL RESULTS
+    for i in range(0, len(result_futures)): 
+      ready, not_ready = ray.wait(result_futures)
+      result = ray.get(ready[0])
+      result_futures = not_ready
+      if not result_futures:
+        break
+
+    # FIN: Conclusion & results comment
+    ray.get(post_comment.remote(issue_or_pr=issue, text=str(result), time_delay_s=0))
+    # issue.create_comment(result)
+  except Exception as e:
+    print(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())    
+    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
+    issue.create_comment(err_str)
 
 
 def handle_pull_request_opened(payload):
@@ -53,88 +133,6 @@ def handle_pull_request_opened(payload):
     print(f"Error: {e}")
     issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{e}")
 
-
-def handle_issue_opened(payload):
-  auth = Auth.AppAuth(
-      os.environ["GITHUB_APP_ID"],
-      os.environ["GITHUB_APP_PRIVATE_KEY"],
-  )
-  gi = GithubIntegration(auth=auth)
-  installation = gi.get_installations()[0]
-  g = installation.get_github_for_installation()
-
-  issue = payload['issue']
-  repo_name = payload["repository"]["full_name"]
-  repo: Repository = g.get_repo(repo_name)
-  base_branch = repo.get_branch(payload["repository"]["default_branch"])
-  number = payload.get('issue').get('number')
-  issue: Issue = repo.get_issue(number=number)
-  
-  metadata = {"issue": issue, 'number': number, "repo_name": repo_name}
-  
-  # TODO BUG: comment_author = comment['user']['login'] TypeError: 'NoneType' object is not subscriptable
-  comment = payload.get('comment')
-  if comment:
-    # not always have a comment.
-    # logging.debug(f"Comment: {comment}")
-    # logging.debug(f"comment['user']: {comment['user']}")
-    comment_author = comment['user']['login']
-    comment_made_by_bot = True if comment.get('performed_via_github_app') else False
-  
-
-  logging.info(f"New issue created: #{number}")
-  try:
-    # ! TODO: REENABLE
-    # unique_branch_name = generate_branch_name(issue)
-    unique_branch_name = 'main'
-
-    # ROHAN's version of the bot. TODO reennable
-    # bot = WorkflowAgent()
-    # result = bot.run(comment)
-
-
-    metadata['unique_branch_name'] = unique_branch_name
-    logging.info(f"New branch created for issue: #{number}.")
-    logging.info(metadata)
-
-    messageForNewIssues = f"""Thanks for opening a new issue! I'll now try to finish this implementation and open a PR for you to review.
-    
-{'You can monitor the [LangSmith trace here](https://smith.langchain.com/o/f7abb6a0-31f6-400c-8bc1-62ade4b67dc1/projects/p/c2ec9de2-71b4-4042-bea0-c706b38737e2).' if 'ML4Bio' in os.environ['LANGCHAIN_PROJECT'] else ''}
-
-I created a new branch for my work: `{unique_branch_name}`.
-
-Feel free to comment in this thread to give me additional instructions, or I'll tag you in a comment if I get stuck.
-If I think I'm successful I'll 'request your review' on the resulting PR. Just watch for emails while I work.
-"""
-    # TODO: put this in a background thread.
-    issue.create_comment(messageForNewIssues)
-    bot = github_agent.GH_Agent(branch_name=unique_branch_name)
-
-    # todo: filter out comment if comment 'performed_via_github_app'
-    metadata['issue_description'] = bot.github_api_wrapper.get_issue(number)
-    logging.info(metadata)
-
-    prompt = hub.pull("kastanday/new-github-issue").format(issue_description=metadata['issue_description'])
-
-    result = bot.launch_gh_agent(prompt, active_branch=unique_branch_name)
-    issue.create_comment(result)
-  except Exception as e:
-    print(f"Error: {e}")
-    issue.create_comment(f"{e}")
-
-
-def extract_key_info_from_issue_or_pr(issue_or_pr: Union[Issue, PullRequest]):
-  """Filter out useless info, format nicely. Especially filter out comment if comment 'performed_via_github_app'.
-  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
-
-  Maybe grab other issues if they're referenced.
-
-  Args:
-      issue_or_pr (Union[Issue, PullRequest]): Full object of the issue or PR.
-  Returns: 
-      full_description: str
-  """
-  pass
 
 
 def handle_comment_opened(payload):
@@ -179,8 +177,7 @@ def handle_comment_opened(payload):
       issue.create_comment(messageForNewPRs)
 
       bot = github_agent.GH_Agent(branch_name=branch_name)
-      issue_description = bot.github_api_wrapper.get_issue(number)
-      instruction = f"Please complete this work-in-progress pull request (PR number {number}) by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {str(issue_description)}"
+      instruction = f"Please complete this work-in-progress pull request (PR number {number}) by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {format_issue(issue)}"
       result = bot.launch_gh_agent(instruction, active_branch=branch_name)
       issue.create_comment(result)
     else:
@@ -200,5 +197,49 @@ def handle_comment_opened(payload):
       issue.create_comment(result)
   except Exception as e:
     print(f"Error: {e}")
+    print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
+    print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # print function name in error.
+    print(f"Traceback:")
+    print(traceback.print_exc())
+
     issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {e}")
 
+@ray.remote
+def post_comment(issue_or_pr: Union[Issue, PullRequest], text: str, time_delay_s: int):
+  """A helper method to post a comment after a delay.
+
+  Args:
+      issue_or_pr (Union[Issue, PullRequest]): The full object.
+      text (str): Text to be posted as a comment by Lil-Jr-Dev[bot]
+      time_delay_s (int): Time delay before running
+  """
+  time.sleep(time_delay_s)
+  issue_or_pr.create_comment(str(text))
+
+def extract_key_info_from_issue_or_pr(issue_or_pr: Union[Issue, PullRequest]):
+  """Filter out useless info, format nicely. Especially filter out comment if comment 'performed_via_github_app'.
+  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
+
+  Maybe grab other issues if they're referenced.
+
+  Args:
+      issue_or_pr (Union[Issue, PullRequest]): Full object of the issue or PR.
+  Returns: 
+      full_description: str
+  """
+  
+  pass
+
+
+@ray.remote
+def post_sharable_url(issue, run_id_in_metadata, time_delay_s):
+  sharable_url = get_langsmith_trace_sharable_url(run_id_in_metadata, time_delay_s=time_delay_s)
+  text = f"👉 [Follow the bot's progress in real time on LangSmith]({sharable_url})."
+  ray.get(post_comment.remote(issue_or_pr=issue, text=text, time_delay_s=0))
+
+
+def format_issue(issue):
+  return f"""Title: {issue.title}.
+{f"Existing PR addressing issue: {issue._pull_request}" if str(issue._pull_request) != "NotSet" else ""}
+{f"Opened by user: {issue.user.login}" if type(issue.user) == github.NamedUser.NamedUser else ''}
+Body: {issue.body}"""

@@ -3,6 +3,7 @@ import re
 import time
 from typing import Any, List, Union
 
+import ray
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -19,7 +20,8 @@ CORS(app)
 
 # load API keys from globally-availabe .env file
 load_dotenv(dotenv_path='.env', override=True)
-# load_dotenv()
+
+ray.init() 
 
 # @app.route('/')
 # def index() -> JSON:

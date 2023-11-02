@@ -10,6 +10,7 @@ import uuid
 from typing import List, Sequence, Tuple
 
 import langchain
+import ray
 from dotenv import load_dotenv
 from github import GithubException
 from github.Issue import Issue
@@ -54,6 +55,7 @@ from langchain_experimental.plan_and_execute.executors.agent_executor import \
 from langchain_experimental.plan_and_execute.planners.chat_planner import \
     load_chat_planner
 from langsmith import Client
+from langsmith.schemas import Run
 from qdrant_client import QdrantClient
 from typing_extensions import runtime
 
@@ -64,11 +66,12 @@ from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 # load_dotenv(override=True, dotenv_path='.env')
 
 # os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
-langchain.debug = True  # True for more detailed logs
+langchain.debug = False  # True for more detailed logs
 VERBOSE = True
 
 GH_Agent_SYSTEM_PROMPT = """You are a senior developer who helps others finish the work faster and to a higher quality than anyone else on the team. People often tag you on pull requests (PRs), and you will finish the PR to the best of your ability and commit your changes. If you're blocked or stuck, feel free to leave a comment on the PR and the rest of the team will help you out. Remember to keep trying, and reflecting on how you solved previous problems will usually help you fix the current issue. Please work hard, stay organized, and follow best practices.\nYou have access to the following tools:"""
 
+@ray.remote
 class GH_Agent():
 
   def __init__(self, branch_name: str = ''):
@@ -115,11 +118,11 @@ class GH_Agent():
             # pretty sure this is wack: # "extra_prompt_messages": [MessagesPlaceholder(variable_name="GH_Agent_SYSTEM_PROMPT")] 
         })
 
-  def launch_gh_agent(self, instruction: str, active_branch='bot-branch'):
+  def launch_gh_agent(self, instruction: str, run_id_in_metadata, active_branch='bot-branch'):
     # self.github_api_wrapper.set_active_branch(active_branch)
-    return self.bot_runner_with_retries(self.pr_agent, instruction)
+    return self.bot_runner_with_retries(self.pr_agent, instruction, run_id_in_metadata=run_id_in_metadata)
 
-  def bot_runner_with_retries(self, bot: AgentExecutor, run_instruction, total_retries=1):
+  def bot_runner_with_retries(self, bot: AgentExecutor, run_instruction, run_id_in_metadata, total_retries=1):
     """Runs the given bot with attempted retries. First prototype.
     """
     langsmith_client = Client()
@@ -127,31 +130,22 @@ class GH_Agent():
     runtime_exceptions = []
     result = ''
     for num_retries in range(1,total_retries+1):
+      
       with tracing_v2_enabled(project_name="ML4Bio", tags=['lil-jr-dev']) as cb:
         try:
           #! MAIN RUN FUNCTION
           if len(runtime_exceptions) >= 1:
             warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
-            result = bot.run(f"{run_instruction}\n{warning_to_bot}")
+            result = bot.with_config({"run_name": "ReAct ML4Bio Agent"}).invoke({"input": f"{run_instruction}\n{warning_to_bot}"}, {"metadata": {"run_id_in_metadata": str(run_id_in_metadata)}})
           else:
-            result = bot.run(f"{run_instruction}")
+            result = bot.with_config({"run_name": "ReAct ML4Bio Agent"}).invoke({"input": run_instruction}, {"metadata": {"run_id_in_metadata": str(run_id_in_metadata)}})
           break # no error, so break retry loop
 
         except Exception as e:
           print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
-          print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # print function name in error.
-          print(f"Traceback:")
-          print(traceback.print_exc())
-
-          runtime_exceptions.append(traceback.format_exc())
           print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
-        finally:
-          # Langsmith: can only get the URL after the bot starts..... 
-          private_url = cb.get_run_url()
-          logging.info(f'private_url: {private_url}')
-          # TODO: list runs, get runID, share run, comment on issue.
-          # sharable_url = langsmith_client.share_run(run_id=run_id)
-          # logging.info(f'⭐️ sharable_url: {sharable_url}')
+          print(f"Error in {inspect.currentframe().f_code.co_name}: {e}\n Traceback: ", traceback.print_exc())
+          runtime_exceptions.append(traceback.format_exc())
     
     if result == '':
       formatted_exceptions = '\n'.join([f'```\n{exc}\n```' for exc in runtime_exceptions])
