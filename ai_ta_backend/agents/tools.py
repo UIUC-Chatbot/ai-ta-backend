@@ -17,17 +17,14 @@ from langchain.llms import OpenAI, OpenAIChat
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import MessagesPlaceholder
 from langchain.retrievers import ArxivRetriever
-from langchain.tools import (ArxivQueryRun, PubmedQueryRun, ShellTool,
-                             VectorStoreQATool, VectorStoreQAWithSourcesTool,
+from langchain.tools import (ArxivQueryRun, PubmedQueryRun, VectorStoreQATool, VectorStoreQAWithSourcesTool,
                              WikipediaQueryRun, WolframAlphaQueryRun)
 from langchain.tools.base import BaseTool
-from langchain.tools.playwright.utils import \
-    create_sync_playwright_browser  # A synchronous browser is available, though it isn't compatible with jupyter.
-from langchain.tools.playwright.utils import create_async_playwright_browser
-from langchain.tools.python.tool import PythonREPLTool
+from langchain.tools.playwright.utils import create_sync_playwright_browser, create_async_playwright_browser
 from langchain.utilities.github import GitHubAPIWrapper
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient
+from autogen.code_utils import execute_code
 
 from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
 from ai_ta_backend.vector_database import Ingest
@@ -53,8 +50,6 @@ def get_tools(llm, sync=True):
 
   # HUMAN
   human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)
-  # SHELL
-  shell = get_shell_tool()
   # GOOGLE SEARCH
   search = load_tools(["serpapi"])
 
@@ -77,23 +72,20 @@ def get_tools(llm, sync=True):
     get_vectorstore_retriever_tool(course_name='ml4bio-bioconductor', name='Bioconductor docs', description="Bioconductor is a project that contains hundreds of individual R packages. They're all high quality libraries that provide widespread access to a broad range of powerful statistical and graphical methods for the analysis of genomic data. Some of them also facilitate the inclusion of biological metadata in the analysis of genomic data, e.g. literature data from PubMed, annotation data from Entrez genes."),
   ]
 
-  tools: list[BaseTool] = human_tools + browser_tools + github_tools + search + docs_tools + [
-      shell,
-      arxiv_tool,
-      PythonREPLTool(),
-  ]
+  # Custom Code Execution Tool
+  def execute_code_tool(code: str, timeout: int = 60, filename: str = "execution_file.py", work_dir: str = "work_dir", use_docker: bool = True, lang: str = "python"):
+    return execute_code(code, timeout, filename, work_dir, use_docker, lang)
+
+  code_execution_tool = Tool.from_function(
+    func=execute_code_tool,
+    name="Code Execution",
+    description="Executes code in a docker container"
+  )
+
+  tools: list[BaseTool] = human_tools + browser_tools + github_tools + search + docs_tools + [code_execution_tool]
   return tools
 
-
-################# TOOLS ##################
-def get_shell_tool():
-  '''Adding the default HumanApprovalCallbackHandler to the tool will make it so that a user has to manually approve every input to the tool before the command is actually executed.
-  Human approval on certain tools only: https://python.langchain.com/docs/modules/agents/tools/human_approval#configuring-human-approval
-  '''
-  return ShellTool(callbacks=[HumanApprovalCallbackHandler(should_check=_should_check, approve=_approve)], handle_tool_error=True)
-
-
-############# HELPERS ################
+	############# HELPERS ################
 def _should_check(serialized_obj: dict) -> bool:
   # Only require approval on ShellTool.
   return serialized_obj.get("name") == "terminal"

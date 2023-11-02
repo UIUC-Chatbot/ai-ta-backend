@@ -72,8 +72,7 @@ def handle_issue_opened(payload):
   try:
 
     # ! TODO: REENABLE: ROHAN's version of the bot.
-    # bot = WorkflowAgent()
-    # result = bot.run(comment)
+    
 
     result_futures = []
 
@@ -85,9 +84,11 @@ def handle_issue_opened(payload):
     result_futures.append(post_sharable_url.remote(issue=issue, run_id_in_metadata=langsmith_run_id, time_delay_s=30))
 
     # 3. RUN BOT
-    bot = github_agent.GH_Agent.remote()
+    # bot = github_agent.GH_Agent.remote()
     prompt = hub.pull("kastanday/new-github-issue").format(issue_description=format_issue(issue))
-    result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, run_id_in_metadata=langsmith_run_id))
+    # result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, run_id_in_metadata=langsmith_run_id))
+    bot = WorkflowAgent(run_id_in_metadata=langsmith_run_id)
+    result = bot.run(prompt)
 
     # COLLECT PARALLEL RESULTS
     for i in range(0, len(result_futures)): 
