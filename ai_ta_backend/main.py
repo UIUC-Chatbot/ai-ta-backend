@@ -449,13 +449,14 @@ def nomic_map():
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic():
   
-  data = request.get_json()
-  course_name = data['course_name']
-  conversation = data['conversation']
+  # data = request.get_json()
+  # course_name = data['course_name']
+  # conversation = data['conversation']
 
-  #course_name: str = request.args.get('course_name', default='', type=str)
-  #conversation: str = request.args.get('conversation', default='', type=str)
-
+  course_name: str = request.args.get('course_name', default='', type=str)
+  conversation: str = request.args.get('conversation', default='', type=str)
+  print(conversation)
+  print("course_name: ", course_name)
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
     abort(
@@ -466,8 +467,8 @@ def logToNomic():
   print(f"In /onResponseCompletion for course: {course_name}")
 
   # background execution of tasks!! 
-  response = executor.submit(log_convo_to_nomic, course_name, data)
-  #response = executor.submit(log_convo_to_nomic, course_name, conversation)
+  #response = executor.submit(log_convo_to_nomic, course_name, data)
+  response = executor.submit(log_convo_to_nomic, course_name, conversation)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
