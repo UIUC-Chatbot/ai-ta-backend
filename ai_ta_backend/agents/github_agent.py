@@ -65,7 +65,7 @@ from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 
 # load_dotenv(override=True, dotenv_path='.env')
 
-# os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
+os.environ["LANGCHAIN_TRACING_V2"] = "true"  # If you want to trace the execution of the program, set to "true"
 langchain.debug = False  # True for more detailed logs
 VERBOSE = True
 

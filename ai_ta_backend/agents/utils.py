@@ -89,6 +89,14 @@ def get_langsmit_run_from_metadata(metadata_value, metadata_key="run_id_in_metad
       Run: _description_
   """
   langsmith_client = Client()
+  print("Checking run (get_langsmit_run_from_metadata)", metadata_value)
+  runs = langsmith_client.list_runs(project_name=os.environ['LANGCHAIN_PROJECT'])
+
+  count = 0
+  for r in runs: 
+    count += 1
+  print(f"Found num runs: {count}")
+
   for run in langsmith_client.list_runs(project_name=os.environ['LANGCHAIN_PROJECT']):
     if run.extra and run.extra.get('metadata') and run.extra.get('metadata').get(metadata_key) == metadata_value:
       # return the 'top-level' of the trace (keep getting runs' parents until at top)
@@ -117,13 +125,12 @@ def get_langsmith_trace_sharable_url(run_id_in_metadata, project_name='', time_d
     project_name = os.environ['LANGCHAIN_PROJECT']
   
   langsmith_client = Client()
-  
+
   # re-attempt to find the run, maybe it hasn't started yet.
   run = None
   for i in range(8):
-    run = get_langsmit_run_from_metadata(run_id_in_metadata)
+    run = get_langsmit_run_from_metadata(str(run_id_in_metadata), metadata_key="run_id_in_metadata")
     if run is not None: 
-      print("RUN IS POPULATED: ", run)
       break
     time.sleep(5)
 

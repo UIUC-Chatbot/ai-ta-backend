@@ -35,7 +35,7 @@ from ai_ta_backend.vector_database import Ingest
 load_dotenv(override=True, dotenv_path='../.env')
 
 os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
-langchain.debug = True
+langchain.debug = False
 VERBOSE = True
 
 def get_tools(llm, sync=True):
