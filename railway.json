@@ -4,6 +4,12 @@
     "builder": "NIXPACKS",
     "nixpacksPlan": {
       "phases": {
+        "install": {
+          "cmds": [
+            "python -m venv --copies /opt/venv && . /opt/venv/bin/activate",
+            "pip install -r requirements.txt"
+          ]
+        },
         "myPhase": {
           "name": "myPhase",
           "aptPkgs": [
@@ -14,6 +20,11 @@
             "NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program",
             "curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash",
             "sudo NEW_RELIC_API_KEY=$NEW_RELIC_API_KEY NEW_RELIC_ACCOUNT_ID=4209060 /usr/local/bin/newrelic install -n logs-integration"
+          ]
+        },
+        "start": {
+          "cmds": [
+            "./run.sh"
           ]
         }
       }
