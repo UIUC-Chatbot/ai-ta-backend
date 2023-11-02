@@ -16,7 +16,7 @@
         },
         "setup": {
           "aptPkgs": [
-            "libcap"
+            "libcap-dev"
           ],
           "nixPkgs": [
             "python310",
