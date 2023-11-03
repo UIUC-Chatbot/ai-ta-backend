@@ -21,7 +21,7 @@ VERBOSE = True
 
 def get_vectorstore_retriever_tool(course_name: str, name: str, description: str, openai_model_name='gpt-3.5-turbo-16k', temperature=0.1, top_k=8) -> VectorStoreQATool:
   """
-    course name str: 
+    course name str: Name of course on uiuc-chat as appears in URL-bar; yes it's case sensitive.
 
     Usage: 
     ```
@@ -32,8 +32,6 @@ def get_vectorstore_retriever_tool(course_name: str, name: str, description: str
     
     langchain_docs_tool._run(search_query)
   """
-  print(f"in get_vectorstore_retriever_tool() for course {course_name}")
-
   try:
     qdrant_client = QdrantClient(
         url=os.getenv('QDRANT_URL'),

@@ -33,6 +33,10 @@ def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> Lis
 
     token_limit = 4_000
     total_tokens = sum(count_tokens(action) for action, _ in steps)
+    
+    # for logging
+    original_total_tokens = sum(count_tokens(action) for action, _ in steps)
+    original_steps = steps.copy()
 
     # Remove the logs if over the limit
     if total_tokens > token_limit:
@@ -63,10 +67,15 @@ def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> Lis
       steps.pop(0)
       total_tokens = sum(count_tokens(action) for action, _ in steps)
 
-    # print("In fancier_trim_latest_3_actions!! 👇👇👇👇👇👇👇👇👇👇👇👇👇👇 ")
-    # print(steps)
-    # print("Tokens used: ", total_tokens)
-    # print("👆👆👆👆👆👆👆👆👆👆👆👆👆")
+    log = Log(message=f"trim_intermediate_steps", 
+      original_steps=str(original_steps),
+      final_steps=str(steps),
+      original_tokens=original_total_tokens,
+      final_tokens=total_tokens,
+    )
+    response = log_client.send(log)
+    response.raise_for_status()
+
     return steps
   except Exception as e:
     print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
