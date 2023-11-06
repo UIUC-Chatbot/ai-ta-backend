@@ -38,21 +38,9 @@ def handle_event(payload, event_type):
         payload (_type_): From github, see their webhook docs.
         event_type (str): The type of the event. Can be 'issue', 'pull_request', or 'comment'.
     """
-    auth = Auth.AppAuth(
-        os.environ["GITHUB_APP_ID"],
-        os.environ["GITHUB_APP_PRIVATE_KEY"],
-    )
-    gi = GithubIntegration(auth=auth)
-    installation = gi.get_installations()[0]
-    g = installation.get_github_for_installation()
-
-    issue = payload['issue']
+    # Construct Docker image name
     repo_name = payload["repository"]["full_name"]
-    repo: Repository = g.get_repo(repo_name)
     number = payload.get('issue').get('number')
-    issue: Issue = repo.get_issue(number=number)
-
-    # Create Docker image name
     image_name = f"{repo_name}_{number}"
 
     # Check if the image name exists in the Supabase table, if not, insert it
