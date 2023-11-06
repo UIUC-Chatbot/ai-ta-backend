@@ -1006,11 +1006,6 @@ class Ingest():
 
       data = response.data  # at this point, we have the origin parent document from Supabase
       if len(data) > 0:
-        print("-------------------")
-        print("len of data: ", len(data))
-        if len(data) == 0:
-          print("data: ", data)
-        print("-------------------")
         filename = data[0]['readable_filename']
         contexts = data[0]['contexts']
         print("no of contexts within the og doc: ", len(contexts))
