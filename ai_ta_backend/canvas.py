@@ -130,14 +130,19 @@ class CanvasAPI():
         Downloads all files in a Canvas course into given folder.
         """
         try:
-            files_request = requests.get(api_path + "/files", headers=self.headers)
-            files = files_request.json()
+            # files_request = requests.get(api_path + "/files", headers=self.headers)
+            # files = files_request.json()
+
+            course = self.canvas_client.get_course(api_path.split('/')[-1])
+            files = course.get_files()
 
             for file in files:
-                file_name = file['filename']
+                # file_name = file['filename']
+                file_name = file.filename
                 print("Downloading file: ", file_name)
 
-                file_download = requests.get(file['url'], headers=self.headers)
+                # file_download = requests.get(file['url'], headers=self.headers)
+                file_download = requests.get(file.url, headers=self.headers)
                 with open(os.path.join(dest_folder, file_name), 'wb') as f:
                     f.write(file_download.content)
 
@@ -183,9 +188,9 @@ class CanvasAPI():
         except Exception as e:
             return "Failed! Error: " + str(e)
         
-    def download_modules(self, dest_folder: str, api_path: str) -> list:
+    def download_modules(self, dest_folder: str, api_path: str) -> str:
         """
-        Returns a list of all external URLs uploaded in modules.
+        Downloads all content uploaded in modules.
         Modules may contain: assignments, quizzes, files, pages, discussions, external tools and external urls.
         Rest of the things are covered in other functions.
         """
@@ -221,7 +226,7 @@ class CanvasAPI():
             assignments = assignment_request.json()
 
             for assignment in assignments:
-                if assignment['description'] is not None:
+                if assignment['description'] is not None and assignment['description'] != "":
                     assignment_name = "assignment_" + str(assignment['id']) + ".html"
                     assignment_description = assignment['description']
 
@@ -246,7 +251,7 @@ class CanvasAPI():
 
                 with open(dest_folder + "/" + discussion_name, 'w') as html_file:
                     html_file.write(discussion_content)
-
+            return "Success"
         except Exception as e:
             return "Failed! Error: " + str(e)
         
