@@ -1,13 +1,7 @@
 import docker
 import json
 import os
-import os
 
-from github import Auth, GithubIntegration
-from github.Issue import Issue
-from github.PullRequest import PullRequest
-from github.Repository import Repository
-from langchain import hub
 from supabase.client import create_client
 
 # Initialize Supabase client
