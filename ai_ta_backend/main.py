@@ -20,6 +20,7 @@ from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
+from ai_ta_backend.agents import webhooks
 
 app = Flask(__name__)
 CORS(app)
@@ -346,14 +347,8 @@ def webhook():
   # print(f"{payload}\n","-"*50, "\n")
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
-
-  # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
-  if payload.get('action') == 'opened' and payload.get('pull_request'):
-    webhook.handle_pull_request_opened(payload)
-  elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
-    webhook.handle_issue_opened(payload)
-  elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
-    webhook.handle_comment_opened(payload)
+  
+  webhooks.handle_event(payload)
 
   return '', 200
 

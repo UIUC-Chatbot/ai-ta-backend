@@ -25,12 +25,11 @@ def check_and_insert_image_name(image_name):
     if not result["data"]:
         supabase.table("docker_images").insert({"image_name": image_name}).execute()
 
-def handle_event(payload, event_type):
+def handle_event(payload):
     """ This is the primary entry point to the app; Just open an issue!
 
     Args:
         payload (_type_): From github, see their webhook docs.
-        event_type (str): The type of the event. Can be 'issue', 'pull_request', or 'comment'.
     """
     # Construct Docker image name
     repo_name = payload["repository"]["full_name"]
@@ -43,12 +42,3 @@ def handle_event(payload, event_type):
     # Send shell command to Docker image
     command = f"python github_webhook_handlers.py --payload '{json.dumps(payload)}'"
     docker_client.containers.run(image_name, command)
-
-def handle_issue_opened(payload):
-    handle_event(payload, 'issue')
-
-def handle_pull_request_opened(payload):
-    handle_event(payload, 'pull_request')
-
-def handle_comment_opened(payload):
-    handle_event(payload, 'comment')
