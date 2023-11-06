@@ -59,8 +59,7 @@ from langsmith.schemas import Run
 from qdrant_client import QdrantClient
 from typing_extensions import runtime
 
-from ai_ta_backend.agents.tools import (get_human_input,
-                                        get_tools)
+from ai_ta_backend.agents.tools import get_human_input, get_tools
 from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 
 # load_dotenv(override=True, dotenv_path='.env')
@@ -95,9 +94,10 @@ class GH_Agent():
     memory = ConversationSummaryBufferMemory(memory_key="chat_history", return_messages=True, llm=summarizer_llm, max_token_limit=2_000)
 
     # TOOLS
-    toolkit: GitHubToolkit = GitHubToolkit.from_github_api_wrapper(self.github_api_wrapper)
-    github_tools: list[BaseTool] = toolkit.get_tools()
-    human_tools: List[BaseTool] = load_tools(["human"], llm=human_llm, input_func=get_human_input)
+    # toolkit: GitHubToolkit = GitHubToolkit.from_github_api_wrapper(self.github_api_wrapper)
+    # github_tools: list[BaseTool] = toolkit.get_tools()
+    # human_tools: List[BaseTool] = load_tools(["human"], llm=human_llm, input_func=get_human_input)
+    get_tools()
 
     return initialize_agent(
         tools=github_tools + human_tools,
