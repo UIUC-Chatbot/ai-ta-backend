@@ -85,10 +85,8 @@ class Ingest():
     #   openai_api_key=os.getenv('AZURE_OPENAI_KEY'), #type:ignore
     #   openai_api_version=os.getenv('AZURE_OPENAI_API_VERSION'), #type:ignore
     #   ) 
-    self.llm = OpenAI(temperature=0, openai_api_base='https://api.kastan.ai/v1')
-    # self.llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo')
-    return None
-
+    # self.llm = OpenAI(temperature=0, openai_api_base='https://api.kastan.ai/v1')
+    self.llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo')
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
     def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
