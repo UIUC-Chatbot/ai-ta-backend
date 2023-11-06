@@ -1,6 +1,8 @@
 ######## GITHUB WEBHOOK HANDLERS ########
 # from github import Github
+import argparse
 import inspect
+import json
 import logging
 import os
 import time
@@ -12,20 +14,24 @@ from typing import Union
 import github
 import langchain
 import ray
+from dotenv import load_dotenv
 from github import Auth, GithubIntegration
 from github.Issue import Issue
+from github.PaginatedList import PaginatedList
 from github.PullRequest import PullRequest
 from github.Repository import Repository
+from github.TimelineEvent import TimelineEvent
 from langchain import hub
 # from langchain.tools.github.utils import generate_branch_name
 from langchain.utilities.github import GitHubAPIWrapper
 from newrelic_telemetry_sdk import Log, LogClient, Span, SpanClient
-from github.PaginatedList import PaginatedList
-from github.TimelineEvent import TimelineEvent
 
 from ai_ta_backend.agents import github_agent
 from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
 from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
+
+# load API keys from globally-availabe .env file
+load_dotenv(dotenv_path='/Users/kastanday/code/ncsa/ai-ta/ai-ta-backend/.env', override=True)
 
 langchain.debug = False  # True for more detailed logs
 
@@ -312,3 +318,25 @@ def get_linked_issue_from_pr(pr: PullRequest) -> Issue | None:
       if str(e.event) == 'cross-referenced':
         if e.source and e.source.issue:
             return e.source.issue
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description='Run the Lil-Jr-Dev agent over a single new input.')
+
+  """
+  Example usage: 
+  $ python github_webhook_handlers.py --payload "{issue_number: 4, ...}"
+  """
+  parser.add_argument('-p', '--payload', type=str, help='json.stringify(payload) directly from the Github wehbook.')
+  args = parser.parse_args()
+
+  payload = json.loads(args.payload)
+  if not payload:
+    raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
+
+  # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
+  if payload.get('action') == 'opened' and payload.get('pull_request'):
+    handle_pull_request_opened(payload)
+  elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
+    handle_issue_opened(payload)
+  elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
+    handle_comment_opened(payload)

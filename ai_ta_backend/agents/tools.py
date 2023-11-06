@@ -3,31 +3,21 @@ import os
 from typing import List
 
 import langchain
+from autogen.code_utils import execute_code
 from dotenv import load_dotenv
-from langchain import SerpAPIWrapper
-from langchain.agents import AgentType, Tool, initialize_agent, load_tools
-from langchain.agents.agent_toolkits import PlayWrightBrowserToolkit
+from langchain.agents import load_tools
+from langchain.agents.agent_toolkits import (FileManagementToolkit,
+                                             PlayWrightBrowserToolkit)
 from langchain.agents.agent_toolkits.github.toolkit import GitHubToolkit
-from langchain.agents.react.base import DocstoreExplorer
-from langchain.callbacks import HumanApprovalCallbackHandler
-from langchain.chains import ConversationalRetrievalChain
-from langchain.chat_models import ChatOpenAI
-from langchain.docstore.base import Docstore
-from langchain.llms import OpenAI, OpenAIChat
-from langchain.memory import ConversationBufferMemory
-from langchain.prompts import MessagesPlaceholder
-from langchain.retrievers import ArxivRetriever
-from langchain.tools import (ArxivQueryRun, PubmedQueryRun, VectorStoreQATool, VectorStoreQAWithSourcesTool,
+from langchain.tools import (ArxivQueryRun, PubmedQueryRun, ShellTool,
+                             VectorStoreQATool, VectorStoreQAWithSourcesTool,
                              WikipediaQueryRun, WolframAlphaQueryRun)
 from langchain.tools.base import BaseTool
-from langchain.tools.playwright.utils import create_sync_playwright_browser, create_async_playwright_browser
+from langchain.tools.playwright.utils import (create_async_playwright_browser,
+                                              create_sync_playwright_browser)
 from langchain.utilities.github import GitHubAPIWrapper
-from langchain.vectorstores import Qdrant
-from qdrant_client import QdrantClient
-from autogen.code_utils import execute_code
 
 from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
-from ai_ta_backend.vector_database import Ingest
 
 load_dotenv(override=True, dotenv_path='../.env')
 
@@ -35,7 +25,7 @@ os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution o
 langchain.debug = False
 VERBOSE = True
 
-def get_tools(llm, sync=True):
+def get_tools(sync=True):
   '''Main function to assemble tools for ML for Bio project.'''
   # WEB BROWSER
   browser_toolkit = None
@@ -49,19 +39,25 @@ def get_tools(llm, sync=True):
   browser_tools = browser_toolkit.get_tools()
 
   # HUMAN
+  if os.environ['OPENAI_API_TYPE'] == 'azure':
+    llm = AzureChatOpenAI(temperature=0.1, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+  else: 
+    llm = ChatOpenAI(temperature=0.1, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
   human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)
   # GOOGLE SEARCH
   search = load_tools(["serpapi"])
+  
+  # SHELL & FILES
+  shell = ShellTool()
+  file_management = FileManagementToolkit(
+    # If you don't provide a root_dir, operations will default to the current working directory
+    # root_dir=str("/app")
+  ).get_tools()
 
   # GITHUB
   github = GitHubAPIWrapper()  # type: ignore
   toolkit = GitHubToolkit.from_github_api_wrapper(github)
   github_tools: list[BaseTool] = toolkit.get_tools()
-
-  # ARXIV SEARCH
-  arxiv_tool = ArxivQueryRun()
-
-  #TODO:WikipediaQueryRun, WolframAlphaQueryRun, PubmedQueryRun, ArxivQueryRun
 
   # TODO: more vector stores per Bio package: trimmomatic, gffread, samtools, salmon, DESeq2 and ggpubr
   docs_tools: List[VectorStoreQATool] = [
@@ -72,37 +68,41 @@ def get_tools(llm, sync=True):
     get_vectorstore_retriever_tool(course_name='ml4bio-bioconductor', name='Bioconductor docs', description="Bioconductor is a project that contains hundreds of individual R packages. They're all high quality libraries that provide widespread access to a broad range of powerful statistical and graphical methods for the analysis of genomic data. Some of them also facilitate the inclusion of biological metadata in the analysis of genomic data, e.g. literature data from PubMed, annotation data from Entrez genes."),
   ]
 
+  # ARXIV SEARCH
+  # Probably unnecessary: WikipediaQueryRun, WolframAlphaQueryRun, PubmedQueryRun, ArxivQueryRun
+  # arxiv_tool = ArxivQueryRun()
+
   # Custom Code Execution Tool
-  def execute_code_tool(code: str, timeout: int = 60, filename: str = "execution_file.py", work_dir: str = "work_dir", use_docker: bool = True, lang: str = "python"):
-    return execute_code(code, timeout, filename, work_dir, use_docker, lang)
+  # def execute_code_tool(code: str, timeout: int = 60, filename: str = "execution_file.py", work_dir: str = "work_dir", use_docker: bool = True, lang: str = "python"):
+  #   return execute_code(code, timeout, filename, work_dir, use_docker, lang)
 
-  code_execution_tool = Tool.from_function(
-    func=execute_code_tool,
-    name="Code Execution",
-    description="Executes code in a docker container"
-  )
+  # code_execution_tool = Tool.from_function(
+  #   func=execute_code_tool,
+  #   name="Code Execution",
+  #   description="Executes code in a docker container"
+  # )
 
-  tools: list[BaseTool] = human_tools + browser_tools + github_tools + search + docs_tools + [code_execution_tool]
+  tools: list[BaseTool] = human_tools + browser_tools + github_tools + search + docs_tools + file_management + [shell]
   return tools
 
-	############# HELPERS ################
-def _should_check(serialized_obj: dict) -> bool:
-  # Only require approval on ShellTool.
-  return serialized_obj.get("name") == "terminal"
+############# HELPERS ################
+# def _should_check(serialized_obj: dict) -> bool:
+#   # Only require approval on ShellTool.
+#   return serialized_obj.get("name") == "terminal"
 
 
-def _approve(_input: str) -> bool:
-  if _input == "echo 'Hello World'":
-    return True
-  msg = ("Do you approve of the following input? "
-         "Anything except 'Y'/'Yes' (case-insensitive) will be treated as a no.")
-  msg += "\n\n" + _input + "\n"
-  resp = input(msg)
-  return resp.lower() in ("yes", "y")
+# def _approve(_input: str) -> bool:
+#   if _input == "echo 'Hello World'":
+#     return True
+#   msg = ("Do you approve of the following input? "
+#          "Anything except 'Y'/'Yes' (case-insensitive) will be treated as a no.")
+#   msg += "\n\n" + _input + "\n"
+#   resp = input(msg)
+#   return resp.lower() in ("yes", "y")
 
 
 def get_human_input() -> str:
-  """Placeholder for Slack input from user."""
+  """Placeholder for Slack/GH-Comment input from user."""
   print("Insert your text. Enter 'q' or press Ctrl-D (or Ctrl-Z on Windows) to end.")
   contents = []
   while True:

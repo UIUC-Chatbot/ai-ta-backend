@@ -38,7 +38,7 @@ class WorkflowAgent:
 
   def make_agent(self): 
     # TOOLS
-    tools = get_tools(self.llm, sync=True)
+    tools = get_tools()
 
     # PLANNER
     planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
