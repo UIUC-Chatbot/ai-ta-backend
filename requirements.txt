@@ -8,6 +8,7 @@ itsdangerous
 Jinja2
 MarkupSafe
 Werkzeug
+playwright==1.39.0
 python-dotenv
 flask-cors
 qdrant-client
