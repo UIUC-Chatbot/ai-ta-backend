@@ -5,14 +5,14 @@
     "nixpacksVersion": "1.15.0",
     "nixpacksPlan": {
       "phases": {
-        "myPhase": {
-          "name": "ffmpeg (removed: libcrypt1, started to break)",
-          "aptPkgs": [
-            "ffmpeg",
-            "libcrypt1"
-          ],
+        "install": {
           "cmds": [
-            "pip install --upgrade pip"
+            "python -m venv --copies /opt/venv && . /opt/venv/bin/activate",
+            "pip install --upgrade pip",
+            "pip install -r requirements.txt"
+          ],
+          "aptPkgs": [
+            "ffmpeg"
           ]
         },
         "setup": {
