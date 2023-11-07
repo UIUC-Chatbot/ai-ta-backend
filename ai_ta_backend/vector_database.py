@@ -482,12 +482,6 @@ class Ingest():
     print("IN PDF: s3_path is this:", s3_path)
     print("IN PDF kwargs is this:", kwargs)
 
-    # try: 
-      # print("IN PDF: kwargs['kwargs'] is this:", kwargs['kwargs'])
-      # print("DOES THE IF PASS??", kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else page['readable_filename'])
-    # except Exception as e:
-      # print("failed/.....d.s.d.")
-
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
@@ -519,18 +513,20 @@ class Ingest():
           text = page.get_text().encode("utf8").decode("utf8", errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
-        if kwargs['kwargs'] == {}:
-          url = ''
-          base_url = ''
-        else:
-          if 'url' in kwargs['kwargs'].keys():
-            url = kwargs['kwargs']['url']
-          else:
+        # Webscrape kwargs
+        if 'kwargs' in kwargs.keys():
+          if  kwargs['kwargs'] == {}:
             url = ''
-          if 'base_url' in kwargs['kwargs'].keys():
-            base_url = kwargs['kwargs']['base_url']
-          else:
             base_url = ''
+          else:
+            if 'url' in kwargs['kwargs'].keys():
+              url = kwargs['kwargs']['url']
+            else:
+              url = ''
+            if 'base_url' in kwargs['kwargs'].keys():
+              base_url = kwargs['kwargs']['base_url']
+            else:
+              base_url = ''
           
         
         metadatas: List[Dict[str, Any]] = [
