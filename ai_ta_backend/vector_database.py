@@ -130,12 +130,12 @@ class Ingest():
         if file_extension in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
           ingest_method = file_ingest_methods[file_extension]
-          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
+          _ingest_single(ingest_method, s3_path, course_name, **kwargs)
         elif mime_category in mimetype_ingest_methods:
           # fallback to MimeType
           print("mime category", mime_category)
           ingest_method = mimetype_ingest_methods[mime_category]
-          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
+          _ingest_single(ingest_method, s3_path, course_name, **kwargs)
         else:
           # No supported ingest... Fallback to attempting utf-8 decoding, otherwise fail. 
           try: 
