@@ -10,10 +10,10 @@ from flask_cors import CORS
 from flask_executor import Executor
 from sqlalchemy import JSON
 
+from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
-from ai_ta_backend.canvas import CanvasAPI
 
 app = Flask(__name__)
 CORS(app)
@@ -209,6 +209,7 @@ def ingest() -> Response:
       str: Success or Failure message. Failure message if any failures. TODO: email on failure.
   """
   s3_paths: List[str] | str = request.args.get('s3_paths', default='')
+  readable_filename: List[str] | str = request.args.get('readable_filename', default='')
   course_name: List[str] | str = request.args.get('course_name', default='')
   print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}")
 
@@ -221,7 +222,10 @@ def ingest() -> Response:
     )
 
   ingester = Ingest()
-  success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+  if readable_filename == '':
+    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+  else:
+    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name, kwargs={'readable_filename': readable_filename})
   print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
   del ingester
 
