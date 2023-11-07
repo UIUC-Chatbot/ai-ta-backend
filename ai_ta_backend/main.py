@@ -225,7 +225,7 @@ def ingest() -> Response:
   if readable_filename == '':
     success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
   else:
-    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name, kwargs={'readable_filename': readable_filename})
+    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name, readable_filename=readable_filename)
   print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
   del ingester
 
