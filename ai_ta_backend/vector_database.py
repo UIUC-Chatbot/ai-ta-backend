@@ -34,6 +34,7 @@ from PIL import Image
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
+from sympy import EX
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
@@ -479,8 +480,15 @@ class Ingest():
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
-    print("IN PDF: s3_path: ", s3_path)
-    print("IN PDF: kwargs: ", kwargs)
+    print("IN PDF: s3_path is this:", s3_path)
+    print("IN PDF kwargs is this:", kwargs)
+
+    print("DOES THE IF PASS??", kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else page['readable_filename'])
+    try: 
+      print("IN PDF: kwargs['kwargs'] is this:", kwargs['kwargs'])
+    except Exception as e:
+      print("failed/.....d.s.d.")
+
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
