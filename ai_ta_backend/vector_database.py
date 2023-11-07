@@ -434,7 +434,7 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"Image ingest error (png/jpg) ERROR {e}")
+      print(f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
   
   def _ingest_single_csv(self, s3_path: str, course_name: str, **kwargs) -> str:
