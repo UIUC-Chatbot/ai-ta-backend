@@ -70,13 +70,11 @@ def handle_event(payload):
     repo_name = payload["repository"]["full_name"]
     number = payload.get('issue').get('number')
     image_name = f"{repo_name}_{number}"
+    volume_name = f"vol_{image_name}"
 
     # Check if the image name exists in the Supabase table, if not, insert it and build a Docker image
     check_and_insert_image_name(image_name)
 
     # Send shell command to Docker image
     command = f"python github_webhook_handlers.py --payload '{json.dumps(payload)}'"
-
-    # Check if a volume with a specific name exists and run a Docker container
-    volume_name = "agents_volume"
     run_docker_container(image_name, command, volume_name)
