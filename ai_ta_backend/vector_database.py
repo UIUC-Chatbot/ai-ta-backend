@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import boto3
 import fitz
 import openai
+import pytesseract
 import supabase
 from bs4 import BeautifulSoup
 from git.repo import Repo
@@ -29,6 +30,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+from PIL import Image
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
@@ -408,7 +410,7 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"Excel ERROR {e}")
+      print(f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
   
   def _ingest_single_image(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -417,8 +419,16 @@ class Ingest():
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
 
-        loader = UnstructuredImageLoader(tmpfile.name, unstructured_kwargs={'strategy': "auto"})
+        """
+        # Unstructured image loader makes the install too large (700MB --> 6GB. 3min -> 12 min build times). AND nobody uses it.
+        # The "hi_res" strategy will identify the layout of the document using detectron2. "ocr_only" uses pdfminer.six. https://unstructured-io.github.io/unstructured/core/partition.html#partition-image
+        loader = UnstructuredImageLoader(tmpfile.name, unstructured_kwargs={'strategy': "ocr_only"})
         documents = loader.load()
+        """
+
+        res_str = pytesseract.image_to_string(Image.open(tmpfile.name))
+        print("IMAGE PARSING RESULT:", res_str)
+        documents = [Document(page_content=res_str)]
 
         texts = [doc.page_content for doc in documents]
         metadatas: List[Dict[str, Any]] = [{
@@ -596,9 +606,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print("ERROR IN PDF INGEST")
-      print(e)
-      return f"Error {e}"
+      print(f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"Error: {e}"
 
   def list_files_recursively(self, bucket, prefix):
     all_files = []

@@ -26,7 +26,6 @@ boto3==1.28.79
 # ImportError: libcrypt.so.2: cannot open shared object file: No such file or directory
 # only safe version of pymupdf is 1.22.5
 PyMuPDF==1.23.6
-# unstructured[xlsx,image,pptx]==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
 tabulate==0.9.0
 typing-inspect==0.9.0
 typing-extensions==4.7.1
@@ -41,13 +40,17 @@ canvasapi==3.2.0
 GitPython==3.1.40
 flask-executor==1.0.0
 # pdf packages for unstructured
-pdf2image==1.16.3
-pdfminer.six==20221105
-opencv-python-headless==4.8.1.78
-unstructured.pytesseract==0.3.12
-unstructured-inference==0.7.11
+# pdf2image==1.16.3
+# pdfminer.six==20221105
+# opencv-python-headless==4.8.1.78
+# unstructured.pytesseract==0.3.12
+# unstructured-inference==0.7.11 # this is the real large one :(
+pytesseract==0.3.10 # image OCR
 openpyxl==3.1.2 # excel
+networkx==3.2.1 # unused part of excel partitioning :(
+python-pptx==0.6.23
 unstructured==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
+# unstructured[xlsx,image,pptx]==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
 
 # Not currently supporting coursera ingest
 # cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
