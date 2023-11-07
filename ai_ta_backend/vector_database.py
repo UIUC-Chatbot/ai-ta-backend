@@ -532,7 +532,7 @@ class Ingest():
                 's3_path': s3_path,
                 'pagenumber': page['page_number'] + 1,  # +1 for human indexing
                 'timestamp': '',
-                'readable_filename': page['readable_filename'],
+                'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else page['readable_filename'],
                 'url': url,
                 'base_url': base_url,
             } for page in pdf_pages_OCRed
