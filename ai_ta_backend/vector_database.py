@@ -474,8 +474,7 @@ class Ingest():
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
-    print("IN PDF: s3_path is this:", s3_path)
-    print("IN PDF kwargs is this:", kwargs)
+    print("IN PDF ingest: s3_path: ", s3_path, "and kwargs:", kwargs)
 
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
