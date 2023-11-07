@@ -482,9 +482,9 @@ class Ingest():
     print("IN PDF: s3_path is this:", s3_path)
     print("IN PDF kwargs is this:", kwargs)
 
-    print("DOES THE IF PASS??", kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else page['readable_filename'])
     try: 
       print("IN PDF: kwargs['kwargs'] is this:", kwargs['kwargs'])
+      # print("DOES THE IF PASS??", kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else page['readable_filename'])
     except Exception as e:
       print("failed/.....d.s.d.")
 
