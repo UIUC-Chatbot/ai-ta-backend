@@ -25,7 +25,7 @@ boto3==1.28.75
 # https://github.com/pymupdf/PyMuPDF/issues/2614
 # ImportError: libcrypt.so.2: cannot open shared object file: No such file or directory
 # only safe version of pymupdf is 1.22.5
-PyMuPDF==1.22.5
+PyMuPDF==1.23.6
 unstructured[all-docs]==0.10.29
 tabulate==0.9.0
 pdf2image==1.16.3
