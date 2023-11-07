@@ -25,7 +25,7 @@ boto3
 # ImportError: libcrypt.so.2: cannot open shared object file: No such file or directory
 # only safe version of pymupdf is 1.22.5
 PyMuPDF==1.22.5
-unstructured
+unstructured[all-docs]
 tabulate
 pdf2image
 typing-inspect==0.9.0
@@ -43,8 +43,8 @@ GitPython
 nomic>=2.0.14
 flask-executor
 xlrd # for excel ingest
-pdfminer # for image OCR
-pytesseract # for image OCR
+# pdfminer # for image OCR
+# pytesseract # for image OCR
 
 # No arize for now, huge build size with these additions.
 # arize[AutoEmbeddings, LLM_Evaluation]
