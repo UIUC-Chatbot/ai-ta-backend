@@ -11,6 +11,15 @@
             "ffmpeg",
             "libcrypt1"
           ]
+        },
+        "setup": {
+          "aptPkgs": [
+            "libcap-dev"
+          ],
+          "nixPkgs": [
+            "python310",
+            "gcc"
+          ]
         }
       }
     }
