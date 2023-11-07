@@ -10,6 +10,9 @@
           "aptPkgs": [
             "ffmpeg",
             "libcrypt1"
+          ],
+          "cmds": [
+            "pip install --upgrade pip"
           ]
         },
         "setup": {
