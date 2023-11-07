@@ -514,19 +514,21 @@ class Ingest():
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
         # Webscrape kwargs
-        if 'kwargs' in kwargs.keys():
-          if  kwargs['kwargs'] == {}:
-            url = ''
-            base_url = ''
+        if kwargs['kwargs'] == {}:
+          url = ''
+          base_url = ''
+        elif 'kwargs' not in kwargs.keys():
+          url = ''
+          base_url = ''
+        else:
+          if 'url' in kwargs['kwargs'].keys():
+            url = kwargs['kwargs']['url']
           else:
-            if 'url' in kwargs['kwargs'].keys():
-              url = kwargs['kwargs']['url']
-            else:
-              url = ''
-            if 'base_url' in kwargs['kwargs'].keys():
-              base_url = kwargs['kwargs']['base_url']
-            else:
-              base_url = ''
+            url = ''
+          if 'base_url' in kwargs['kwargs'].keys():
+            base_url = kwargs['kwargs']['base_url']
+          else:
+            base_url = ''
           
         
         metadatas: List[Dict[str, Any]] = [
