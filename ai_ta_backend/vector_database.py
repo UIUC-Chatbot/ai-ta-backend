@@ -482,11 +482,11 @@ class Ingest():
     print("IN PDF: s3_path is this:", s3_path)
     print("IN PDF kwargs is this:", kwargs)
 
-    try: 
-      print("IN PDF: kwargs['kwargs'] is this:", kwargs['kwargs'])
+    # try: 
+      # print("IN PDF: kwargs['kwargs'] is this:", kwargs['kwargs'])
       # print("DOES THE IF PASS??", kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else page['readable_filename'])
-    except Exception as e:
-      print("failed/.....d.s.d.")
+    # except Exception as e:
+      # print("failed/.....d.s.d.")
 
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
@@ -549,9 +549,8 @@ class Ingest():
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
         print("Success pdf ingest")
     except Exception as e:
-      print("ERROR IN PDF READING ")
-      print(e)
-      return f"Error {e}"
+      print(f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (PDF ingest): {e}"
     return "Success"
 
   def _ingest_single_txt(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -585,7 +584,7 @@ class Ingest():
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
     except Exception as e:
-      print(f"ERROR IN TXT READING {e}")
+      print(f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
 
   def _ingest_single_ppt(self, s3_path: str, course_name: str, **kwargs) -> str:
