@@ -20,7 +20,7 @@ sqlalchemy
 git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain&subdirectory=libs/langchain
 git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain-experimental&subdirectory=libs/experimental
 wandb
-openai
+openai==0.28.1
 supabase
 SQLAlchemy
 boto3
