@@ -12,7 +12,8 @@
             "pip install -r requirements.txt"
           ],
           "aptPkgs": [
-            "ffmpeg"
+            "ffmpeg",
+            "tesseract-ocr"
           ]
         },
         "setup": {
