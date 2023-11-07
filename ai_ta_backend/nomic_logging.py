@@ -9,11 +9,11 @@ import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 
-nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
-NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
-
 
 def log_convo_to_nomic(course_name: str, conversation) -> str:
+  nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
+  NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+
   """
   Logs conversation to Nomic.
   1. Check if map exists for given course
@@ -120,23 +120,30 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
     # add embeddings to the project
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-    project.add_embeddings(embeddings=np.array(embeddings), data=pd.DataFrame(metadata))
-    project.rebuild_maps()
+    with project.wait_for_project_lock():
+      project.add_embeddings(embeddings=np.array(embeddings), data=pd.DataFrame(metadata))
+      project.rebuild_maps()
+
+    print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
+    return f"Successfully logged for {course_name}"
 
   except Exception as e:
-    # if project doesn't exist, create it
-    print("ERROR in log_convo_to_nomic():", e)
-    result = create_nomic_map(course_name, conversation)
-    if result is None:
-      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+    # Error handling - the below error is for when the project does not exist
+    if str(e) == 'You must specify a unique_id_field when creating a new project.':
+      # project does not exist, so create it
+      result = create_nomic_map(course_name, conversation)
+      if result is None:
+        print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+        return f"Logging failed for {course_name}"
+      else:
+        print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
+        return f"Successfully logged for {course_name}"
     else:
-      print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
-      return f"Successfully logged for {course_name}"
-
-  print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
-  return f"Successfully logged for {course_name}"
-
-
+      # for rest of the errors - return fail
+      print("ERROR in log_convo_to_nomic():", e)
+      return f"Logging failed for {course_name}"
+    
+    
 def get_nomic_map(course_name: str):
   """
   Returns the variables necessary to construct an iframe of the Nomic map given a course name.
@@ -145,6 +152,9 @@ def get_nomic_map(course_name: str):
     map link: https://atlas.nomic.ai/map/ed222613-97d9-46a9-8755-12bbc8a06e3a/f4967ad7-ff37-4098-ad06-7e1e1a93dd93
     map id: f4967ad7-ff37-4098-ad06-7e1e1a93dd93
   """
+  nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
+  NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+
   project_name = NOMIC_MAP_NAME_PREFIX + course_name
   start_time = time.monotonic()
 
@@ -169,6 +179,9 @@ def create_nomic_map(course_name: str, log_data: list):
   2. appends current embeddings and metadata to it
   2. creates map if there are at least 20 queries
   """
+  nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
+  NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+  
   print(f"in create_nomic_map() for {course_name}")
   # initialize supabase
   supabase_client = supabase.create_client(  # type: ignore

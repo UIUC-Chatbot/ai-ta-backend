@@ -8,23 +8,29 @@ import subprocess
 import time
 import traceback
 import uuid
+from importlib import metadata
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import boto3
 import fitz
 import openai
+import pytesseract
 import supabase
 from bs4 import BeautifulSoup
 from git.repo import Repo
 from langchain.document_loaders import (Docx2txtLoader, GitLoader,
                                         PythonLoader, SRTLoader, TextLoader,
+                                        UnstructuredExcelLoader,
                                         UnstructuredPowerPointLoader)
+from langchain.document_loaders.csv_loader import CSVLoader
+from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+from PIL import Image
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
@@ -69,120 +75,34 @@ class Ingest():
         supabase_key=os.environ['SUPABASE_API_KEY'])
     return None
 
-  def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
-    """
-    Get a stuffed prompt for a given user question and course name.
-    Args : 
-      user_question (str)
-      course_name (str) : used for metadata filtering
-    Returns : str
-      a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
-    """
-    # MMR with metadata filtering based on course_name
-    vec_start_time = time.monotonic()
-    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
-    print(
-        f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds"
-    )
-
-    requests = []
-    for i, doc in enumerate(found_docs):
-      print("doc", doc)
-      dictionary = {
-          "model": "gpt-3.5-turbo",
-          "messages": [{
-              "role":
-                  "system",
-              "content":
-                  "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
-          }, {
-              "role":
-                  "user",
-              "content":
-                  f"Provide a comprehensive summary of the given text, based on this question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write 'None' and nothing else.",
-          }],
-          "n": 1,
-          "max_tokens": 600,
-          "metadata": doc.metadata
-      }
-      requests.append(dictionary)
-
-    oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                             request_url='https://api.openai.com/v1/chat/completions',
-                             api_key=os.getenv("OPENAI_API_KEY"),
-                             max_requests_per_minute=1500,
-                             max_tokens_per_minute=90000,
-                             token_encoding_name='cl100k_base',
-                             max_attempts=5,
-                             logging_level=20)
-
-    chain_start_time = time.monotonic()
-    asyncio.run(oai.process_api_requests_from_file())
-    results: list[str] = oai.results
-    print(f"⏰ EXTREME context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
-
-    print(f"Cleaned results: {oai.cleaned_results}")
-
-    all_texts = ""
-    separator = '---'  # between each context
-    token_counter = 0  #keeps track of tokens in each summarization
-    max_tokens = 7_500  #limit, will keep adding text to string until 8000 tokens reached.
-    for i, text in enumerate(oai.cleaned_results):
-      if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
-        # no useful text, it replied with a summary of "None"
-        continue
-      if text is not None:
-        if "pagenumber" not in results[i][-1].keys(): # type: ignore
-          results[i][-1]['pagenumber'] = results[i][-1].get('pagenumber_or_timestamp') # type: ignore
-        num_tokens, prompt_cost = count_tokens_and_cost(text) # type: ignore
-        if token_counter + num_tokens > max_tokens:
-          print(f"Total tokens yet in loop {i} is {num_tokens}")
-          break  # Stop building the string if it exceeds the maximum number of tokens
-        token_counter += num_tokens
-        filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
-        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber', ''))  # type: ignore
-        pagenumber = f", page: {pagenumber_or_timestamp}" if pagenumber_or_timestamp else ''
-        doc = f"Document : filename: {filename}" + pagenumber
-        summary = f"\nSummary: {text}"
-        all_texts += doc + summary + '\n' + separator + '\n'
-
-    stuffed_prompt = f"""Please answer the following question.
-Use the context below, called 'your documents', only if it's helpful and don't use parts that are very irrelevant.
-It's good to quote 'your documents' directly using informal citations, like "in document X it says Y". Try to avoid giving false or misleading information. Feel free to say you don't know.
-Try to be helpful, polite, honest, sophisticated, emotionally aware, and humble-but-knowledgeable.
-That said, be practical and really do your best, and don't let caution get too much in the way of being useful.
-To help answer the question, here's a few passages of high quality documents:\n{all_texts}
-Now please respond to my question: {user_question}"""
-
-    # "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
-
-    return stuffed_prompt
-
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
-    def _ingest_single(file_ingest_methods, s3_path, *args, **kwargs):
+    def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
-      handler = file_ingest_methods.get(Path(s3_path).suffix)
-      if handler:
-        # RUN INGEST METHOD
-        ret = handler(s3_path, *args, **kwargs)
-        if ret != "Success":
-          success_status['failure_ingest'].append(s3_path)
-        else:
-          success_status['success_ingest'].append(s3_path)
+      # RUN INGEST METHOD
+      ret = ingest_method(s3_path, *args, **kwargs)
+      if ret == "Success":
+        success_status['success_ingest'].append(s3_path)
+      else:
+        success_status['failure_ingest'].append(s3_path)
 
-    # 👇👇👇👇 ADD NEW INGEST METHODSE E  HER👇👇👇👇🎉
+    # 👇👇👇👇 ADD NEW INGEST METHODS HERE 👇👇👇👇🎉
     file_ingest_methods = {
         '.html': self._ingest_html,
         '.py': self._ingest_single_py,
-        '.vtt': self._ingest_single_vtt,
         '.pdf': self._ingest_single_pdf,
         '.txt': self._ingest_single_txt,
         '.md': self._ingest_single_txt,
         '.srt': self._ingest_single_srt,
+        '.vtt': self._ingest_single_vtt,
         '.docx': self._ingest_single_docx,
         '.ppt': self._ingest_single_ppt,
         '.pptx': self._ingest_single_ppt,
+        '.xlsx': self._ingest_single_excel,
+        '.xls': self._ingest_single_excel,
+        '.csv': self._ingest_single_csv,
+        '.png': self._ingest_single_image,
+        '.jpg': self._ingest_single_image,
     }
 
     # Ingest methods via MIME type (more general than filetype)
@@ -190,32 +110,41 @@ Now please respond to my question: {user_question}"""
       'video': self._ingest_single_video,
       'audio': self._ingest_single_video,
       'text': self._ingest_single_txt,
+      'image': self._ingest_single_image,
     }
-    # 👆👆👆👆 ADD NEW INGEST METHODS ERE 👆👆👇�DS 👇�🎉
+    # 👆👆👆👆 ADD NEW INGEST METHODhe 👆👆👆👆🎉
 
+    print(f"Top of ingest, Course_name {course_name}. S3 paths {s3_paths}")
     success_status = {"success_ingest": [], "failure_ingest": []}
     try:
       if isinstance(s3_paths, str):
         s3_paths = [s3_paths]
-
       
       for s3_path in s3_paths:
-        with NamedTemporaryFile(suffix=Path(s3_path).suffix) as tmpfile:
+        file_extension = Path(s3_path).suffix
+        with NamedTemporaryFile(suffix=file_extension) as tmpfile:
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
-          mime_type = mimetypes.guess_type(tmpfile.name, strict=False)[0]
-          mime_category, extension = mime_type.split('/')
-          file_ext = "." + extension
+          mime_type = str(mimetypes.guess_type(tmpfile.name, strict=False)[0])
+          mime_category, mime_subcategory = mime_type.split('/')
 
-        if file_ext in file_ingest_methods:
+        if file_extension in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
-          _ingest_single(file_ingest_methods, s3_path, course_name, kwargs=kwargs)
+          ingest_method = file_ingest_methods[file_extension]
+          _ingest_single(ingest_method, s3_path, course_name, **kwargs)
         elif mime_category in mimetype_ingest_methods:
-          # mime type
-          _ingest_single(mimetype_ingest_methods, s3_path, course_name, kwargs=kwargs)
+          # fallback to MimeType
+          print("mime category", mime_category)
+          ingest_method = mimetype_ingest_methods[mime_category]
+          _ingest_single(ingest_method, s3_path, course_name, **kwargs)
         else:
-          # failure
-          success_status['failure_ingest'].append(f"File ingest not supported for Mimetype: {mime_type}, with MimeCategory: {mime_category}, with file extension: {file_ext} for s3_path: {s3_path}")
-          continue
+          # No supported ingest... Fallback to attempting utf-8 decoding, otherwise fail. 
+          try: 
+            self._ingest_single_txt(s3_path, course_name)
+            success_status['success_ingest'].append(s3_path)
+            print("✅ FALLBACK TO UTF-8 INGEST WAS SUCCESSFUL :) ")
+          except Exception as e:
+            print(f"We don't have a ingest method for this filetype: {file_extension}. As a last-ditch effort, we tried to ingest the file as utf-8 text, but that failed too. File is unsupported: {s3_path}. UTF-8 ingest error: {e}")
+            success_status['failure_ingest'].append(f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}")
       
       return success_status
     except Exception as e:
@@ -223,7 +152,7 @@ Now please respond to my question: {user_question}"""
         return success_status
 
 
-  def _ingest_single_py(self, s3_path: str, course_name: str):
+  def _ingest_single_py(self, s3_path: str, course_name: str, **kwargs):
     try:
       file_name = s3_path.split("/")[-1]
       file_path = "media/" + file_name # download from s3 to local folder for ingest
@@ -238,13 +167,13 @@ Now please respond to my question: {user_question}"""
       metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
             'base_url': '',
         } for doc in documents]
-
+      #print(texts)
       os.remove(file_path)
 
       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -253,7 +182,7 @@ Now please respond to my question: {user_question}"""
     except Exception as e:
       print(f"ERROR IN py READING {e}")
 
-  def _ingest_single_vtt(self, s3_path: str, course_name: str):
+  def _ingest_single_vtt(self, s3_path: str, course_name: str, **kwargs):
     """
     Ingest a single .vtt file from S3.
     """
@@ -268,7 +197,7 @@ Now please respond to my question: {user_question}"""
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -307,6 +236,7 @@ Now please respond to my question: {user_question}"""
       
 
       text = [soup.get_text()]
+      
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
@@ -316,7 +246,7 @@ Now please respond to my question: {user_question}"""
           'pagenumber': '',
           'timestamp': '',
       }]
-
+      
       success_or_failure = self.split_and_upload(text, metadata)
       print(f"_ingest_html: {success_or_failure}")
       return success_or_failure
@@ -325,15 +255,14 @@ Now please respond to my question: {user_question}"""
       print(err)
       return f"_ingest_html Error: {e}"
 
-  def _ingest_single_video(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_video(self, s3_path: str, course_name: str, **kwargs) -> str:
     """
     Ingest a single video file from S3.
     """
+    print("Starting ingest video or audio")
     try:
       # check for file extension
       file_ext = Path(s3_path).suffix
-      print(file_ext[1:])
-
       openai.api_key = os.getenv('OPENAI_API_KEY')
       transcript_list = []
       with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
@@ -387,7 +316,7 @@ Now please respond to my question: {user_question}"""
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
+          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
           'pagenumber': '',
           'timestamp': text.index(txt),
           'url': '',
@@ -401,15 +330,10 @@ Now please respond to my question: {user_question}"""
       print(e)
       return f"Error {e}"
 
-  def _ingest_single_docx(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_docx(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
-        # download from S3 into pdf_tmpfile
-        print("Bucket: ", os.getenv('S3_BUCKET_NAME'))
-        print("Key: ", s3_path)
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-        print("GOT THE FILE")
-        print(tmpfile.name)
 
         loader = Docx2txtLoader(tmpfile.name)
         documents = loader.load()
@@ -418,7 +342,7 @@ Now please respond to my question: {user_question}"""
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -428,10 +352,10 @@ Now please respond to my question: {user_question}"""
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"ERROR IN DOCX {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (DOCX ingest): {e}"
 
-  def _ingest_single_srt(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_srt(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
         # download from S3 into pdf_tmpfile
@@ -444,7 +368,7 @@ Now please respond to my question: {user_question}"""
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -454,8 +378,95 @@ Now please respond to my question: {user_question}"""
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"SRT ERROR {e}")
+      print(f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (SRT ingest): {e}"
+  
+  def _ingest_single_excel(self, s3_path: str, course_name: str, **kwargs) -> str:
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
+
+        loader = UnstructuredExcelLoader(tmpfile.name, mode="elements")
+        # loader = SRTLoader(tmpfile.name)
+        documents = loader.load()
+
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
+            's3_path': s3_path,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'pagenumber': '',
+            'timestamp': '',
+            'url': '',
+            'base_url': '',
+        } for doc in documents]
+
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
+  
+  def _ingest_single_image(self, s3_path: str, course_name: str, **kwargs) -> str:
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
+
+        """
+        # Unstructured image loader makes the install too large (700MB --> 6GB. 3min -> 12 min build times). AND nobody uses it.
+        # The "hi_res" strategy will identify the layout of the document using detectron2. "ocr_only" uses pdfminer.six. https://unstructured-io.github.io/unstructured/core/partition.html#partition-image
+        loader = UnstructuredImageLoader(tmpfile.name, unstructured_kwargs={'strategy': "ocr_only"})
+        documents = loader.load()
+        """
+
+        res_str = pytesseract.image_to_string(Image.open(tmpfile.name))
+        print("IMAGE PARSING RESULT:", res_str)
+        documents = [Document(page_content=res_str)]
+
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
+            's3_path': s3_path,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'pagenumber': '',
+            'timestamp': '',
+            'url': '',
+            'base_url': '',
+        } for doc in documents]
+
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"Error: {e}"
+  
+  def _ingest_single_csv(self, s3_path: str, course_name: str, **kwargs) -> str:
+    try:
+      with NamedTemporaryFile() as tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
+
+        loader = CSVLoader(file_path=tmpfile.name)
+        documents = loader.load()
+
+        texts = [doc.page_content for doc in documents]
+        metadatas: List[Dict[str, Any]] = [{
+            'course_name': course_name,
+            's3_path': s3_path,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'pagenumber': '',
+            'timestamp': '',
+            'url': '',
+            'base_url': '',
+        } for doc in documents]
+
+        self.split_and_upload(texts=texts, metadatas=metadatas)
+        return "Success"
+    except Exception as e:
+      print(f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (CSV ingest): {e}"
 
   def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
     """
@@ -463,6 +474,8 @@ Now please respond to my question: {user_question}"""
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
+    print("IN PDF ingest: s3_path: ", s3_path, "and kwargs:", kwargs)
+
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
@@ -491,10 +504,14 @@ Now please respond to my question: {user_question}"""
                 self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
 
           # Extract text
-          text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
+          text = page.get_text().encode("utf8").decode("utf8", errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
-        if kwargs['kwargs'] == {}:
+        # Webscrape kwargs
+        if 'kwargs' in kwargs.keys() and kwargs['kwargs'] == {}:
+          url = ''
+          base_url = ''
+        elif 'kwargs' not in kwargs.keys():
           url = ''
           base_url = ''
         else:
@@ -514,7 +531,7 @@ Now please respond to my question: {user_question}"""
                 's3_path': s3_path,
                 'pagenumber': page['page_number'] + 1,  # +1 for human indexing
                 'timestamp': '',
-                'readable_filename': page['readable_filename'],
+                'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else page['readable_filename'],
                 'url': url,
                 'base_url': base_url,
             } for page in pdf_pages_OCRed
@@ -524,12 +541,11 @@ Now please respond to my question: {user_question}"""
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
         print("Success pdf ingest")
     except Exception as e:
-      print("ERROR IN PDF READING ")
-      print(e)
-      return f"Error {e}"
+      print(f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (PDF ingest): {e}"
     return "Success"
 
-  def _ingest_single_txt(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_txt(self, s3_path: str, course_name: str, **kwargs) -> str:
     """Ingest a single .txt or .md file from S3.
     Args:
         s3_path (str): A path to a .txt file in S3
@@ -537,29 +553,33 @@ Now please respond to my question: {user_question}"""
     Returns:
         str: "Success" or an error message
     """
+    print("In text ingest")
     try:
       # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
+      print("s3 Resonse:", response)
       text = response['Body'].read().decode('utf-8')
+      print("Text from s3:", text)
       text = [text]
     
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
+          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
           'pagenumber': '',
           'timestamp': '',
           'url': '',
           'base_url': '',
       }]
+      print("Prior to ingest", metadatas)
 
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
     except Exception as e:
-      print(f"ERROR IN TXT READING {e}")
+      print(f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
 
-  def _ingest_single_ppt(self, s3_path: str, course_name: str) -> str:
+  def _ingest_single_ppt(self, s3_path: str, course_name: str, **kwargs) -> str:
     """
     Ingest a single .ppt or .pptx file from S3.
     """
@@ -576,7 +596,7 @@ Now please respond to my question: {user_question}"""
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -586,9 +606,8 @@ Now please respond to my question: {user_question}"""
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print("ERROR IN PDF INGEST")
-      print(e)
-      return f"Error {e}"
+      print(f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"Error: {e}"
 
   def list_files_recursively(self, bucket, prefix):
     all_files = []
@@ -695,8 +714,8 @@ Now please respond to my question: {user_question}"""
         self.split_and_upload(texts=[texts], metadatas=[metadatas])
       return "Success"
     except Exception as e:
-      print(f"ERROR IN GITHUB INGEST {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (GITHUB ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (GITHUB ingest): {e}"
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
@@ -712,15 +731,19 @@ Now please respond to my question: {user_question}"""
     print(f"metadatas: {metadatas}")
     print(f"Texts: {texts}")
     assert len(texts) == len(metadatas), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
-
+    
     try:
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
-          separators=[". ", "\n\n", "\n", " ", ""]  # try to split on sentences... fallback to others to ensure we always fit in context window
+          separators=["\n\n", "\n", ". ", " ", ""]  # try to split on paragraphs... fallback to sentences, then chars, ensure we always fit in context window
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
+      
+      # adding chunk index to metadata for parent doc retrieval
+      for i, context in enumerate(contexts):
+        context.metadata['chunk_index'] = i
 
       oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
                                request_url='https://api.openai.com/v1/embeddings',
@@ -737,8 +760,8 @@ Now please respond to my question: {user_question}"""
       ### BULK upload to Qdrant ###
       vectors: list[PointStruct] = []
       for context in contexts:
-        # print({k: v for k, v in context.metadata.items() if k != 'embedding'})
-        upload_metadata = {"metadata":context.metadata, "page_content":context.page_content}
+        # !DONE: Updated the payload so each key is top level (no more payload.metadata.course_name. Instead, use payload.course_name), great for creating indexes.
+        upload_metadata = {**context.metadata, "page_content": context.page_content}
         vectors.append(
             PointStruct(
                 id=str(uuid.uuid4()),
@@ -755,6 +778,7 @@ Now please respond to my question: {user_question}"""
           "text": context.page_content,
           "pagenumber": context.metadata.get('pagenumber'),
           "timestamp": context.metadata.get('timestamp'),
+          "chunk_index": context.metadata.get('chunk_index'),
           "embedding": embeddings_dict[context.page_content]
       } for context in contexts]
 
@@ -766,15 +790,6 @@ Now please respond to my question: {user_question}"""
           "base_url": contexts[0].metadata.get('base_url'),
           "contexts": contexts_for_supa,
       }
-
-      # document = [{
-      #   "course_name": context.metadata.get('course_name'),
-      #     "s3_path": context.metadata.get('s3_path'),
-      #     "readable_filename": context.metadata.get('readable_filename'),
-      #     "url": context.metadata.get('url'),
-      #     "base_url": context.metadata.get('base_url'),
-      #     "contexts": contexts_for_supa,  # should ideally be just one context but getting JSON serialization error when I do that
-      # } for context in contexts]
 
       count = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
       print("successful END OF split_and_upload")
@@ -813,7 +828,7 @@ Now please respond to my question: {user_question}"""
           collection_name=os.environ['QDRANT_COLLECTION_NAME'],
           points_selector=models.Filter(must=[
               models.FieldCondition(
-                  key="metadata.course_name",
+                  key="course_name",
                   match=models.MatchValue(value=course_name),
               ),
           ]),
@@ -856,7 +871,7 @@ Now please respond to my question: {user_question}"""
               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
               points_selector=models.Filter(must=[
                   models.FieldCondition(
-                      key="metadata.s3_path",
+                      key="s3_path",
                       match=models.MatchValue(value=s3_path),
                   ),
               ]),
@@ -877,7 +892,7 @@ Now please respond to my question: {user_question}"""
               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
               points_selector=models.Filter(must=[
                   models.FieldCondition(
-                      key="metadata.url",
+                      key="url",
                       match=models.MatchValue(value=source_url),
                   ),
               ]),
@@ -931,7 +946,7 @@ Now please respond to my question: {user_question}"""
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='metadata.course_name',
+                      key='course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -941,20 +956,29 @@ Now please respond to my question: {user_question}"""
           query_filter=myfilter,
           with_vectors=False,
           query_vector=user_query_embedding,
-          limit=top_n  # Return 5 closest points
+          limit=top_n,  # Return n closest points
+          
+          # In a system with high disk latency, the re-scoring step may become a bottleneck: https://qdrant.tech/documentation/guides/quantization/
+          search_params=models.SearchParams(
+            quantization=models.QuantizationSearchParams(
+              rescore=False
+            )
+          )
       )
 
-      print("search_results", search_results)
       found_docs: list[Document] = []
       for d in search_results:
-        metadata = d.payload.get('metadata') # type: ignore
-        if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
-            # aiding in the database migration...
-            metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
-        
-        found_docs.append(Document(page_content=d.payload.get('page_content'), metadata=metadata)) # type: ignore
-      
-      # found_docs: list[Document] = [Document(page_content=str(d.payload.get('page_content')), metadata=d.payload.get('metadata')) for d in search_results]
+        try:
+          metadata = d.payload
+          page_content = metadata['page_content']
+          del metadata['page_content']
+          if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
+              # aiding in the database migration...
+              metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
+          
+          found_docs.append(Document(page_content=page_content, metadata=metadata)) # type: ignore
+        except Exception as e:
+          print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
       print("found_docs", found_docs)
       return found_docs
 
@@ -1005,20 +1029,110 @@ Now please respond to my question: {user_question}"""
       print(err)
       return err
 
+  def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
+    """
+    Get a stuffed prompt for a given user question and course name.
+    Args : 
+      user_question (str)
+      course_name (str) : used for metadata filtering
+    Returns : str
+      a very long "stuffed prompt" with question + summaries of top_n most relevant documents.
+    """
+    # MMR with metadata filtering based on course_name
+    vec_start_time = time.monotonic()
+    found_docs = self.vectorstore.max_marginal_relevance_search(user_question, k=top_n, fetch_k=top_k_to_search)
+    print(
+        f"⏰ MMR Search runtime (top_n_to_keep: {top_n}, top_k_to_search: {top_k_to_search}): {(time.monotonic() - vec_start_time):.2f} seconds"
+    )
+
+    requests = []
+    for i, doc in enumerate(found_docs):
+      print("doc", doc)
+      dictionary = {
+          "model": "gpt-3.5-turbo",
+          "messages": [{
+              "role":
+                  "system",
+              "content":
+                  "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+          }, {
+              "role":
+                  "user",
+              "content":
+                  f"Provide a comprehensive summary of the given text, based on this question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points that are relevant to the question, while also condensing the information into a concise format. The length of the summary should be as short as possible, without losing relevant information.\nMake use of direct quotes from the text.\nFeel free to include references, sentence fragments, keywords or anything that could help someone learn about it, only as it relates to the given question.\nIf the text does not provide information to answer the question, please write 'None' and nothing else.",
+          }],
+          "n": 1,
+          "max_tokens": 600,
+          "metadata": doc.metadata
+      }
+      requests.append(dictionary)
+
+    oai = OpenAIAPIProcessor(input_prompts_list=requests,
+                             request_url='https://api.openai.com/v1/chat/completions',
+                             api_key=os.getenv("OPENAI_API_KEY"),
+                             max_requests_per_minute=1500,
+                             max_tokens_per_minute=90000,
+                             token_encoding_name='cl100k_base',
+                             max_attempts=5,
+                             logging_level=20)
+
+    chain_start_time = time.monotonic()
+    asyncio.run(oai.process_api_requests_from_file())
+    results: list[str] = oai.results
+    print(f"⏰ EXTREME context stuffing runtime: {(time.monotonic() - chain_start_time):.2f} seconds")
+
+    print(f"Cleaned results: {oai.cleaned_results}")
+
+    all_texts = ""
+    separator = '---'  # between each context
+    token_counter = 0  #keeps track of tokens in each summarization
+    max_tokens = 7_500  #limit, will keep adding text to string until 8000 tokens reached.
+    for i, text in enumerate(oai.cleaned_results):
+      if text.lower().startswith('none') or text.lower().endswith('none.') or text.lower().endswith('none'):
+        # no useful text, it replied with a summary of "None"
+        continue
+      if text is not None:
+        if "pagenumber" not in results[i][-1].keys(): # type: ignore
+          results[i][-1]['pagenumber'] = results[i][-1].get('pagenumber_or_timestamp') # type: ignore
+        num_tokens, prompt_cost = count_tokens_and_cost(text) # type: ignore
+        if token_counter + num_tokens > max_tokens:
+          print(f"Total tokens yet in loop {i} is {num_tokens}")
+          break  # Stop building the string if it exceeds the maximum number of tokens
+        token_counter += num_tokens
+        filename = str(results[i][-1].get('readable_filename', ''))  # type: ignore
+        pagenumber_or_timestamp = str(results[i][-1].get('pagenumber', ''))  # type: ignore
+        pagenumber = f", page: {pagenumber_or_timestamp}" if pagenumber_or_timestamp else ''
+        doc = f"Document : filename: {filename}" + pagenumber
+        summary = f"\nSummary: {text}"
+        all_texts += doc + summary + '\n' + separator + '\n'
+
+    stuffed_prompt = f"""Please answer the following question.
+Use the context below, called 'your documents', only if it's helpful and don't use parts that are very irrelevant.
+It's good to quote 'your documents' directly using informal citations, like "in document X it says Y". Try to avoid giving false or misleading information. Feel free to say you don't know.
+Try to be helpful, polite, honest, sophisticated, emotionally aware, and humble-but-knowledgeable.
+That said, be practical and really do your best, and don't let caution get too much in the way of being useful.
+To help answer the question, here's a few passages of high quality documents:\n{all_texts}
+Now please respond to my question: {user_question}"""
+
+    # "Please answer the following question. It's good to quote 'your documents' directly, something like 'from ABS source it says XYZ' Feel free to say you don't know. \nHere's a few passages of the high quality 'your documents':\n"
+
+    return stuffed_prompt
+
+
   def get_stuffed_prompt(self, search_query: str, course_name: str, token_limit: int = 7_000) -> str:
     """
     Returns
       String: A fully formatted prompt string.
     """
     try:
-      top_n = 150
+      top_n = 90
       start_time_overall = time.monotonic()
       o = OpenAIEmbeddings() # type: ignore
       user_query_embedding = o.embed_documents(search_query)[0] # type: ignore
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='metadata.course_name',
+                      key='course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -1040,19 +1154,18 @@ Now please respond to my question: {user_question}"""
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
       valid_docs = []
       for d in found_docs:
-        if "pagenumber" not in d.payload["metadata"].keys(): # type: ignore
-          d.payload["metadata"]["pagenumber"] = d.payload["metadata"]["pagenumber_or_timestamp"] # type: ignore
-        doc_string = f"---\nDocument: {d.payload['metadata']['readable_filename']}{', page: ' + str(d.payload['metadata']['pagenumber']) if d.payload['metadata']['pagenumber'] else ''}\n{d.payload.get('page_content')}\n" # type: ignore
+        if "pagenumber" not in d.payload.keys(): # type: ignore
+          d.payload["pagenumber"] = d.payload["pagenumber_or_timestamp"] # type: ignore
+        doc_string = f"---\nDocument: {d.payload['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n" # type: ignore
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
 
         print(f"Page: {d.payload.get('page_content')[:100]}...") # type: ignore
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
-          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload.get('metadata'))) # type: ignore
+          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload)) # type: ignore
         else:
           continue
-          print("running continue")
 
       # Convert the valid_docs to full prompt
       separator = '---\n'  # between each context
