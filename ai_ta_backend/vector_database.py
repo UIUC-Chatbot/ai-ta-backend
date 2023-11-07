@@ -333,12 +333,7 @@ class Ingest():
   def _ingest_single_docx(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
-        # download from S3 into pdf_tmpfile
-        print("Bucket: ", os.getenv('S3_BUCKET_NAME'))
-        print("Key: ", s3_path)
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-        print("GOT THE FILE")
-        print(tmpfile.name)
 
         loader = Docx2txtLoader(tmpfile.name)
         documents = loader.load()
@@ -357,8 +352,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"ERROR IN DOCX {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (DOCX ingest): {e}"
 
   def _ingest_single_srt(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
@@ -383,8 +378,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"SRT ERROR {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (SRT ingest): {e}"
   
   def _ingest_single_excel(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
@@ -470,8 +465,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"CSV ERROR {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (CSV ingest): {e}"
 
   def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
     """
@@ -720,8 +715,8 @@ class Ingest():
         self.split_and_upload(texts=[texts], metadatas=[metadatas])
       return "Success"
     except Exception as e:
-      print(f"ERROR IN GITHUB INGEST {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (GITHUB ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (GITHUB ingest): {e}"
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
