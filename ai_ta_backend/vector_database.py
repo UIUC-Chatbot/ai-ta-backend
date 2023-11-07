@@ -514,7 +514,7 @@ class Ingest():
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
         # Webscrape kwargs
-        if kwargs['kwargs'] == {}:
+        if 'kwargs' in kwargs.keys() and kwargs['kwargs'] == {}:
           url = ''
           base_url = ''
         elif 'kwargs' not in kwargs.keys():
