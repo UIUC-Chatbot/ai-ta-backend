@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import boto3
 import fitz
 import openai
+import pytesseract
 import supabase
 from bs4 import BeautifulSoup
 from git.repo import Repo
@@ -29,6 +30,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+from PIL import Image
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
@@ -128,12 +130,12 @@ class Ingest():
         if file_extension in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
           ingest_method = file_ingest_methods[file_extension]
-          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
+          _ingest_single(ingest_method, s3_path, course_name, **kwargs)
         elif mime_category in mimetype_ingest_methods:
           # fallback to MimeType
           print("mime category", mime_category)
           ingest_method = mimetype_ingest_methods[mime_category]
-          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
+          _ingest_single(ingest_method, s3_path, course_name, **kwargs)
         else:
           # No supported ingest... Fallback to attempting utf-8 decoding, otherwise fail. 
           try: 
@@ -165,13 +167,13 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
             'base_url': '',
         } for doc in documents]
-
+      #print(texts)
       os.remove(file_path)
 
       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -195,7 +197,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -234,6 +236,7 @@ class Ingest():
       
 
       text = [soup.get_text()]
+      
       metadata: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
@@ -243,7 +246,7 @@ class Ingest():
           'pagenumber': '',
           'timestamp': '',
       }]
-
+      
       success_or_failure = self.split_and_upload(text, metadata)
       print(f"_ingest_html: {success_or_failure}")
       return success_or_failure
@@ -313,7 +316,7 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
+          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
           'pagenumber': '',
           'timestamp': text.index(txt),
           'url': '',
@@ -330,12 +333,7 @@ class Ingest():
   def _ingest_single_docx(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
-        # download from S3 into pdf_tmpfile
-        print("Bucket: ", os.getenv('S3_BUCKET_NAME'))
-        print("Key: ", s3_path)
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-        print("GOT THE FILE")
-        print(tmpfile.name)
 
         loader = Docx2txtLoader(tmpfile.name)
         documents = loader.load()
@@ -344,7 +342,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -354,8 +352,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"ERROR IN DOCX {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (DOCX ingest): {e}"
 
   def _ingest_single_srt(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
@@ -370,7 +368,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -380,8 +378,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"SRT ERROR {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (SRT ingest): {e}"
   
   def _ingest_single_excel(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
@@ -397,7 +395,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -407,7 +405,7 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"Excel ERROR {e}")
+      print(f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
   
   def _ingest_single_image(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -416,14 +414,22 @@ class Ingest():
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
 
-        loader = UnstructuredImageLoader(tmpfile.name, unstructured_kwargs={'strategy': "auto"})
+        """
+        # Unstructured image loader makes the install too large (700MB --> 6GB. 3min -> 12 min build times). AND nobody uses it.
+        # The "hi_res" strategy will identify the layout of the document using detectron2. "ocr_only" uses pdfminer.six. https://unstructured-io.github.io/unstructured/core/partition.html#partition-image
+        loader = UnstructuredImageLoader(tmpfile.name, unstructured_kwargs={'strategy': "ocr_only"})
         documents = loader.load()
+        """
+
+        res_str = pytesseract.image_to_string(Image.open(tmpfile.name))
+        print("IMAGE PARSING RESULT:", res_str)
+        documents = [Document(page_content=res_str)]
 
         texts = [doc.page_content for doc in documents]
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -433,7 +439,7 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"Image ingest error (png/jpg) ERROR {e}")
+      print(f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
   
   def _ingest_single_csv(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -449,7 +455,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -459,8 +465,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"CSV ERROR {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (CSV ingest): {e}"
 
   def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
     """
@@ -468,6 +474,8 @@ class Ingest():
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
+    print("IN PDF ingest: s3_path: ", s3_path, "and kwargs:", kwargs)
+
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
@@ -496,10 +504,14 @@ class Ingest():
                 self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
 
           # Extract text
-          text = page.get_text().encode("utf8").decode('ascii', errors='ignore')  # get plain text (is in UTF-8)
+          text = page.get_text().encode("utf8").decode("utf8", errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
-        if kwargs['kwargs'] == {}:
+        # Webscrape kwargs
+        if 'kwargs' in kwargs.keys() and kwargs['kwargs'] == {}:
+          url = ''
+          base_url = ''
+        elif 'kwargs' not in kwargs.keys():
           url = ''
           base_url = ''
         else:
@@ -519,7 +531,7 @@ class Ingest():
                 's3_path': s3_path,
                 'pagenumber': page['page_number'] + 1,  # +1 for human indexing
                 'timestamp': '',
-                'readable_filename': page['readable_filename'],
+                'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else page['readable_filename'],
                 'url': url,
                 'base_url': base_url,
             } for page in pdf_pages_OCRed
@@ -529,9 +541,8 @@ class Ingest():
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
         print("Success pdf ingest")
     except Exception as e:
-      print("ERROR IN PDF READING ")
-      print(e)
-      return f"Error {e}"
+      print(f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (PDF ingest): {e}"
     return "Success"
 
   def _ingest_single_txt(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -554,7 +565,7 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
+          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
           'pagenumber': '',
           'timestamp': '',
           'url': '',
@@ -565,7 +576,7 @@ class Ingest():
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
     except Exception as e:
-      print(f"ERROR IN TXT READING {e}")
+      print(f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
 
   def _ingest_single_ppt(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -585,7 +596,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -595,9 +606,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print("ERROR IN PDF INGEST")
-      print(e)
-      return f"Error {e}"
+      print(f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"Error: {e}"
 
   def list_files_recursively(self, bucket, prefix):
     all_files = []
@@ -704,8 +714,8 @@ class Ingest():
         self.split_and_upload(texts=[texts], metadatas=[metadatas])
       return "Success"
     except Exception as e:
-      print(f"ERROR IN GITHUB INGEST {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (GITHUB ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (GITHUB ingest): {e}"
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
@@ -721,15 +731,19 @@ class Ingest():
     print(f"metadatas: {metadatas}")
     print(f"Texts: {texts}")
     assert len(texts) == len(metadatas), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
-
+    
     try:
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
-          separators=[". ", "\n\n", "\n", " ", ""]  # try to split on sentences... fallback to others to ensure we always fit in context window
+          separators=["\n\n", "\n", ". ", " ", ""]  # try to split on paragraphs... fallback to sentences, then chars, ensure we always fit in context window
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
+      
+      # adding chunk index to metadata for parent doc retrieval
+      for i, context in enumerate(contexts):
+        context.metadata['chunk_index'] = i
 
       oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
                                request_url='https://api.openai.com/v1/embeddings',
@@ -746,8 +760,8 @@ class Ingest():
       ### BULK upload to Qdrant ###
       vectors: list[PointStruct] = []
       for context in contexts:
-        # print({k: v for k, v in context.metadata.items() if k != 'embedding'})
-        upload_metadata = {"metadata":context.metadata, "page_content":context.page_content}
+        # !DONE: Updated the payload so each key is top level (no more payload.metadata.course_name. Instead, use payload.course_name), great for creating indexes.
+        upload_metadata = {**context.metadata, "page_content": context.page_content}
         vectors.append(
             PointStruct(
                 id=str(uuid.uuid4()),
@@ -764,6 +778,7 @@ class Ingest():
           "text": context.page_content,
           "pagenumber": context.metadata.get('pagenumber'),
           "timestamp": context.metadata.get('timestamp'),
+          "chunk_index": context.metadata.get('chunk_index'),
           "embedding": embeddings_dict[context.page_content]
       } for context in contexts]
 
@@ -775,15 +790,6 @@ class Ingest():
           "base_url": contexts[0].metadata.get('base_url'),
           "contexts": contexts_for_supa,
       }
-
-      # document = [{
-      #   "course_name": context.metadata.get('course_name'),
-      #     "s3_path": context.metadata.get('s3_path'),
-      #     "readable_filename": context.metadata.get('readable_filename'),
-      #     "url": context.metadata.get('url'),
-      #     "base_url": context.metadata.get('base_url'),
-      #     "contexts": contexts_for_supa,  # should ideally be just one context but getting JSON serialization error when I do that
-      # } for context in contexts]
 
       count = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
       print("successful END OF split_and_upload")
@@ -822,7 +828,7 @@ class Ingest():
           collection_name=os.environ['QDRANT_COLLECTION_NAME'],
           points_selector=models.Filter(must=[
               models.FieldCondition(
-                  key="metadata.course_name",
+                  key="course_name",
                   match=models.MatchValue(value=course_name),
               ),
           ]),
@@ -865,7 +871,7 @@ class Ingest():
               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
               points_selector=models.Filter(must=[
                   models.FieldCondition(
-                      key="metadata.s3_path",
+                      key="s3_path",
                       match=models.MatchValue(value=s3_path),
                   ),
               ]),
@@ -886,7 +892,7 @@ class Ingest():
               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
               points_selector=models.Filter(must=[
                   models.FieldCondition(
-                      key="metadata.url",
+                      key="url",
                       match=models.MatchValue(value=source_url),
                   ),
               ]),
@@ -940,7 +946,7 @@ class Ingest():
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='metadata.course_name',
+                      key='course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -950,20 +956,29 @@ class Ingest():
           query_filter=myfilter,
           with_vectors=False,
           query_vector=user_query_embedding,
-          limit=top_n  # Return 5 closest points
+          limit=top_n,  # Return n closest points
+          
+          # In a system with high disk latency, the re-scoring step may become a bottleneck: https://qdrant.tech/documentation/guides/quantization/
+          search_params=models.SearchParams(
+            quantization=models.QuantizationSearchParams(
+              rescore=False
+            )
+          )
       )
 
-      print("search_results", search_results)
       found_docs: list[Document] = []
       for d in search_results:
-        metadata = d.payload.get('metadata') # type: ignore
-        if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
-            # aiding in the database migration...
-            metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
-        
-        found_docs.append(Document(page_content=d.payload.get('page_content'), metadata=metadata)) # type: ignore
-      
-      # found_docs: list[Document] = [Document(page_content=str(d.payload.get('page_content')), metadata=d.payload.get('metadata')) for d in search_results]
+        try:
+          metadata = d.payload
+          page_content = metadata['page_content']
+          del metadata['page_content']
+          if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys(): # type: ignore
+              # aiding in the database migration...
+              metadata["pagenumber"] = metadata["pagenumber_or_timestamp"] # type: ignore
+          
+          found_docs.append(Document(page_content=page_content, metadata=metadata)) # type: ignore
+        except Exception as e:
+          print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
       print("found_docs", found_docs)
       return found_docs
 
@@ -1110,14 +1125,14 @@ Now please respond to my question: {user_question}"""
       String: A fully formatted prompt string.
     """
     try:
-      top_n = 150
+      top_n = 90
       start_time_overall = time.monotonic()
       o = OpenAIEmbeddings() # type: ignore
       user_query_embedding = o.embed_documents(search_query)[0] # type: ignore
       myfilter = models.Filter(
               must=[
                   models.FieldCondition(
-                      key='metadata.course_name',
+                      key='course_name',
                       match=models.MatchValue(value=course_name)
                   ),
               ])
@@ -1139,19 +1154,18 @@ Now please respond to my question: {user_question}"""
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
       valid_docs = []
       for d in found_docs:
-        if "pagenumber" not in d.payload["metadata"].keys(): # type: ignore
-          d.payload["metadata"]["pagenumber"] = d.payload["metadata"]["pagenumber_or_timestamp"] # type: ignore
-        doc_string = f"---\nDocument: {d.payload['metadata']['readable_filename']}{', page: ' + str(d.payload['metadata']['pagenumber']) if d.payload['metadata']['pagenumber'] else ''}\n{d.payload.get('page_content')}\n" # type: ignore
+        if "pagenumber" not in d.payload.keys(): # type: ignore
+          d.payload["pagenumber"] = d.payload["pagenumber_or_timestamp"] # type: ignore
+        doc_string = f"---\nDocument: {d.payload['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n" # type: ignore
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
 
         print(f"Page: {d.payload.get('page_content')[:100]}...") # type: ignore
         print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
-          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload.get('metadata'))) # type: ignore
+          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload)) # type: ignore
         else:
           continue
-          print("running continue")
 
       # Convert the valid_docs to full prompt
       separator = '---\n'  # between each context

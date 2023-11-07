@@ -1,49 +1,53 @@
-wheel
-click
+# On Apple Silicon: pip uninstall grpcio -y; conda install grpcio -y
+nomic==2.0.14
+protobuf==4.25.0
+langchain==0.0.331
+click==8.1.7
+aiohttp==3.8.6
+MarkupSafe==2.1.3
+Werkzeug==3.0.1
+mkdocstrings[python]==0.23.0
+mkdocs-material==9.4.7
+itsdangerous==2.1.2
+wheel==0.41.3
 Flask==3.0.0
-protobuf<=4.24.1
 gunicorn==21.2.0
-aiohttp
-tiktoken
-itsdangerous
-Jinja2
-MarkupSafe
-Werkzeug
-python-dotenv
-flask-cors
-qdrant-client
-mkdocs
-mkdocstrings[python]
-mkdocs-material
-sqlalchemy
-langchain==0.0.270
-openai
-supabase
-SQLAlchemy
-boto3
-# https://github.com/pymupdf/PyMuPDF/issues/2614
-# ImportError: libcrypt.so.2: cannot open shared object file: No such file or directory
-# only safe version of pymupdf is 1.22.5
-PyMuPDF==1.22.5
-unstructured
-tabulate
-pdf2image
+tiktoken==0.5.1
+Jinja2==3.1.2
+python-dotenv==1.0.0
+flask-cors==4.0.0
+qdrant-client==1.6.4
+mkdocs==1.5.3
+openai==0.28.1
+supabase==2.0.2
+SQLAlchemy==2.0.22
+boto3==1.28.79
+PyMuPDF==1.23.6
+tabulate==0.9.0
 typing-inspect==0.9.0
-typing_extensions==4.7.1
-pysrt
-docx2txt
-pydub
-ffmpeg-python
-ffprobe
-ffmpeg
-beautifulsoup4
-cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
-GitPython
-nomic
-flask-executor
-xlrd # for excel ingest
-pdfminer # for image OCR
-pytesseract # for image OCR
+typing_extensions==4.8.0
+pysrt==1.1.2
+docx2txt==0.8
+pydub==0.25.1
+ffmpeg-python==0.2.0
+ffprobe==0.5
+ffmpeg==1.4
+beautifulsoup4==4.12.2
+canvasapi==3.2.0
+GitPython==3.1.40
+flask-executor==1.0.0
+# pdf packages for unstructured
+# pdf2image==1.16.3
+# pdfminer.six==20221105
+# opencv-python-headless==4.8.1.78
+# unstructured.pytesseract==0.3.12
+# unstructured-inference==0.7.11 # this is the real large one :(
+pytesseract==0.3.10 # image OCR
+openpyxl==3.1.2 # excel
+networkx==3.2.1 # unused part of excel partitioning :(
+python-pptx==0.6.23
+unstructured==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
+# unstructured[xlsx,image,pptx]==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
 
-# No arize for now, huge build size with these additions.
-# arize[AutoEmbeddings, LLM_Evaluation]
+# Not currently supporting coursera ingest
+# cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
