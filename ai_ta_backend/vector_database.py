@@ -1053,7 +1053,7 @@ class Ingest():
     for doc in found_docs: # top N from QDRANT
     
       # if url present, query through that
-      if doc.metadata['url']:
+      if 'url' in doc.metadata.keys() and doc.metadata['url']:
         parent_doc_id = doc.metadata['url']
         print("url: ", parent_doc_id)
         response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('url', parent_doc_id).execute()
@@ -1225,7 +1225,7 @@ class Ingest():
           break
       
       for v in valid_docs:
-        print("valid doc text: ", v['text'])
+        #print("valid doc text: ", v['text'])
         print("s3_path: ", v['s3_path'])
         print("url: ", v['url'])
         print("readable_filename: ", v['readable_filename'])
