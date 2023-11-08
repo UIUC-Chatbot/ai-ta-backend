@@ -221,7 +221,11 @@ class Ingest():
       title = title.replace("/", " ")
       title = title.strip()
 
-      if kwargs['kwargs'] == {}:
+      # To handle webscrape vs front-end Kwargs
+      if 'kwargs' in kwargs.keys() and kwargs['kwargs'] == {}:
+          url = ''
+          base_url = ''
+      elif 'kwargs' not in kwargs.keys():
         url = ''
         base_url = ''
       else:
