@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import boto3
 import fitz
 import openai
+import pytesseract
 import supabase
 from bs4 import BeautifulSoup
 from git.repo import Repo
@@ -29,6 +30,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+from PIL import Image
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
@@ -128,12 +130,12 @@ class Ingest():
         if file_extension in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
           ingest_method = file_ingest_methods[file_extension]
-          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
+          _ingest_single(ingest_method, s3_path, course_name, **kwargs)
         elif mime_category in mimetype_ingest_methods:
           # fallback to MimeType
           print("mime category", mime_category)
           ingest_method = mimetype_ingest_methods[mime_category]
-          _ingest_single(ingest_method, s3_path, course_name, kwargs=kwargs)
+          _ingest_single(ingest_method, s3_path, course_name, **kwargs)
         else:
           # No supported ingest... Fallback to attempting utf-8 decoding, otherwise fail. 
           try: 
@@ -165,7 +167,7 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -195,7 +197,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -314,7 +316,7 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
+          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
           'pagenumber': '',
           'timestamp': text.index(txt),
           'url': '',
@@ -331,12 +333,7 @@ class Ingest():
   def _ingest_single_docx(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
       with NamedTemporaryFile() as tmpfile:
-        # download from S3 into pdf_tmpfile
-        print("Bucket: ", os.getenv('S3_BUCKET_NAME'))
-        print("Key: ", s3_path)
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
-        print("GOT THE FILE")
-        print(tmpfile.name)
 
         loader = Docx2txtLoader(tmpfile.name)
         documents = loader.load()
@@ -345,7 +342,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -355,8 +352,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"ERROR IN DOCX {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (DOCX ingest): {e}"
 
   def _ingest_single_srt(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
@@ -371,7 +368,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -381,8 +378,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"SRT ERROR {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (SRT ingest): {e}"
   
   def _ingest_single_excel(self, s3_path: str, course_name: str, **kwargs) -> str:
     try:
@@ -398,7 +395,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -408,7 +405,7 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"Excel ERROR {e}")
+      print(f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
   
   def _ingest_single_image(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -417,14 +414,22 @@ class Ingest():
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=tmpfile)
 
-        loader = UnstructuredImageLoader(tmpfile.name, unstructured_kwargs={'strategy': "auto"})
+        """
+        # Unstructured image loader makes the install too large (700MB --> 6GB. 3min -> 12 min build times). AND nobody uses it.
+        # The "hi_res" strategy will identify the layout of the document using detectron2. "ocr_only" uses pdfminer.six. https://unstructured-io.github.io/unstructured/core/partition.html#partition-image
+        loader = UnstructuredImageLoader(tmpfile.name, unstructured_kwargs={'strategy': "ocr_only"})
         documents = loader.load()
+        """
+
+        res_str = pytesseract.image_to_string(Image.open(tmpfile.name))
+        print("IMAGE PARSING RESULT:", res_str)
+        documents = [Document(page_content=res_str)]
 
         texts = [doc.page_content for doc in documents]
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -434,7 +439,7 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"Image ingest error (png/jpg) ERROR {e}")
+      print(f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
   
   def _ingest_single_csv(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -450,7 +455,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -460,8 +465,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print(f"CSV ERROR {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (CSV ingest): {e}"
 
   def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
     """
@@ -469,6 +474,8 @@ class Ingest():
       LangChain `Documents` have .metadata and .page_content attributes.
     Be sure to use TemporaryFile() to avoid memory leaks!
     """
+    print("IN PDF ingest: s3_path: ", s3_path, "and kwargs:", kwargs)
+
     try:
       with NamedTemporaryFile() as pdf_tmpfile:
         # download from S3 into pdf_tmpfile
@@ -500,7 +507,11 @@ class Ingest():
           text = page.get_text().encode("utf8").decode("utf8", errors='ignore')  # get plain text (is in UTF-8)
           pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
 
-        if kwargs['kwargs'] == {}:
+        # Webscrape kwargs
+        if 'kwargs' in kwargs.keys() and kwargs['kwargs'] == {}:
+          url = ''
+          base_url = ''
+        elif 'kwargs' not in kwargs.keys():
           url = ''
           base_url = ''
         else:
@@ -520,7 +531,7 @@ class Ingest():
                 's3_path': s3_path,
                 'pagenumber': page['page_number'] + 1,  # +1 for human indexing
                 'timestamp': '',
-                'readable_filename': page['readable_filename'],
+                'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else page['readable_filename'],
                 'url': url,
                 'base_url': base_url,
             } for page in pdf_pages_OCRed
@@ -530,9 +541,8 @@ class Ingest():
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
         print("Success pdf ingest")
     except Exception as e:
-      print("ERROR IN PDF READING ")
-      print(e)
-      return f"Error {e}"
+      print(f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (PDF ingest): {e}"
     return "Success"
 
   def _ingest_single_txt(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -555,7 +565,7 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': Path(s3_path).name,
+          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
           'pagenumber': '',
           'timestamp': '',
           'url': '',
@@ -566,7 +576,7 @@ class Ingest():
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
     except Exception as e:
-      print(f"ERROR IN TXT READING {e}")
+      print(f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
       return f"Error: {e}"
 
   def _ingest_single_ppt(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -586,7 +596,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -596,9 +606,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      print("ERROR IN PDF INGEST")
-      print(e)
-      return f"Error {e}"
+      print(f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"Error: {e}"
 
   def list_files_recursively(self, bucket, prefix):
     all_files = []
@@ -705,8 +714,8 @@ class Ingest():
         self.split_and_upload(texts=[texts], metadatas=[metadatas])
       return "Success"
     except Exception as e:
-      print(f"ERROR IN GITHUB INGEST {e}")
-      return f"Error: {e}"
+      print(f"❌❌ Error in (GITHUB ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.print_exc())
+      return f"❌❌ Error in (GITHUB ingest): {e}"
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
