@@ -1117,10 +1117,11 @@ class Ingest():
             'readable_filename': doc.metadata['readable_filename'],
             'course_name': course_name,
             's3_path': doc.metadata['s3_path'],
-            'url': doc.metadata['url'],
             'base_url':doc.metadata['base_url']
           }
-          
+          if 'url' in doc.metadata.keys():
+            context_dict['url'] = doc.metadata['url']
+            
           result_contexts.append(context_dict)
           print("len of result contexts after qdrant append: ", len(result_contexts))
       
