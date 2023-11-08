@@ -1075,7 +1075,7 @@ class Ingest():
           # retrieve by chunk index --> pad contexts
           target_chunk_index = doc.metadata['chunk_index']
           print("target chunk_index: ", target_chunk_index)
-        
+          print("len of result contexts before chunk_index padding: ", len(result_contexts))
           for context in contexts:
             curr_chunk_index = context['chunk_index']
             # collect between range of target index - 3 and target index + 3
@@ -1089,12 +1089,13 @@ class Ingest():
               result_contexts.append(context)
               # add current index to retrieved_contexts_identifiers after each context is retrieved to avoid duplicates
               retrieved_contexts_identifiers[parent_doc_id].append(curr_chunk_index)
+          print("len of result contexts after chunk_index padding: ", len(result_contexts))
 
         elif doc.metadata['pagenumber'] != '':
           # retrieve by page number --> retrieve the single whole page?
           pagenumber = doc.metadata['pagenumber']
           print("target pagenumber: ", pagenumber)
-
+          print("len of result contexts: ", len(result_contexts))
           for context in contexts:
             if context['pagenumber'] == pagenumber:
               context['readable_filename'] = filename
@@ -1103,12 +1104,13 @@ class Ingest():
               context['url'] = data[0]['url']
               context['base_url'] = data[0]['base_url']
               result_contexts.append(context)
-          
+          print("len of result contexts after pagenumber padding: ", len(result_contexts))
           # add page number to retrieved_contexts_identifiers after all contexts belonging to that page number have been retrieved
           retrieved_contexts_identifiers[parent_doc_id].append(pagenumber)
         else:
           # dont pad, re-factor it to be like Supabase object
           print("no chunk index or page number, just appending the QDRANT context")
+          print("len of result contexts in else condn: ", len(result_contexts))
           context_dict = {'text': doc.page_content,
             'embedding': '',
             'timestamp': doc.metadata['timestamp'],
@@ -1121,6 +1123,7 @@ class Ingest():
           }
 
           result_contexts.append(context_dict)
+          print("len of result contexts after qdrant append: ", len(result_contexts))
       
     print("length of final contexts: ", len(result_contexts))
 
