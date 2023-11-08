@@ -1113,7 +1113,6 @@ class Ingest():
           print("len of result contexts in else condn: ", len(result_contexts))
           context_dict = {'text': doc.page_content,
             'embedding': '',
-            'timestamp': doc.metadata['timestamp'],
             'pagenumber': doc.metadata['pagenumber'],
             'readable_filename': doc.metadata['readable_filename'],
             'course_name': course_name,
@@ -1121,7 +1120,7 @@ class Ingest():
             'url': doc.metadata['url'],
             'base_url':doc.metadata['base_url']
           }
-
+          
           result_contexts.append(context_dict)
           print("len of result contexts after qdrant append: ", len(result_contexts))
       
