@@ -1176,6 +1176,7 @@ class Ingest():
             )
       
       generated_queries = generate_queries.invoke({"original_query": search_query})
+      print("generated_queries", generated_queries)
 
       batch_found_docs: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries, course_name=course_name)
 
@@ -1197,9 +1198,11 @@ class Ingest():
       
       # Extract only the Document objects from the tuples to pass them to context padding
       found_docs = [doc for doc, score in found_docs]
+      print(f"Number of docs found with multiple queries: {len(found_docs)}")
 
       # call context padding function here
       final_docs = self.context_padding(found_docs, search_query, course_name)
+      print(f"Number of final docs after context padding: {len(final_docs)}")
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
