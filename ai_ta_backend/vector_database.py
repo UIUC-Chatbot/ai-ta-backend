@@ -1097,7 +1097,7 @@ class Ingest():
           print("target pagenumber: ", pagenumber)
           print("len of result contexts: ", len(result_contexts))
           for context in contexts:
-            if context['pagenumber'] == pagenumber:
+            if int(context['pagenumber']) == pagenumber:
               context['readable_filename'] = filename
               context['course_name'] = course_name
               context['s3_path'] = data[0]['s3_path']
