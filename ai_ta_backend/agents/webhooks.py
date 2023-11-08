@@ -4,23 +4,39 @@ import os
 
 from supabase.client import create_client
 from docker.errors import NotFound
-
+import traceback
+import re
+import logging
 # Initialize Supabase client
 supabase_url = os.environ["SUPABASE_URL"]
-supabase_key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+supabase_key = os.environ["SUPABASE_API_KEY"]
 supabase = create_client(supabase_url, supabase_key)
 
 # Initialize Docker client
 docker_client = docker.from_env()
-
+logging.basicConfig(level=logging.DEBUG)
+logging.getLogger('docker').setLevel(logging.DEBUG)
+logging.getLogger('urllib3').setLevel(logging.DEBUG)
 def build_docker_image(image_name):
     """Build a Docker image with the given name.
 
     Args:
         image_name (str): The Docker image name.
     """
-    dockerfile_path = '.'  # replace with the path to your Dockerfile
-    docker_client.images.build(path=dockerfile_path, tag=image_name)
+    print(f"Building docker image: {image_name}")
+    dockerfile_path = "ai_ta_backend/agents"
+    # p = pathlib.Path('.')
+    # print(f"List of files in {dockerfile_path}: {list(p.glob('*'))}")
+    try:
+        img, logs = docker_client.images.build(path=dockerfile_path, tag=image_name, quiet=False) #type:ignore
+        print(f"Response on creating new image: {img}, logs: {logs}")
+        for log in logs:
+            print(log)
+        return img
+    except Exception as e:
+        print(f"Error: {e}")
+        print(traceback.print_exc())
+    return None
 
 def run_docker_container(image_name, command, volume_name):
     """Run a Docker container with the given image name and command.
@@ -45,20 +61,32 @@ def check_and_insert_image_name(image_name):
     Args:
         image_name (str): The Docker image name.
     """
+    docker_images = []
+    img = None
     # Query the Supabase table
     result = supabase.table("docker_images").select("image_name").eq("image_name", image_name).execute()
 
+    print(f"Result: {result}")
+
     # If the image name does not exist in the table, insert it and build a Docker image
-    if not result["data"]:
+    if not result.data:
         supabase.table("docker_images").insert({"image_name": image_name}).execute()
-        build_docker_image(image_name)
+        img = build_docker_image(image_name)
 
     # Query the Docker environment
-    docker_images = [img.tags[0] for img in docker_client.images.list()] #type:ignore
+    try:
+        docker_images = [img.tags[0] for img in docker_client.images.list() if img.tags] #type:ignore
+        print(f"Docker images available: {docker_images}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
     # Check if the image exists in the Docker environment
     if image_name not in docker_images:
-        raise ValueError(f"Docker image {image_name} does not exist in the Docker environment.")
+        print(f"Docker image {image_name} does not exist in the Docker environment.")
+        img = build_docker_image(image_name)
+
+    return img
+
 
 def handle_event(payload):
     """ This is the primary entry point to the app; Just open an issue!
@@ -67,14 +95,16 @@ def handle_event(payload):
         payload (_type_): From github, see their webhook docs.
     """
     # Construct Docker image name
-    repo_name = payload["repository"]["full_name"]
+    repo_name = payload["repository"]["full_name"].lower()
     number = payload.get('issue').get('number')
     image_name = f"{repo_name}_{number}"
-    volume_name = f"vol_{image_name}"
+    # Filter out disallowed characters from the image name for the volume name
+    volume_name = f"vol_{re.sub('[^a-zA-Z0-9_.-]', '_', image_name)}"
 
     # Check if the image name exists in the Supabase table, if not, insert it and build a Docker image
-    check_and_insert_image_name(image_name)
+    img = check_and_insert_image_name(image_name)
 
     # Send shell command to Docker image
     command = f"python github_webhook_handlers.py --payload '{json.dumps(payload)}'"
-    run_docker_container(image_name, command, volume_name)
+    if img:
+        run_docker_container(image_name, command, volume_name)

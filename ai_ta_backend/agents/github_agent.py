@@ -59,8 +59,8 @@ from langsmith.schemas import Run
 from qdrant_client import QdrantClient
 from typing_extensions import runtime
 
-from ai_ta_backend.agents.tools import get_human_input, get_tools
-from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
+from tools import get_human_input, get_tools
+from utils import fancier_trim_intermediate_steps
 
 # load_dotenv(override=True, dotenv_path='.env')
 

@@ -1,0 +1,13 @@
+# git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain&subdirectory=libs/langchain
+# git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain-experimental&subdirectory=libs/experimental
+# langchain==0.0.331
+# langchain-experimental
+# langchainhub==0.1.13
+# python-dotenv==1.0.0
+# pygithub
+# playwright
+# google-search-results
+# arxiv
+# ray[default]
+# newrelic
+# newrelic-telemetry-sdk

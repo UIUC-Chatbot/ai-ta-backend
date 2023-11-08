@@ -328,7 +328,6 @@ def mit_download_course():
 
 
 # TODO: add a way to delete items from course based on base_url
-from ai_ta_backend.agents import github_webhook_handlers
 
 
 @app.route('/', methods=['POST']) # RUN: $ smee -u https://smee.io/nRnJDGnCbWYUaSGg --port 8000

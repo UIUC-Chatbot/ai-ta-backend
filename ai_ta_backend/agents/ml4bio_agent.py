@@ -8,8 +8,8 @@ from langchain_experimental.plan_and_execute import (PlanAndExecute,
                                                      load_agent_executor,
                                                      load_chat_planner)
 
-from ai_ta_backend.agents.tools import get_tools
-from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
+from tools import get_tools
+from utils import fancier_trim_intermediate_steps
 
 
 def get_user_info_string():

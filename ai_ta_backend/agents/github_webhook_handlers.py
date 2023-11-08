@@ -26,9 +26,9 @@ from langchain import hub
 from langchain.utilities.github import GitHubAPIWrapper
 from newrelic_telemetry_sdk import Log, LogClient, Span, SpanClient
 
-from ai_ta_backend.agents import github_agent
-from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
-from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
+from github_agent import GH_Agent
+from ml4bio_agent import WorkflowAgent
+from utils import get_langsmith_trace_sharable_url
 
 # load API keys from globally-availabe .env file
 load_dotenv(dotenv_path='/Users/kastanday/code/ncsa/ai-ta/ai-ta-backend/.env', override=True)
@@ -201,7 +201,7 @@ def handle_comment_opened(payload):
       messageForNewPRs = "Thanks for commenting on this PR!! I'll now try to finish this implementation and I'll comment if I get blocked or (WIP) 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
       issue.create_comment(messageForNewPRs)
 
-      bot = github_agent.GH_Agent(branch_name=branch_name)
+      bot = GH_Agent(branch_name=branch_name)
       instruction = f"Please complete this work-in-progress pull request (PR number {number}) by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {format_issue(issue)}"
       result = bot.launch_gh_agent(instruction, active_branch=branch_name)
       issue.create_comment(result)

@@ -1,17 +1,9 @@
-# USAGE: 
-# 0. VOLUME 
-# docker volume create my_volume
-# 1. BUILD
-# 
-# 2. RUN 
-# docker run -v my_volume:/path/in/container -p 8000:8000 --env-file .env your-image
-
 # Use an official minimal Alpine Linux as a parent image
 FROM alpine:latest
 LABEL maintainer="kastanvday@gmail.com"
 
 # APK packages
-RUN apk add --no-cache python3=3.10.13 py3-pip R R-dev
+RUN apk add --no-cache python3 py3-pip R R-dev
 
 # R packages
 RUN R -e "install.packages(c('dplyr', 'ggplot2'), repos='http://cran.rstudio.com/')"
@@ -19,7 +11,9 @@ RUN R -e "install.packages(c('dplyr', 'ggplot2'), repos='http://cran.rstudio.com
 # PIP packages
 RUN pip install --upgrade pip
 COPY requirements.txt /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN export PYTHONPATH=/usr/bin/python \
+ && pip install -r requirements.txt
+# RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 WORKDIR /app
 COPY . /app
