@@ -471,7 +471,7 @@ def logToNomic():
   return 
 
 @app.route('/export-convo-history-csv', methods=['GET'])
-def nomic_map():
+def export_convo_history():
   course_name: str = request.args.get('course_name', default='', type=str)
   from_date: str = request.args.get('from_date', default='', type=str)
   to_date: str = request.args.get('to_date', default='', type=str)
