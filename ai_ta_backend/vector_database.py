@@ -1039,7 +1039,7 @@ class Ingest():
     """
     Takes top N contexts acquired from QRANT similarity search and pads them 
     with context from the original document from Supabase.
-    1. Use s3_path/url as unique doc indentifier
+    1. Use s3_path OR url as unique doc indentifier
     2. Use s_path + chunk_index to locate chunk in the document.
     3. Pad it with 3 contexts before and after it.
     4. If chunk_index is not present, use page number to locate the page in the document.
@@ -1054,13 +1054,11 @@ class Ingest():
       # if url present, query through that
       if 'url' in doc.metadata.keys() and doc.metadata['url']:
         parent_doc_id = doc.metadata['url']
-        print("url: ", parent_doc_id)
         response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('url', parent_doc_id).execute()
         retrieved_contexts_identifiers[parent_doc_id] = []
       # else use s3_path
       else: 
         parent_doc_id = doc.metadata['s3_path']
-        print("s3_path: ", parent_doc_id)
         response = self.supabase_client.table(documents_table).select('*').eq('course_name', course_name).eq('s3_path', parent_doc_id).execute()
         retrieved_contexts_identifiers[parent_doc_id] = []
 
@@ -1245,7 +1243,7 @@ class Ingest():
       return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
-      err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.print_exc()}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
+      err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.format_exc()}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
       print(err)
       return err
 
