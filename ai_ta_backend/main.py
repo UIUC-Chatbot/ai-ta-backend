@@ -468,6 +468,26 @@ def logToNomic():
   response = executor.submit(log_convo_to_nomic, course_name, data)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
+  return 
+
+@app.route('/export-convo-history-csv', methods=['GET'])
+def nomic_map():
+  course_name: str = request.args.get('course_name', default='', type=str)
+  from_date: str = request.args.get('from_date', default='', type=str)
+  to_date: str = request.args.get('to_date', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`"
+    )
+
+  export_status = export_convo_history_csv(course_name, from_date, to_date)
+
+  response = jsonify(export_status)
+  response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
 
