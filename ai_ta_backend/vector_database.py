@@ -1223,7 +1223,7 @@ class Ingest():
         else:
           # filled our token size, time to return
           break
-
+      print("valid docs", valid_docs)
       print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
