@@ -19,6 +19,8 @@ import openai
 import supabase
 from bs4 import BeautifulSoup
 from git.repo import Repo
+from langchain import hub
+from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
 from langchain.document_loaders import (Docx2txtLoader, GitLoader,
                                         PythonLoader, SRTLoader, TextLoader,
                                         UnstructuredExcelLoader,
@@ -26,7 +28,10 @@ from langchain.document_loaders import (Docx2txtLoader, GitLoader,
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.document_loaders.image import UnstructuredImageLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.llms.openai import OpenAI
+from langchain.load import dumps, loads
 from langchain.schema import Document
+from langchain.schema.output_parser import StrOutputParser
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.qdrant import Qdrant
 from pydub import AudioSegment
@@ -36,11 +41,6 @@ from qdrant_client.models import PointStruct
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
-from langchain import hub
-from langchain.llms.openai import OpenAI
-from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
-from langchain.schema.output_parser import StrOutputParser
-from langchain.load import dumps, loads
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 
@@ -989,7 +989,7 @@ class Ingest():
       print("found_docs", found_docs)
       return found_docs
   
-  def batch_vector_search(self, search_queries: List[str], course_name: str):
+  def batch_vector_search(self, search_queries: List[str], course_name: str, top_n: int=20):
     from qdrant_client.http import models as rest
     o = OpenAIEmbeddings()
     # Prepare the filter for the course name
@@ -1006,7 +1006,7 @@ class Ingest():
     for query in search_queries:
         user_query_embedding = o.embed_query(query)
         search_requests.append(
-            rest.SearchRequest(vector=user_query_embedding, filter=myfilter, limit=5, with_payload=True)
+            rest.SearchRequest(vector=user_query_embedding, filter=myfilter, limit=top_n, with_payload=True)
         )
 
     # Perform the batch search
@@ -1014,7 +1014,6 @@ class Ingest():
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
         requests=search_requests
     )
-    print(f"Search results: {search_results}")
     # Process the search results
     found_docs: list[list[Document]] = []
     for result in search_results:
@@ -1133,6 +1132,10 @@ class Ingest():
     return result_contexts
   
   def reciprocal_rank_fusion(self, results: list[list], k=60):
+    """
+    Since we have multiple queries, and n documents returned per query, we need to go through all the results
+    and collect the documents with the highest overall score, as scored by qdrant similarity matching.
+    """
     fused_scores = {}
     for docs in results:
         # Assumes the docs are returned in sorted order of relevance
@@ -1184,26 +1187,13 @@ class Ingest():
       batch_found_docs: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries, course_name=course_name)
 
       found_docs = self.reciprocal_rank_fusion(batch_found_docs)
-
-      # LCEL implementation (need custom one for batch vector search since it doesn't implement langchain Runnable)
-      # retriever = self.vectorstore.as_retriever(
-      #     search_kwargs={"k": top_n, "filter": {"course_name": course_name}}
-      # )
-      # chain = generate_queries | retriever.map() | self.reciprocal_rank_fusion
-      # docs = chain.invoke({"original_query": search_query})
-
-      # Only for debugging
-      # print(f"Docs found with multiple queries: {found_docs}")
-      print(f"Number of docs found with multiple queries: {len(found_docs)}")
-
-      if len(found_docs) == 0:
-          return []
-      
-      # Extract only the Document objects from the tuples to pass them to context padding
       found_docs = [doc for doc, score in found_docs]
       print(f"Number of docs found with multiple queries: {len(found_docs)}")
+      if len(found_docs) == 0:
+          return []
 
-      # call context padding function here
+      # 'context padding' // 'parent document retriever' 
+      # TODO maybe only do context padding for top 5 docs? Otherwise it's wasteful imo.
       final_docs = self.context_padding(found_docs, search_query, course_name)
       print(f"Number of final docs after context padding: {len(final_docs)}")
 
@@ -1228,12 +1218,12 @@ class Ingest():
           break
       
       for v in valid_docs:
+        print("FINAL VALID DOCS:")
         #print("valid doc text: ", v['text'])
         print("s3_path: ", v['s3_path'])
         print("url: ", v['url'])
         print("readable_filename: ", v['readable_filename'])
         print("\n")
-
 
       print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
