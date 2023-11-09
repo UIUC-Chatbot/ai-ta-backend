@@ -1,20 +1,32 @@
-# Use an official minimal Alpine Linux as a parent image
-FROM alpine:latest
-LABEL maintainer="kastanvday@gmail.com"
+# Use an official Ubuntu as a parent image
+FROM ubuntu:jammy
+# Set environment variables
+ARG DEBIAN_FRONTEND=noninteractive
+ARG TZ=America/Los_Angeles
 
-# APK packages
-RUN apk add --no-cache python3 py3-pip R R-dev
+# Install Python and other dependencies
+RUN apt-get update && \
+    # Install Python
+    apt-get install -y python3 python3-distutils curl git && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
+    curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python get-pip.py && \
+    rm get-pip.py && \
+    # clean apt cache
+    rm -rf /var/lib/apt/lists/*
 
-# R packages
-RUN R -e "install.packages(c('dplyr', 'ggplot2'), repos='http://cran.rstudio.com/')"
+# Install R packages
+# RUN R -e "install.packages(c('dplyr', 'ggplot2'), repos='http://cran.rstudio.com/')"
 
-# PIP packages
-RUN pip install --upgrade pip
+# Install PIP packages
 COPY requirements.txt /tmp/
-RUN export PYTHONPATH=/usr/bin/python \
- && pip install -r requirements.txt
-# RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN pip install --upgrade pip && \
+    # pip install virtualenv && \
+    # virtualenv venv && \
+    # . venv/bin/activate && \
+    pip install --no-cache-dir -r /tmp/requirements.txt
 
+# Set the working directory
 WORKDIR /app
 COPY . /app
 
@@ -28,3 +40,7 @@ COPY . /app
 # Run your application when the container launches
 # Replace `app.py` with the script that runs your application
 # CMD ["python3", "app.py"]
+
+# Bake browsers into the image
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+RUN playwright install --with-deps

@@ -3,66 +3,27 @@ Env for Kastan: openai_3 or flask10_py10
 """
 
 import inspect
-import logging
 import os
 import traceback
-import uuid
-from typing import List, Sequence, Tuple
 
 import langchain
 import ray
 from dotenv import load_dotenv
-from github import GithubException
-from github.Issue import Issue
-from langchain.agents import (AgentExecutor, AgentType, Tool, initialize_agent,
-                              load_tools)
-from langchain.agents.agent_toolkits import PlayWrightBrowserToolkit
-from langchain.agents.agent_toolkits.github.toolkit import GitHubToolkit
-from langchain.agents.openai_functions_multi_agent.base import \
-    OpenAIMultiFunctionsAgent
-from langchain.agents.react.base import DocstoreExplorer
+from langchain.agents import (AgentExecutor, AgentType, initialize_agent)
 from langchain.callbacks.manager import tracing_v2_enabled
-from langchain.chains import RetrievalQA
 from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
-from langchain.chat_models.base import BaseChatModel
-from langchain.docstore.base import Docstore
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.memory import (ConversationBufferMemory,
-                              ConversationSummaryBufferMemory)
-from langchain.prompts import (ChatPromptTemplate, HumanMessagePromptTemplate,
-                               MessagesPlaceholder, PromptTemplate)
-from langchain.prompts.chat import (BaseMessagePromptTemplate,
-                                    ChatPromptTemplate,
-                                    HumanMessagePromptTemplate,
-                                    MessagesPlaceholder,
-                                    SystemMessagePromptTemplate)
-from langchain.schema import AgentAction
-from langchain.schema.language_model import BaseLanguageModel
-from langchain.schema.messages import (AIMessage, BaseMessage, FunctionMessage,
-                                       SystemMessage)
-from langchain.tools.base import BaseTool
-from langchain.tools.playwright.utils import \
-    create_sync_playwright_browser  # A synchronous browser is available, though it isn't compatible with jupyter.
-from langchain.tools.playwright.utils import create_async_playwright_browser
+from langchain.memory import (ConversationSummaryBufferMemory)
+from langchain.prompts import (MessagesPlaceholder)
+from langchain.prompts.chat import (MessagesPlaceholder)
 from langchain.utilities.github import GitHubAPIWrapper
-from langchain.vectorstores import Qdrant
 # from langchain_experimental.autonomous_agents.autogpt.agent import AutoGPT
 # from langchain_experimental.autonomous_agents.baby_agi import BabyAGI
-from langchain_experimental.plan_and_execute.agent_executor import \
-    PlanAndExecute
-from langchain_experimental.plan_and_execute.executors.agent_executor import \
-    load_agent_executor
-from langchain_experimental.plan_and_execute.planners.chat_planner import \
-    load_chat_planner
 from langsmith import Client
-from langsmith.schemas import Run
-from qdrant_client import QdrantClient
-from typing_extensions import runtime
 
-from tools import get_human_input, get_tools
+from tools import get_tools
 from utils import fancier_trim_intermediate_steps
 
-# load_dotenv(override=True, dotenv_path='.env')
+load_dotenv(override=True, dotenv_path='.env')
 
 os.environ["LANGCHAIN_TRACING_V2"] = "true"  # If you want to trace the execution of the program, set to "true"
 langchain.debug = False  # True for more detailed logs

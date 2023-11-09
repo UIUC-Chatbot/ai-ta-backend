@@ -12,8 +12,7 @@ import ray
 from langchain.schema import AgentAction
 from langsmith import Client
 from langsmith.schemas import Run
-
-from ai_ta_backend.utils_tokenization import count_tokens_and_cost
+import tiktoken
 
 
 def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> List[Tuple[AgentAction, str]]:
@@ -148,6 +147,73 @@ def get_langsmith_trace_sharable_url(run_id_in_metadata, project_name='', time_d
     sharable_url = langsmith_client.read_run_shared_link(run_id=run.id)
   logging.info(f'⭐️ sharable_url: {sharable_url}')
   return sharable_url
+
+def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: str = "gpt-3.5-turbo"): # -> tuple[int, float] | tuple[int, float, int, float]:
+  """
+  Returns the number of tokens in a text string.
+
+  Only the first parameter is required, a string of text to measure. The completion and model name are optional.
+
+  num_tokens, prompt_cost = count_tokens_and_cost(prompt="hello there")
+  num_tokens_prompt, prompt_cost, num_tokens_completion, completion_cost  = count_tokens_and_cost(prompt="hello there", completion="how are you?")  
+  
+  Args:
+      prompt (str): _description_
+      completion (str, optional): _description_. Defaults to ''.
+      openai_model_name (str, optional): _description_. Defaults to "gpt-3.5-turbo".
+
+  Returns:
+      tuple[int, float] | tuple[int, float, int, float]: Returns the number of tokens consumed and the cost. The total cost you'll be billed is the sum of each individual cost (prompt_cost + completion_cost)
+  """
+  # encoding = tiktoken.encoding_for_model(openai_model_name)
+  openai_model_name = openai_model_name.lower()
+  encoding = tiktoken.encoding_for_model("gpt-3.5-turbo") # I think they all use the same encoding
+  prompt_cost = 0
+  completion_cost = 0
+  
+  prompt_token_cost = 0 
+  completion_token_cost = 0
+  
+  if openai_model_name.startswith("gpt-3.5-turbo"):
+    if "16k" in openai_model_name:
+      prompt_token_cost: float = 0.003 / 1_000
+      completion_token_cost: float = 0.004 / 1_000
+    else:
+      # 3.5-turbo regular (4k context)
+      prompt_token_cost: float = 0.0015 / 1_000
+      completion_token_cost: float = 0.002 / 1_000
+      
+  elif openai_model_name.startswith("gpt-4"):
+    if "32k" in openai_model_name:
+      prompt_token_cost = 0.06 / 1_000
+      completion_token_cost = 0.12 / 1_000
+    else:
+      # gpt-4 regular (8k context)
+      prompt_token_cost = 0.03 / 1_000
+      completion_token_cost = 0.06 / 1_000
+  elif openai_model_name.startswith("text-embedding-ada-002"):
+    prompt_token_cost = 0.0001 / 1_000
+    completion_token_cost = 0.0001 / 1_000
+  else: 
+    # no idea of cost
+    print(f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`. (Defaulting to GPT-4 pricing...)")
+    prompt_token_cost = 0.03 / 1_000
+    completion_token_cost = 0.06 / 1_000
+  
+  if completion == '':
+    num_tokens_prompt: int = len(encoding.encode(prompt))
+    prompt_cost = float(prompt_token_cost * num_tokens_prompt)
+    return num_tokens_prompt, prompt_cost
+  elif prompt == '':
+    num_tokens_completion: int = len(encoding.encode(completion))
+    completion_cost = float(completion_token_cost * num_tokens_completion)
+    return num_tokens_completion, completion_cost
+  else:
+    num_tokens_prompt: int = len(encoding.encode(prompt))
+    num_tokens_completion: int = len(encoding.encode(completion))
+    prompt_cost = float(prompt_token_cost * num_tokens_prompt)
+    completion_cost = float(completion_token_cost * num_tokens_completion)
+    return num_tokens_prompt, prompt_cost, num_tokens_completion, completion_cost
 
 
 

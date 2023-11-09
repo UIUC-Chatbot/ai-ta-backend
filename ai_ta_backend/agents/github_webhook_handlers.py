@@ -8,7 +8,6 @@ import os
 import time
 import traceback
 import uuid
-from dis import Instruction
 from typing import Union
 
 import github
@@ -23,15 +22,14 @@ from github.Repository import Repository
 from github.TimelineEvent import TimelineEvent
 from langchain import hub
 # from langchain.tools.github.utils import generate_branch_name
-from langchain.utilities.github import GitHubAPIWrapper
-from newrelic_telemetry_sdk import Log, LogClient, Span, SpanClient
+from newrelic_telemetry_sdk import Log, LogClient
 
 from github_agent import GH_Agent
 from ml4bio_agent import WorkflowAgent
 from utils import get_langsmith_trace_sharable_url
 
 # load API keys from globally-availabe .env file
-load_dotenv(dotenv_path='/Users/kastanday/code/ncsa/ai-ta/ai-ta-backend/.env', override=True)
+load_dotenv()
 
 langchain.debug = False  # True for more detailed logs
 
