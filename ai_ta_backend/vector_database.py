@@ -1301,7 +1301,7 @@ class Ingest():
 
       # Vector search with ONLY original query
       # found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
-
+      mq_start_time = time.monotonic()
       # Multi query retriever
       generate_queries = (
                 MULTI_QUERY_PROMPT
@@ -1321,6 +1321,8 @@ class Ingest():
       print(f"Number of docs found with multiple queries: {len(found_docs)}")
       if len(found_docs) == 0:
           return []
+
+      print(f"⏰ Multi-query processing runtime: {(time.monotonic() - mq_start_time):.2f} seconds")
 
       # 'context padding' // 'parent document retriever' 
       # TODO maybe only do context padding for top 5 docs? Otherwise it's wasteful imo.
@@ -1347,13 +1349,13 @@ class Ingest():
           # filled our token size, time to return
           break
       
-      for v in valid_docs:
-        print("FINAL VALID DOCS:")
-        #print("valid doc text: ", v['text'])
-        print("s3_path: ", v['s3_path'])
-        print("url: ", v['url'])
-        print("readable_filename: ", v['readable_filename'])
-        print("\n")
+      # for v in valid_docs:
+      #   print("FINAL VALID DOCS:")
+      #   #print("valid doc text: ", v['text'])
+      #   print("s3_path: ", v['s3_path'])
+      #   print("url: ", v['url'])
+      #   print("readable_filename: ", v['readable_filename'])
+      #   print("\n")
 
       print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")

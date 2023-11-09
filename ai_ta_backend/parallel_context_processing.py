@@ -27,11 +27,13 @@ def context_processing(found_docs, search_query, course_name):
             executor.map(partial_func1, found_docs[5:])
             executor.map(partial_func2, found_docs[:5])
         
-        print("qdrant contexts: ", len(qdrant_contexts))
-        print("supabase contexts: ", len(supabase_contexts))
+        supabase_contexts_no_duplicates = []
+        for context in supabase_contexts:
+          if context not in supabase_contexts_no_duplicates:
+            supabase_contexts_no_duplicates.append(context)
 
-        result_contexts = list(supabase_contexts) + list(qdrant_contexts)
-
+        result_contexts = supabase_contexts_no_duplicates + list(qdrant_contexts)
+    
         print(f"⏰ Context processing runtime: {(time.monotonic() - start_time):.2f} seconds")
         
         return result_contexts
