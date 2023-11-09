@@ -42,7 +42,7 @@ from qdrant_client.models import PointStruct
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
-from ai_ta_backend.parallel_context_processing import context_padding
+from ai_ta_backend.parallel_context_processing import context_processing
 
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
@@ -1324,7 +1324,7 @@ class Ingest():
 
       # 'context padding' // 'parent document retriever' 
       # TODO maybe only do context padding for top 5 docs? Otherwise it's wasteful imo.
-      final_docs = context_padding(found_docs, search_query, course_name)
+      final_docs = context_processing(found_docs, search_query, course_name)
       print(f"Number of final docs after context padding: {len(final_docs)}")
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
