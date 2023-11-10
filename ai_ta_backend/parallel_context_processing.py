@@ -62,8 +62,7 @@ def supabase_context_padding(doc, course_name, result_docs):
     """
     Does context padding for given doc. Used with context_padding()
     """
-    print("in supabase context processing")
-    
+        
     # query by url or s3_path
     if 'url' in doc.metadata.keys() and doc.metadata['url']:
       parent_doc_id = doc.metadata['url']
