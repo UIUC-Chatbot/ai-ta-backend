@@ -4,12 +4,14 @@ import platform
 
 from langchain import hub
 from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain.agents import AgentType, initialize_agent
 from langchain_experimental.plan_and_execute import (PlanAndExecute,
                                                      load_agent_executor,
                                                      load_chat_planner)
-
+from langchain.memory import ConversationBufferMemory
 from ai_ta_backend.agents.tools import get_tools
 from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
+from ai_ta_backend.memory import MemoryManager
 
 
 def get_user_info_string():
@@ -42,6 +44,12 @@ class WorkflowAgent:
 
     # PLANNER
     planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
+
+    memory = MemoryManager()
+    memory_tools = memory.memory_tools()
+    memory_agent = initialize_agent(
+      tools=memory_tools, llm=self.llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+    )
 
     # EXECUTOR
     executor = load_agent_executor(self.llm, tools, verbose=True, trim_intermediate_steps=fancier_trim_intermediate_steps, handle_parsing_errors=True)
