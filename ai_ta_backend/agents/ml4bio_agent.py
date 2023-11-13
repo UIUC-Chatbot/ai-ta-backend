@@ -8,7 +8,6 @@ from langchain.agents import AgentType, initialize_agent
 from langchain_experimental.plan_and_execute import (PlanAndExecute,
                                                      load_agent_executor,
                                                      load_chat_planner)
-from langchain.memory import ConversationBufferMemory
 from ai_ta_backend.agents.tools import get_tools
 from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 from ai_ta_backend.memory import MemoryManager
