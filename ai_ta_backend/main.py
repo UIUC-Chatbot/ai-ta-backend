@@ -14,6 +14,7 @@ from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+from ai_ta_backend.export_data import export_convo_history_csv
 
 app = Flask(__name__)
 CORS(app)
@@ -468,7 +469,7 @@ def logToNomic():
   response = executor.submit(log_convo_to_nomic, course_name, data)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
-  return 
+  return response
 
 @app.route('/export-convo-history-csv', methods=['GET'])
 def export_convo_history():
