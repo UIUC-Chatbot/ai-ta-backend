@@ -2,6 +2,7 @@ import os
 import datetime
 import pandas as pd
 import supabase
+from flask import send_file
 
 def export_convo_history_csv(course_name: str, from_date= '', to_date= ''):
     """
@@ -35,6 +36,7 @@ def export_convo_history_csv(course_name: str, from_date= '', to_date= ''):
         print("id count greater than zero")
         first_id = response.data[0]['id']
         last_id = response.data[-1]['id']
+        filename = course_name + '_convo_history.csv'
         
         # Fetch data in batches of 25 from first_id to last_id
         while first_id <= last_id:
@@ -43,17 +45,23 @@ def export_convo_history_csv(course_name: str, from_date= '', to_date= ''):
             # Convert to pandas dataframe
             df = pd.DataFrame(response.data)
             # Append to csv file
-            filename = course_name + '_convo_history.csv'
-            if not os.path.isfile(filename):
-                df.to_csv(filename, mode='a', header=True, index=False)
+            if not os.path.isfile('docs/' + filename):
+                df.to_csv('docs/' + filename, mode='a', header=True, index=False)
             else:
-                df.to_csv(filename, mode='a', header=False, index=False)
+                df.to_csv('docs/' + filename, mode='a', header=False, index=False)
             
             # Update first_id
             first_id = response.data[-1]['id'] + 1
             print("updated first_id: ", first_id)
-            
+        
+        # Download file
+        file_path = os.path.join(os.getcwd(), 'docs/' + filename)
+        try:
+            return (file_path, 'docs/' + filename, os.getcwd())
+        except Exception as e:
+            print(e)
+            return "Error downloading file"
     else:
         print("No data found between the dates")
         return "No data found between the dates"
-    return "success"
+    

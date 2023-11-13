@@ -5,7 +5,7 @@ import time
 from typing import List
 
 from dotenv import load_dotenv
-from flask import Flask, Response, abort, jsonify, request
+from flask import Flask, Response, abort, jsonify, request, send_file, make_response, send_from_directory
 from flask_cors import CORS
 from flask_executor import Executor
 from sqlalchemy import JSON
@@ -486,9 +486,15 @@ def export_convo_history():
     )
 
   export_status = export_convo_history_csv(course_name, from_date, to_date)
-
-  response = jsonify(export_status)
+  print(export_status)
+  print("path: ", os.getcwd() + '/docs/cropwizard_convo_history.csv')
+  print("path exists: ", os.path.exists(os.getcwd() + '/docs/cropwizard_convo_history.csv'))
+  
+  response = make_response(send_file(os.getcwd() + '/docs/cropwizard_convo_history.csv', as_attachment=True))
+  #response = make_response(send_from_directory('docs', 'cropwizard_convo_history.csv', as_attachment=True))
   response.headers.add('Access-Control-Allow-Origin', '*')
+  response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
+
   return response
 
 
