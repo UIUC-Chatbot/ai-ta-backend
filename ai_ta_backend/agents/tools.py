@@ -17,7 +17,8 @@ from langchain.tools.playwright.utils import (create_async_playwright_browser,
                                               create_sync_playwright_browser)
 from langchain.utilities.github import GitHubAPIWrapper
 
-from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
+from vector_db import get_vectorstore_retriever_tool
+from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
 
 load_dotenv(override=True, dotenv_path='../.env')
 
@@ -43,7 +44,7 @@ def get_tools(sync=True):
     llm = AzureChatOpenAI(temperature=0.1, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
   else: 
     llm = ChatOpenAI(temperature=0.1, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-  human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)
+  # human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)
   # GOOGLE SEARCH
   search = load_tools(["serpapi"])
   
@@ -82,7 +83,7 @@ def get_tools(sync=True):
   #   description="Executes code in a docker container"
   # )
 
-  tools: list[BaseTool] = human_tools + browser_tools + github_tools + search + docs_tools + file_management + [shell]
+  tools: list[BaseTool] = browser_tools + github_tools + search + docs_tools + file_management + [shell]
   return tools
 
 ############# HELPERS ################
