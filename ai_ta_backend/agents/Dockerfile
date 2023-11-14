@@ -6,13 +6,11 @@ ARG TZ=America/Los_Angeles
 
 # Install Python and other dependencies
 RUN apt-get update && \
-    # Install Python
-    apt-get install -y python3 python3-distutils curl git && \
+    apt-get install -y python3 python3-distutils curl git gcc python3-dev && \
     update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
     curl -sSL https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python get-pip.py && \
     rm get-pip.py && \
-    # clean apt cache
     rm -rf /var/lib/apt/lists/*
 
 # Install R packages
@@ -29,6 +27,8 @@ RUN pip install --upgrade pip && \
 # Set the working directory
 WORKDIR /app
 COPY . /app
+COPY ./.env /app
+# COPY ../../.env /app
 
 # Make port 80 available to the world outside this container
 # Change the port if your application uses a different port

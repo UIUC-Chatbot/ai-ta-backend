@@ -29,7 +29,7 @@ from ml4bio_agent import WorkflowAgent
 from utils import get_langsmith_trace_sharable_url
 
 # load API keys from globally-availabe .env file
-load_dotenv()
+load_dotenv(override=True)
 
 langchain.debug = False  # True for more detailed logs
 
@@ -40,7 +40,6 @@ MESSAGE_HANDLE_ISSUE_OPENED = f"""Thanks for opening a new issue! I'll now try t
 Feel free to comment in this thread to give me additional instructions, or I'll tag you in a comment if I get stuck.
 If I think I'm successful I'll 'request your review' on the resulting PR. Just watch for emails while I work.
 """
-log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
 
 # app = newrelic.agent.application()
 
@@ -72,6 +71,7 @@ def handle_issue_opened(payload):
   # logging.info(f"New issue created: #{number}. Metadata: {metadata}")
 
   log = Log(message=f"New issue created: #{number}", metadata=metadata)
+  log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
   response = log_client.send(log)
   response.raise_for_status()
 
