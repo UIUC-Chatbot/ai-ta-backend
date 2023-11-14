@@ -1,7 +1,7 @@
 # On Apple Silicon: pip uninstall grpcio -y; conda install grpcio -y
 nomic==2.0.14
 protobuf==4.25.0
-langchain==0.0.331
+langchain==0.0.335
 click==8.1.7
 aiohttp==3.8.6
 MarkupSafe==2.1.3
