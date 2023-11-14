@@ -8,15 +8,9 @@ from langchain.agents import AgentType, initialize_agent
 from langchain_experimental.plan_and_execute import (PlanAndExecute,
                                                      load_agent_executor,
                                                      load_chat_planner)
-<<<<<<< HEAD
-from ai_ta_backend.agents.tools import get_tools
-from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
-from ai_ta_backend.memory import MemoryManager
-=======
 
 from tools import get_tools
 from utils import fancier_trim_intermediate_steps
->>>>>>> github_agent_webhooks
 
 
 def get_user_info_string():
