@@ -10,9 +10,10 @@ from flask_cors import CORS
 from flask_executor import Executor
 from sqlalchemy import JSON
 
+from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend.web_scrape import main_crawler, mit_course_download
+from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 from ai_ta_backend.canvas import CanvasAPI
 
 app = Flask(__name__)
@@ -209,6 +210,7 @@ def ingest() -> Response:
       str: Success or Failure message. Failure message if any failures. TODO: email on failure.
   """
   s3_paths: List[str] | str = request.args.get('s3_paths', default='')
+  readable_filename: List[str] | str = request.args.get('readable_filename', default='')
   course_name: List[str] | str = request.args.get('course_name', default='')
   print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}")
 
@@ -221,7 +223,10 @@ def ingest() -> Response:
     )
 
   ingester = Ingest()
-  success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+  if readable_filename == '':
+    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+  else:
+    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name, readable_filename=readable_filename)
   print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
   del ingester
 
@@ -327,7 +332,9 @@ def scrape() -> Response:
   max_urls: int = request.args.get('max_urls', default=100, type=int)
   max_depth: int = request.args.get('max_depth', default=2, type=int)
   timeout: int = request.args.get('timeout', default=3, type=int)
-  stay_on_baseurl: bool | None = request.args.get('stay_on_baseurl', default=True, type=bool)
+  # stay_on_baseurl = request.args.get('stay_on_baseurl', default='', type=str)
+  stay_on_baseurl: bool = request.args.get('stay_on_baseurl', default=True, type=lambda x: x.lower() == 'true')
+  depth_or_breadth:str = request.args.get('depth_or_breadth', default='breadth', type=str)
 
   if url == '' or max_urls == -1 or max_depth == -1 or timeout == -1 or course_name == '' or stay_on_baseurl is None:
     # proper web error "400 Bad request"
@@ -338,14 +345,14 @@ def scrape() -> Response:
     )
 
   # print all input params
-  print(f"Web scrape!")
-  print(f"Url: {url}")
+  print(f"Web scrape: {url}")
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
+  print(f"Stay on BaseURL: {stay_on_baseurl}")
   print(f"Timeout in Seconds ⏰: {timeout}")
-  print(f"Stay on baseurl: {stay_on_baseurl}")
-
-  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl)
+  
+  scraper = WebScrape()
+  success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl, depth_or_breadth)
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -397,9 +404,21 @@ def ingest_canvas():
   """
   Ingest course content from Canvas
   """
+  print("made it to ingest")
   canvas = CanvasAPI()
   canvas_course_id: str = request.args.get('course_id')
   course_name: str = request.args.get('course_name')
+
+  # Retrieve the checkbox values from the request and create the content_ingest_dict
+  # Set default values to True if not provided in the request
+  content_ingest_dict = {
+      'files': request.args.get('files', 'true').lower() == 'true',
+      'pages': request.args.get('pages', 'true').lower() == 'true',
+      'modules': request.args.get('modules', 'true').lower() == 'true',
+      'syllabus': request.args.get('syllabus', 'true').lower() == 'true',
+      'assignments': request.args.get('assignments', 'true').lower() == 'true',
+      'discussions': request.args.get('discussions', 'true').lower() == 'true'
+  }
 
   if canvas_course_id == '' or course_name == '':
     # proper web error "400 Bad request"
@@ -409,33 +428,10 @@ def ingest_canvas():
         f"Missing one or more required parameters: 'course_id' and 'course_name' must be provided. course_id: `{canvas_course_id}`, course_name: `{course_name}`"
     )
 
-  success_or_failure = canvas.ingest_course_content(canvas_course_id, course_name)
+  success_or_failure = canvas.ingest_course_content(canvas_course_id, course_name, content_ingest_dict)
   response = jsonify({"outcome": success_or_failure})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
-
-@app.route('/updateCanvas', methods=['GET'])
-def update_canvas():
-  """
-  Update course content from Canvas
-  """
-  canvas = CanvasAPI()
-  canvas_course_id: str = request.args.get('course_id')
-  course_name: str = request.args.get('course_name')
-
-  if canvas_course_id == '' or course_name == '':
-    # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'course_id' and 'course_name' must be provided. course_id: `{canvas_course_id}`, course_name: `{course_name}`"
-    )
-
-  success_or_failure = canvas.update_course_content(canvas_course_id, course_name)
-  response = jsonify({"outcome": success_or_failure})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
 
 @app.route('/getNomicMap', methods=['GET'])
 def nomic_map():

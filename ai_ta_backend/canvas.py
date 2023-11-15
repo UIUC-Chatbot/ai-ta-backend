@@ -5,7 +5,6 @@ import requests
 from zipfile import ZipFile
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend import update_materials
 from pathlib import Path
 
 
@@ -69,7 +68,7 @@ class CanvasAPI():
             return "Failed! Error: " + str(e)
 
 
-    def ingest_course_content(self, canvas_course_id: int, course_name: str)-> str:
+    def ingest_course_content(self, canvas_course_id: int, course_name: str, content_ingest_dict: dict = None) -> str:
         """
         Ingests all Canvas course materials through the course ID.
         1. Download zip file from Canvas and store in local directory
@@ -81,14 +80,15 @@ class CanvasAPI():
         print("In ingest_course_content")
         try:
             # a dictionary of all contents we want to ingest - files, pages, modules, syllabus, assignments, discussions.
-            content_to_ingest = {
-                'files': True,
-                'pages': True,
-                'modules': True,
-                'syllabus': True,
-                'assignments': True,
-                'discussions': True
-            }
+            if content_ingest_dict is None:
+                content_ingest_dict = {
+                    'files': True,
+                    'pages': True,
+                    'modules': True,
+                    'syllabus': True,
+                    'assignments': True,
+                    'discussions': True
+                }
 
             # Create a canvas directory with a course folder inside it.
             canvas_dir = "canvas_materials"
@@ -108,7 +108,7 @@ class CanvasAPI():
                 print("Course folder created")
 
             # Download course content
-            self.download_course_content(canvas_course_id, folder_path, content_to_ingest)
+            self.download_course_content(canvas_course_id, folder_path, content_ingest_dict)
             
             # Upload files to S3
             s3_paths = upload_data_files_to_s3(course_name, folder_path)
@@ -125,67 +125,24 @@ class CanvasAPI():
             print(e)
             return "Failed"
         
-    def update_course_content(self, canvas_course_id: int, course_name: str) -> str:
-        """
-        Updates all Canvas course materials through the course ID.
-        1. Download zip file from Canvas
-        2. Perform diff between downloaded files and existing S3 files
-        3. Replace the changed files in S3 and QDRANT
-        """
-        print("In update_course_content")
-
-        try:
-            # a dictionary of all contents we want to ingest - files, pages, modules, syllabus, assignments, discussions.
-            content_to_ingest = {
-                'files': True,
-                'pages': True,
-                'modules': True,
-                'syllabus': True,
-                'assignments': True,
-                'discussions': True
-            }
-
-            # Create a canvas directory with a course folder inside it.
-            canvas_dir = "canvas_materials"
-            folder_name = "canvas_course_" + str(canvas_course_id) + "_ingest"
-            folder_path = canvas_dir + "/" + folder_name
-
-            if os.path.exists(canvas_dir):
-                print("Canvas directory already exists")
-            else:
-                os.mkdir(canvas_dir)
-                print("Canvas directory created")
-
-            if os.path.exists(canvas_dir + "/" + folder_name):
-                print("Course folder already exists")
-            else:
-                os.mkdir(canvas_dir + "/" + folder_name)
-                print("Course folder created")
-
-            # Download course content
-            self.download_course_content(canvas_course_id, folder_path, content_to_ingest)
-            print("Downloaded and extracted canvas materials")
-            
-            # Call diff function
-            response = update_materials.update_files(folder_path, course_name)
-            print(response)
-            return response
-        except Exception as e:
-            return "Failed! Error: " + str(e)
-        
     def download_files(self, dest_folder: str, api_path: str) -> str:
         """
         Downloads all files in a Canvas course into given folder.
         """
         try:
-            files_request = requests.get(api_path + "/files", headers=self.headers)
-            files = files_request.json()
+            # files_request = requests.get(api_path + "/files", headers=self.headers)
+            # files = files_request.json()
+
+            course = self.canvas_client.get_course(api_path.split('/')[-1])
+            files = course.get_files()
 
             for file in files:
-                file_name = file['filename']
+                # file_name = file['filename']
+                file_name = file.filename
                 print("Downloading file: ", file_name)
 
-                file_download = requests.get(file['url'], headers=self.headers)
+                # file_download = requests.get(file['url'], headers=self.headers)
+                file_download = requests.get(file.url, headers=self.headers)
                 with open(os.path.join(dest_folder, file_name), 'wb') as f:
                     f.write(file_download.content)
 
@@ -231,9 +188,9 @@ class CanvasAPI():
         except Exception as e:
             return "Failed! Error: " + str(e)
         
-    def download_modules(self, dest_folder: str, api_path: str) -> list:
+    def download_modules(self, dest_folder: str, api_path: str) -> str:
         """
-        Returns a list of all external URLs uploaded in modules.
+        Downloads all content uploaded in modules.
         Modules may contain: assignments, quizzes, files, pages, discussions, external tools and external urls.
         Rest of the things are covered in other functions.
         """
@@ -269,7 +226,7 @@ class CanvasAPI():
             assignments = assignment_request.json()
 
             for assignment in assignments:
-                if assignment['description'] is not None:
+                if assignment['description'] is not None and assignment['description'] != "":
                     assignment_name = "assignment_" + str(assignment['id']) + ".html"
                     assignment_description = assignment['description']
 
@@ -294,7 +251,7 @@ class CanvasAPI():
 
                 with open(dest_folder + "/" + discussion_name, 'w') as html_file:
                     html_file.write(discussion_content)
-
+            return "Success"
         except Exception as e:
             return "Failed! Error: " + str(e)
         
