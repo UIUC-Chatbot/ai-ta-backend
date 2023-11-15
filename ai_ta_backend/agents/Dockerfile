@@ -27,7 +27,6 @@ RUN pip install --upgrade pip && \
 # Set the working directory
 WORKDIR /app
 COPY . /app
-COPY ../../.env /app
 
 # Make port 80 available to the world outside this container
 # Change the port if your application uses a different port
