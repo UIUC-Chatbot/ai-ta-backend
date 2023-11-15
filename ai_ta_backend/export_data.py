@@ -1,5 +1,5 @@
 import os
-import datetime
+import uuid
 import pandas as pd
 import supabase
 from flask import send_file
@@ -36,8 +36,9 @@ def export_convo_history_csv(course_name: str, from_date= '', to_date= ''):
         print("id count greater than zero")
         first_id = response.data[0]['id']
         last_id = response.data[-1]['id']
-        filename = course_name + '_convo_history.csv'
-        file_path = os.path.join(os.getcwd(), 'docs/' + filename)
+        
+        filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.csv'
+        file_path = os.path.join(os.getcwd(), filename)
         # Fetch data in batches of 25 from first_id to last_id
         while first_id <= last_id:
             print("Fetching data from id: ", first_id)
