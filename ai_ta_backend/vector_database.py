@@ -1136,26 +1136,35 @@ Now please respond to my question: {user_question}"""
     course_name = metadatas[0]['course_name']
     s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
-    
-    print("--------------------Checking for duplicates------------------------")
-    # print("METADATAS: ", metadatas)
-    # print("S3_PATH: ", s3_path)
-    # print("URL: ", url)
 
+    shorter_s3_path = s3_path.split('/')[-1][37:]
+    print("--------------------Checking for duplicates------------------------")
+    print("METADATAS: ", metadatas)
+    print("S3_PATH: ", s3_path)
+    print("URL: ", url)
+    print("SHORTER S3 PATH: ", shorter_s3_path) # will always have a 37-char prefix
+    
+    
     if s3_path:
-      filename = s3_path
-      supabase_contents = self.supabase_client.table(doc_table).select('contexts').eq('course_name', course_name).eq('s3_path', s3_path).execute()
+      filename = shorter_s3_path
+      supabase_contents = self.supabase_client.table(doc_table).select('contexts', 's3_path').eq('course_name', course_name).like('s3_path', '%' + shorter_s3_path + '%').execute()
     elif url:
       filename = url
-      supabase_contents = self.supabase_client.table(doc_table).select('contexts').eq('course_name', course_name).eq('url', url).execute()
+      supabase_contents = self.supabase_client.table(doc_table).select('contexts', 's3_path').eq('course_name', course_name).eq('url', url).execute()
     else:
       filename = None
       supabase_contents = []
     
     supabase_whole_text = ""
-    if  len(supabase_contents.data) > 0:
+    # printing older s3_paths
+    for content in supabase_contents.data:
+      print(content['s3_path'])
+
+
+    if  len(supabase_contents.data) > 0: # if a doc with same filename exists in Supabase
       # concatenate texts
       supabase_contexts = supabase_contents.data[0]
+      
       for text in supabase_contexts['contexts']:
         supabase_whole_text += text['text']
         
@@ -1164,13 +1173,18 @@ Now please respond to my question: {user_question}"""
         current_whole_text += text['input']
       
       # compare with current texts
-      if supabase_whole_text == current_whole_text:
+      if supabase_whole_text == current_whole_text: # matches the previous file
         print(f"The file 📄: {filename} is a duplicate!")
         return True
-      else:
-        print(f"The file 📄: {filename} is NOT a duplicate!")
+      else: # the file is updated
+        print(f"The file 📄: {filename} seems to be updated! Deleting the older data...")
+        # call the delete function
+        for content in supabase_contents.data:
+          print("content: ", content['s3_path'])
+          delete_status = self.delete_data(course_name, content['s3_path'], '')
+          print("delete_status: ", delete_status)
         return False
-    else:
+    else: # filename does not already exist in Supabase, so its a brand new file
       print(f"File 📄: {filename} is NOT a duplicate!")
       return False
     
