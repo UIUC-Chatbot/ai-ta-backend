@@ -24,21 +24,10 @@ RUN pip install --upgrade pip && \
     # . venv/bin/activate && \
     pip install --no-cache-dir -r /tmp/requirements.txt
 
-# Set the working directory
-WORKDIR /app
-COPY . /app
-
-# Make port 80 available to the world outside this container
-# Change the port if your application uses a different port
-# EXPOSE 8000
-
-# Define environment variable (uncomment and modify as needed)
-# ENV NAME=Value
-
-# Run your application when the container launches
-# Replace `app.py` with the script that runs your application
-# CMD ["python3", "app.py"]
-
 # Bake browsers into the image
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN playwright install --with-deps
+
+# Set the working directory
+WORKDIR /app
+COPY . /app

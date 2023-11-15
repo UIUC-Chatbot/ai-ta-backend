@@ -106,6 +106,7 @@ def check_and_insert_image_name(image_name):
         img = build_docker_image(image_name)
     else:
         # If the image already exists, fetch it
+        # TODO: re-build the image in case there are changes. Rebuilds should be very fast.
         img = docker_client.images.get(image_name)
 
     return img
