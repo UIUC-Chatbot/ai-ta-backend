@@ -1242,28 +1242,24 @@ Now please respond to my question: {user_question}"""
     
     doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')
     course_name = metadatas[0]['course_name']
-    s3_path = metadatas[0]['s3_path']
+    incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
     filename = metadatas[0]['readable_filename']
 
-    shorter_s3_path = s3_path.split('/')[-1]
-    match = re.match(r'^\w{37}_(.*)$', shorter_s3_path)
-    if match:
-      print("ID exists")
-    else:
-      print("No ID")
+    original_filename = incoming_s3_path.split('/')[-1][37:] # remove the 37-char uuid prefix
+    original_s3_path = "courses/" + course_name + "/" + original_filename # the older files will have this path
 
     
     print("--------------------Checking for duplicates------------------------")
     print("METADATAS: ", metadatas)
-    print("S3_PATH: ", s3_path)
+    print("S3_PATH: ", incoming_s3_path)
     print("filename: ", filename)
-    print("SHORTER S3 PATH: ", shorter_s3_path) # will always have a 37-char prefix
+    print("OG S3 PATH: ", original_s3_path) 
     exit()
     
     if s3_path:
-      filename = shorter_s3_path
-      supabase_contents = self.supabase_client.table(doc_table).select('contexts', 's3_path').eq('course_name', course_name).like('s3_path', '%' + shorter_s3_path + '%').execute()
+      filename = original_s3_path
+      supabase_contents = self.supabase_client.table(doc_table).select('contexts', 's3_path').eq('course_name', course_name).like('s3_path', '%' + original_s3_path + '%').execute()
     elif url:
       filename = url
       supabase_contents = self.supabase_client.table(doc_table).select('contexts', 's3_path').eq('course_name', course_name).eq('url', url).execute()
