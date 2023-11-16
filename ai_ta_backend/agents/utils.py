@@ -13,7 +13,10 @@ from langchain.schema import AgentAction
 from langsmith import Client
 from langsmith.schemas import Run
 import tiktoken
+from newrelic_telemetry_sdk import Log, LogClient
 
+# Initialize New Relic Client
+log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
 
 def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> List[Tuple[AgentAction, str]]:
   """
