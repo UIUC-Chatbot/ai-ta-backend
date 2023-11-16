@@ -223,21 +223,20 @@ class Ingest():
       title = title.replace("_", " ")
       title = title.replace("/", " ")
       title = title.strip()
-
-      if kwargs['kwargs'] == {}:
+      print("KWARGS: ", kwargs)
+      if kwargs == {}:
         url = ''
         base_url = ''
       else:
-        if 'url' in kwargs['kwargs'].keys():
-          url = kwargs['kwargs']['url']
+        if 'url' in kwargs.keys():
+          url = kwargs['url']
         else:
           url = ''
-        if 'base_url' in kwargs['kwargs'].keys():
-          base_url = kwargs['kwargs']['base_url']
+        if 'base_url' in kwargs.keys():
+          base_url = kwargs['base_url']
         else:
           base_url = ''
       
-
       text = [soup.get_text()]
       
       metadata: List[Dict[str, Any]] = [{
@@ -744,7 +743,8 @@ class Ingest():
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
-
+      print("METADATAS: ", metadatas)
+      
       # check for duplicates
       is_duplicate = self.check_for_duplicates(input_texts, metadatas)
       print("is_duplicate: ", is_duplicate)
@@ -1244,34 +1244,28 @@ Now please respond to my question: {user_question}"""
     course_name = metadatas[0]['course_name']
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
-    filename = metadatas[0]['readable_filename']
+    incoming_filename = metadatas[0]['readable_filename'] # incoming filename should be equal to old filename
 
     original_filename = incoming_s3_path.split('/')[-1][37:] # remove the 37-char uuid prefix
-    original_s3_path = "courses/" + course_name + "/" + original_filename # the older files will have this path
 
-    
     print("--------------------Checking for duplicates------------------------")
-    print("METADATAS: ", metadatas)
-    print("S3_PATH: ", incoming_s3_path)
-    print("filename: ", filename)
-    print("OG S3 PATH: ", original_s3_path) 
-    exit()
+    # print("METADATAS: ", metadatas)
+    # print("S3_PATH: ", incoming_s3_path)
+    # print("filename: ", incoming_filename)
+     
     
-    if s3_path:
-      filename = original_s3_path
-      supabase_contents = self.supabase_client.table(doc_table).select('contexts', 's3_path').eq('course_name', course_name).like('s3_path', '%' + original_s3_path + '%').execute()
+    if incoming_s3_path:
+      filename = incoming_s3_path
+      supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq('course_name', course_name).like('s3_path', '%' + original_filename + '%').order('id', desc=True).execute()
     elif url:
       filename = url
-      supabase_contents = self.supabase_client.table(doc_table).select('contexts', 's3_path').eq('course_name', course_name).eq('url', url).execute()
+      supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq('course_name', course_name).eq('url', url).order('id', desc=True).execute()
     else:
       filename = None
       supabase_contents = []
     
     supabase_whole_text = ""
-    # printing older s3_paths
-    for content in supabase_contents.data:
-      print(content['s3_path'])
-
+    print("no. of docs previously present: ", len(supabase_contents.data))
 
     if  len(supabase_contents.data) > 0: # if a doc with same filename exists in Supabase
       # concatenate texts
@@ -1289,13 +1283,15 @@ Now please respond to my question: {user_question}"""
         print(f"The file 📄: {filename} is a duplicate!")
         return True
       else: # the file is updated
-        print(f"The file 📄: {filename} seems to be updated! Deleting the older data...")
-        # call the delete function
+        print(f"The file 📄: {filename} seems to be updated! Deleting the older file...")
+        
+        # call the delete function on older docs - ideally should only be 1
         for content in supabase_contents.data:
-          print("content: ", content['s3_path'])
+          print("older s3_path to be deleted: ", content['s3_path'])
           delete_status = self.delete_data(course_name, content['s3_path'], '')
           print("delete_status: ", delete_status)
         return False
+      
     else: # filename does not already exist in Supabase, so its a brand new file
       print(f"File 📄: {filename} is NOT a duplicate!")
       return False

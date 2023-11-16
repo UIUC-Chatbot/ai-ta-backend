@@ -2,7 +2,7 @@ import os
 from multiprocessing import Lock, cpu_count
 from multiprocessing.pool import ThreadPool
 from typing import List, Optional
-
+import uuid
 import boto3
 
 
@@ -38,9 +38,12 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
   s3_paths_lock = Lock()
 
   def upload(myfile):
-    print("filename: ", myfile)
-    exit()
-    s3_file = f"courses/{course_name}/{os.path.basename(myfile)}"
+    # get the last part of the path and append unique ID before it
+    directory, old_filename = os.path.split(myfile)
+    new_filename = str(uuid.uuid4()) + '_' + old_filename
+    new_filepath = os.path.join(directory, new_filename)
+    
+    s3_file = f"courses/{course_name}/{os.path.basename(new_filepath)}"
     s3.upload_file(myfile, os.getenv('S3_BUCKET_NAME'), s3_file)
     with s3_paths_lock:
       s3_paths.append(s3_file)
