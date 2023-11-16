@@ -169,7 +169,7 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -200,7 +200,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -223,6 +223,7 @@ class Ingest():
       title = title.replace("_", " ")
       title = title.replace("/", " ")
       title = title.strip()
+      title = title[37:] # remove unqiue ID from the filename
       print("KWARGS: ", kwargs)
       if kwargs == {}:
         url = ''
@@ -318,7 +319,7 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
           'pagenumber': '',
           'timestamp': text.index(txt),
           'url': '',
@@ -344,7 +345,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -370,7 +371,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -397,7 +398,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -431,7 +432,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -457,7 +458,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -507,7 +508,7 @@ class Ingest():
 
           # Extract text
           text = page.get_text().encode("utf8").decode("utf8", errors='ignore')  # get plain text (is in UTF-8)
-          pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name))
+          pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
 
         # Webscrape kwargs
         if 'kwargs' in kwargs.keys() and kwargs['kwargs'] == {}:
@@ -568,7 +569,7 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,
           's3_path': s3_path,
-          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+          'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
           'pagenumber': '',
           'timestamp': '',
           'url': '',
@@ -599,7 +600,7 @@ class Ingest():
         metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name,
+            'readable_filename': kwargs['readable_filename'] if 'readable_filename' in kwargs.keys() else Path(s3_path).name[37:],
             'pagenumber': '',
             'timestamp': '',
             'url': '',
@@ -1244,15 +1245,8 @@ Now please respond to my question: {user_question}"""
     course_name = metadatas[0]['course_name']
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
-    incoming_filename = metadatas[0]['readable_filename'] # incoming filename should be equal to old filename
-
     original_filename = incoming_s3_path.split('/')[-1][37:] # remove the 37-char uuid prefix
-
-    print("--------------------Checking for duplicates------------------------")
-    # print("METADATAS: ", metadatas)
-    # print("S3_PATH: ", incoming_s3_path)
-    # print("filename: ", incoming_filename)
-     
+    print("original_filename: ", original_filename)
     
     if incoming_s3_path:
       filename = incoming_s3_path
@@ -1270,7 +1264,6 @@ Now please respond to my question: {user_question}"""
     if  len(supabase_contents.data) > 0: # if a doc with same filename exists in Supabase
       # concatenate texts
       supabase_contexts = supabase_contents.data[0]
-      
       for text in supabase_contexts['contexts']:
         supabase_whole_text += text['text']
         
@@ -1282,10 +1275,11 @@ Now please respond to my question: {user_question}"""
       if supabase_whole_text == current_whole_text: # matches the previous file
         print(f"The file 📄: {filename} is a duplicate!")
         return True
+      
       else: # the file is updated
         print(f"The file 📄: {filename} seems to be updated! Deleting the older file...")
         
-        # call the delete function on older docs - ideally should only be 1
+        # call the delete function on older docs
         for content in supabase_contents.data:
           print("older s3_path to be deleted: ", content['s3_path'])
           delete_status = self.delete_data(course_name, content['s3_path'], '')
