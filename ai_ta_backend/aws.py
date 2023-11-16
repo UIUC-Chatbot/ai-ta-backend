@@ -38,6 +38,8 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
   s3_paths_lock = Lock()
 
   def upload(myfile):
+    print("filename: ", myfile)
+    exit()
     s3_file = f"courses/{course_name}/{os.path.basename(myfile)}"
     s3.upload_file(myfile, os.getenv('S3_BUCKET_NAME'), s3_file)
     with s3_paths_lock:

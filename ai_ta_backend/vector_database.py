@@ -8,6 +8,7 @@ import subprocess
 import time
 import traceback
 import uuid
+import re
 from importlib import metadata
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -1243,14 +1244,22 @@ Now please respond to my question: {user_question}"""
     course_name = metadatas[0]['course_name']
     s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
+    filename = metadatas[0]['readable_filename']
 
-    shorter_s3_path = s3_path.split('/')[-1][37:]
+    shorter_s3_path = s3_path.split('/')[-1]
+    match = re.match(r'^\w{37}_(.*)$', shorter_s3_path)
+    if match:
+      print("ID exists")
+    else:
+      print("No ID")
+
+    
     print("--------------------Checking for duplicates------------------------")
     print("METADATAS: ", metadatas)
     print("S3_PATH: ", s3_path)
-    print("URL: ", url)
+    print("filename: ", filename)
     print("SHORTER S3 PATH: ", shorter_s3_path) # will always have a 37-char prefix
-    
+    exit()
     
     if s3_path:
       filename = shorter_s3_path
