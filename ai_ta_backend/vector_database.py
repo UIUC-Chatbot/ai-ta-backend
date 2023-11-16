@@ -169,7 +169,7 @@ class Ingest():
       metadatas: List[Dict[str, Any]] = [{
             'course_name': course_name,
             's3_path': s3_path,
-            'readable_filename': kwargs.get('readable_filename', Path(s3_path).name[37:),
+            'readable_filename': kwargs.get('readable_filename', Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
             'url': '',
