@@ -296,6 +296,93 @@ def create_nomic_map(course_name: str, log_data: list):
     project.create_index(index_name, build_topic_model=True)
     return f"Successfully created Nomic map for {course_name}"
 
+def create_map_for_all_courses():
+  """
+  Creates a map for all the courses across UIUC.Chat
+  """
+  nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
+  NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+  
+  # initialize supabase
+  supabase_client = supabase.create_client(  # type: ignore
+      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+  
+  courses = supabase_client.table("llm-convo-monitor").select("course_name").execute()
+  data = courses.data
+  df = pd.DataFrame(data)
+  course_list = df['course_name'].unique()
+  course_list = list(course_list)
+  course_list.remove(None) # there is one course called None, remove it
+
+  for course in course_list:
+    print("Course name: ", course)
+    try:
+        response = supabase_client.table("llm-convo-monitor").select("*").eq('course_name', course).execute()
+        data = response.data
+        course_df = pd.DataFrame(data)
+        print("Number of rows in the course: ", len(course_df))
+
+        if len(course_df) < 20:
+            continue
+        else:
+        
+            user_queries = []
+            metadata = []
+            i = 1
+
+            # log conversation instead of individual messages
+            for index, row in course_df.iterrows():
+                user_email = row['user_email']
+                created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
+                convo = row['convo']
+                messages = convo['messages']
+                first_message = messages[0]['content']
+
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                
+                user_queries.append(first_message)
+                # create metadata for multi-turn conversation
+                conversation = ""
+                for message in messages:
+                    # string of role: content, role: content, ...
+                    if message['role'] == 'user':
+                        emoji = "🙋"
+                    else:
+                        emoji = "🤖"
+                    conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+                # add to metadata
+                metadata_row = {"course": row['course_name'], "conversation": conversation, "conversation_id": convo['id'], 
+                                "id": i, "user_email": user_email, "first_query": first_message, "created_at": created_at,
+                                "modified_at": current_time}
+                metadata.append(metadata_row)
+                i += 1
+
+            print("Length of user queries: ", len(user_queries))
+            print("Length of metadata: ", len(metadata))
+
+            metadata = pd.DataFrame(metadata)
+            embeddings_model = OpenAIEmbeddings()
+            embeddings = embeddings_model.embed_documents(user_queries)
+            embeddings = np.array(embeddings)
+            print(embeddings.shape)
+
+            # create an Atlas project
+            project_name = NOMIC_MAP_NAME_PREFIX + course
+            index_name = course + "_convo_index"
+            project = atlas.map_embeddings(embeddings=np.array(embeddings),
+                                            data=metadata,
+                                            id_field='id',
+                                            build_topic_model=True,
+                                            topic_label_field='first_query',
+                                            name=project_name,
+                                            colorable_fields=['conversation_id', 'first_query', 'created_at', 'modified_at'])
+            print(project.maps)
+
+            project.create_index(index_name, build_topic_model=True)
+    except Exception as e:
+        print("course_name:", course)
+        print("error: ", e)
 
 if __name__ == '__main__':
   pass
