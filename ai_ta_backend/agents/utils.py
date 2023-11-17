@@ -13,7 +13,10 @@ from langchain.schema import AgentAction
 from langsmith import Client
 from langsmith.schemas import Run
 import tiktoken
+from newrelic_telemetry_sdk import Log, LogClient
 
+# Initialize New Relic Client
+log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
 
 def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> List[Tuple[AgentAction, str]]:
   """
@@ -215,34 +218,3 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
     completion_cost = float(completion_token_cost * num_tokens_completion)
     return num_tokens_prompt, prompt_cost, num_tokens_completion, completion_cost
 
-
-
-import os
-
-from newrelic_telemetry_sdk import Log, LogClient, Span, SpanClient
-
-# from dotenv import load_dotenv
-
-# load_dotenv(override=True)
-
-log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
-
-# log = Log(message="Message with metadata", **{'complex_metadata': 69.420, 'number_entry': 12, 'boolean_entry': False})
-
-# log = Log(message="Message with metadata",
-#           complex_metadata=69.420, 
-#           number_entry=12, 
-#           boolean_entry=False)
-# response = log_client.send(log)
-# response.raise_for_status()
-# print("Log sent successfully 2!")
-
-
-# Spans provide an easy way to time components of your code. The example code assumes you’ve set the following environment variables:
-# with Span(name="sleep") as span:
-#     time.sleep(0.5)
-
-# span_client = SpanClient(os.environ["NEW_RELIC_LICENSE_KEY"])
-# response = span_client.send(span)
-# response.raise_for_status()
-# print("Span sleep sent successfully!")

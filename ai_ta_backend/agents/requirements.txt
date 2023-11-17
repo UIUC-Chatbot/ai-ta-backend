@@ -16,3 +16,4 @@ git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg
 pyautogen
 beautifulsoup4==4.12.2
 openai
+supabase

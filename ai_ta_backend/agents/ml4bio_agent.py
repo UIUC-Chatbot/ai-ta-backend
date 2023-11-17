@@ -46,7 +46,8 @@ class WorkflowAgent:
 
 
     # EXECUTOR
-    executor = load_agent_executor(self.llm, tools, verbose=True, trim_intermediate_steps=fancier_trim_intermediate_steps, handle_parsing_errors=True)
+    # executor = load_agent_executor(self.llm, tools, verbose=True, trim_intermediate_steps=fancier_trim_intermediate_steps, handle_parsing_errors=True)
+    executor = load_agent_executor(self.llm, tools, verbose=True, handle_parsing_errors=True)
 
     # Create PlanAndExecute Agent
     workflow_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True)

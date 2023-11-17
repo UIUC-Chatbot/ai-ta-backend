@@ -8,16 +8,28 @@ import traceback
 import re
 import logging
 import shlex
+import uuid
+from newrelic_telemetry_sdk import Log, LogClient
+# Clients here
+
 # Initialize Supabase client
 supabase_url = os.environ["SUPABASE_URL"]
 supabase_key = os.environ["SUPABASE_API_KEY"]
 supabase = create_client(supabase_url, supabase_key)
 
 # Initialize Docker client
-docker_client = docker.from_env()
+try:
+    docker_client = docker.from_env()
+except Exception as e:
+    print(f"Is your Docker client running? Error while setting up docker client: {e}")
+    print(traceback.print_exc())
+    
 logging.basicConfig(level=logging.DEBUG)
 logging.getLogger('docker').setLevel(logging.DEBUG)
 logging.getLogger('urllib3').setLevel(logging.DEBUG)
+
+# Initialize New Relic Client
+log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
 
 def build_docker_image(image_name):
     """Build a Docker image with the given name.
@@ -75,7 +87,7 @@ def run_docker_container(image_name, command, volume_name):
     except Exception as e:
         print(traceback.print_exc)
 
-def check_and_insert_image_name(image_name):
+def check_and_insert_image_name(image_name, langsmith_run_id):
     """Check if the image name exists in the Supabase table, if not, insert it and build a Docker image.
 
     Args:
@@ -90,7 +102,7 @@ def check_and_insert_image_name(image_name):
 
     # If the image name does not exist in the table, insert it and build a Docker image
     if not result.data:
-        supabase.table("docker_images").insert({"image_name": image_name}).execute()
+        supabase.table("docker_images").insert({"image_name": image_name, "langsmith_id": langsmith_run_id}).execute()
         img = build_docker_image(image_name)
 
     # Query the Docker environment
@@ -105,8 +117,9 @@ def check_and_insert_image_name(image_name):
         print(f"Docker image {image_name} does not exist in the Docker environment.")
         img = build_docker_image(image_name)
     else:
-        # If the image already exists, fetch it
-        img = docker_client.images.get(image_name)
+        # If the image already exists, rebuild it to ensure it's up to date
+        print(f"Rebuilding Docker image {image_name} to ensure it's up to date.")
+        img = build_docker_image(image_name)  # This will use cache if no changes
 
     return img
 
@@ -119,20 +132,22 @@ def handle_event(payload):
     """
     # Convert raw_payload to a JSON string
     payload_json = json.dumps(payload)
-    # print(f"Payload in webhooks: {payload_json}")
 
     # Construct Docker image name
     repo_name = payload["repository"]["full_name"].lower()
     number = payload.get('issue').get('number')
     image_name = f"{repo_name}_{number}"
+    
     # Filter out disallowed characters from the image name for the volume name
     volume_name = f"vol_{re.sub('[^a-zA-Z0-9_.-]', '_', image_name)}"
 
+    langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
+
     # Check if the image name exists in the Supabase table, if not, insert it and build a Docker image
-    img = check_and_insert_image_name(image_name)
+    img = check_and_insert_image_name(image_name, langsmith_run_id)
 
     # Send shell command to Docker image
-    command = f"python github_webhook_handlers.py --payload {shlex.quote(payload_json)}"
+    command = f"python github_webhook_handlers.py --payload {shlex.quote(payload_json)} --langsmith_run_id {langsmith_run_id}"
 
     print(f"Command for container: {command}")
     if img:
