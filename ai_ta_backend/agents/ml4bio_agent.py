@@ -44,11 +44,6 @@ class WorkflowAgent:
     # PLANNER
     planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
 
-    memory = MemoryManager()
-    memory_tools = memory.memory_tools()
-    memory_agent = initialize_agent(
-      tools=memory_tools, llm=self.llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
-    )
 
     # EXECUTOR
     executor = load_agent_executor(self.llm, tools, verbose=True, trim_intermediate_steps=fancier_trim_intermediate_steps, handle_parsing_errors=True)
