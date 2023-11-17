@@ -2,21 +2,24 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
+    "nixpacksVersion": "1.15.0",
     "nixpacksPlan": {
       "phases": {
         "install": {
           "cmds": [
             "python -m venv --copies /opt/venv && . /opt/venv/bin/activate",
-            "pip install -r requirements.txt",
-            "curl -Ls https://download.newrelic.com/install/newrelic-cli/scripts/install.sh | bash && sudo NEW_RELIC_API_KEY=$NEW_RELIC_API_KEY NEW_RELIC_ACCOUNT_ID=4209060 /usr/local/bin/newrelic install -n logs-integration -y"
+            "pip install pip==23.3.1",
+            "pip install -r requirements.txt"
           ],
           "aptPkgs": [
-            "ffmpeg"
+            "ffmpeg",
+            "tesseract-ocr"
           ]
         },
         "setup": {
           "aptPkgs": [
-            "libcap-dev"
+            "libcap-dev",
+            "libgl1"
           ],
           "nixPkgs": [
             "python310",
