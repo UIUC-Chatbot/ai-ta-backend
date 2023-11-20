@@ -1,6 +1,8 @@
 import datetime
+import inspect
 import os
 import time
+import traceback
 import requests
 import nomic
 import numpy as np
@@ -141,8 +143,9 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         return f"Successfully logged for {course_name}"
     else:
       # for rest of the errors - return fail
-      print("ERROR in log_convo_to_nomic():", e)
-      return f"Logging failed for {course_name}"
+      err = f"❌❌ Error in log_convo_to_nomic() for course `{course_name}`: {e}\nTraceback: {traceback.extract_tb(e.__traceback__)}"  # type: ignore
+      print(err)
+      return err
     
     
 def get_nomic_map(course_name: str):
@@ -439,7 +442,9 @@ def create_map_for_all_courses():
               print("Project Maps: ", project.maps)
               project.create_index(index_name, build_topic_model=True)
     except Exception as e:
-        print("Failed to create map due to error: ", e)
+      err = f"❌❌ Failed to create map create_map_for_all_courses(): {e}\nTraceback: {traceback.extract_tb(e.__traceback__)}"  # type: ignore
+      print(err)
+      return err
 
 if __name__ == '__main__':
   pass
