@@ -175,6 +175,7 @@ pip-selfcheck.json
 .vscode
 .venv*
 *.env
+*.env.template
 venv*
 
 # Mac files
@@ -182,3 +183,5 @@ venv*
 
 # npm
 node_modules
+
+.rules
