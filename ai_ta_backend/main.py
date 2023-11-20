@@ -5,7 +5,7 @@ import time
 from typing import List
 
 from dotenv import load_dotenv
-from flask import Flask, Response, abort, jsonify, request
+from flask import Flask, Response, abort, jsonify, request, send_file, make_response, send_from_directory
 from flask_cors import CORS
 from flask_executor import Executor
 from sqlalchemy import JSON
@@ -14,6 +14,7 @@ from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+from ai_ta_backend.export_data import export_convo_history_csv
 
 app = Flask(__name__)
 CORS(app)
@@ -468,6 +469,30 @@ def logToNomic():
   response = executor.submit(log_convo_to_nomic, course_name, data)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/export-convo-history-csv', methods=['GET'])
+def export_convo_history():
+  course_name: str = request.args.get('course_name', default='', type=str)
+  from_date: str = request.args.get('from_date', default='', type=str)
+  to_date: str = request.args.get('to_date', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`"
+    )
+
+  export_status = export_convo_history_csv(course_name, from_date, to_date)
+  print("EXPORT FILE LINKS: ",  export_status)
+  
+  response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
+  
+  os.remove(export_status[0])
   return response
 
 
