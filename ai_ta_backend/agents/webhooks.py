@@ -1,6 +1,7 @@
 import docker
 import json
 import os
+from dotenv import load_dotenv
 
 from supabase.client import create_client
 from docker.errors import NotFound, BuildError, ContainerError, ImageNotFound, APIError
@@ -16,6 +17,12 @@ from newrelic_telemetry_sdk import Log, LogClient
 supabase_url = os.environ["SUPABASE_URL"]
 supabase_key = os.environ["SUPABASE_API_KEY"]
 supabase = create_client(supabase_url, supabase_key)
+langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
+
+load_dotenv(override=True, dotenv_path='.env')
+
+def get_langsmith_supabase():
+    return supabase, langsmith_run_id
 
 # Initialize Docker client
 try:
@@ -140,8 +147,6 @@ def handle_event(payload):
     
     # Filter out disallowed characters from the image name for the volume name
     volume_name = f"vol_{re.sub('[^a-zA-Z0-9_.-]', '_', image_name)}"
-
-    langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
 
     # Check if the image name exists in the Supabase table, if not, insert it and build a Docker image
     img = check_and_insert_image_name(image_name, langsmith_run_id)
