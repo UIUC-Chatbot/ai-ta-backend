@@ -9,8 +9,9 @@ from langchain_experimental.plan_and_execute import (PlanAndExecute,
                                                      load_agent_executor,
                                                      load_chat_planner)
 
-from tools import get_tools
-from utils import fancier_trim_intermediate_steps
+from .tools import get_tools
+from .utils import fancier_trim_intermediate_steps
+from .memorycallbacks import get_memory_callback_handler
 
 
 def get_user_info_string():
@@ -37,9 +38,11 @@ class WorkflowAgent:
     print(f"Result: {result}")
     return result
 
+
   def make_agent(self): 
     # TOOLS
     tools = get_tools()
+    memory_handler = get_memory_callback_handler()
 
     # PLANNER
     planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
@@ -50,6 +53,6 @@ class WorkflowAgent:
     executor = load_agent_executor(self.llm, tools, verbose=True, handle_parsing_errors=True)
 
     # Create PlanAndExecute Agent
-    workflow_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True)
+    workflow_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True, callbacks=[memory_handler])
 
     return workflow_agent
