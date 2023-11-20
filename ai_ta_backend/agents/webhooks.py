@@ -47,7 +47,7 @@ def build_docker_image(image_name):
     print(f"Building docker image: {image_name}")
     dockerfile_path = "ai_ta_backend/agents"
     try:
-        img, logs = docker_client.images.build(path=dockerfile_path, tag=image_name, quiet=False) #type:ignore
+        img, logs = docker_client.images.build(path=dockerfile_path, tag=image_name, quiet=False, nocache=True) #type:ignore
         print(f"Response on creating new image: {img.attrs}")
         for log in logs:
             if 'stream' in log:
