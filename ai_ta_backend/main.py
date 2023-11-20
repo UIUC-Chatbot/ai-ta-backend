@@ -19,8 +19,8 @@ from regex import D
 from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend.web_scrape import main_crawler, mit_course_download
-from ai_ta_backend.agents import webhooks
+from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+from ai_ta_backend.agents import webhooks, github_webhook_handlers
 
 app = Flask(__name__)
 CORS(app)
@@ -307,7 +307,7 @@ def scrape():
   print(f"Max Depth: {max_depth}")
   print(f"Timeout in Seconds ⏰: {timeout}")
 
-  success_fail_dict = main_crawler(url, course_name, max_urls, max_depth, timeout, base_url_bool)
+  success_fail_dict = WebScrape.main_crawler(url, course_name, max_urls, max_depth, timeout, base_url_bool)
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -347,10 +347,21 @@ def webhook():
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
   
-  webhooks.handle_event(payload)
+  # webhooks.handle_event(payload)
+
+  supabase, langsmith_run_id = webhooks.get_langsmith_supabase()
+
+
+  # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
+  if payload.get('action') == 'opened' and payload.get('pull_request'):
+    github_webhook_handlers.handle_pull_request_opened(payload, langsmith_run_id)
+  elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
+    github_webhook_handlers.handle_issue_opened(payload, langsmith_run_id)
+  elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
+    github_webhook_handlers.handle_comment_opened(payload, langsmith_run_id)
 
   return '', 200
 
 
 if __name__ == '__main__':
-  app.run(debug=True, port=os.getenv("PORT", default=8000))
+  app.run(debug=False, port=os.getenv("PORT", default=8000))

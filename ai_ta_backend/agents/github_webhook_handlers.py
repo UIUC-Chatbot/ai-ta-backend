@@ -24,12 +24,12 @@ from langchain import hub
 # from langchain.tools.github.utils import generate_branch_name
 from newrelic_telemetry_sdk import Log, LogClient
 
-from github_agent import GH_Agent
-from ml4bio_agent import WorkflowAgent
-from utils import get_langsmith_trace_sharable_url
+from .github_agent import GH_Agent
+from .ml4bio_agent import WorkflowAgent
+from .utils import get_langsmith_trace_sharable_url
 
 # load API keys from globally-availabe .env file
-load_dotenv(override=True)
+load_dotenv(override=True, dotenv_path='.env')
 
 langchain.debug = False  # True for more detailed logs
 
@@ -91,6 +91,8 @@ def handle_issue_opened(payload, langsmith_run_id):
     # 3. RUN BOT
     # bot = github_agent.GH_Agent.remote()
     prompt = hub.pull("kastanday/new-github-issue").format(issue_description=format_issue(issue))
+    print("PRINTING PROMPT")
+    print(prompt)
     # result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, run_id_in_metadata=langsmith_run_id))
     bot = WorkflowAgent(run_id_in_metadata=langsmith_run_id)
     result = bot.run(prompt)

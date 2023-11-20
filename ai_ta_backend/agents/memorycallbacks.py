@@ -100,6 +100,7 @@ class MemoryCallbackHandler(BaseCallbackHandler):
 
 def get_memory_callback_handler():
     handler = MemoryCallbackHandler()
+    print(handler.langsmith_run_id)
     return handler
 
 

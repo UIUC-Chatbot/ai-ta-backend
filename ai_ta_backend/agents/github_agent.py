@@ -20,8 +20,8 @@ from langchain.utilities.github import GitHubAPIWrapper
 # from langchain_experimental.autonomous_agents.baby_agi import BabyAGI
 from langsmith import Client
 
-from tools import get_tools
-from utils import fancier_trim_intermediate_steps
+from .tools import get_tools
+from .utils import fancier_trim_intermediate_steps
 
 load_dotenv(override=True, dotenv_path='.env')
 
@@ -117,3 +117,4 @@ class GH_Agent():
 
 if __name__ == "__main__":
   print("No code.")
+  

@@ -14,6 +14,8 @@ from langsmith import Client
 from langsmith.schemas import Run
 import tiktoken
 from newrelic_telemetry_sdk import Log, LogClient
+from dotenv import load_dotenv
+load_dotenv(override=True, dotenv_path='.env')
 
 # Initialize New Relic Client
 log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
