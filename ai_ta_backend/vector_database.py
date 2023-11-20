@@ -477,7 +477,7 @@ class Ingest():
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
         ### READ OCR of PDF
         doc = fitz.open(pdf_tmpfile.name)  # type: ignore
-
+        
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
         zoom_y = 2.0  # vertical zoom
@@ -485,6 +485,14 @@ class Ingest():
 
         pdf_pages_OCRed: List[Dict] = []
         for i, page in enumerate(doc):  # type: ignore
+          # image extraction 
+          print("extracting image")
+          d = page.get_text("dict")
+          blocks = d['blocks']
+          img_blocks = [b for b in blocks if b['type']==1]
+          print(img_blocks[0])
+          exit()
+
 
           # UPLOAD FIRST PAGE IMAGE to S3
           if i == 0:
