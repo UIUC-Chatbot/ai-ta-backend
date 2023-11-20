@@ -1228,7 +1228,17 @@ Now please respond to my question: {user_question}"""
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
     original_filename = incoming_s3_path.split('/')[-1][37:] # remove the 37-char uuid prefix
-    print("original_filename: ", original_filename)
+    print("Extracted filename from incoming s3_path: ", original_filename)
+
+    # check if uuid exists in s3_path
+    incoming_filename = incoming_s3_path.split('/')[-1]
+    pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', re.I)
+    if bool(pattern.search(incoming_filename)): # uuid pattern exists
+      # remove the uuid and proceed with duplicate checking
+      original_filename = incoming_filename[37:]
+    else:
+      # do not remove anything and proceed with duplicate checking
+      original_filename = incoming_filename
     
     if incoming_s3_path:
       filename = incoming_s3_path
