@@ -11,7 +11,7 @@ from flask_executor import Executor
 from sqlalchemy import JSON
 
 from ai_ta_backend.canvas import CanvasAPI
-from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
+from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, create_map_for_all_courses
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 
@@ -449,6 +449,19 @@ def nomic_map():
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+@app.route('/createNomicMapForAllCourses', methods=['GET'])
+def create_nomic_maps():
+  """
+  Creates Nomic Maps for all courses withing UIUC.Chat
+  Takes no arguments.
+  """
+  print("in /createNomicMapForAllCourses")
+  results = create_map_for_all_courses()
+  response = jsonify(results)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic():

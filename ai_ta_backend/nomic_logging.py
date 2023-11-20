@@ -327,6 +327,7 @@ def create_map_for_all_courses():
   """
   Creates a map for all the courses across UIUC.Chat
   """
+  print("in create_map_for_all_courses()")
   nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
   NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
   
@@ -345,18 +346,19 @@ def create_map_for_all_courses():
 
   project_exists = False
   existing_projects = list_projects()
+  
   for course in course_list:
-     
     try:
         # check if course already has a map
         project_name = NOMIC_MAP_NAME_PREFIX + course
-
+        print("Project name: ", project_name)
         for project in existing_projects:
           if "name" in project and project['name'] == project_name:
             project_exists = True
             break
         
         if project_exists:
+          print("Map already exists for course: ", course)
           project_exists = False
           continue
         else:
@@ -438,8 +440,10 @@ def create_map_for_all_courses():
                           colorable_fields=['conversation_id', 'first_query', 'created_at', 'modified_at'])
               print("Project Maps: ", project.maps)
               project.create_index(index_name, build_topic_model=True)
+              return "Maps created for all courses!"
     except Exception as e:
         print("Failed to create map due to error: ", e)
+        return "Failed!"
 
 if __name__ == '__main__':
   pass
