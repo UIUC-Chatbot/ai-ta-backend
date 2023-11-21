@@ -1,13 +1,31 @@
 import getpass
 import os
 import platform
+from typing import List
 
 from langchain import hub
 from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
 from langchain.agents import AgentType, initialize_agent
+from langchain.schema.language_model import BaseLanguageModel
 from langchain_experimental.plan_and_execute import (PlanAndExecute,
                                                      load_agent_executor,
                                                      load_chat_planner)
+from langchain.agents.agent import AgentExecutor
+from langchain.agents.structured_chat.base import StructuredChatAgent
+from langchain.schema.language_model import BaseLanguageModel
+from langchain.tools import BaseTool
+
+from langchain_experimental.plan_and_execute.executors.base import ChainExecutor
+
+HUMAN_MESSAGE_TEMPLATE = """Previous steps: {previous_steps}
+
+Current objective: {current_step}
+
+{agent_scratchpad}"""
+
+TASK_PREFIX = """{objective}
+
+"""
 
 from .tools import get_tools
 from .utils import fancier_trim_intermediate_steps
@@ -47,6 +65,44 @@ class WorkflowAgent:
         print(f"Result: {result}")
         return result
 
+    def custom_load_agent_executor(self,
+            llm: BaseLanguageModel,
+            tools: List[BaseTool],
+            verbose: bool = False,
+            callbacks: List = [],
+            include_task_in_prompt: bool = False,
+            **kwargs
+    ) -> ChainExecutor:
+        """
+        Load an agent executor.
+
+        Args:
+            llm: BaseLanguageModel
+            tools: List[BaseTool]
+            verbose: bool. Defaults to False.
+            include_task_in_prompt: bool. Defaults to False.
+
+        Returns:
+            ChainExecutor
+        """
+        input_variables = ["previous_steps", "current_step", "agent_scratchpad"]
+        template = HUMAN_MESSAGE_TEMPLATE
+
+        if include_task_in_prompt:
+            input_variables.append("objective")
+            template = TASK_PREFIX + template
+
+        agent = StructuredChatAgent.from_llm_and_tools(
+            llm,
+            tools,
+            human_message_template=template,
+            input_variables=input_variables,
+        )
+        agent_executor = AgentExecutor.from_agent_and_tools(
+            agent=agent, tools=tools, verbose=verbose, callbacks=callbacks, **kwargs
+        )
+        return ChainExecutor(chain=agent_executor)
+
     def make_agent(self):
         # TOOLS
         tools = get_tools()
@@ -56,7 +112,7 @@ class WorkflowAgent:
 
         # EXECUTOR
         # executor = load_agent_executor(self.llm, tools, verbose=True, trim_intermediate_steps=fancier_trim_intermediate_steps, handle_parsing_errors=True)
-        executor = load_agent_executor(self.llm, tools, verbose=True, handle_parsing_errors=True)
+        executor = self.custom_load_agent_executor(self.llm, tools, verbose=True, callbacks=[self.callback_handler], handle_parsing_errors=True)
 
         # Create PlanAndExecute Agent
         workflow_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True, callbacks=[self.callback_handler])
