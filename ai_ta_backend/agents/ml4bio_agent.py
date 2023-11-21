@@ -11,7 +11,7 @@ from langchain_experimental.plan_and_execute import (PlanAndExecute,
 
 from .tools import get_tools
 from .utils import fancier_trim_intermediate_steps
-import ai_ta_backend.agents.memorycallbacks as memorycallbacks
+import ai_ta_backend.agents.customcallbacks as customcallbacks
 
 
 def get_user_info_string():
@@ -27,16 +27,16 @@ class WorkflowAgent:
     def __init__(self, run_id_in_metadata, image_name):
         self.run_id_in_metadata = run_id_in_metadata
         self.image_name = image_name
-        self.memory_handler = memorycallbacks.MemoryCallbackHandler(run_id=self.run_id_in_metadata,
-                                                                    image_name=self.image_name)
+        self.callback_handler = customcallbacks.CustomCallbackHandler(run_id=self.run_id_in_metadata,
+                                                                      image_name=self.image_name)
         if os.environ['OPENAI_API_TYPE'] == 'azure':
             self.llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3,
                                        deployment_name=os.environ['AZURE_OPENAI_ENGINE'],
-                                       callbacks=[self.memory_handler])  # type: ignore
+                                       callbacks=[self.callback_handler])  # type: ignore
         else:
             self.llm: ChatOpenAI = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=500,
                                               request_timeout=60 * 3,
-                                              callbacks=[self.memory_handler])  # type: ignore
+                                              callbacks=[self.callback_handler])  # type: ignore
 
         self.agent = self.make_agent()
 
@@ -59,6 +59,6 @@ class WorkflowAgent:
         executor = load_agent_executor(self.llm, tools, verbose=True, handle_parsing_errors=True)
 
         # Create PlanAndExecute Agent
-        workflow_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True, callbacks=[self.memory_handler])
+        workflow_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True, callbacks=[self.callback_handler])
 
         return workflow_agent
