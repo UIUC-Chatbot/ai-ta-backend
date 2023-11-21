@@ -9,7 +9,7 @@ from langchain import hub
 from ai_ta_backend.agents.utils import get_supabase_client, get_langsmith_id
 
 
-class MemoryCallbackHandler(BaseCallbackHandler):
+class CustomCallbackHandler(BaseCallbackHandler):
     """A callback handler that stores the LLM's context and action in memory."""
     def __init__(self, run_id=None, image_name=None):
         self.tool_in_progress = False  # usage TBD
@@ -97,14 +97,14 @@ class MemoryCallbackHandler(BaseCallbackHandler):
                 {"langsmith_id": self.langsmith_run_id, "image_name": self.image_name, "on_chain_start": str(serialized)}).execute()
 
 
-def get_memory_callback_handler():
-    handler = MemoryCallbackHandler()
+def get_custom_callback_handler():
+    handler = CustomCallbackHandler()
     return handler
 
 
 if __name__ == "__main__":
     # for testing
-    handler1 = MemoryCallbackHandler()
+    handler1 = CustomCallbackHandler()
 
     memory_prompt = hub.pull("kastanday/memory_manager_agent")
 
