@@ -14,11 +14,14 @@ from langsmith import Client
 from langsmith.schemas import Run
 import tiktoken
 from newrelic_telemetry_sdk import Log, LogClient
+from supabase.client import create_client
 from dotenv import load_dotenv
 load_dotenv(override=True, dotenv_path='.env')
 
 # Initialize New Relic Client
 log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
+
+langsmith_id = str(uuid.uuid4())  # for Langsmith
 
 def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> List[Tuple[AgentAction, str]]:
   """
@@ -220,3 +223,14 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
     completion_cost = float(completion_token_cost * num_tokens_completion)
     return num_tokens_prompt, prompt_cost, num_tokens_completion, completion_cost
 
+
+def get_supabase_client():
+    # Initialize Supabase client
+    supabase_url = os.environ["SUPABASE_URL"]
+    supabase_key = os.environ["SUPABASE_API_KEY"]
+    supabase = create_client(supabase_url, supabase_key)
+    return supabase
+
+
+def get_langsmith_id():
+    return langsmith_id  # for Langsmith
