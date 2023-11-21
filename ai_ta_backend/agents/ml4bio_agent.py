@@ -11,7 +11,7 @@ from langchain_experimental.plan_and_execute import (PlanAndExecute,
 
 from .tools import get_tools
 from .utils import fancier_trim_intermediate_steps
-from .memorycallbacks import get_memory_callback_handler
+import ai_ta_backend.agents.memorycallbacks as memorycallbacks
 
 
 def get_user_info_string():
