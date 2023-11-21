@@ -39,6 +39,7 @@ from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 
+from ai_ta_backend.image_extraction import extract_images_from_pdf
 
 class Ingest():
   """
@@ -478,6 +479,10 @@ class Ingest():
         ### READ OCR of PDF
         doc = fitz.open(pdf_tmpfile.name)  # type: ignore
         
+        # extract all images from the pdf
+        result = extract_images_from_pdf(doc, s3_path)
+        print("Image extraction result:", result)
+
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
         zoom_y = 2.0  # vertical zoom
@@ -485,21 +490,11 @@ class Ingest():
 
         pdf_pages_OCRed: List[Dict] = []
         for i, page in enumerate(doc):  # type: ignore
-          # image extraction 
-          print("extracting image")
-          d = page.get_text("dict")
-          blocks = d['blocks']
-          img_blocks = [b for b in blocks if b['type']==1]
-          print(img_blocks[0])
-          exit()
-
-
           # UPLOAD FIRST PAGE IMAGE to S3
           if i == 0:
             with NamedTemporaryFile(suffix=".png") as first_page_png:
               pix = page.get_pixmap(matrix=mat)
               pix.save(first_page_png)  # store image as a PNG
-
               s3_upload_path = str(Path(s3_path)).rsplit('.pdf')[0] + "-pg1-thumb.png"
               first_page_png.seek(0)  # Seek the file pointer back to the beginning
               with open(first_page_png.name, 'rb') as f:
