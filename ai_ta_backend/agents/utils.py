@@ -109,7 +109,7 @@ def get_langsmit_run_from_metadata(metadata_value, metadata_key="run_id_in_metad
     count += 1
   print(f"Found num runs: {count}")
 
-  for run in langsmith_client.list_runs(project_name=os.environ['LANGCHAIN_PROJECT']):
+  for run in runs:
     if run.extra and run.extra.get('metadata') and run.extra.get('metadata').get(metadata_key) == metadata_value:
       # return the 'top-level' of the trace (keep getting runs' parents until at top)
       if run.parent_run_id:
