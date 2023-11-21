@@ -11,18 +11,10 @@ import logging
 import shlex
 import uuid
 from newrelic_telemetry_sdk import Log, LogClient
-# Clients here
 
-# Initialize Supabase client
-supabase_url = os.environ["SUPABASE_URL"]
-supabase_key = os.environ["SUPABASE_API_KEY"]
-supabase = create_client(supabase_url, supabase_key)
-langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
+from ai_ta_backend.agents.utils import get_supabase_client, get_langsmith_id
 
 load_dotenv(override=True, dotenv_path='.env')
-
-def get_langsmith_supabase():
-    return supabase, langsmith_run_id
 
 # Initialize Docker client
 try:
@@ -103,6 +95,7 @@ def check_and_insert_image_name(image_name, langsmith_run_id):
     docker_images = []
     img = None
     # Query the Supabase table
+    supabase = get_supabase_client()
     result = supabase.table("docker_images").select("image_name").eq("image_name", image_name).execute()
 
     print(f"Result: {result}")
@@ -147,6 +140,8 @@ def handle_event(payload):
     
     # Filter out disallowed characters from the image name for the volume name
     volume_name = f"vol_{re.sub('[^a-zA-Z0-9_.-]', '_', image_name)}"
+
+    langsmith_run_id = get_langsmith_id()
 
     # Check if the image name exists in the Supabase table, if not, insert it and build a Docker image
     img = check_and_insert_image_name(image_name, langsmith_run_id)
