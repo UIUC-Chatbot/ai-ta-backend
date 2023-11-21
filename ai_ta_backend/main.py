@@ -1,5 +1,7 @@
 import newrelic.agent
 
+from ai_ta_backend.agents.utils import get_langsmith_id
+
 newrelic.agent.initialize()
 
 
@@ -349,7 +351,7 @@ def webhook():
   
   # webhooks.handle_event(payload)
 
-  supabase, langsmith_run_id = webhooks.get_langsmith_supabase()
+  langsmith_run_id = get_langsmith_id()
 
 
   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
