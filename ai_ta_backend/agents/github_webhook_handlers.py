@@ -59,11 +59,14 @@ def handle_issue_opened(payload, langsmith_run_id):
   g = installation.get_github_for_installation()
 
   issue = payload['issue']
-  repo_name = payload["repository"]["full_name"]
+  repo_name = payload["repository"]["full_name"].lower()
   repo: Repository = g.get_repo(repo_name)
   base_branch = repo.get_branch(payload["repository"]["default_branch"])
   number = payload.get('issue').get('number')
   issue: Issue = repo.get_issue(number=number)
+
+  # Construct Docker image name as ID for supabase table
+  image_name = f"{repo_name}_{number}"
 
   metadata = {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
   # logging.info(f"New issue created: #{number}", metadata)
@@ -91,10 +94,8 @@ def handle_issue_opened(payload, langsmith_run_id):
     # 3. RUN BOT
     # bot = github_agent.GH_Agent.remote()
     prompt = hub.pull("kastanday/new-github-issue").format(issue_description=format_issue(issue))
-    print("PRINTING PROMPT")
-    print(prompt)
     # result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, run_id_in_metadata=langsmith_run_id))
-    bot = WorkflowAgent(run_id_in_metadata=langsmith_run_id)
+    bot = WorkflowAgent(run_id_in_metadata=langsmith_run_id, image_name=image_name)
     result = bot.run(prompt)
 
     # COLLECT PARALLEL RESULTS
