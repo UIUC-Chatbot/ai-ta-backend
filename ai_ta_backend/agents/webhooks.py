@@ -33,7 +33,7 @@ except Exception as e:
     
 logging.basicConfig(level=logging.DEBUG)
 logging.getLogger('docker').setLevel(logging.DEBUG)
-logging.getLogger('urllib3').setLevel(logging.DEBUG)
+logging.getLogger('urllib3').setLevel(logging.INFO)
 
 # Initialize New Relic Client
 log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
