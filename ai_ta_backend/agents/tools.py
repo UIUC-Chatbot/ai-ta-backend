@@ -26,7 +26,7 @@ os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution o
 langchain.debug = False
 VERBOSE = True
 
-def get_tools(sync=True):
+def get_tools(sync=True, callback=None):
   '''Main function to assemble tools for ML for Bio project.'''
   # WEB BROWSER
   browser_toolkit = None
@@ -46,11 +46,11 @@ def get_tools(sync=True):
     llm = ChatOpenAI(temperature=0.1, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
   # human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)
   # GOOGLE SEARCH
-  search = load_tools(["serpapi"])
+  search = load_tools(["serpapi"], callbacks=[callback])
   
   # SHELL & FILES
   shell = ShellTool()
-  file_management = FileManagementToolkit(
+  file_management = FileManagementToolkit(callbacks=[callback]
     # If you don't provide a root_dir, operations will default to the current working directory
     # root_dir=str("/app")
   ).get_tools()
@@ -62,11 +62,11 @@ def get_tools(sync=True):
 
   # TODO: more vector stores per Bio package: trimmomatic, gffread, samtools, salmon, DESeq2 and ggpubr
   docs_tools: List[VectorStoreQATool] = [
-    get_vectorstore_retriever_tool(course_name='langchain-docs', name='Langchain docs', description="Build context-aware, reasoning applications with LangChain's flexible abstractions and AI-first toolkit."),
-    get_vectorstore_retriever_tool(course_name='ml4bio-star', name='STAR docs', description='Basic STAR workflow consists of 2 steps: (1) Generating genome indexes files and (2) Mapping reads to the genome'),
-    get_vectorstore_retriever_tool(course_name='ml4bio-fastqc', name='FastQC docs', description='FastQC aims to provide a simple way to do some quality control checks on raw sequence data coming from high throughput sequencing pipelines. It provides a modular set of analyses which you can use to give a quick impression of whether your data has any problems of which you should be aware before doing any further analysis. It works with data from BAM, SAM or FastQ files'),
-    get_vectorstore_retriever_tool(course_name='ml4bio-multiqc', name='MultiQC docs', description="MultiQC is a reporting tool that parses results and statistics from bioinformatics tool outputs, such as log files and console outputs. It helps to summarize experiments containing multiple samples and multiple analysis steps. It's designed to be placed at the end of pipelines or to be run manually when you've finished running your tools."),
-    get_vectorstore_retriever_tool(course_name='ml4bio-bioconductor', name='Bioconductor docs', description="Bioconductor is a project that contains hundreds of individual R packages. They're all high quality libraries that provide widespread access to a broad range of powerful statistical and graphical methods for the analysis of genomic data. Some of them also facilitate the inclusion of biological metadata in the analysis of genomic data, e.g. literature data from PubMed, annotation data from Entrez genes."),
+    get_vectorstore_retriever_tool(course_name='langchain-docs', name='Langchain docs', description="Build context-aware, reasoning applications with LangChain's flexible abstractions and AI-first toolkit.", callbacks=[callback]),
+    get_vectorstore_retriever_tool(course_name='ml4bio-star', name='STAR docs', description='Basic STAR workflow consists of 2 steps: (1) Generating genome indexes files and (2) Mapping reads to the genome', callbacks=[callback]),
+    get_vectorstore_retriever_tool(course_name='ml4bio-fastqc', name='FastQC docs', description='FastQC aims to provide a simple way to do some quality control checks on raw sequence data coming from high throughput sequencing pipelines. It provides a modular set of analyses which you can use to give a quick impression of whether your data has any problems of which you should be aware before doing any further analysis. It works with data from BAM, SAM or FastQ files', callbacks=[callback]),
+    get_vectorstore_retriever_tool(course_name='ml4bio-multiqc', name='MultiQC docs', description="MultiQC is a reporting tool that parses results and statistics from bioinformatics tool outputs, such as log files and console outputs. It helps to summarize experiments containing multiple samples and multiple analysis steps. It's designed to be placed at the end of pipelines or to be run manually when you've finished running your tools.", callbacks=[callback]),
+    get_vectorstore_retriever_tool(course_name='ml4bio-bioconductor', name='Bioconductor docs', description="Bioconductor is a project that contains hundreds of individual R packages. They're all high quality libraries that provide widespread access to a broad range of powerful statistical and graphical methods for the analysis of genomic data. Some of them also facilitate the inclusion of biological metadata in the analysis of genomic data, e.g. literature data from PubMed, annotation data from Entrez genes.", callbacks=[callback]),
   ]
 
   # ARXIV SEARCH
