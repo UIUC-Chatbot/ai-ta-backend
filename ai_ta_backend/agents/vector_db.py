@@ -19,9 +19,12 @@ load_dotenv(override=True)
 langchain.debug = False
 VERBOSE = True
 
-def get_vectorstore_retriever_tool(course_name: str, name: str, description: str, openai_model_name='gpt-3.5-turbo-16k', temperature=0.1, top_k=8) -> VectorStoreQATool:
+def get_vectorstore_retriever_tool(course_name: str, name: str, description: str,
+                                   openai_model_name='gpt-3.5-turbo-16k', temperature=0.1, top_k=8,
+                                   callbacks=None) -> VectorStoreQATool:
   """
     course name str: Name of course on uiuc-chat as appears in URL-bar; yes it's case sensitive.
+    callbacks: list of callbacks to pass to the LLM. See ai_ta_backend/agents/customcallbacks.py for an example.
 
     Usage: 
     ```
@@ -49,7 +52,8 @@ def get_vectorstore_retriever_tool(course_name: str, name: str, description: str
       llm=ChatOpenAI(model_name=openai_model_name, temperature=temperature),  # type: ignore
       name=name,
       description=description,
-      retriever_kwargs={'filter': {'course_name': course_name, 'k': top_k}}
+      retriever_kwargs={'filter': {'course_name': course_name, 'k': top_k}},
+      callbacks=callbacks
     )
   except Exception as e:
     # return full traceback to front end
