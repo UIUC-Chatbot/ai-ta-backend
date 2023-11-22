@@ -87,14 +87,14 @@ class CustomCallbackHandler(BaseCallbackHandler):
     # def on_llm_new_token(self, token: str, **kwargs: Any) -> Any:
     #     print(f"on_new_token {token}")
 
-    def on_chain_start(self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any) -> Any:
-        print("on_chain_start")
-        if self.is_exists_image():
-            self.supabase_client.table("docker_images").update({"on_chain_start": str(serialized)}).\
-                                        eq("image_name", self.image_name).execute()
-        else:
-            self.supabase_client.table("docker_images").upsert(
-                {"langsmith_id": self.langsmith_run_id, "image_name": self.image_name, "on_chain_start": str(serialized)}).execute()
+    # def on_chain_start(self, serialized: Dict[str, Any], inputs: Dict[str, Any], **kwargs: Any) -> Any:
+    #     print("on_chain_start")
+    #     if self.is_exists_image():
+    #         self.supabase_client.table("docker_images").update({"on_chain_start": str(serialized)}).\
+    #                                     eq("image_name", self.image_name).execute()
+    #     else:
+    #         self.supabase_client.table("docker_images").upsert(
+    #             {"langsmith_id": self.langsmith_run_id, "image_name": self.image_name, "on_chain_start": str(serialized)}).execute()
 
 
 def get_custom_callback_handler():
