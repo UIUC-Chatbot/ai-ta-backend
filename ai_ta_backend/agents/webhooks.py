@@ -1,3 +1,4 @@
+from pathlib import Path
 import docker
 import json
 import os
@@ -24,7 +25,7 @@ except Exception as e:
     print(f"Is your Docker client running? Error while setting up docker client: {e}")
     print(traceback.print_exc())
     
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logging.getLogger('docker').setLevel(logging.DEBUG)
 logging.getLogger('urllib3').setLevel(logging.DEBUG)
 
@@ -37,11 +38,12 @@ def build_docker_image(image_name):
     Args:
         image_name (str): The Docker image name.
     """
+    dockerfile_path = str(Path(os.getcwd() + "/ai_ta_backend/agents"))
     print(f"Building docker image: {image_name}")
-    dockerfile_path = "ai_ta_backend/agents"
+    print("Current working directory: ", os.getcwd())
+    # dockerfile_path = "ai_ta_backend/agents"
     try:
         img, logs = docker_client.images.build(path=dockerfile_path, tag=image_name, quiet=False) #type:ignore
-        print(f"Response on creating new image: {img.attrs}")
         for log in logs:
             if 'stream' in log:
                 print(f"Build logs: {log['stream'].strip()}")
@@ -75,17 +77,28 @@ def run_docker_container(image_name, command, volume_name):
         # If the volume does not exist, create it
         volume = docker_client.volumes.create(name=volume_name)
 
-    # Run a container with the volume attached
+    image_name_without_tag = image_name.split(':')[0].split('/')[-1]
+
+    # ! TODO Figure out how to RESUME a container if it already exists
     try:
-        docker_client.containers.run(image_name, command, volumes={volume.name: {'bind': '/app', 'mode': 'rw'}}) #type:ignore
-    except ContainerError as e:
-        print(f"Container error: {e.stderr}")
-    except ImageNotFound as e:
-        print(f"Image not found: {e.explanation}")
-    except APIError as e:
-        print(f"API error: {e.explanation}")
+        # Check if the container exists
+        container = docker_client.containers.get(image_name_without_tag)
+        print("Container exists, resuming...")
+        # If the container exists, start it
+        container.start()
+    except NotFound:
+        print("Container does not exist, creating a new one...")
+        # If the container does not exist, run a new one
+        container = docker_client.containers.run(
+            image_name, 
+            command, 
+            name=image_name_without_tag, 
+            detach=True, 
+            volumes={volume_name: {'bind': '/volume', 'mode': 'rw'}}
+        )
     except Exception as e:
-        print(traceback.print_exc)
+        print(f"Error: {e}")
+        print(traceback.print_exc())
 
 def check_and_insert_image_name(image_name, langsmith_run_id):
     """Check if the image name exists in the Supabase table, if not, insert it and build a Docker image.
@@ -95,34 +108,13 @@ def check_and_insert_image_name(image_name, langsmith_run_id):
     """
     docker_images = []
     img = None
-    # Query the Supabase table
     result = supabase.table("docker_images").select("image_name").eq("image_name", image_name).execute()
-
-    print(f"Result: {result}")
-
-    # If the image name does not exist in the table, insert it and build a Docker image
     if not result.data:
+        # If the image name does not exist in the table, insert it and build a Docker image
         supabase.table("docker_images").insert({"image_name": image_name, "langsmith_id": langsmith_run_id}).execute()
-        img = build_docker_image(image_name)
 
-    # Query the Docker environment
-    try:
-        docker_images = [tag.split(":")[0] for img in docker_client.images.list() for tag in img.tags] #type:ignore
-        print(f"Docker images available: {docker_images}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-
-    # Check if the image exists in the Docker environment
-    if image_name not in docker_images:
-        print(f"Docker image {image_name} does not exist in the Docker environment.")
-        img = build_docker_image(image_name)
-    else:
-        # If the image already exists, rebuild it to ensure it's up to date
-        print(f"Rebuilding Docker image {image_name} to ensure it's up to date.")
-        img = build_docker_image(image_name)  # This will use cache if no changes
-
-    return img
-
+    # Always build the Docker image (to ensure it's up to date)
+    return build_docker_image(image_name)
 
 def handle_event(payload):
     """ This is the primary entry point to the app; Just open an issue!
@@ -136,7 +128,7 @@ def handle_event(payload):
     # Construct Docker image name
     repo_name = payload["repository"]["full_name"].lower()
     number = payload.get('issue').get('number')
-    image_name = f"{repo_name}_{number}"
+    image_name = f"{repo_name}_{number}:our_tag"
     
     # Filter out disallowed characters from the image name for the volume name
     volume_name = f"vol_{re.sub('[^a-zA-Z0-9_.-]', '_', image_name)}"
@@ -149,6 +141,6 @@ def handle_event(payload):
     # Send shell command to Docker image
     command = f"python github_webhook_handlers.py --payload {shlex.quote(payload_json)} --langsmith_run_id {langsmith_run_id}"
 
-    print(f"Command for container: {command}")
+    # print(f"Command for container: {command}")
     if img:
         run_docker_container(image_name, command, volume_name)
