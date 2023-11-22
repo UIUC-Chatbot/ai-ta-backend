@@ -16,6 +16,9 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 
 from langchain_experimental.plan_and_execute.executors.base import ChainExecutor
+from .tools import get_tools
+from .utils import fancier_trim_intermediate_steps
+import ai_ta_backend.agents.customcallbacks as customcallbacks
 
 HUMAN_MESSAGE_TEMPLATE = """Previous steps: {previous_steps}
 
@@ -27,9 +30,6 @@ TASK_PREFIX = """{objective}
 
 """
 
-from .tools import get_tools
-from .utils import fancier_trim_intermediate_steps
-import ai_ta_backend.agents.customcallbacks as customcallbacks
 
 
 def get_user_info_string():
@@ -66,13 +66,13 @@ class WorkflowAgent:
         return result
 
     def custom_load_agent_executor(self,
-            llm: BaseLanguageModel,
-            tools: List[BaseTool],
-            verbose: bool = False,
-            callbacks: List = [],
-            include_task_in_prompt: bool = False,
-            **kwargs
-    ) -> ChainExecutor:
+                                llm: BaseLanguageModel,
+                                tools: List[BaseTool],
+                                verbose: bool = False,
+                                callbacks: List = [],
+                                include_task_in_prompt: bool = False,
+                                **kwargs
+        ) -> ChainExecutor:
         """
         Load an agent executor.
 
@@ -105,10 +105,10 @@ class WorkflowAgent:
 
     def make_agent(self):
         # TOOLS
-        tools = get_tools()
+        tools = get_tools(callback=self.callback_handler)
 
         # PLANNER
-        planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info = get_user_info_string))
+        planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
 
         # EXECUTOR
         # executor = load_agent_executor(self.llm, tools, verbose=True, trim_intermediate_steps=fancier_trim_intermediate_steps, handle_parsing_errors=True)
