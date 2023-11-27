@@ -1,4 +1,5 @@
 import getpass
+import json
 import os
 import platform
 from typing import List
@@ -18,6 +19,7 @@ from langchain.tools import BaseTool
 from langchain_experimental.plan_and_execute.executors.base import ChainExecutor
 from .tools import get_tools
 from .utils import fancier_trim_intermediate_steps
+from .utils import SupabaseDB
 import ai_ta_backend.agents.customcallbacks as customcallbacks
 
 HUMAN_MESSAGE_TEMPLATE = """Previous steps: {previous_steps}
@@ -30,6 +32,12 @@ TASK_PREFIX = """{objective}
 
 """
 
+MEMORY_CONTEXT = """
+Memory:
+Tools used in chronological order(1 is oldest) : {tools_used}
+Actions taken in chronological order(1 is oldest) : {agent_action_steps}
+"""
+
 
 
 def get_user_info_string():
@@ -39,6 +47,27 @@ def get_user_info_string():
     default_shell = os.environ.get("SHELL")
 
     return f"[User Info]\nName: {username}\nCWD: {current_working_directory}\nSHELL: {default_shell}\nOS: {operating_system}"
+
+
+def get_memory_context(table_name: str, image_name: str):
+    db = SupabaseDB(table_name=table_name, image_name=image_name)
+    tools_used, action_data_string = "", ""
+
+    if db.is_exists_image():
+        tool_data = db.fetch_field_from_db("on_tool_start")
+        if tool_data:
+            tools_used = [item['name'] for item in tool_data]
+            tools_used = ", ".join(tools_used)
+
+        action_data = db.fetch_field_from_db("on_agent_action")
+        if action_data:
+            action_data_string = [item['log'] for item in action_data]
+            action_data_string = ", ".join(action_data_string)
+
+    return MEMORY_CONTEXT.format(
+        tools_used=tools_used,
+        agent_action_steps=action_data_string,
+    )
 
 
 class WorkflowAgent:
@@ -85,8 +114,11 @@ class WorkflowAgent:
         Returns:
             ChainExecutor
         """
+        memory_context = get_memory_context(table_name="docker_images", image_name=self.image_name)
+        print("Memory Context: ", memory_context)
+
         input_variables = ["previous_steps", "current_step", "agent_scratchpad"]
-        template = HUMAN_MESSAGE_TEMPLATE
+        template = HUMAN_MESSAGE_TEMPLATE + memory_context
 
         if include_task_in_prompt:
             input_variables.append("objective")
