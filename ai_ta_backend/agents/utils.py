@@ -5,7 +5,7 @@ import os
 import time
 import traceback
 import uuid
-from typing import List, Tuple
+from typing import Dict, Union, Any, List, Tuple
 
 import langsmith
 import ray
@@ -234,3 +234,53 @@ def get_supabase_client():
 
 def get_langsmith_id():
     return langsmith_id  # for Langsmith
+
+
+class SupabaseDB:
+  """ Class for all postgresDB Supabase python client calls. """
+
+  def __init__(self, table_name: str = "docker_images", image_name: str = ''):
+    self.supabase_client = get_supabase_client()
+    self.table_name = table_name
+    self.image_name = image_name
+
+  def is_exists_image(self) -> bool:
+    """Method to check if image / record exists in DB."""
+    response = self.supabase_client.table("docker_images").select("image_name"). \
+        eq("image_name", self.image_name).execute()
+    return len(response.data) > 0
+
+  def fetch_field_from_db(self, field: str):
+    """Method to fetch field from DB.
+    Args:
+        field (str): Field name to fetch from DB.
+    Returns:
+        APIResponse: Response from Supabase.
+    """
+    response = self.supabase_client.table("docker_images").select(field). \
+      eq("image_name", self.image_name).execute()
+    return response.data[0][field]
+
+  def update_field_in_db(self, field: str, value: Any):
+    """Method to update field in  supabase DB.
+    Args:
+        field (str): Field name to update in DB.
+        value (Any): Value to update in DB.
+    Returns:
+        APIResponse: Response from Supabase.
+    """
+    response = self.supabase_client.table("docker_images").update({field: value}). \
+      eq("image_name", self.image_name).execute()
+    return response
+
+  def upsert_field_in_db(self, field, value):
+    """Method to upsert field in  supabase DB.
+    Args:
+        field (str): Field name to upsert in DB.
+        value (Any): Value to upsert in DB.
+        Returns:
+            APIResponse: Response from Supabase.
+    """
+    response = self.supabase_client.table("docker_images").upsert({field: value}). \
+      eq("image_name", self.image_name).execute()
+    return response
