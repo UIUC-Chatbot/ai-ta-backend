@@ -19,7 +19,7 @@ newrelic.agent.initialize()
 app = Flask(__name__)
 CORS(app)
 
-# load API keys from globally-availabe .env file
+# load API keys from globally-available .env file
 load_dotenv(dotenv_path='.env', override=True)
 
 ray.init() 
