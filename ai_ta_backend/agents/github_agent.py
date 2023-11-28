@@ -20,8 +20,8 @@ from langchain.utilities.github import GitHubAPIWrapper
 # from langchain_experimental.autonomous_agents.baby_agi import BabyAGI
 from langsmith import Client
 
-from .tools import get_tools
-from .utils import fancier_trim_intermediate_steps
+from ai_ta_backend.agents.tools import get_tools
+from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 
 load_dotenv(override=True, dotenv_path='.env')
 
