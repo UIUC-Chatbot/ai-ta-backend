@@ -50,6 +50,10 @@ def handle_issue_opened(payload, langsmith_run_id):
   Args:
       payload (_type_): From github, see their webhook docs.
   """
+  logging.warning(f'fAuth {os.environ["GITHUB_APP_ID"]}')
+  logging.error(f'Auth {os.environ["GITHUB_APP_PRIVATE_KEY"]}')
+  # print("Auth ", os.environ["GITHUB_APP_ID"])
+  # print("Auth ", os.environ["GITHUB_APP_PRIVATE_KEY"])
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
@@ -57,6 +61,9 @@ def handle_issue_opened(payload, langsmith_run_id):
   gi = GithubIntegration(auth=auth)
   installation = gi.get_installations()[0]
   g = installation.get_github_for_installation()
+
+  print("After get instillation")
+  logging.info("After get instillation")
 
   issue = payload['issue']
   repo_name = payload["repository"]["full_name"].lower()
