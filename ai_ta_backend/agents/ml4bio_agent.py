@@ -20,7 +20,7 @@ from langchain_experimental.plan_and_execute.executors.base import ChainExecutor
 from ai_ta_backend.agents.tools import get_tools
 from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 from ai_ta_backend.agents.utils import SupabaseDB
-import ai_ta_backend.agents.customcallbacks as customcallbacks
+from ai_ta_backend.agents.customcallbacks import CustomCallbackHandler
 
 HUMAN_MESSAGE_TEMPLATE = """Previous steps: {previous_steps}
 
@@ -74,7 +74,7 @@ class WorkflowAgent:
     def __init__(self, run_id_in_metadata, image_name):
         self.run_id_in_metadata = run_id_in_metadata
         self.image_name = image_name
-        self.callback_handler = customcallbacks.CustomCallbackHandler(run_id=self.run_id_in_metadata,
+        self.callback_handler = CustomCallbackHandler(run_id=self.run_id_in_metadata,
                                                                       image_name=self.image_name)
         if os.environ['OPENAI_API_TYPE'] == 'azure':
             self.llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3,

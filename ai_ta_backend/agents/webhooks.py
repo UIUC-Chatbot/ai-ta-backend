@@ -120,6 +120,7 @@ def check_and_insert_image_name(image_name, langsmith_run_id):
     # Always build the Docker image (to ensure it's up to date)
     return build_docker_image(image_name)
 
+
 def handle_event(payload):
     """ This is the primary entry point to the app; Just open an issue!
 
