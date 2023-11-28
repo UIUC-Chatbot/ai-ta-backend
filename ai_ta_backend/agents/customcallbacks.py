@@ -40,9 +40,9 @@ class CustomCallbackHandler(BaseCallbackHandler):
                 data.append(serialized)
                 response = self.db.update_field_in_db("on_tool_start", data)
             else:
-                response = self.db.update_field_in_db("on_tool_start", serialized)
+                response = self.db.update_field_in_db("on_tool_start", [serialized])
         else:
-            response = self.db.upsert_field_in_db("on_tool_start", serialized)
+            response = self.db.upsert_field_in_db("on_tool_start", [serialized])
 
 
     def on_tool_end(self, output: str, **kwargs: Any) -> Any:
@@ -62,9 +62,9 @@ class CustomCallbackHandler(BaseCallbackHandler):
                 data.append(output)
                 response = self.db.update_field_in_db("on_tool_end", data)
             else:
-                response = self.db.update_field_in_db("on_tool_end", output)
+                response = self.db.update_field_in_db("on_tool_end", [output])
         else:
-            response = self.db.upsert_field_in_db("on_tool_end", output)
+            response = self.db.upsert_field_in_db("on_tool_end", [output])
 
 
     def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
@@ -88,9 +88,9 @@ class CustomCallbackHandler(BaseCallbackHandler):
                 data.append(action)
                 response = self.db.update_field_in_db("on_agent_action", data)
             else:
-                response = self.db.update_field_in_db("on_agent_action", action)
+                response = self.db.update_field_in_db("on_agent_action", [action])
         else:
-            response = self.db.upsert_field_in_db("on_agent_action", action)
+            response = self.db.upsert_field_in_db("on_agent_action", [action])
 
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
