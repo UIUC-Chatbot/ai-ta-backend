@@ -349,18 +349,7 @@ def webhook():
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
   
-  # webhooks.handle_event(payload)
-
-  langsmith_run_id = get_langsmith_id()
-
-
-  # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
-  if payload.get('action') == 'opened' and payload.get('pull_request'):
-    github_webhook_handlers.handle_pull_request_opened(payload, langsmith_run_id)
-  elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
-    github_webhook_handlers.handle_issue_opened(payload, langsmith_run_id)
-  elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
-    github_webhook_handlers.handle_comment_opened(payload, langsmith_run_id)
+  webhooks.handle_event(payload)
 
   return '', 200
 
