@@ -119,10 +119,6 @@ class CustomCallbackHandler(BaseCallbackHandler):
         pass
 
 
-def get_custom_callback_handler():
-    handler = CustomCallbackHandler()
-    return handler
-
 
 if __name__ == "__main__":
     # for testing
