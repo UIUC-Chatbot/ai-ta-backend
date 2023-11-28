@@ -17,7 +17,7 @@ from langchain.tools.playwright.utils import (create_async_playwright_browser,
                                               create_sync_playwright_browser)
 from langchain.utilities.github import GitHubAPIWrapper
 
-from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
+from vector_db import get_vectorstore_retriever_tool
 from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
 
 load_dotenv(override=True, dotenv_path='../.env')

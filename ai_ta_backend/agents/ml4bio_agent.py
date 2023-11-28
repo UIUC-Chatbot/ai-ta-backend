@@ -17,10 +17,10 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 
 from langchain_experimental.plan_and_execute.executors.base import ChainExecutor
-from ai_ta_backend.agents.tools import get_tools
-from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
-from ai_ta_backend.agents.utils import SupabaseDB
-from ai_ta_backend.agents.customcallbacks import CustomCallbackHandler
+from tools import get_tools
+from utils import fancier_trim_intermediate_steps
+from utils import SupabaseDB
+from customcallbacks import CustomCallbackHandler
 
 HUMAN_MESSAGE_TEMPLATE = """Previous steps: {previous_steps}
 

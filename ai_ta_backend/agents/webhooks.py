@@ -13,7 +13,7 @@ import shlex
 import uuid
 from newrelic_telemetry_sdk import Log, LogClient
 
-from ai_ta_backend.agents.utils import get_supabase_client, get_langsmith_id
+from .utils import get_supabase_client, get_langsmith_id
 
 load_dotenv(override=True, dotenv_path='.env')
 

@@ -11,7 +11,7 @@ from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
-from ai_ta_backend.agents import webhooks
+from .agents import webhooks
 
 import newrelic.agent
 newrelic.agent.initialize()
