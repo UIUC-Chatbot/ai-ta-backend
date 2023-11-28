@@ -1,7 +1,7 @@
 # don't sync coursera docs
 coursera-dl/
 *parsed.json
-*wandb*
+wandb
 *.ipynb
 *.pem
 
@@ -166,3 +166,22 @@ pip-selfcheck.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 .aider*
+
+# IDEA/Webstorm project files
+*.idea/
+*.iml
+
+#VSCode metadata
+.vscode
+.venv*
+*.env
+*.env.template
+venv*
+
+# Mac files
+.DS_Store
+
+# npm
+node_modules
+
+.rules
