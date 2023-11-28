@@ -1,28 +1,20 @@
-import newrelic.agent
-
-from ai_ta_backend.agents.utils import get_langsmith_id
-
-newrelic.agent.initialize()
-
-
 import logging
 import os
 import re
 import time
 from typing import Any, List, Union
-
 import ray
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from h11 import Response
-from regex import D
-# from qdrant_client import QdrantClient
 from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
-from ai_ta_backend.agents import webhooks, github_webhook_handlers
+from ai_ta_backend.agents import webhooks
+
+import newrelic.agent
+newrelic.agent.initialize()
 
 app = Flask(__name__)
 CORS(app)
