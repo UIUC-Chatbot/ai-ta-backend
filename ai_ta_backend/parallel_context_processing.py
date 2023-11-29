@@ -54,13 +54,15 @@ def qdrant_context_processing(doc, course_name, result_contexts):
     }
     if 'url' in doc.metadata.keys():
       context_dict['url'] = doc.metadata['url']
+    else:
+      context_dict['url'] = ''
         
     result_contexts.append(context_dict)
     return result_contexts    
 
 def supabase_context_padding(doc, course_name, result_docs):
     """
-    Does context padding for given doc. Used with context_padding()
+    Does context padding for given doc.
     """
         
     # query by url or s3_path
@@ -98,6 +100,7 @@ def supabase_context_padding(doc, course_name, result_docs):
         pagenumber = doc.metadata['pagenumber']
             
         for context in contexts:
+          # pad contexts belonging to same page number
           if int(context['pagenumber']) == pagenumber:
             context['readable_filename'] = filename
             context['course_name'] = course_name
@@ -119,6 +122,9 @@ def supabase_context_padding(doc, course_name, result_docs):
         }
         if 'url' in doc.metadata.keys():
           context_dict['url'] = doc.metadata['url']
+        else:
+          context_dict['url'] = ''
+
         result_docs.append(context_dict)
     
     

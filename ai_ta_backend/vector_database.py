@@ -1409,7 +1409,7 @@ class Ingest():
       print(f"⏰ ^^ Runtime of getTopContextsWithMQR: {(time.monotonic() - start_time_overall):.2f} seconds")
       if len(valid_docs) == 0:
         return []
-      return self.format_for_json(valid_docs)
+      return self.format_for_json_mqr(valid_docs)
     except Exception as e:
       # return full traceback to front end
       err: str = f"ERROR: In /getTopContextsWithMQR. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.format_exc()}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
@@ -1577,6 +1577,29 @@ Now please respond to my question: {user_question}"""
       print(err)
       return err
 
+  
+  def format_for_json_mqr(self, found_docs) -> List[Dict]:
+    """
+    Same as format_for_json, but for the new MQR pipeline.
+    """
+    for found_doc in found_docs:
+      if "pagenumber" not in found_doc.keys():
+        print("found no pagenumber")
+        found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
+
+    contexts = [{
+        'text': doc['text'],
+        'readable_filename': doc['readable_filename'],
+        'course_name ': doc['course_name'],
+        's3_path': doc['s3_path'],
+        'pagenumber': doc['pagenumber'], 
+        'url': doc['url'], # wouldn't this error out?
+        'base_url': doc['base_url'],
+    } for doc in found_docs]
+
+    return contexts
+  
+
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
     """Formatting only.
       {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
@@ -1590,21 +1613,20 @@ Now please respond to my question: {user_question}"""
     Returns:
         List[Dict]: _description_
     """
-    
     for found_doc in found_docs:
-      if "pagenumber" not in found_doc.keys():
+      if "pagenumber" not in found_doc.metadata.keys():
         print("found no pagenumber")
-        found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
+        found_doc.metadata['pagenumber'] = found_doc.metadata['pagenumber_or_timestamp']
 
     contexts = [{
-        'text': doc['text'],
-        'readable_filename': doc['readable_filename'],
-        'course_name ': doc['course_name'],
-        's3_path': doc['s3_path'],
-        'pagenumber': doc['pagenumber'], # this because vector db schema is older...
+        'text': doc.page_content,
+        'readable_filename': doc.metadata['readable_filename'],
+        'course_name ': doc.metadata['course_name'],
+        's3_path': doc.metadata['s3_path'],
+        'pagenumber': doc.metadata['pagenumber'], # this because vector db schema is older...
         # OPTIONAL PARAMS...
-        'url': doc['url'], # wouldn't this error out?
-        'base_url': doc['base_url'],
+        'url': doc.metadata.get('url'), # wouldn't this error out?
+        'base_url': doc.metadata.get('base_url'),
     } for doc in found_docs]
 
     return contexts
