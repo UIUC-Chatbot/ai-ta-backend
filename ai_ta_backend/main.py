@@ -130,7 +130,7 @@ def getTopContexts() -> Response:
   Exception
       Testing how exceptions are handled.
   """
-  print("In getRopContexts in Main()")
+  print("In getTopContexts in Main()")
   search_query: str = request.args.get('search_query', default='', type=str)
   course_name: str = request.args.get('course_name', default='', type=str)
   token_limit: int = request.args.get('token_limit', default=3000, type=int)
@@ -150,6 +150,29 @@ def getTopContexts() -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/getTopContextsWithMQR', methods=['GET'])
+def getTopContextsWithMQR() -> Response:
+  """
+  Get relevant contexts for a given search query, using Multi-query retrieval + filtering method.
+  """
+  search_query: str = request.args.get('search_query', default='', type=str)
+  course_name: str = request.args.get('course_name', default='', type=str)
+  token_limit: int = request.args.get('token_limit', default=3000, type=int)
+  if search_query == '' or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
+    )
+
+  ingester = Ingest()
+  found_documents = ingester.getTopContextsWithMQR(search_query, course_name, token_limit)
+  del ingester
+
+  response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 
 @app.route('/get_stuffed_prompt', methods=['GET'])
