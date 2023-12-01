@@ -73,7 +73,7 @@ def handle_issue_opened(payload, langsmith_run_id):
   issue: Issue = repo.get_issue(number=number)
 
   # Construct Docker image name as ID for supabase table
-  image_name = f"{repo_name}_{number}"
+  image_name = f"{repo_name}_{number}:our_tag"
 
   metadata = {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
   # logging.info(f"New issue created: #{number}", metadata)
