@@ -13,6 +13,7 @@ import requests
 from dotenv import load_dotenv
 from langchain import hub
 from langchain.prompts import PromptTemplate
+#from openai import OpenAI
 
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 
@@ -33,10 +34,10 @@ class AsyncActor:
 
   def filter_context(self, context, user_query, langsmith_prompt_obj):
     final_prompt = str(langsmith_prompt_obj.format(context=context, user_query=user_query))
-    # print(f"-------\nfinal_prompt:\n{final_prompt}\n^^^^^^^^^^^^^")
+    print(f"-------\nfinal_prompt:\n{final_prompt}\n^^^^^^^^^^^^^")
     try: 
       # completion = run_model(final_prompt)
-      # completion = run_replicate(final_prompt)
+      #completion = run_replicate(final_prompt)
       completion = run_anyscale(final_prompt)
       return {"completion": completion, "context": context}
     except Exception as e: 
@@ -81,11 +82,12 @@ def run_replicate(prompt):
   return output
 
 def run_anyscale(prompt):
+  print("in run anyscale")
   ret = openai.ChatCompletion.create(
           api_base = "https://api.endpoints.anyscale.com/v1",
           api_key=os.environ["ANYSCALE_ENDPOINT_TOKEN"],
           # model="meta-llama/Llama-2-70b-chat-hf",
-          model="mistralai/Mistral-7B-Instruct-v0.1",
+          engine="mistralai/Mistral-7B-Instruct-v0.1",
           messages=[{"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": prompt}],
           temperature=0.3, 
@@ -93,6 +95,25 @@ def run_anyscale(prompt):
       )
   print(ret["choices"][0]["message"]["content"])
   return ret["choices"][0]["message"]["content"]
+
+# def run_anyscale(prompt):
+#   print("in run anyscale")
+#   client = openai.OpenAI(
+#            base_url = "https://api.endpoints.anyscale.com/v1",
+#            api_key=os.environ["ANYSCALE_ENDPOINT_TOKEN"]
+#         )
+  
+#   ret = client.chat.completions.create(
+#           # model="meta-llama/Llama-2-70b-chat-hf",
+#           model="mistralai/Mistral-7B-Instruct-v0.1",
+#           messages=[{"role": "system", "content": "You are a helpful assistant."},
+#                     {"role": "user", "content": prompt}],
+#           temperature=0.3, 
+#           max_tokens=250,
+#       )
+#   print("ANYSCALE RESPONSE: ", ret.choices[0].message.content)
+#   return ret.choices[0].message.content
+#   #return ret["choices"][0]["message"]["content"]
 
 def parse_result(result):
   lines = result.split('\n')
@@ -108,11 +129,15 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
 
   actor = AsyncActor.options(max_concurrency=max_concurrency).remote()
   result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts]
+  print("Num futures:", len(result_futures))
+  #print("Result futures:", result_futures)
+  
 
   start_time = time.time()
   for i in range(0, len(result_futures)): 
     try: 
       ready, not_ready = ray.wait(result_futures)
+      print("ready:", ready)
       result = ray.get(ready[0])
       
       if result is None:

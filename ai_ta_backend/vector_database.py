@@ -43,6 +43,7 @@ from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 from ai_ta_backend.parallel_context_processing import context_processing
+from ai_ta_backend.filtering_contexts import run
 
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
@@ -1396,13 +1397,13 @@ class Ingest():
           # filled our token size, time to return
           break
       
-      # for v in valid_docs:
-      #   print("FINAL VALID DOCS:")
-      #   #print("valid doc text: ", v['text'])
-      #   print("s3_path: ", v['s3_path'])
-      #   print("url: ", v['url'])
-      #   print("readable_filename: ", v['readable_filename'])
-      #   print("\n")
+      print("Length of valid docs: ", len(valid_docs))
+      
+      # insert filtering here and only pass relevant contexts ahead
+      final_filtered_docs = list(run(contexts=valid_docs, user_query=search_query, max_time_before_return=45, max_concurrency=20))
+      
+      print("Length of final filtered docs: ", len(final_filtered_docs))
+      #print("FINAL FILTERED DOCS: ", final_filtered_docs)
 
       print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
