@@ -56,3 +56,4 @@ xlrd # for excel ingest
 newrelic
 ray
 langchainhub
+replicate

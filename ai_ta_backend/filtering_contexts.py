@@ -87,7 +87,7 @@ def run_anyscale(prompt):
           api_base = "https://api.endpoints.anyscale.com/v1",
           api_key=os.environ["ANYSCALE_ENDPOINT_TOKEN"],
           # model="meta-llama/Llama-2-70b-chat-hf",
-          engine="mistralai/Mistral-7B-Instruct-v0.1",
+          model="mistralai/Mistral-7B-Instruct-v0.1",
           messages=[{"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": prompt}],
           temperature=0.3, 
