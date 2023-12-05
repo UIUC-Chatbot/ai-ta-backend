@@ -27,6 +27,9 @@ class WebScrape():
         aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
     )
 
+    # TODO: Get it from vector_database.py
+    self.acceptable_filetypes = ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']
+
     # Create a Supabase client
     self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.environ['SUPABASE_URL'],
@@ -47,7 +50,7 @@ class WebScrape():
   def get_file_extension(self, filename):
       match = re.search(r'\.([a-zA-Z0-9]+)$', filename)
       valid_filetypes = list(mimetypes.types_map.keys())
-      valid_filetypes = valid_filetypes + ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']
+      valid_filetypes = valid_filetypes + self.acceptable_filetypes
       if match:
           filetype = "." + match.group(1)
           if filetype in valid_filetypes:
@@ -79,7 +82,7 @@ class WebScrape():
           if "<!doctype html" not in str(response.text).lower():
             print("⛔️⛔️ Filetype not supported:", response.url, "⛔️⛔️")
             return (False, False, False)
-        elif filetype in ['.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
+        elif filetype in self.acceptable_filetypes[1:]:
           if "<!doctype html" in str(response.text).lower():
             content = BeautifulSoup(response.text, "html.parser")
             filetype = '.html'
@@ -87,7 +90,7 @@ class WebScrape():
             content = response.content
         else:
           return (False, False, False)
-        if filetype not in ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']:
+        if filetype not in self.acceptable_filetypes:
           print("⛔️⛔️ Filetype not supported:", filetype, "⛔️⛔️")
           return (False, False, False)
         return (response.url, content, filetype)
