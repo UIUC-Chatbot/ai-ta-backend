@@ -551,12 +551,8 @@ class WebScrape():
       try:
         print("Begin Ingesting Web page")
         self.supa_urls = len(self.existing_urls)
-        if depth_or_breadth.lower() == 'depth':
-          self.depth_crawler(url=url, course_name=course_name, max_depth=max_depth, timeout=timeout, base_url_on=base_url_str)
-        elif depth_or_breadth.lower() == 'breadth':
-          self.breadth_crawler(url=url, course_name=course_name, timeout=timeout, base_url_on=base_url_str, max_depth=max_depth)
-        else:
-          raise ValueError("Invalid depth_or_breadth argument")
+        self.breadth_crawler(url=url, course_name=course_name, timeout=timeout, base_url_on=base_url_str, max_depth=max_depth)
+
       except ValueError as e:
         print("Error:", e)
 
