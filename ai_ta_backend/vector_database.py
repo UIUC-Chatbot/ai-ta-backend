@@ -1406,14 +1406,14 @@ class Ingest():
       final_filtered_docs = list(run(contexts=valid_docs, user_query=search_query, max_time_before_return=45, max_concurrency=20))
       
       print("Length of final filtered docs: ", len(final_filtered_docs))
-      #print("FINAL FILTERED DOCS: ", final_filtered_docs)
+      print("FINAL FILTERED DOCS: ", final_filtered_docs)
 
-      print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
+      print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(final_filtered_docs)}")
       print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContextsWithMQR: {(time.monotonic() - start_time_overall):.2f} seconds")
-      if len(valid_docs) == 0:
+      if len(final_filtered_docs) == 0:
         return []
-      return self.format_for_json_mqr(valid_docs)
+      return self.format_for_json_mqr(final_filtered_docs)
     except Exception as e:
       # return full traceback to front end
       err: str = f"ERROR: In /getTopContextsWithMQR. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.format_exc()}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
