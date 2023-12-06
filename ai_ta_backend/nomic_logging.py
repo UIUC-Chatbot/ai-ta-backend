@@ -1,13 +1,16 @@
 import datetime
+import inspect
 import os
 import time
-
+import traceback
+import requests
 import nomic
 import numpy as np
 import pandas as pd
 import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
+from nomic.project import AtlasClass
 
 
 def log_convo_to_nomic(course_name: str, conversation) -> str:
@@ -140,8 +143,9 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         return f"Successfully logged for {course_name}"
     else:
       # for rest of the errors - return fail
-      print("ERROR in log_convo_to_nomic():", e)
-      return f"Logging failed for {course_name}"
+      err = f"❌❌ Error in log_convo_to_nomic() for course `{course_name}`: {e}\nTraceback: {traceback.extract_tb(e.__traceback__)}"  # type: ignore
+      print(err)
+      return err
     
     
 def get_nomic_map(course_name: str):
@@ -296,6 +300,154 @@ def create_nomic_map(course_name: str, log_data: list):
     project.create_index(index_name, build_topic_model=True)
     return f"Successfully created Nomic map for {course_name}"
 
+def list_projects(organization_id=None):
+    """
+    Lists all projects in an organization.
+    If called without an organization id, it will list all projects in the
+    current user's main organization.
+    """
+    c = AtlasClass()
+    if organization_id is None:
+        organization = c._get_current_users_main_organization()
+        if organization is None:
+            raise ValueError(
+                "No organization id provided and no main organization found."
+            )
+        organization_id = organization['organization_id']
+    response = requests.get(
+        c.atlas_api_path + f"/v1/organization/{organization_id}",
+        headers=c.header
+    )
+    proj_info = response.json()['projects']
+    return [
+        {'name': p['project_name'],
+            'id': p['id'],
+            'created_timestamp': p['created_timestamp']}
+        for p in proj_info
+    ]
+
+def create_map_for_all_courses():
+  """
+  Creates a map for all the courses across UIUC.Chat
+  """
+  print("in create_map_for_all_courses()")
+  nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
+  NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+  
+  # initialize supabase
+  supabase_client = supabase.create_client(  # type: ignore
+      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+  
+  # get a list of all courses
+  courses = supabase_client.table("llm-convo-monitor").select("course_name").execute()
+  data = courses.data
+  df = pd.DataFrame(data)
+  course_list = df['course_name'].unique()
+  course_list = list(course_list)
+  course_list.remove(None) # there is one course called None, remove it
+
+  project_exists = False
+  existing_projects = list_projects()
+  
+  for course in course_list:
+    try:
+        # check if course already has a map
+        project_name = NOMIC_MAP_NAME_PREFIX + course
+        print("Project name: ", project_name)
+        for project in existing_projects:
+          if "name" in project and project['name'] == project_name:
+            project_exists = True
+            break
+        
+        if project_exists:
+          print("Map already exists for course: ", course)
+          project_exists = False
+          continue
+        else:
+          print("Creating map for course: ", course)
+
+          # fetch IDs of all conversations for this course
+          id_response = supabase_client.table("llm-convo-monitor").select("id").eq('course_name', course).order('id', desc=False).execute()
+          id_data = id_response.data
+          print("Total IDs: ", len(id_data))
+
+          if len(id_data) < 20: # cannot create a map with less than 20 queries
+            continue
+          else:
+            course_df = pd.DataFrame()
+            first_id = id_data[0]['id']
+            last_id = id_data[-1]['id']
+
+            i = 0
+            current_data = []
+            while len(current_data) < len(id_data):
+              if len(current_data) == 0:
+                response = supabase_client.table("llm-convo-monitor").select("*").eq('course_name', course).gte('id', first_id).order('id', desc=False).limit(25).execute()
+              else:
+                response = supabase_client.table("llm-convo-monitor").select("*").eq('course_name', course).gt('id', first_id).order('id', desc=False).limit(25).execute()
+                    
+              current_data += response.data
+              first_id = current_data[-1]['id']
+              i += 1
+                
+            course_df = pd.DataFrame(current_data)
+            print("Number of converstions: ", len(course_df))
+
+            user_queries = []
+            metadata = []
+            i = 1
+
+            # log conversation instead of individual messages
+            for index, row in course_df.iterrows():
+              user_email = row['user_email']
+              created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
+              convo = row['convo']
+              messages = convo['messages']
+              first_message = messages[0]['content']
+              current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+              user_queries.append(first_message)
+              # create metadata for multi-turn conversation
+              conversation = ""
+              for message in messages:
+                # string of role: content, role: content, ...
+                if message['role'] == 'user':
+                  emoji = "🙋"
+                else:
+                  emoji = "🤖"
+                conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+                # add to metadata
+                metadata_row = {"course": row['course_name'], "conversation": conversation, "conversation_id": convo['id'], 
+                  "id": i, "user_email": user_email, "first_query": first_message, "created_at": created_at, "modified_at": current_time}
+              
+              metadata.append(metadata_row)
+              i += 1
+
+              print("Length of user queries: ", len(user_queries))
+              print("Length of metadata: ", len(metadata))
+
+              metadata = pd.DataFrame(metadata)
+              embeddings_model = OpenAIEmbeddings()  # type: ignore
+              embeddings = embeddings_model.embed_documents(user_queries)
+              embeddings = np.array(embeddings)
+              print(embeddings.shape)
+
+              # create an Atlas project
+              index_name = course + "_convo_index"
+              project = atlas.map_embeddings(embeddings=np.array(embeddings),
+                          data=metadata,
+                          id_field='id',
+                          build_topic_model=True,
+                          topic_label_field='first_query',
+                          name=project_name,
+                          colorable_fields=['conversation_id', 'first_query', 'created_at', 'modified_at'])
+              print("Project Maps: ", project.maps)
+              project.create_index(index_name, build_topic_model=True)
+              return "Maps created for all courses!"
+    except Exception as e:
+      err = f"❌❌ Failed to create map create_map_for_all_courses(): {e}\nTraceback: {traceback.extract_tb(e.__traceback__)}"  # type: ignore
+      print(err)
+      return err
 
 if __name__ == '__main__':
   pass
