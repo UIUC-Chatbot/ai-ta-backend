@@ -47,6 +47,7 @@ from ai_ta_backend.filtering_contexts import run
 
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
+OPENAI_API_TYPE = "azure" # "openai" or "azure"
 
 class Ingest():
   """
@@ -68,7 +69,7 @@ class Ingest():
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-        embeddings=OpenAIEmbeddings()) # type: ignore
+        embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)) # type: ignore
 
     # S3
     self.s3_client = boto3.client(
@@ -89,6 +90,7 @@ class Ingest():
       openai_api_key=os.getenv('AZURE_OPENAI_KEY'), #type:ignore
       #openai_api_version=os.getenv('AZURE_OPENAI_API_VERSION'), #type:ignore
       openai_api_version=os.getenv('OPENAI_API_VERSION'), #type:ignore
+      openai_api_type=OPENAI_API_TYPE
       ) 
     # self.llm = OpenAI(temperature=0, openai_api_base='https://api.kastan.ai/v1')
     #self.llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo')
@@ -281,6 +283,7 @@ class Ingest():
       # check for file extension
       file_ext = Path(s3_path).suffix
       openai.api_key = os.getenv('OPENAI_API_KEY')
+      
       transcript_list = []
       with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
         # download from S3 into an video tmpfile
@@ -953,7 +956,7 @@ class Ingest():
 
   def vector_search(self, search_query, course_name):
       top_n = 80
-      o = OpenAIEmbeddings() # type: ignore
+      o = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE) # type: ignore
       user_query_embedding = o.embed_query(search_query)
       myfilter = models.Filter(
               must=[
@@ -996,7 +999,7 @@ class Ingest():
   
   def batch_vector_search(self, search_queries: List[str], course_name: str, top_n: int=20):
     from qdrant_client.http import models as rest
-    o = OpenAIEmbeddings()
+    o = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)
     # Prepare the filter for the course name
     myfilter = rest.Filter(
         must=[
@@ -1515,7 +1518,7 @@ Now please respond to my question: {user_question}"""
     try:
       top_n = 150
       start_time_overall = time.monotonic()
-      o = OpenAIEmbeddings() # type: ignore
+      o = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE) # type: ignore
       user_query_embedding = o.embed_documents(search_query)[0] # type: ignore
       myfilter = models.Filter(
               must=[

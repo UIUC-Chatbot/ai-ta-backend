@@ -83,6 +83,7 @@ def run_replicate(prompt):
 
 def run_anyscale(prompt):
   print("in run anyscale")
+  
   ret = openai.ChatCompletion.create(
           api_base = "https://api.endpoints.anyscale.com/v1",
           api_key=os.environ["ANYSCALE_ENDPOINT_TOKEN"],
@@ -126,9 +127,11 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
   langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr")
 
   print("Num jobs to run:", len(contexts))
+  #print("Context: ", contexts[0])
+  #exit()
 
   actor = AsyncActor.options(max_concurrency=max_concurrency).remote()
-  result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts]
+  result_futures = [actor.filter_context.remote(c['text'], user_query, langsmith_prompt_obj) for c in contexts]
   print("Num futures:", len(result_futures))
   #print("Result futures:", result_futures)
   
