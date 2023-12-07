@@ -123,12 +123,10 @@ def parse_result(result):
       return 'yes' in line.lower()
   return False
 
-def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=None, max_concurrency=6):
-  langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr")
-
+def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=None, max_concurrency=100):
+  langsmith_prompt_obj = hub.pull("kasantday/filter-unrelated-contexts-zephyr")
+  
   print("Num jobs to run:", len(contexts))
-  #print("Context: ", contexts[0])
-  #exit()
 
   actor = AsyncActor.options(max_concurrency=max_concurrency).remote()
   result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts]
@@ -178,6 +176,7 @@ if __name__ == "__main__":
   ray.init() 
   start_time = time.monotonic()
   # print(len(CONTEXTS))
+
   final_passage_list = list(run(contexts=CONTEXTS*2, user_query=USER_QUERY, max_time_before_return=45, max_concurrency=20))
 
   print("✅✅✅ FINAL RESULTS: \n" + '\n'.join(json.dumps(r, indent=2) for r in final_passage_list))
