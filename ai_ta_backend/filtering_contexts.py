@@ -123,7 +123,6 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
   for i in range(0, len(result_futures)): 
     try: 
       ready, not_ready = ray.wait(result_futures)
-      print("ready:", ready)
       result = ray.get(ready[0])
       
       if result is None:
