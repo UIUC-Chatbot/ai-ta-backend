@@ -155,9 +155,16 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
       if not result_futures:
         break
 
+
+def ray_run(contexts, user_query, max_time_before_return=45, max_concurrency=100):
+  ray.init()
+  filtered_passages = list(run(contexts, user_query, max_time_before_return=max_time_before_return, max_concurrency=max_concurrency))
+  return filtered_passages
+  
+
 # ! CONDA ENV: llm-serving
 if __name__ == "__main__":
-  ray.init() 
+  #ray.init() 
   start_time = time.monotonic()
   # print(len(CONTEXTS))
 
