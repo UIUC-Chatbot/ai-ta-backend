@@ -1027,7 +1027,7 @@ class Ingest():
     )
 
     requests = []
-    for i, doc in enumerate(found_docs):
+    for doc in found_docs:
       print("doc", doc)
       dictionary = {
           "model": "gpt-3.5-turbo",

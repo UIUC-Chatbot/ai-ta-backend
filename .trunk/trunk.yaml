@@ -34,6 +34,13 @@ lint:
     - trivy@0.48.0
     - trufflehog@3.63.2
     - yamllint@1.33.0
+  ignore:
+    - linters: [ALL]
+      paths:
+        - .github/**/*
+        - .trunk/**/*
+        - mkdocs.yml
+        - .DS_Store
 actions:
   enabled:
     - trunk-announce

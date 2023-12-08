@@ -497,4 +497,4 @@ def export_convo_history():
 
 
 if __name__ == '__main__':
-  app.run(debug=True, port=int(os.getenv("PORT", default=8000)))
+  app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression

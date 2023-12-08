@@ -4,6 +4,7 @@ import re
 import shutil
 import time
 from tempfile import NamedTemporaryFile
+from typing import List, Optional
 from zipfile import ZipFile
 
 import boto3  # type: ignore
@@ -131,7 +132,8 @@ class WebScrape():
 
     return False
 
-  def find_urls(self, soup: BeautifulSoup, site: str, urls: list = []):
+  def find_urls(self, soup: BeautifulSoup, site: str, urls: Optional[List] = None):
+    urls = urls if urls is not None else []
     try:
       for i in soup.find_all("a"):  # type: ignore
         try:
@@ -597,9 +599,9 @@ def is_github_repo(url):
 
 
 def mit_course_download(url: str, course_name: str, local_dir: str):
-  '''
+  """
   Download an MIT course using its url
-  '''
+  """
   ingester = Ingest()
   if url.endswith("download"):
     pass

@@ -1,4 +1,4 @@
-## AI TA Backend for UIUC's Course Assistant Chatbot
+# AI TA Backend for UIUC's Course Assistant Chatbot
 
 A Flask application hosting endpoints for AI TA backend.
 
@@ -26,7 +26,7 @@ The docs are auto-built and deployed to [our docs website](https://uiuc-chatbot.
 
 ### Course metadata structure
 
-```
+```text
 'text': doc.page_content,
 'readable_filename': doc.metadata['readable_filename'],
 'course_name ': doc.metadata['course_name'],
