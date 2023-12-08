@@ -41,6 +41,7 @@ lint:
         - .trunk/**/*
         - mkdocs.yml
         - .DS_Store
+        - .vscode/**/*
 actions:
   enabled:
     - trunk-announce
