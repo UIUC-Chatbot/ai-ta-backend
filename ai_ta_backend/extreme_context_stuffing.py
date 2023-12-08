@@ -117,8 +117,8 @@ import tiktoken  # for counting tokens
 
 class OpenAIAPIProcessor:
 
-  def __init__(self, input_prompts_list, request_url, api_key, max_requests_per_minute, max_tokens_per_minute,
-               token_encoding_name, max_attempts, logging_level):
+  def __init__(self, input_prompts_list, request_url, api_key, max_requests_per_minute, max_tokens_per_minute, token_encoding_name,
+               max_attempts, logging_level):
     self.request_url = request_url
     self.api_key = api_key
     self.max_requests_per_minute = max_requests_per_minute
@@ -179,8 +179,8 @@ class OpenAIAPIProcessor:
 
             next_request = APIRequest(task_id=next(task_id_generator),
                                       request_json=request_json,
-                                      token_consumption=num_tokens_consumed_from_request(
-                                          request_json, api_endpoint, self.token_encoding_name),
+                                      token_consumption=num_tokens_consumed_from_request(request_json, api_endpoint,
+                                                                                         self.token_encoding_name),
                                       attempts_left=self.max_attempts,
                                       metadata=request_json.pop("metadata", None))
             status_tracker.num_tasks_started += 1
@@ -251,8 +251,7 @@ class OpenAIAPIProcessor:
     if status_tracker.num_tasks_failed > 0:
       logging.warning(f"{status_tracker.num_tasks_failed} / {status_tracker.num_tasks_started} requests failed.")
     if status_tracker.num_rate_limit_errors > 0:
-      logging.warning(
-          f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
+      logging.warning(f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
 
     # asyncio wait for task_list
     await asyncio.wait(task_list)
@@ -351,8 +350,7 @@ class APIRequest:
         status_tracker.num_tasks_failed += 1
         return data
     else:
-      data = ([self.request_json, response, self.metadata] if self.metadata else [self.request_json, response]
-             )  # type: ignore
+      data = ([self.request_json, response, self.metadata] if self.metadata else [self.request_json, response])  # type: ignore
       #append_to_jsonl(data, save_filepath)
       status_tracker.num_tasks_in_progress -= 1
       status_tracker.num_tasks_succeeded += 1

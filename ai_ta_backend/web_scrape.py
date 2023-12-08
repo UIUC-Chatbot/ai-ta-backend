@@ -321,8 +321,7 @@ class WebScrape():
           header = ""
         # Check for 403 Forbidden urls
         try:
-          if content.title.string.lower() == "403 forbidden" or content.title.string.lower(
-          ) == 'page not found':  # type: ignore
+          if content.title.string.lower() == "403 forbidden" or content.title.string.lower() == 'page not found':  # type: ignore
             print("403 Forbidden")
             self.invalid_urls.append(url)
           else:
@@ -355,8 +354,7 @@ class WebScrape():
 
       # Check for 403 Forbidden urls
       try:
-        if soup.title.string.lower() == "403 forbidden" or soup.title.string.lower(
-        ) == 'page not found':  # type: ignore
+        if soup.title.string.lower() == "403 forbidden" or soup.title.string.lower() == 'page not found':  # type: ignore
           print("403 Forbidden")
           self.invalid_urls.append(url)
         else:
@@ -547,9 +545,8 @@ class WebScrape():
     else:
       try:
         print("Gathering existing urls from Supabase")
-        urls = self.supabase_client.table(
-            os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url').eq(
-                'course_name', course_name).execute()  # type: ignore
+        urls = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url').eq(
+            'course_name', course_name).execute()  # type: ignore
 
         if urls.data == []:
           self.existing_urls = []
@@ -569,17 +566,9 @@ class WebScrape():
         print("Begin Ingesting Web page")
         self.supa_urls = len(self.existing_urls)
         if depth_or_breadth.lower() == 'depth':
-          self.depth_crawler(url=url,
-                             course_name=course_name,
-                             max_depth=max_depth,
-                             timeout=timeout,
-                             base_url_on=base_url_str)
+          self.depth_crawler(url=url, course_name=course_name, max_depth=max_depth, timeout=timeout, base_url_on=base_url_str)
         elif depth_or_breadth.lower() == 'breadth':
-          self.breadth_crawler(url=url,
-                               course_name=course_name,
-                               timeout=timeout,
-                               base_url_on=base_url_str,
-                               max_depth=max_depth)
+          self.breadth_crawler(url=url, course_name=course_name, timeout=timeout, base_url_on=base_url_str, max_depth=max_depth)
         else:
           raise ValueError("Invalid depth_or_breadth argument")
       except ValueError as e:
