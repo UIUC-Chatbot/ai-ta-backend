@@ -286,7 +286,8 @@ def create_nomic_map(course_name: str, log_data: list):
     index_name = course_name + "_convo_index"
     project = atlas.map_embeddings(
         embeddings=np.array(embeddings),
-        data=metadata,  # type: ignore -- this is actually the correc type, the function signature from Nomic is incomplete
+        data=
+        metadata,  # type: ignore -- this is actually the correc type, the function signature from Nomic is incomplete
         id_field='id',
         build_topic_model=True,
         topic_label_field='first_query',

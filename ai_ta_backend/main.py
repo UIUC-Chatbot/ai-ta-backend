@@ -284,7 +284,9 @@ def getAll() -> Response:
 
   if course_name == '':
     # proper web error "400 Bad request"
-    abort(400, description=f"Missing the one required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+    abort(
+        400,
+        description=f"Missing the one required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   ingester = Ingest()
   distinct_dicts = ingester.getAll(course_name)
@@ -354,7 +356,8 @@ def scrape() -> Response:
   print(f"Timeout in Seconds ⏰: {timeout}")
 
   scraper = WebScrape()
-  success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl, depth_or_breadth)
+  success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl,
+                                           depth_or_breadth)
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')

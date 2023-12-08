@@ -80,7 +80,14 @@ class CanvasAPI():
     try:
       # a dictionary of all contents we want to ingest - files, pages, modules, syllabus, assignments, discussions.
       if content_ingest_dict is None:
-        content_ingest_dict = {'files': True, 'pages': True, 'modules': True, 'syllabus': True, 'assignments': True, 'discussions': True}
+        content_ingest_dict = {
+            'files': True,
+            'pages': True,
+            'modules': True,
+            'syllabus': True,
+            'assignments': True,
+            'discussions': True
+        }
 
       # Create a canvas directory with a course folder inside it.
       canvas_dir = "canvas_materials"
