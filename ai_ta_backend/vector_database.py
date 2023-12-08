@@ -148,7 +148,8 @@ class Ingest():
                 f"We don't have a ingest method for this filetype: {file_extension}. As a last-ditch effort, we tried to ingest the file as utf-8 text, but that failed too. File is unsupported: {s3_path}. UTF-8 ingest error: {e}"
             )
             success_status['failure_ingest'].append(
-                f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}")
+                f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}"
+            )
 
       return success_status
     except Exception as e:
@@ -184,7 +185,8 @@ class Ingest():
       return success_or_failure
 
     except Exception as e:
-      err = f"❌❌ Error in (Python ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (Python ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -214,7 +216,8 @@ class Ingest():
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
         return success_or_failure
     except Exception as e:
-      err = f"❌❌ Error in (VTT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (VTT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -322,7 +325,8 @@ class Ingest():
       self.split_and_upload(texts=text, metadatas=metadatas)
       return "Success"
     except Exception as e:
-      err = f"❌❌ Error in (VIDEO ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (VIDEO ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -349,7 +353,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      err = f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -377,7 +382,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      err = f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -406,7 +412,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      err = f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -441,7 +448,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      err = f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -469,7 +477,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      err = f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -528,7 +537,8 @@ class Ingest():
         self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
         print("Success pdf ingest")
     except Exception as e:
-      err = f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
     return "Success"
@@ -565,7 +575,8 @@ class Ingest():
       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
       return success_or_failure
     except Exception as e:
-      err = f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -597,7 +608,8 @@ class Ingest():
         self.split_and_upload(texts=texts, metadatas=metadatas)
         return "Success"
     except Exception as e:
-      err = f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       return err
 
@@ -731,8 +743,9 @@ class Ingest():
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
           chunk_size=1000,
           chunk_overlap=150,
-          separators=["\n\n", "\n", ". ", " ",
-                      ""]  # try to split on paragraphs... fallback to sentences, then chars, ensure we always fit in context window
+          separators=[
+              "\n\n", "\n", ". ", " ", ""
+          ]  # try to split on paragraphs... fallback to sentences, then chars, ensure we always fit in context window
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
@@ -748,17 +761,20 @@ class Ingest():
                                max_tokens_per_minute=20_000,
                                max_attempts=20,
                                logging_level=logging.INFO,
-                               token_encoding_name='cl100k_base')  # type: ignore
+                               token_encoding_name='cl100k_base')  # type: ignore  # nosec
       asyncio.run(oai.process_api_requests_from_file())
       # parse results into dict of shape page_content -> embedding
-      embeddings_dict: dict[str, List[float]] = {item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results}
+      embeddings_dict: dict[str, List[float]] = {
+          item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results
+      }
 
       ### BULK upload to Qdrant ###
       vectors: list[PointStruct] = []
       for context in contexts:
         # !DONE: Updated the payload so each key is top level (no more payload.metadata.course_name. Instead, use payload.course_name), great for creating indexes.
         upload_metadata = {**context.metadata, "page_content": context.page_content}
-        vectors.append(PointStruct(id=str(uuid.uuid4()), vector=embeddings_dict[context.page_content], payload=upload_metadata))
+        vectors.append(
+            PointStruct(id=str(uuid.uuid4()), vector=embeddings_dict[context.page_content], payload=upload_metadata))
 
       self.qdrant_client.upsert(
           collection_name=os.environ['QDRANT_COLLECTION_NAME'],  # type: ignore
@@ -782,7 +798,8 @@ class Ingest():
           "contexts": contexts_for_supa,
       }
 
-      self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
+      self.supabase_client.table(
+          os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
       print("successful END OF split_and_upload")
       return "Success"
     except Exception as e:
@@ -802,7 +819,8 @@ class Ingest():
     try:
       # Delete file from S3
       print("Deleting from S3")
-      objects_to_delete = self.s3_client.list_objects(Bucket=os.getenv('S3_BUCKET_NAME'), Prefix=f'courses/{course_name}/')
+      objects_to_delete = self.s3_client.list_objects(Bucket=os.getenv('S3_BUCKET_NAME'),
+                                                      Prefix=f'courses/{course_name}/')
       for object in objects_to_delete['Contents']:
         self.s3_client.delete_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=object['Key'])
     except Exception as e:
@@ -832,8 +850,8 @@ class Ingest():
     try:
       # Delete from Supabase
       print("deleting from supabase")
-      response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('course_name',
-                                                                                                               course_name).execute()
+      response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
+          'course_name', course_name).execute()
       print("supabase response: ", response)
       return "Success"
     except Exception as e:
@@ -870,8 +888,8 @@ class Ingest():
         except Exception as e:
           print("Error in deleting file from Qdrant:", e)
         try:
-          self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('s3_path', s3_path).eq(
-              'course_name', course_name).execute()
+          self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
+              's3_path', s3_path).eq('course_name', course_name).execute()
         except Exception as e:
           print("Error in deleting file from supabase:", e)
 
@@ -891,8 +909,8 @@ class Ingest():
         except Exception as e:
           print("Error in deleting file from Qdrant:", e)
         try:
-          self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq('url', source_url).eq(
-              'course_name', course_name).execute()
+          self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
+              'url', source_url).eq('course_name', course_name).execute()
         except Exception as e:
           print("Error in deleting file from supabase:", e)
 
@@ -914,9 +932,8 @@ class Ingest():
         list of dictionaries with distinct s3 path, readable_filename and course_name, url, base_url. 
     """
 
-    response = self.supabase_client.table(
-        os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select('course_name, s3_path, readable_filename, url, base_url').eq(
-            'course_name', course_name).execute()
+    response = self.supabase_client.table(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select(
+        'course_name, s3_path, readable_filename, url, base_url').eq('course_name', course_name).execute()
 
     data = response.data
     unique_combinations = set()
@@ -982,7 +999,8 @@ class Ingest():
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
-      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)  # type: ignore
+      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' +
+                                               search_query)  # type: ignore
 
       valid_docs = []
       num_tokens = 0
@@ -1048,14 +1066,15 @@ class Ingest():
       }
       requests.append(dictionary)
 
-    oai = OpenAIAPIProcessor(input_prompts_list=requests,
-                             request_url='https://api.openai.com/v1/chat/completions',
-                             api_key=os.getenv("OPENAI_API_KEY"),
-                             max_requests_per_minute=1500,
-                             max_tokens_per_minute=90000,
-                             token_encoding_name='cl100k_base',
-                             max_attempts=5,
-                             logging_level=20)
+    oai = OpenAIAPIProcessor(
+        input_prompts_list=requests,
+        request_url='https://api.openai.com/v1/chat/completions',
+        api_key=os.getenv("OPENAI_API_KEY"),
+        max_requests_per_minute=1500,
+        max_tokens_per_minute=90000,
+        token_encoding_name='cl100k_base',  # nosec
+        max_attempts=5,
+        logging_level=20)
 
     chain_start_time = time.monotonic()
     asyncio.run(oai.process_api_requests_from_file())
@@ -1127,7 +1146,8 @@ Now please respond to my question: {user_question}"""
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
 
       # count tokens at start and end, then also count each context.
-      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query)  # type: ignore
+      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' +
+                                               search_query)  # type: ignore
       valid_docs = []
       for d in found_docs:
         if "pagenumber" not in d.payload.keys():  # type: ignore

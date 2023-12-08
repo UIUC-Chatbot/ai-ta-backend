@@ -18,29 +18,24 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
   if from_date == '' and to_date == '':
     # Get all data
     print("No dates")
-    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name",
-                                                                                         course_name).order('id', desc=False).execute()
+    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+        "course_name", course_name).order('id', desc=False).execute()
   elif from_date != '' and to_date == '':
     print("only from_date")
     # Get data from from_date to now
-    response = supabase_client.table("llm-convo-monitor").select("id",
-                                                                 count='exact').eq("course_name",
-                                                                                   course_name).gte('created_at',
-                                                                                                    from_date).order('id',
-                                                                                                                     desc=False).execute()
+    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+        "course_name", course_name).gte('created_at', from_date).order('id', desc=False).execute()
   elif from_date == '' and to_date != '':
     print("only to_date")
     # Get data from beginning to to_date
-    response = supabase_client.table("llm-convo-monitor").select("id",
-                                                                 count='exact').eq("course_name",
-                                                                                   course_name).lte('created_at',
-                                                                                                    to_date).order('id',
-                                                                                                                   desc=False).execute()
+    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+        "course_name", course_name).lte('created_at', to_date).order('id', desc=False).execute()
   else:
     print("both from_date and to_date")
     # Get data from from_date to to_date
-    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).gte(
-        'created_at', from_date).lte('created_at', to_date).order('id', desc=False).execute()
+    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+        "course_name", course_name).gte('created_at', from_date).lte('created_at', to_date).order('id',
+                                                                                                  desc=False).execute()
 
   # Fetch data
   if response.count > 0:
@@ -53,8 +48,8 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
     # Fetch data in batches of 25 from first_id to last_id
     while first_id <= last_id:
       print("Fetching data from id: ", first_id)
-      response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte('id', first_id).lte(
-          'id', last_id).order('id', desc=False).limit(25).execute()
+      response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
+          'id', first_id).lte('id', last_id).order('id', desc=False).limit(25).execute()
       # Convert to pandas dataframe
       df = pd.DataFrame(response.data)
       # Append to csv file
