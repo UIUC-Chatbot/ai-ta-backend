@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   format:
     runs-on: ubuntu-latest
@@ -23,6 +27,6 @@ jobs:
         with:
           author_name: ${{ github.actor }}
           author_email: ${{ github.actor }}@users.noreply.github.com
-          message: "Format code"
+          message: Format code
           add: "."
           branch: ${{ github.ref }}
