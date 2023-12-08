@@ -41,9 +41,9 @@ def get_tools(sync=True):
 
   # HUMAN
   if os.environ['OPENAI_API_TYPE'] == 'azure':
-    llm = AzureChatOpenAI(temperature=0.1, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+    llm = AzureChatOpenAI(temperature=0.1, model="gpt-4-32k", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
   else: 
-    llm = ChatOpenAI(temperature=0.1, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
+    llm = ChatOpenAI(temperature=0.1, model="gpt-4-32k", max_retries=3, request_timeout=60 * 3)  # type: ignore
   # human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)
   # GOOGLE SEARCH
   search = load_tools(["serpapi"])

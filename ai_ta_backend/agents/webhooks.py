@@ -122,6 +122,14 @@ def handle_event(payload):
     Args:
         payload (_type_): From github, see their webhook docs.
     """
+    # First, update Langchain distribution
+    import subprocess
+    try:
+        print("Updating Langchain... (python print)")
+        subprocess.run(["bash", "update_langchain.sh"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred while updating Langchain: {e}")
+
     # Convert raw_payload to a JSON string
     payload_json = json.dumps(payload)
 

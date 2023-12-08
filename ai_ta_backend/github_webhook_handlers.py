@@ -5,6 +5,8 @@ import inspect
 import json
 import logging
 import os
+import re
+import shlex
 import time
 import traceback
 import uuid
@@ -23,17 +25,23 @@ from github.TimelineEvent import TimelineEvent
 from langchain import hub
 # from langchain.tools.github.utils import generate_branch_name
 from newrelic_telemetry_sdk import Log, LogClient
+import sys
+# import os
 
-from github_agent import GH_Agent
-from ml4bio_agent import WorkflowAgent
-from utils import get_langsmith_trace_sharable_url
+
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+
+from docker_utils import check_and_insert_image_name, run_docker_container
+from ai_ta_backend.agents.github_agent import GH_Agent
+from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
+from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
 
 # load API keys from globally-availabe .env file
 load_dotenv(override=True)
 
 langchain.debug = False  # True for more detailed logs
 
-MESSAGE_HANDLE_ISSUE_OPENED = """Thanks for opening a new issue! I'll now try to finish this implementation and open a PR for you to review.
+MESSAGE_HANDLE_ISSUE_OPENED = f"""Thanks for opening a new issue! I'll now try to finish this implementation and open a PR for you to review.
     
 {'You can monitor the [LangSmith trace here](https://smith.langchain.com/o/f7abb6a0-31f6-400c-8bc1-62ade4b67dc1/projects/p/c2ec9de2-71b4-4042-bea0-c706b38737e2).' if 'ML4Bio' in os.environ['LANGCHAIN_PROJECT'] else ''}
 
@@ -41,9 +49,34 @@ Feel free to comment in this thread to give me additional instructions, or I'll 
 If I think I'm successful I'll 'request your review' on the resulting PR. Just watch for emails while I work.
 """
 
-# app = newrelic.agent.application()
+# def handle_event(payload):
+#   """
+#   This is the primary entry point to the app; Just open an issue!
 
-# @newrelic.agent.background_task() 
+#   Args:
+#     payload (_type_): The entire payload object from Github webhook, see their webhook docs.
+#   """
+#   # Convert raw_payload to a JSON string
+#   payload_json = json.dumps(payload)
+
+#   # Construct Docker image name
+#   repo_name = payload["repository"]["full_name"].lower()
+#   number = payload.get('issue').get('number')
+#   image_name = f"{repo_name}_{number}:our_tag"
+  
+#   # Filter out disallowed characters from the image name for the volume name
+#   volume_name = f"vol_{re.sub('[^a-zA-Z0-9_.-]', '_', image_name)}"
+
+#   langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
+
+#   # Check if the image name exists in the Supabase table, if not, insert it and build a Docker image
+#   img = check_and_insert_image_name(image_name, langsmith_run_id)
+
+#   if img:
+#     command = f"python github_webhook_handlers.py --payload {shlex.quote(payload_json)} --langsmith_run_id {langsmith_run_id}"
+#     run_docker_container(image_name, command, volume_name)
+
+
 def handle_issue_opened(payload, langsmith_run_id):
   """ This is the primary entry point to the app; Just open an issue!
 
