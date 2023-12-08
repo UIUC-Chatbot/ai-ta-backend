@@ -12,7 +12,6 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
       course_name (str): The name of the course.
       from_date (str, optional): The start date for the data export. Defaults to ''.
       to_date (str, optional): The end date for the data export. Defaults to ''.
-      
   """
   print("Exporting conversation history to csv file...")
   supabase_client = supabase.create_client(  # type: ignore
