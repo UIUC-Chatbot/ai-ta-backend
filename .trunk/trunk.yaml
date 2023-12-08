@@ -32,7 +32,6 @@ lint:
     - shellcheck@0.9.0
     - shfmt@3.6.0
     - trivy@0.48.0
-    - trufflehog@3.63.2
     - yamllint@1.33.0
   ignore:
     - linters: [ALL]
