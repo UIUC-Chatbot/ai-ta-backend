@@ -3,7 +3,6 @@ import os
 import re
 import shutil
 import time
-from collections import Counter
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile
 
@@ -19,7 +18,7 @@ from ai_ta_backend.vector_database import Ingest
 class WebScrape():
 
   def __init__(self) -> None:
-    
+
     # S3
     self.s3_client = boto3.client(
         's3',
@@ -29,11 +28,10 @@ class WebScrape():
 
     # Create a Supabase client
     self.supabase_client = supabase.create_client(  # type: ignore
-        supabase_url=os.environ['SUPABASE_URL'],
-        supabase_key=os.environ['SUPABASE_API_KEY'])
-    
+        supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
+
     self.ingester = Ingest()
-    
+
     self.url_contents = []
     self.invalid_urls = []
     self.existing_urls = []
@@ -45,20 +43,20 @@ class WebScrape():
     return None
 
   def get_file_extension(self, filename):
-      match = re.search(r'\.([a-zA-Z0-9]+)$', filename)
-      valid_filetypes = list(mimetypes.types_map.keys())
-      valid_filetypes = valid_filetypes + ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']
-      if match:
-          filetype = "." + match.group(1)
-          if filetype in valid_filetypes:
-              return filetype
-          else:
-              return '.html'
+    match = re.search(r'\.([a-zA-Z0-9]+)$', filename)
+    valid_filetypes = list(mimetypes.types_map.keys())
+    valid_filetypes = valid_filetypes + ['.html', '.py', '.vtt', '.pdf', '.txt', '.srt', '.docx', '.ppt', '.pptx']
+    if match:
+      filetype = "." + match.group(1)
+      if filetype in valid_filetypes:
+        return filetype
       else:
-          return '.html'
+        return '.html'
+    else:
+      return '.html'
 
   def valid_url(self, url):
-    '''Returns the URL and it's content if it's good, otherwise returns false. Prints the status code.'''
+    """Returns the URL and it's content if it's good, otherwise returns false. Prints the status code."""
     try:
       response = requests.get(url, allow_redirects=True, timeout=20)
 
@@ -99,45 +97,45 @@ class WebScrape():
       return (False, False, False)
 
   # Ensures url is in the correct format
-  def base_url(self, url:str):
+  def base_url(self, url: str):
     try:
       # Get rid of double slashes in url
       # Create a base site for incomplete hrefs
       if url.startswith("https:"):
-        site= re.match(pattern=r'https:\/\/.+[.a-zA-Z0-9]*\.[a-z]{3}', string=url).group(0) # type: ignore
+        site = re.match(pattern=r'https:\/\/.+[.a-zA-Z0-9]*\.[a-z]{3}', string=url).group(0)  # type: ignore
         url = re.sub(pattern=r"https:\/\/", repl="", string=url)
         url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
-        url = "https://"+url
+        url = "https://" + url
         return site
       elif url.startswith("http:"):
-        site = re.match(pattern=r'http:\/\/.+[.a-zA-Z0-9]*\.[a-z]{3}', string=url).group(0) # type: ignore
+        site = re.match(pattern=r'http:\/\/.+[.a-zA-Z0-9]*\.[a-z]{3}', string=url).group(0)  # type: ignore
         url = re.sub(pattern=r"http:\/\/", repl="", string=url)
         url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
-        url = "http://"+url
+        url = "http://" + url
         return site
       else:
         return ""
     except Exception as e:
       print("Error:", e)
       return ""
-    
-  def base_requirements(self, url:str, base:str):
+
+  def base_requirements(self, url: str, base: str):
     match = re.search(r'\.(.*[.][\w]{3})', url)
     if match:
-        required_part = match.group(1)
+      required_part = match.group(1)
     else:
-        required_part = "No base part in URL"
-    
+      required_part = "No base part in URL"
+
     if required_part in base:
       return True
-    
+
     return False
 
-  def find_urls(self, soup:BeautifulSoup, site:str, urls:list=[]):
+  def find_urls(self, soup: BeautifulSoup, site: str, urls: list = []):
     try:
-      for i in soup.find_all("a"): # type: ignore
+      for i in soup.find_all("a"):  # type: ignore
         try:
-        # getting the href tag
+          # getting the href tag
           href = i.attrs['href']
         except KeyError as e:
           print("KeyError:", e, "for", i)
@@ -147,9 +145,9 @@ class WebScrape():
         if href.startswith("http"):
           pass
         elif href.startswith("/"):
-          href = site+href
+          href = site + href
         else:
-          href = site+'/'+href
+          href = site + '/' + href
         href = self.no_hash_url(href)
         urls.append(href)
 
@@ -162,22 +160,22 @@ class WebScrape():
   def title_path_name(self, value):
     try:
       title = value[1].title.string
-    except AttributeError as e:
+    except AttributeError:
       # if no title
       try:
         title = re.findall(pattern=r'[a-zA-Z0-9.]*[a-z]', string=value[0])[1]
-      except Exception as e:
+      except Exception:
         title = "Title Not Found"
       print(f"URL is missing a title, using this title instead: {title}")
 
     try:
-      clean = re.match(r"[a-zA-Z0-9\s]*", title).group(0) # type: ignore
+      clean = re.match(r"[a-zA-Z0-9\s]*", title).group(0)  # type: ignore
     except Exception as e:
       print("Error:", e)
       clean = title
     print("title names after regex before cleaning", clean)
-    if clean: 
-      clean = clean.strip() 
+    if clean:
+      clean = clean.strip()
     else:
       clean = ""
     clean = clean.replace(" ", "_")
@@ -191,21 +189,21 @@ class WebScrape():
   def ingest_file(self, key, course_name, path_name, base_url):
     try:
       with NamedTemporaryFile(suffix=key[2]) as temp_file:
-          if key[1] != "" or key[1] != None:
-            if key[2] == ".html":
-              print("Writing", key[2] ,"to temp file")
-              temp_file.write(key[1].encode('utf-8'))
-            else:
-              print("Writing", key[2] ,"to temp file")
-              temp_file.write(key[1])
-            temp_file.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name + key[2]
-            with open(temp_file.name, 'rb') as f:
-              print("Uploading", key[2] ,"to S3")
-              self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-              self.ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=base_url)
+        if key[1] != "" or key[1] is not None:
+          if key[2] == ".html":
+            print("Writing", key[2], "to temp file")
+            temp_file.write(key[1].encode('utf-8'))
           else:
-            print("No", key[2] ,"to upload", key[1])
+            print("Writing", key[2], "to temp file")
+            temp_file.write(key[1])
+          temp_file.seek(0)
+          s3_upload_path = "courses/" + course_name + "/" + path_name + key[2]
+          with open(temp_file.name, 'rb') as f:
+            print("Uploading", key[2], "to S3")
+            self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+            self.ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=base_url)
+        else:
+          print("No", key[2], "to upload", key[1])
     except Exception as e:
       print("Error in upload:", e)
 
@@ -216,7 +214,7 @@ class WebScrape():
   #   existing_files = [url[1] for url in _existing_urls if url!=False]
   #   existing_urls = [url[0] for url in _existing_urls if url!=False]
 
-  #   if urls: 
+  #   if urls:
   #     print("deleting duplicate files")
   #     for row in urls:
   #       if row[0] in existing_urls:
@@ -236,22 +234,22 @@ class WebScrape():
 
   #   return urls
 
-  def no_hash_url(self, url:str):
+  def no_hash_url(self, url: str):
     match = re.search(r'^(.*?)#', url)
     if match:
-        retrieved_url = match.group(1)
+      retrieved_url = match.group(1)
     else:
-        retrieved_url = url
+      retrieved_url = url
     return retrieved_url
 
   def check_file_not_exists(self, file):
-    contents = [url[1] for url in self.existing_urls]
+    [url[1] for url in self.existing_urls]
     urls = [self.no_hash_url(url[0]) for url in self.existing_urls]
     if file[0] in urls:
       return False
     else:
       return True
-  
+
   # # Counts the average number of repeated urls and if it is too high, it will exit the web scraper
   # def count_hard_stop_avg(self, average:int=4):
   #   # Counts the number of repeated urls and if it is too high, it will exit the web scraper
@@ -269,21 +267,21 @@ class WebScrape():
   def count_hard_stop_len(self):
     count = len(self.url_contents)
     if self.url_contents != []:
-      print("📈📈 Counted URLs", count, "out of", self.original_amount, "📈📈" )
+      print("📈📈 Counted URLs", count, "out of", self.original_amount, "📈📈")
       if count > self.original_amount:
         print("Too many repeated urls, exiting web scraper")
         return True
       else:
         return False
 
-  def check_and_ingest(self, url:str, course_name:str, timeout:int, base_url_on:str):
+  def check_and_ingest(self, url: str, course_name: str, timeout: int, base_url_on: str):
     if url not in self.invalid_urls and url not in self.existing_urls:
       second_url, content, filetype = self.valid_url(url)
     else:
       print("This URL is invalid or already existing in the database")
       self.existing_urls.append((url))
       return '', '', ''
-    
+
     if second_url:
       time.sleep(timeout)
       url_content = (second_url, content, filetype)
@@ -301,18 +299,18 @@ class WebScrape():
     else:
       self.invalid_urls.append(url)
       print("This URL is invalid")
-    
+
     return url, content, filetype
 
-  def scrape_user_provided_page(self, url:str, course_name:str, timeout:int, base:str):
-    urls= []
+  def scrape_user_provided_page(self, url: str, course_name: str, timeout: int, base: str):
+    urls = []
     url, content, filetype = self.check_and_ingest(url, course_name, timeout, base)
 
     if url:
       if filetype == '.html':
         try:
           body = content.find("body")
-          header = content.find("head") 
+          header = content.find("head")
           footer = content.find("footer")
           nav = content.find("nav")
         except Exception as e:
@@ -321,30 +319,30 @@ class WebScrape():
           header = ""
         # Check for 403 Forbidden urls
         try:
-          if content.title.string.lower() == "403 forbidden" or content.title.string.lower() == 'page not found': # type: ignore
+          if content.title.string.lower() == "403 forbidden" or content.title.string.lower() == 'page not found':  # type: ignore
             print("403 Forbidden")
             self.invalid_urls.append(url)
           else:
             pass
         except Exception as e:
           print("Error:", e)
-          pass 
+          pass
         if body != "" and header != "":
-          urls = self.find_urls(body, base, urls) # type: ignore
-          urls = self.find_urls(header, base, urls)# type: ignore
-          self.invalid_urls.append(self.find_urls(footer, base)) # type: ignore
-          self.invalid_urls.append(self.find_urls(nav, base)) # type: ignore
+          urls = self.find_urls(body, base, urls)  # type: ignore
+          urls = self.find_urls(header, base, urls)  # type: ignore
+          self.invalid_urls.append(self.find_urls(footer, base))  # type: ignore
+          self.invalid_urls.append(self.find_urls(nav, base))  # type: ignore
         else:
-          urls = self.find_urls(content, base, urls)# type: ignore
+          urls = self.find_urls(content, base, urls)  # type: ignore
 
     return urls
-  
-  def non_user_provided_page_urls(self, url:str, base:str, soup, filetype:str):
+
+  def non_user_provided_page_urls(self, url: str, base: str, soup, filetype: str):
     urls = []
     if filetype == '.html':
       try:
         body = soup.find("body")
-        header = soup.find("head") 
+        header = soup.find("head")
         footer = soup.find("footer")
         nav = soup.find("nav")
       except Exception as e:
@@ -354,22 +352,22 @@ class WebScrape():
 
       # Check for 403 Forbidden urls
       try:
-        if soup.title.string.lower() == "403 forbidden" or soup.title.string.lower() == 'page not found': # type: ignore
+        if soup.title.string.lower() == "403 forbidden" or soup.title.string.lower() == 'page not found':  # type: ignore
           print("403 Forbidden")
           self.invalid_urls.append(url)
         else:
           pass
       except Exception as e:
         print("Error:", e)
-        pass 
+        pass
       if body != "" and header != "":
         urls = self.find_urls(body, base, urls)
         urls = self.find_urls(header, base, urls)
-        self.invalid_urls.append(self.find_urls(footer, base)) # type: ignore
-        self.invalid_urls.append(self.find_urls(nav, base)) # type: ignore
+        self.invalid_urls.append(self.find_urls(footer, base))  # type: ignore
+        self.invalid_urls.append(self.find_urls(nav, base))  # type: ignore
       else:
         urls = self.find_urls(soup, base, urls)
-    
+
     return urls
 
   # def depth_crawler(self, url:str, course_name:str, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup=None, _filetype:str=None): # type: ignore
@@ -378,15 +376,15 @@ class WebScrape():
   #   print("depth: ", _depth)
   #   if base_url_on:
   #     base_url_on = str(base_url_on)
-    
+
   #   # Create a base site for incomplete hrefs
   #   base = self.base_url(url)
   #   if base == "":
   #     raise ValueError("This URL is invalid")
-    
+
   #   if self.count_hard_stop_len():
   #     raise ValueError("Too many repeated urls, exiting web scraper")
-    
+
   #   try:
   #     if _soup:
   #       urls = self.non_user_provided_page_urls(url, base, _soup, _filetype)
@@ -394,7 +392,7 @@ class WebScrape():
   #       urls = self.scrape_user_provided_page(url, course_name, timeout, base)
   #   except ValueError as e:
   #     raise e
-    
+
   #   temp_urls = []
   #   # We grab content out of these urls
   #   try:
@@ -412,14 +410,14 @@ class WebScrape():
   #           if new_url:
   #             temp_urls.append((new_url, content, filetype))
   #           if self.count_hard_stop_len():
-  #             raise ValueError("Too many repeated urls, exiting web scraper")     
+  #             raise ValueError("Too many repeated urls, exiting web scraper")
   #       else:
   #         print("Max URLs reached")
   #         raise ValueError("Max URLs reached")
   #   except ValueError as e:
   #     print("Error:", e)
-    
-  #   # recursively go through crawler until we reach the max amount of urls. 
+
+  #   # recursively go through crawler until we reach the max amount of urls.
   #   for url in temp_urls:
   #     if self.max_urls > 0:
   #       if _depth < max_depth:
@@ -431,33 +429,39 @@ class WebScrape():
   #         print("Depth exceeded:", _depth+1, "out of", max_depth)
   #         break
   #     else:
-  #       print("Max urls reached") 
+  #       print("Max urls reached")
   #       break
-  
+
   #   return None
-  
-  def breadth_crawler(self, url:str, course_name:str, timeout:int=1, base_url_on:str=None, max_depth:int=3, base_option:bool=False): # type: ignore
+
+  def breadth_crawler(self,
+                      url: str,
+                      course_name: str,
+                      timeout: int = 1,
+                      base_url_on: str = None,
+                      max_depth: int = 3,
+                      base_option: bool = False):  # type: ignore
     depth = 0
     if base_url_on:
       base_url_on = str(base_url_on)
-    
+
     # Create a base site for incomplete hrefs
     base = self.base_url(url)
     if base == "":
       raise ValueError("This URL is invalid")
-    
-    self.queue[depth] = self.scrape_user_provided_page(url, course_name, timeout,  base)
-    self.queue[depth+1] = []
+
+    self.queue[depth] = self.scrape_user_provided_page(url, course_name, timeout, base)
+    self.queue[depth + 1] = []
     print("queue", self.queue)
-    print("len", len(self.queue[depth]), len(self.queue[depth+1]))
-    
-    while self.count_hard_stop_len() == False:
-      print("queue", len(self.queue[depth]), len(self.queue[depth+1]))
+    print("len", len(self.queue[depth]), len(self.queue[depth + 1]))
+
+    while self.count_hard_stop_len() is False:
+      print("queue", len(self.queue[depth]), len(self.queue[depth + 1]))
 
       if self.queue[depth] == []:
         depth += 1
         print("depth:", depth)
-        self.queue[depth+1] = []
+        self.queue[depth + 1] = []
         if depth > max_depth:
           print("Depth exceeded:", depth, "out of", max_depth)
           raise ValueError("Depth exceeded")
@@ -465,7 +469,7 @@ class WebScrape():
       if self.queue[depth] == []:
         print("queue is empty")
         raise ValueError("Queue is empty")
-      
+
       url = self.queue[depth].pop(0)
       if self.max_urls > 0:
         if depth <= max_depth:
@@ -474,7 +478,7 @@ class WebScrape():
               print("url", url)
               print("requirements", self.base_requirements(url, base_url_on))
               new_url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
-              self.queue[depth+1] += self.non_user_provided_page_urls(new_url, base, content, filetype)
+              self.queue[depth + 1] += self.non_user_provided_page_urls(new_url, base, content, filetype)
               if self.count_hard_stop_len():
                 raise ValueError("Too many repeated urls, exiting web scraper")
             else:
@@ -484,19 +488,26 @@ class WebScrape():
                   raise ValueError("Too many repeated urls, exiting web scraper")
           else:
             new_url, content, filetype = self.check_and_ingest(url, course_name, timeout, base_url_on)
-            self.queue[depth+1] += self.non_user_provided_page_urls(new_url, base, content, filetype)
+            self.queue[depth + 1] += self.non_user_provided_page_urls(new_url, base, content, filetype)
             if self.count_hard_stop_len():
-              raise ValueError("Too many repeated urls, exiting web scraper")     
+              raise ValueError("Too many repeated urls, exiting web scraper")
         else:
-          print("Depth exceeded:", depth+1, "out of", max_depth)
+          print("Depth exceeded:", depth + 1, "out of", max_depth)
           break
       else:
         print("Max URLs reached")
         raise ValueError("Max URLs reached")
-    
+
     return None
-  
-  def main_crawler(self, url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, stay_on_baseurl:bool=True, depth_or_breadth:str='breadth'):
+
+  def main_crawler(self,
+                   url: str,
+                   course_name: str,
+                   max_urls: int = 100,
+                   max_depth: int = 3,
+                   timeout: int = 1,
+                   stay_on_baseurl: bool = True,
+                   depth_or_breadth: str = 'breadth'):
     """
     Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
 
@@ -532,16 +543,17 @@ class WebScrape():
     else:
       try:
         print("Gathering existing urls from Supabase")
-        urls = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url').eq('course_name', course_name).execute() # type: ignore
+        urls = self.supabase_client.table(os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).select('course_name, url').eq(
+            'course_name', course_name).execute()  # type: ignore
 
         if urls.data == []:
           self.existing_urls = []
         else:
           self.existing_urls = []
           for row in urls.data:
-          #   whole = ''
-          #   for text in row['contexts']:
-          #     whole += text['text']
+            #   whole = ''
+            #   for text in row['contexts']:
+            #     whole += text['text']
             self.existing_urls.append((row['url'], 'whole', 'supa'))
           print("Finished gathering existing urls from Supabase")
       except Exception as e:
@@ -560,7 +572,6 @@ class WebScrape():
       except ValueError as e:
         print("Error:", e)
 
-
     if len(self.url_contents) < self.original_amount:
       print("Max URLS not reached, returning all urls found:", len(self.url_contents), "out of", self.original_amount)
     elif len(self.url_contents) == self.original_amount:
@@ -575,36 +586,35 @@ class WebScrape():
 def is_github_repo(url):
   # Split the URL by '?' to ignore any parameters
   base_url = url.split('?')[0]
-  
+
   # The regular expression now allows for optional 'http', 'https', and 'www' prefixes.
   # It also accounts for optional trailing slashes.
   # The pattern is also case-insensitive.
   pattern = re.compile(r'^(https?://)?(www\.)?github\.com/[^/?]+/[^/?]+/?$', re.IGNORECASE)
-  
+
   # The function returns True or False based on whether the pattern matches the base_url
   return base_url if pattern.match(base_url) else None
 
 
-def mit_course_download(url:str, course_name:str, local_dir:str):
+def mit_course_download(url: str, course_name: str, local_dir: str):
   '''
   Download an MIT course using its url
   '''
   ingester = Ingest()
-  base = "https://ocw.mit.edu"
   if url.endswith("download"):
     pass
   else:
     url = url + "download"
 
   r = requests.get(url)
-  soup = BeautifulSoup(r.text,"html.parser")
+  soup = BeautifulSoup(r.text, "html.parser")
 
   zip = ''
   for ref in soup.find_all("a"):
     if ref.attrs['href'].endswith("zip"):
       zip = ref.attrs['href']
 
-  site =  zip
+  site = zip
   print('site', site)
   r = requests.get(url=site, stream=True)
 
@@ -619,18 +629,18 @@ def mit_course_download(url:str, course_name:str, local_dir:str):
     print("Error:", e, site)
 
   with ZipFile(zip_file, 'r') as zObject:
-    zObject.extractall(
-      path=local_dir)
-  
-  shutil.move(local_dir+"/"+"robots.txt", local_dir+"/static_resources")
-  s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
-  success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
+    zObject.extractall(path=local_dir)
+
+  shutil.move(local_dir + "/" + "robots.txt", local_dir + "/static_resources")
+  s3_paths = upload_data_files_to_s3(course_name, local_dir + "/static_resources")
+  success_fail = ingester.bulk_ingest(s3_paths, course_name)  # type: ignore
 
   shutil.move(zip_file, local_dir)
   shutil.rmtree(local_dir)
   del ingester
   print("Finished Ingest")
   return success_fail
+
 
 if __name__ == '__main__':
   pass

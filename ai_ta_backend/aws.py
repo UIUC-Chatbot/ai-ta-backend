@@ -17,19 +17,19 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
     Optional[List[str]]: A list of S3 paths, the final resting place of uploads, or None if no files were uploaded.
   """
   s3 = boto3.client(
-    's3',
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+      's3',
+      aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+      aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
   )
 
   filenames = []
-  for root, subdirs, files in os.walk(localdir):
+  for root, _subdirs, files in os.walk(localdir):
     for filename in files:
       filenames.append(os.path.join(root, filename))
 
   if not filenames:
-      print(f"No files to upload. Not found in: {localdir}")
-      return None
+    print(f"No files to upload. Not found in: {localdir}")
+    return None
 
   print(f"Files to upload: {filenames}")
   print("About to upload...")
@@ -52,6 +52,7 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
 
   print("All data files uploaded to S3 successfully.")
   return s3_paths
+
 
 if __name__ == '__main__':
   pass
