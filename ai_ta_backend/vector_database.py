@@ -43,7 +43,7 @@ from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 from ai_ta_backend.parallel_context_processing import context_processing
-from ai_ta_backend.filtering_contexts import run, ray_run
+from ai_ta_backend.filtering_contexts import run_context_filtering
 
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
@@ -1164,11 +1164,11 @@ class Ingest():
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
 
-      filtered_docs = ray_run(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
+      filtered_docs = run_context_filtering(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
 
       #filtered_docs = list(run(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100))
-      print(f"Number of docs after context filtering: {len(filtered_docs)}")
-
+      #print(f"Number of docs after context filtering: {len(filtered_docs)}")
+      
       valid_docs = []
       num_tokens = 0
         

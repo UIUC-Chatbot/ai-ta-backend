@@ -80,11 +80,11 @@ def supabase_context_padding(doc, course_name, result_docs):
       # do the padding
       filename = data[0]['readable_filename']
       contexts = data[0]['contexts']
-      print("no of contexts within the og doc: ", len(contexts))
+      #print("no of contexts within the og doc: ", len(contexts))
       
 
       if 'chunk_index' in doc.metadata and 'chunk_index' in contexts[0].keys():
-        print("inside chunk index")
+        #print("inside chunk index")
         # pad contexts by chunk index + 3 and - 3
         target_chunk_index = doc.metadata['chunk_index']
         for context in contexts:
@@ -98,7 +98,7 @@ def supabase_context_padding(doc, course_name, result_docs):
             result_docs.append(context)
 
       elif doc.metadata['pagenumber'] != '':
-        print("inside page number")
+        #print("inside page number")
         # pad contexts belonging to same page number
         pagenumber = doc.metadata['pagenumber']
             
@@ -113,7 +113,7 @@ def supabase_context_padding(doc, course_name, result_docs):
             result_docs.append(context)
         
       else:
-        print("inside else")
+        #print("inside else")
         # refactor as a Supabase object and append 
         context_dict = {
           'text': doc.page_content,
