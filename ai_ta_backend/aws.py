@@ -40,7 +40,7 @@ def upload_data_files_to_s3(course_name: str, localdir: str) -> Optional[List[st
   def upload(myfile):
     # get the last part of the path and append unique ID before it
     directory, old_filename = os.path.split(myfile)
-    new_filename = str(uuid.uuid4()) + '_' + old_filename
+    new_filename = str(uuid.uuid4()) + '-' + old_filename
     new_filepath = os.path.join(directory, new_filename)
     
     s3_file = f"courses/{course_name}/{os.path.basename(new_filepath)}"
