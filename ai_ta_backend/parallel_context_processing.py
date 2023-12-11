@@ -34,7 +34,7 @@ def context_processing(found_docs, search_query, course_name):
 
         result_contexts = supabase_contexts_no_duplicates + list(qdrant_contexts)
     
-        print(f"⏰ Context processing runtime: {(time.monotonic() - start_time):.2f} seconds")
+        print(f"⏰ Context padding runtime: {(time.monotonic() - start_time):.2f} seconds")
         
         return result_contexts
 
