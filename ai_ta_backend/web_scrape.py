@@ -200,7 +200,7 @@ class WebScrape():
               print("Writing", key[2] ,"to temp file")
               temp_file.write(key[1])
             temp_file.seek(0)
-            path_name = str(uuid.uuid4()) + '_' + path_name
+            path_name = str(uuid.uuid4()) + '-' + path_name
             print("path name in webscrape: ", path_name)
             s3_upload_path = "courses/"+ course_name + "/" + path_name + key[2]
             with open(temp_file.name, 'rb') as f:
