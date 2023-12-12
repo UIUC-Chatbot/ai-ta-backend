@@ -40,12 +40,12 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
     partial_func1 = partial(filter_context, user_query=user_query, langsmith_prompt_obj=langsmith_prompt_obj)
     partial_func2 = partial(select_context, result=filtered_contexts)
 
-    with ProcessPoolExecutor(max_workers=200) as executor1:
+    with ProcessPoolExecutor(max_workers=100) as executor1:
       results1 = list(executor1.map(partial_func1, contexts))
 
     print(f"⏰ ThreadPool runtime: {(time.monotonic() - start_time):.2f} seconds")
   
-    with ProcessPoolExecutor(max_workers=200) as executor:
+    with ProcessPoolExecutor(max_workers=100) as executor:
       executor.map(partial_func2, results1)
     
     filtered_contexts = list(filtered_contexts)
