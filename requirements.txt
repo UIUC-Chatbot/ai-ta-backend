@@ -51,5 +51,3 @@ unstructured==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: ht
 
 # Not currently supporting coursera ingest
 # cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
-
-pypdf
