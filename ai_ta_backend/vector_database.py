@@ -730,12 +730,8 @@ class Ingest():
       
       # check for duplicates
       is_duplicate = self.check_for_duplicates(input_texts, metadatas)
-      print("is_duplicate: ", is_duplicate)
       if is_duplicate:
-        print("split_and_upload returning duplicate")
-        return "🚫🚫 Duplicate, ingest skipped.🚫🚫"
-      
-      print("split_and_upload continuing...")
+        return "Success"
       
       # adding chunk index to metadata for parent doc retrieval
       for i, context in enumerate(contexts):
@@ -1221,20 +1217,18 @@ Now please respond to my question: {user_question}"""
     For given metadata, fetch docs from Supabase based on S3 path or URL. 
     If docs exists, concatenate the texts and compare with current texts, if same, return True.
     """
-    print("in check_for_duplicates")
-    
-    doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')
+    doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE', '')
     course_name = metadatas[0]['course_name']
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
     original_filename = incoming_s3_path.split('/')[-1][37:] # remove the 37-char uuid prefix
     print("Extracted filename from incoming s3_path: ", original_filename)
 
-    # check if uuid exists in s3_path
+    # check if uuid exists in s3_path -- not all s3_paths have uuids! 
     incoming_filename = incoming_s3_path.split('/')[-1]
     pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', re.I) # uuid V4 pattern, and v4 only.
-    if bool(pattern.search(incoming_filename)): # uuid pattern exists
-      # remove the uuid and proceed with duplicate checking
+    if bool(pattern.search(incoming_filename)):
+      # uuid pattern exists -- remove the uuid and proceed with duplicate checking
       original_filename = incoming_filename[37:]
     else:
       # do not remove anything and proceed with duplicate checking
@@ -1253,8 +1247,6 @@ Now please respond to my question: {user_question}"""
       supabase_contents = []
     
     supabase_whole_text = ""
-    print("no. of docs previously present: ", len(supabase_contents))
-
     if  len(supabase_contents) > 0: # if a doc with same filename exists in Supabase
       # concatenate texts
       supabase_contexts = supabase_contents[0]
@@ -1265,8 +1257,8 @@ Now please respond to my question: {user_question}"""
       for text in texts:
         current_whole_text += text['input']
       
-      print("supabase_whole_text: ", supabase_whole_text)
-      print("current_whole_text: ", current_whole_text)
+      # print("supabase_whole_text: ", supabase_whole_text)
+      # print("current_whole_text: ", current_whole_text)
       
       # compare with current texts
       if supabase_whole_text == current_whole_text: # matches the previous file
@@ -1286,7 +1278,6 @@ Now please respond to my question: {user_question}"""
     else: # filename does not already exist in Supabase, so its a brand new file
       print(f"File 📄: {filename} is NOT a duplicate!")
       return False
-
 
 
 if __name__ == '__main__':
