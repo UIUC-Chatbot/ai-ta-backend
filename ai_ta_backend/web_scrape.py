@@ -58,7 +58,9 @@ class WebScrape():
       return '.html'
 
   def valid_url(self, url):
-    """Returns the URL and it's content if it's good, otherwise returns false. Prints the status code."""
+    """
+    Returns the URL and it's content if it's good, otherwise returns false. Prints the status code.
+    """
     try:
       response = requests.get(url, allow_redirects=True, timeout=20)
 
@@ -192,25 +194,16 @@ class WebScrape():
   def ingest_file(self, key, course_name, path_name, base_url):
     try:
       with NamedTemporaryFile(suffix=key[2]) as temp_file:
-          if key[1] != "" or key[1] != None:
-            if key[2] == ".html":
-              print("Writing", key[2] ,"to temp file")
-              temp_file.write(key[1].encode('utf-8'))
-            else:
-              print("Writing", key[2] ,"to temp file")
-              temp_file.write(key[1])
-            temp_file.seek(0)
-            path_name = str(uuid.uuid4()) + '-' + path_name
-            print("path name in webscrape: ", path_name)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name + key[2]
-            with open(temp_file.name, 'rb') as f:
-              print("Uploading", key[2] ,"to S3")
-              self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
-              self.ingester.bulk_ingest(s3_upload_path, course_name=course_name, url=key[0], base_url=base_url)
+        if key[1] != "" or key[1] is not None:
+          if key[2] == ".html":
+            print("Writing", key[2], "to temp file")
+            temp_file.write(key[1].encode('utf-8'))
           else:
             print("Writing", key[2], "to temp file")
             temp_file.write(key[1])
           temp_file.seek(0)
+          path_name = str(uuid.uuid4()) + '-' + path_name
+          print("path name in webscrape: ", path_name)
           s3_upload_path = "courses/" + course_name + "/" + path_name + key[2]
           with open(temp_file.name, 'rb') as f:
             print("Uploading", key[2], "to S3")
