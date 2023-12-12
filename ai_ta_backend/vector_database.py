@@ -1222,7 +1222,6 @@ Now please respond to my question: {user_question}"""
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
     original_filename = incoming_s3_path.split('/')[-1][37:] # remove the 37-char uuid prefix
-    print("Extracted filename from incoming s3_path: ", original_filename)
 
     # check if uuid exists in s3_path -- not all s3_paths have uuids! 
     incoming_filename = incoming_s3_path.split('/')[-1]
@@ -1257,16 +1256,12 @@ Now please respond to my question: {user_question}"""
       for text in texts:
         current_whole_text += text['input']
       
-      # print("supabase_whole_text: ", supabase_whole_text)
-      # print("current_whole_text: ", current_whole_text)
-      
-      # compare with current texts
       if supabase_whole_text == current_whole_text: # matches the previous file
-        print(f"The file 📄: {filename} is a duplicate!")
+        print(f"Duplicate ingested! 📄 s3_path: {filename}.")
         return True
       
       else: # the file is updated
-        print(f"The file 📄: {filename} seems to be updated! Deleting the older file...")
+        print(f"Updated file detected! Same filename, new contents. 📄 s3_path: {filename}")
         
         # call the delete function on older docs
         for content in supabase_contents:
@@ -1276,7 +1271,7 @@ Now please respond to my question: {user_question}"""
         return False
       
     else: # filename does not already exist in Supabase, so its a brand new file
-      print(f"File 📄: {filename} is NOT a duplicate!")
+      print(f"NOT a duplicate! 📄s3_path: {filename}")
       return False
 
 
