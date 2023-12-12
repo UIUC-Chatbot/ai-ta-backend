@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import time
+import uuid
 from collections import Counter
 from tempfile import NamedTemporaryFile
 from zipfile import ZipFile
@@ -199,6 +200,8 @@ class WebScrape():
               print("Writing", key[2] ,"to temp file")
               temp_file.write(key[1])
             temp_file.seek(0)
+            path_name = str(uuid.uuid4()) + '-' + path_name
+            print("path name in webscrape: ", path_name)
             s3_upload_path = "courses/"+ course_name + "/" + path_name + key[2]
             with open(temp_file.name, 'rb') as f:
               print("Uploading", key[2] ,"to S3")
