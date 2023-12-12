@@ -16,7 +16,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import boto3
 import fitz
-from pypdf import PdfReader
 import openai
 import pytesseract
 import supabase
