@@ -1145,7 +1145,11 @@ class Ingest():
       batch_found_docs: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries, course_name=course_name)
       
       # filtered_docs = run_context_filtering(contexts=batch_found_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
+      # print(f"Number of docs after context filtering: {len(filtered_docs)}")
+
+      # print(filtered_docs[0])
       # exit()
+
       found_docs = self.reciprocal_rank_fusion(batch_found_docs)
       found_docs = [doc for doc, score in found_docs]
       print(f"Number of docs found with multiple queries: {len(found_docs)}")
@@ -1153,10 +1157,6 @@ class Ingest():
           return []
 
       print(f"⏰ Multi-query processing runtime: {(time.monotonic() - mq_start_time):.2f} seconds")
-
-      # Context filtering
-      #filtered_docs = list(run(contexts=found_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100))
-      #print(f"Number of docs after context filtering: {len(filtered_docs)}")
 
       # 'context padding' // 'parent document retriever' 
       final_docs = context_processing(found_docs, search_query, course_name)

@@ -34,18 +34,29 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
   start_time = time.monotonic()
   langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr")
   
+  # passages = []
+  # for docs in contexts:
+  #   for doc in docs:
+  #     print("doc: ", doc)
+  #     exit()
+  #     passages.append(doc)
+  
+  # print("Num jobs to run:", len(passages))
+  
   # call filter contexts function
   with Manager() as manager:
     filtered_contexts = manager.list()
     partial_func1 = partial(filter_context, user_query=user_query, langsmith_prompt_obj=langsmith_prompt_obj)
     partial_func2 = partial(select_context, result=filtered_contexts)
 
-    with ProcessPoolExecutor(max_workers=30) as executor:
+    with ProcessPoolExecutor(max_workers=100) as executor:
       anyscale_responses = list(executor.map(partial_func1, contexts))
       if len(anyscale_responses) > 0:
         executor.map(partial_func2, anyscale_responses)
       else:
         print("LLM responses are empty.")
+      
+      executor.shutdown(wait=True)
  
     filtered_contexts = list(filtered_contexts)
   print(f"⏰ Context filtering runtime: {(time.monotonic() - start_time):.2f} seconds")
