@@ -42,13 +42,14 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
     partial_func2 = partial(select_context, result=filtered_contexts)
 
     with ProcessPoolExecutor(max_workers=100) as executor:
+      print("max workers: ", executor._max_workers)
       anyscale_responses = list(executor.map(partial_func1, contexts))
       if len(anyscale_responses) > 0:
         executor.map(partial_func2, anyscale_responses)
       else:
         print("LLM responses are empty.")
       
-      executor.shutdown(wait=True)
+      executor.shutdown()
  
     filtered_contexts = list(filtered_contexts)
   print(f"⏰ Context filtering runtime: {(time.monotonic() - start_time):.2f} seconds")
@@ -59,7 +60,8 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
 
   
 def filter_context(context, user_query, langsmith_prompt_obj):
-  start_time = time.monotonic()
+  api_start_time = time.monotonic()
+  print("API start time: ", api_start_time)
   final_prompt = str(langsmith_prompt_obj.format(context=context['text'], user_query=user_query))
   try: 
     #completion = run_anyscale(final_prompt)
@@ -73,7 +75,7 @@ def filter_context(context, user_query, langsmith_prompt_obj):
           max_tokens=250,
       )
     completion = ret["choices"][0]["message"]["content"]
-    print("API call time: ", (time.monotonic() - start_time))
+    print("API call time: ", (time.monotonic() - api_start_time))
     return {"completion": completion, "context": context}
   except Exception as e: 
     print(f"Error: {e}")
