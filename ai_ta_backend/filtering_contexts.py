@@ -41,7 +41,7 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
     partial_func2 = partial(select_context, result=filtered_contexts)
 
     with ProcessPoolExecutor(max_workers=200) as executor1:
-      results1 = list(executor1.map(partial_func1, contexts[:10]))
+      results1 = list(executor1.map(partial_func1, contexts))
 
     print(f"⏰ ThreadPool runtime: {(time.monotonic() - start_time):.2f} seconds")
   
