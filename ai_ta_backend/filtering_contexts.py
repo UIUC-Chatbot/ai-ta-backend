@@ -41,7 +41,7 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
     partial_func1 = partial(filter_context, user_query=user_query, langsmith_prompt_obj=langsmith_prompt_obj)
     partial_func2 = partial(select_context, result=filtered_contexts)
 
-    with ProcessPoolExecutor(max_workers=100) as executor:
+    with ProcessPoolExecutor(max_workers=30) as executor:
       print("max workers: ", executor._max_workers)
       anyscale_responses = list(executor.map(partial_func1, contexts))
       print("len of anyscale responses: ", len(anyscale_responses))
