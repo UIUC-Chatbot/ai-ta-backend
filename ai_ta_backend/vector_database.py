@@ -1165,14 +1165,17 @@ class Ingest():
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
 
       filtered_docs = run_context_filtering(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
-
-      #filtered_docs = list(run(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100))
-      #print(f"Number of docs after context filtering: {len(filtered_docs)}")
+      if len(filtered_docs) > 0:
+        final_docs_used = filtered_docs
+      else:
+        final_docs_used = final_docs
+        print("No docs passed context filtering, using all docs retrieved.")
+      
       
       valid_docs = []
       num_tokens = 0
         
-      for doc in filtered_docs:
+      for doc in final_docs_used:
         
         doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore

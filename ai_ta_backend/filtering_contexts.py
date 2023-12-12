@@ -40,18 +40,17 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
     partial_func1 = partial(filter_context, user_query=user_query, langsmith_prompt_obj=langsmith_prompt_obj)
     partial_func2 = partial(select_context, result=filtered_contexts)
 
-    with ProcessPoolExecutor(max_workers=100) as executor1:
-      results1 = list(executor1.map(partial_func1, contexts))
-
-    print(f"⏰ ThreadPool runtime: {(time.monotonic() - start_time):.2f} seconds")
-  
-    with ProcessPoolExecutor(max_workers=100) as executor:
-      executor.map(partial_func2, results1)
-    
+    with ProcessPoolExecutor(max_workers=50) as executor:
+      anyscale_responses = list(executor.map(partial_func1, contexts))
+      if len(anyscale_responses) > 0:
+        executor.map(partial_func2, anyscale_responses)
+      else:
+        print("LLM responses are empty.")
+ 
     filtered_contexts = list(filtered_contexts)
   print(f"⏰ Context filtering runtime: {(time.monotonic() - start_time):.2f} seconds")
+
   print("len of filtered contexts: ", len(filtered_contexts))
-  
   return filtered_contexts
 
   
@@ -62,8 +61,6 @@ def filter_context(context, user_query, langsmith_prompt_obj):
     ret = openai.ChatCompletion.create(
           api_base = "https://api.endpoints.anyscale.com/v1",
           api_key=os.environ["ANYSCALE_ENDPOINT_TOKEN"],
-          # model="meta-llama/Llama-2-70b-chat-hf",
-          #model="mistralai/Mistral-7B-Instruct-v0.1",
           model = "HuggingFaceH4/zephyr-7b-beta",
           messages=[{"role": "system", "content": "You are a helpful assistant."},
                     {"role": "user", "content": final_prompt}],
@@ -71,7 +68,6 @@ def filter_context(context, user_query, langsmith_prompt_obj):
           max_tokens=250,
       )
     completion = ret["choices"][0]["message"]["content"]
-
     return {"completion": completion, "context": context}
   except Exception as e: 
     print(f"Error: {e}")
@@ -80,7 +76,6 @@ def select_context(completion_object, result):
   if parse_result(completion_object['completion']):
     result.append(completion_object['context'])
   
-
 def parse_result(result):
   lines = result.split('\n')
   for line in lines:
@@ -89,7 +84,7 @@ def parse_result(result):
   return False 
  
 
-## OLD CODE ##
+#----------------------- OLD CODE BELOW ----------------------------------------------------------------------------#
 
 #@ray.remote
 # class AsyncActor:
@@ -111,43 +106,43 @@ def parse_result(result):
 #     except Exception as e: 
 #       print(f"Error: {e}")
 
-def run_model(prompt, max_tokens=300, temp=0.3, **kwargs):
-  '''
-  Local LLMs  USAGE DOCS: https://kastanday.notion.site/LLM-Serving-on-prem-OpenAI-Clone-bb06028266d842b0872465f552684177 ## 
-  '''
+# def run_model(prompt, max_tokens=300, temp=0.3, **kwargs):
+#   '''
+#   Local LLMs  USAGE DOCS: https://kastanday.notion.site/LLM-Serving-on-prem-OpenAI-Clone-bb06028266d842b0872465f552684177 ## 
+#   '''
 
-  url = "http://api.kastan.ai/v1/completions?model=HuggingFaceH4/zephyr-7b-alpha"
-  headers = {
-      'Content-Type': 'application/json'
-  }
-  data = {
-      "prompt": prompt,
-      "max_tokens": max_tokens,
-      "temperature": temp,
-      **kwargs
-  }
+#   url = "http://api.kastan.ai/v1/completions?model=HuggingFaceH4/zephyr-7b-alpha"
+#   headers = {
+#       'Content-Type': 'application/json'
+#   }
+#   data = {
+#       "prompt": prompt,
+#       "max_tokens": max_tokens,
+#       "temperature": temp,
+#       **kwargs
+#   }
 
-  try: 
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    return response.json()['choices'][0]['text']
-  except Exception as e:
-    # Probably cuda OOM error. 
-    raise ValueError(f"🚫🚫🚫 Failed inference attempt. Response: {response.json()}\nError: {e}\nPromt that caused error: {prompt}")
+#   try: 
+#     response = requests.post(url, headers=headers, data=json.dumps(data))
+#     return response.json()['choices'][0]['text']
+#   except Exception as e:
+#     # Probably cuda OOM error. 
+#     raise ValueError(f"🚫🚫🚫 Failed inference attempt. Response: {response.json()}\nError: {e}\nPromt that caused error: {prompt}")
 
-def run_replicate(prompt):
-  output = replicate.run(
-    "tomasmcm/zephyr-7b-beta:961cd6665b811d0c43c0b9488b6dfa85ff5c7bfb875e93b4533e4c7f96c7c526",
-    input={
-      "top_k": 50,
-      "top_p": 0.95,
-      "prompt": prompt,
-      "temperature": 0.3,
-      "max_new_tokens": 250,
-      "presence_penalty": 1
-    }
-  )
-  print(output)
-  return output
+# def run_replicate(prompt):
+#   output = replicate.run(
+#     "tomasmcm/zephyr-7b-beta:961cd6665b811d0c43c0b9488b6dfa85ff5c7bfb875e93b4533e4c7f96c7c526",
+#     input={
+#       "top_k": 50,
+#       "top_p": 0.95,
+#       "prompt": prompt,
+#       "temperature": 0.3,
+#       "max_new_tokens": 250,
+#       "presence_penalty": 1
+#     }
+#   )
+#   print(output)
+#   return output
 
 # def run_anyscale(prompt):
   
