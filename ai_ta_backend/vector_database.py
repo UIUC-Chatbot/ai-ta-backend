@@ -1102,7 +1102,7 @@ class Ingest():
         summary = f"\nSummary: {text}"
         all_texts += doc + summary + '\n' + separator + '\n'
 
-    stuffed_prompt = f"""Please answer the following question.
+    stuffed_prompt = """Please answer the following question.
 Use the context below, called 'your documents', only if it's helpful and don't use parts that are very irrelevant.
 It's good to quote 'your documents' directly using informal citations, like "in document X it says Y". Try to avoid giving false or misleading information. Feel free to say you don't know.
 Try to be helpful, polite, honest, sophisticated, emotionally aware, and humble-but-knowledgeable.
@@ -1232,7 +1232,7 @@ Now please respond to my question: {user_question}"""
 
     # check if uuid exists in s3_path
     incoming_filename = incoming_s3_path.split('/')[-1]
-    pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', re.I)
+    pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', re.I) # uuid V4 pattern, and v4 only.
     if bool(pattern.search(incoming_filename)): # uuid pattern exists
       # remove the uuid and proceed with duplicate checking
       original_filename = incoming_filename[37:]
@@ -1243,25 +1243,30 @@ Now please respond to my question: {user_question}"""
     if incoming_s3_path:
       filename = incoming_s3_path
       supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq('course_name', course_name).like('s3_path', '%' + original_filename + '%').order('id', desc=True).execute()
+      supabase_contents = supabase_contents.data
     elif url:
       filename = url
       supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq('course_name', course_name).eq('url', url).order('id', desc=True).execute()
+      supabase_contents = supabase_contents.data
     else:
       filename = None
       supabase_contents = []
     
     supabase_whole_text = ""
-    print("no. of docs previously present: ", len(supabase_contents.data))
+    print("no. of docs previously present: ", len(supabase_contents))
 
-    if  len(supabase_contents.data) > 0: # if a doc with same filename exists in Supabase
+    if  len(supabase_contents) > 0: # if a doc with same filename exists in Supabase
       # concatenate texts
-      supabase_contexts = supabase_contents.data[0]
+      supabase_contexts = supabase_contents[0]
       for text in supabase_contexts['contexts']:
         supabase_whole_text += text['text']
         
       current_whole_text = ""
       for text in texts:
         current_whole_text += text['input']
+      
+      print("supabase_whole_text: ", supabase_whole_text)
+      print("current_whole_text: ", current_whole_text)
       
       # compare with current texts
       if supabase_whole_text == current_whole_text: # matches the previous file
@@ -1272,7 +1277,7 @@ Now please respond to my question: {user_question}"""
         print(f"The file 📄: {filename} seems to be updated! Deleting the older file...")
         
         # call the delete function on older docs
-        for content in supabase_contents.data:
+        for content in supabase_contents:
           print("older s3_path to be deleted: ", content['s3_path'])
           delete_status = self.delete_data(course_name, content['s3_path'], '')
           print("delete_status: ", delete_status)
@@ -1281,7 +1286,7 @@ Now please respond to my question: {user_question}"""
     else: # filename does not already exist in Supabase, so its a brand new file
       print(f"File 📄: {filename} is NOT a duplicate!")
       return False
-    
+
 
 
 if __name__ == '__main__':
