@@ -34,14 +34,6 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
   start_time = time.monotonic()
   langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr")
   
-  # passages = []
-  # for docs in contexts:
-  #   for doc in docs:
-  #     print("doc: ", doc)
-  #     exit()
-  #     passages.append(doc)
-  
-  # print("Num jobs to run:", len(passages))
   
   # call filter contexts function
   with Manager() as manager:
@@ -64,8 +56,10 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
   print("len of filtered contexts: ", len(filtered_contexts))
   return filtered_contexts
 
+
   
 def filter_context(context, user_query, langsmith_prompt_obj):
+  start_time = time.monotonic()
   final_prompt = str(langsmith_prompt_obj.format(context=context['text'], user_query=user_query))
   try: 
     #completion = run_anyscale(final_prompt)
@@ -79,6 +73,7 @@ def filter_context(context, user_query, langsmith_prompt_obj):
           max_tokens=250,
       )
     completion = ret["choices"][0]["message"]["content"]
+    print("API call time: ", (time.monotonic() - start_time))
     return {"completion": completion, "context": context}
   except Exception as e: 
     print(f"Error: {e}")
