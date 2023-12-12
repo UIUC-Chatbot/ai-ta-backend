@@ -1143,7 +1143,9 @@ class Ingest():
       print("generated_queries", generated_queries)
 
       batch_found_docs: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries, course_name=course_name)
-
+      
+      # filtered_docs = run_context_filtering(contexts=batch_found_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
+      # exit()
       found_docs = self.reciprocal_rank_fusion(batch_found_docs)
       found_docs = [doc for doc, score in found_docs]
       print(f"Number of docs found with multiple queries: {len(found_docs)}")
