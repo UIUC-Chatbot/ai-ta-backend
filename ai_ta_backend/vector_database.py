@@ -520,10 +520,9 @@ class Ingest():
         pdf_texts = [page['text'] for page in pdf_pages_OCRed]
 
         success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
-        print("PDF message: ", success_or_failure)
         return success_or_failure
     except Exception as e:
-      err = f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc() # type: ignore
       print(err)
       return err
     return "Success"
@@ -714,8 +713,8 @@ class Ingest():
         metadatas (List[Dict[str, Any]]): _description_
     """
     print("In split and upload")
-    # print(f"metadatas: {metadatas}")
-    # print(f"Texts: {texts}")
+    print(f"metadatas: {metadatas}")
+    print(f"Texts: {texts}")
     assert len(texts) == len(metadatas), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
     
     try:
@@ -726,7 +725,6 @@ class Ingest():
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
-      print("METADATAS: ", metadatas)
       
       # check for duplicates
       is_duplicate = self.check_for_duplicates(input_texts, metadatas)
