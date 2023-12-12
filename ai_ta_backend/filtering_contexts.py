@@ -62,7 +62,7 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
   
 def filter_context(context, user_query, langsmith_prompt_obj):
   api_start_time = time.monotonic()
-  print("API start time: ", api_start_time)
+  
   final_prompt = str(langsmith_prompt_obj.format(context=context['text'], user_query=user_query))
   try: 
     #completion = run_anyscale(final_prompt)
@@ -76,7 +76,8 @@ def filter_context(context, user_query, langsmith_prompt_obj):
           max_tokens=250,
       )
     completion = ret["choices"][0]["message"]["content"]
-    print("API call time: ", (time.monotonic() - api_start_time))
+
+    print(f"⏰ Anyscale runtime: {(time.monotonic() - api_start_time):.2f} seconds")
     return {"completion": completion, "context": context}
   except Exception as e: 
     print(f"Error: {e}")
@@ -95,7 +96,7 @@ def parse_result(result):
 
 #----------------------- OLD CODE BELOW ----------------------------------------------------------------------------#
 
-#@ray.remote
+# @ray.remote
 # class AsyncActor:
 #   def __init__(self):
 #     pass
@@ -107,10 +108,7 @@ def parse_result(result):
 #       # completion = run_model(final_prompt)
 #       #completion = run_replicate(final_prompt)
 #       completion = run_anyscale(final_prompt)
-#       #clean_text = context['text'].replace('\n', '')
-#       #print("Context: ", clean_text)
-#       #print("Completion: ", completion)
-
+      
 #       return {"completion": completion, "context": context}
 #     except Exception as e: 
 #       print(f"Error: {e}")
@@ -154,7 +152,7 @@ def parse_result(result):
 #   return output
 
 # def run_anyscale(prompt):
-  
+#   api_start_time = time.monotonic()
 #   ret = openai.ChatCompletion.create(
 #           api_base = "https://api.endpoints.anyscale.com/v1",
 #           api_key=os.environ["ANYSCALE_ENDPOINT_TOKEN"],
@@ -166,12 +164,12 @@ def parse_result(result):
 #           temperature=0.3, 
 #           max_tokens=250,
 #       )
-
+#   print(f"⏰ Anyscale runtime: {(time.monotonic() - api_start_time):.2f} seconds")
 #   return ret["choices"][0]["message"]["content"]
 
 
 # def parse_result(result):
-#   lines = result['completion'].split('\n')
+#   lines = result.split('\n')
 #   for line in lines:
 #     if 'Final answer' in line:
 #       return 'yes' in line.lower()
