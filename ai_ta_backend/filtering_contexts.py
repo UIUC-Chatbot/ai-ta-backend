@@ -44,6 +44,7 @@ def run_context_filtering(contexts, user_query, max_time_before_return=45, max_c
     with ProcessPoolExecutor(max_workers=100) as executor:
       print("max workers: ", executor._max_workers)
       anyscale_responses = list(executor.map(partial_func1, contexts))
+      print("len of anyscale responses: ", len(anyscale_responses))
       if len(anyscale_responses) > 0:
         executor.map(partial_func2, anyscale_responses)
       else:
