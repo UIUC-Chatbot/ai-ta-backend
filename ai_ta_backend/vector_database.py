@@ -43,8 +43,9 @@ from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 from ai_ta_backend.parallel_context_processing import context_processing
-#from ai_ta_backend.filtering_contexts import run
-from ai_ta_backend.filtering_contexts import run_context_filtering
+#from ai_ta_backend.filtering_contexts import ray_context_filtering
+#from ai_ta_backend.filtering_contexts import run_context_filtering
+from ai_ta_backend.filtering_contexts import batch_context_filtering
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 OPENAI_API_TYPE = "azure" # "openai" or "azure"
@@ -1048,8 +1049,10 @@ class Ingest():
     and collect the documents with the highest overall score, as scored by qdrant similarity matching.
     """
     fused_scores = {}
+    count = 0
     for docs in results:
         # Assumes the docs are returned in sorted order of relevance
+        count += len(docs)
         for rank, doc in enumerate(docs):
             doc_str = dumps(doc)
             if doc_str not in fused_scores:
@@ -1063,6 +1066,7 @@ class Ingest():
         (loads(doc), score)
         for doc, score in sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
     ]
+    
     return reranked_results
   
   def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
@@ -1144,23 +1148,26 @@ class Ingest():
 
       batch_found_docs: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries, course_name=course_name)
       
-      # filtered_docs = run_context_filtering(contexts=batch_found_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
-      # print(f"Number of docs after context filtering: {len(filtered_docs)}")
+      # use the below filtering code for batch context filtering - List[List[Document]] (only use at this point in the pipeline)
+      filtered_docs = batch_context_filtering(batch_docs=batch_found_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
 
-      # print(filtered_docs[0])
-      # exit()
+      filtered_count = 0
+      for docs in filtered_docs:
+        filtered_count += len(docs)
+      print(f"Number of individual docs after context filtering: {filtered_count}")
 
-      found_docs = self.reciprocal_rank_fusion(batch_found_docs)
+      # if filtered docs are between 0 to 5 (very less), use the pre-filter batch_found_docs
+      if 0 < filtered_count < 5:
+        found_docs = self.reciprocal_rank_fusion(batch_found_docs)
+      else:
+        found_docs = self.reciprocal_rank_fusion(filtered_docs)
+      
       found_docs = [doc for doc, score in found_docs]
-      print(f"Number of docs found with multiple queries: {len(found_docs)}")
+      print(f"Number of docs found with MQR after rank fusion: {len(found_docs)}")
       if len(found_docs) == 0:
           return []
 
-      print(f"⏰ Multi-query processing runtime: {(time.monotonic() - mq_start_time):.2f} seconds")
-
-      # filtered_docs = run_context_filtering(contexts=found_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
-      # print(f"Number of docs after context filtering: {len(filtered_docs)}")
-      # exit()
+      print(f"⏰ Total multi-query processing runtime: {(time.monotonic() - mq_start_time):.2f} seconds")
 
       # 'context padding' // 'parent document retriever' 
       final_docs = context_processing(found_docs, search_query, course_name)
@@ -1170,20 +1177,21 @@ class Ingest():
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
 
-      filtered_docs = run_context_filtering(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
+      # use the below commented code for ray-based context filtering or List[dict] filtering
+
+      #filtered_docs = list_context_filtering(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
       #filtered_docs = list(run(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100))
-      print(f"Number of docs after context filtering: {len(filtered_docs)}")
-      if len(filtered_docs) > 0:
-        final_docs_used = filtered_docs
-      else:
-        final_docs_used = final_docs
-        print("No docs passed context filtering, using all docs retrieved.")
-      
+      # print(f"Number of docs after context filtering: {len(filtered_docs)}")
+      # if len(filtered_docs) > 0:
+      #   final_docs_used = filtered_docs
+      # else:
+      #   final_docs_used = final_docs
+      #   print("No docs passed context filtering, using all docs retrieved.")
       
       valid_docs = []
       num_tokens = 0
         
-      for doc in final_docs_used:
+      for doc in final_docs:
         
         doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
