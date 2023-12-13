@@ -69,13 +69,13 @@ def batch_context_filtering(batch_docs, user_query, max_time_before_return=45, m
   """
   
   start_time = time.monotonic()
-  
+
   partial_func = partial(list_context_filtering, user_query=user_query, max_time_before_return=max_time_before_return, max_concurrency=max_concurrency)
   with ProcessPoolExecutor(max_workers=5) as executor:
     processed_docs = list(executor.map(partial_func, batch_docs))
     
   processed_docs = list(processed_docs)
-  print(f"⏰ Context filtering runtime: {(time.monotonic() - start_time):.2f} seconds")
+  print(f"⏰ Batch context filtering runtime: {(time.monotonic() - start_time):.2f} seconds")
 
   return processed_docs
 
