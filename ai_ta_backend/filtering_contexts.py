@@ -209,7 +209,7 @@ def parse_result(result):
 #       return 'yes' in line.lower()
 #   return False
 
-# def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=None, max_concurrency=100):
+# def ray_context_filtering(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=None, max_concurrency=100):
 #   
 #  # Main function for filtering contexts using RAY. Use this when dealing with a list of contexts.
 # 
@@ -268,7 +268,7 @@ def parse_result(result):
 #   start_time = time.monotonic()
 #   # print(len(CONTEXTS))
 
-#   final_passage_list = list(run(contexts=CONTEXTS*2, user_query=USER_QUERY, max_time_before_return=45, max_concurrency=20))
+#   final_passage_list = list(ray_context_filtering(contexts=CONTEXTS*2, user_query=USER_QUERY, max_time_before_return=45, max_concurrency=20))
 
 #   print("✅✅✅ FINAL RESULTS: \n" + '\n'.join(json.dumps(r, indent=2) for r in final_passage_list))
 #   print("✅✅✅ TOTAL RETURNED: ", len(final_passage_list))
