@@ -48,6 +48,7 @@ pytesseract # for image OCR
 newrelic
 ray
 langchainhub
+replicate
 
 # No arize for now, huge build size with these additions.
 # arize[AutoEmbeddings, LLM_Evaluation]
