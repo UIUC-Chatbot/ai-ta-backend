@@ -18,6 +18,7 @@ load_dotenv(override=True)
 ## Local LLMs  USAGE DOCS: https://kastanday.notion.site/LLM-Serving-on-prem-OpenAI-Clone-bb06028266d842b0872465f552684177 ##
 
 from transformers import AutoTokenizer
+
 tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
 
 USER_QUERY = "Explain how tiling helps with global memory bandwidth."
@@ -813,17 +814,17 @@ def run_anyscale(prompt, model_name="HuggingFaceH4/zephyr-7b-beta"):
       temperature=0.3,
       max_tokens=250,
   )
-  
+
   output = ret["choices"][0]["message"]["content"]
   print("Output:", output[:40])
-  
+
   input_length = len(tokenizer.encode(prompt))
   output_length = len(tokenizer.encode(output))
-  
+
   print(
       f"🧠 ^^^^ one anyscale call Runtime: {(time.monotonic() - start_time):.2f} seconds. Input tokens {input_length}, output tokens: {output_length}"
   )
-  
+
   return output
 
 
