@@ -41,7 +41,7 @@ def call_chat_endpoint(model_id,
       'gpt-4-from-canada-east' # Only for use with CAII Azure key
     """
   # url = "http://localhost:3000/api/chat"
-  url = "http://www.uiuc.chat/api/chat"
+  url = "https://www.uiuc.chat/api/chat"
   headers = {"Content-Type": "application/json"}
   data = {
       "model": model_id,
