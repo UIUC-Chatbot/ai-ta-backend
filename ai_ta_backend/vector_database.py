@@ -987,7 +987,7 @@ class Ingest():
         found_docs.append(Document(page_content=page_content, metadata=metadata))  # type: ignore
       except Exception as e:
         print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
-    print("found_docs", found_docs)
+    # print("found_docs", found_docs)
     return found_docs
 
   def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
@@ -1017,7 +1017,9 @@ class Ingest():
         doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)  # type: ignore
 
-        print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
+        print(
+            f"tokens used/limit: {token_counter}/{token_limit}, tokens in chunk: {num_tokens}, total prompt cost (of these contexts): {prompt_cost}. 📄 File: {doc.metadata['readable_filename']}"
+        )
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
           valid_docs.append(doc)
@@ -1025,7 +1027,7 @@ class Ingest():
           # filled our token size, time to return
           break
 
-      print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
+      print(f"Total tokens used: {token_counter}. Docs used: {len(valid_docs)} of {len(found_docs)} docs retrieved")
       print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
       if len(valid_docs) == 0:
@@ -1159,18 +1161,23 @@ Now please respond to my question: {user_question}"""
                                                search_query)  # type: ignore
       valid_docs = []
       for d in found_docs:
-        if "pagenumber" not in d.payload.keys():  # type: ignore
-          d.payload["pagenumber"] = d.payload["pagenumber_or_timestamp"]  # type: ignore
-        doc_string = f"---\nDocument: {d.payload['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"  # type: ignore
-        num_tokens, prompt_cost = count_tokens_and_cost(doc_string)  # type: ignore
+        if d.payload is not None:
+          if "pagenumber" not in d.payload.keys():
+            d.payload["pagenumber"] = d.payload["pagenumber_or_timestamp"]
 
-        print(f"Page: {d.payload.get('page_content')[:100]}...")  # type: ignore
-        print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, token_limit: {token_limit}")
-        if token_counter + num_tokens <= token_limit:
-          token_counter += num_tokens
-          valid_docs.append(Document(page_content=d.payload.get('page_content'), metadata=d.payload))  # type: ignore
-        else:
-          continue
+          doc_string = f"---\nDocument: {d.payload['readable_filename']}{', page: ' + str(d.payload['pagenumber']) if d.payload['pagenumber'] else ''}\n{d.payload.get('page_content')}\n"
+          num_tokens, prompt_cost = count_tokens_and_cost(doc_string)  # type: ignore
+
+          # print(f"Page: {d.payload.get('page_content', ' '*100)[:100]}...")
+          print(
+              f"tokens used/limit: {token_counter}/{token_limit}, tokens in chunk: {num_tokens}, prompt cost of chunk: {prompt_cost}. 📄 File: {d.payload.get('readable_filename', '')}"
+          )
+          if token_counter + num_tokens <= token_limit:
+            token_counter += num_tokens
+            valid_docs.append(
+                Document(page_content=d.payload.get('page_content', '<Missing page content>'), metadata=d.payload))
+          else:
+            continue
 
       # Convert the valid_docs to full prompt
       separator = '---\n'  # between each context
