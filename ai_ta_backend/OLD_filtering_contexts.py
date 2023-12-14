@@ -836,7 +836,6 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
 
   print("Max concurrency:", max_concurrency)
   print("Num jobs to run:", len(contexts))
-  TASK_TIMEOUT = 15  # seconds
 
   # START TASKS
   actor = AsyncActor.options(max_concurrency=max_concurrency, num_cpus=0.001).remote()
@@ -845,7 +844,7 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
   start_time = time.time()
   done_tasks, in_progress = ray.wait(result_futures,
                                      num_returns=len(result_futures),
-                                     timeout=TASK_TIMEOUT,
+                                     timeout=os.environ["FILTER_TOP_CONTEXTS_TIMEOUT_SECONDS"],
                                      fetch_local=False)
 
   for task in in_progress:
