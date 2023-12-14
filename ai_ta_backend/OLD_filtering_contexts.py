@@ -797,8 +797,8 @@ def run_anyscale(prompt, model_name="HuggingFaceH4/zephyr-7b-beta"):
       api_base="https://api.endpoints.anyscale.com/v1",
       api_key=os.environ["ANYSCALE_ENDPOINT_TOKEN"],
       api_type="openai",
-      model="mistralai/Mistral-7B-Instruct-v0.1",
-      # model="HuggingFaceH4/zephyr-7b-beta",
+      # model="mistralai/Mistral-7B-Instruct-v0.1",
+      model="HuggingFaceH4/zephyr-7b-beta",
       messages=[{
           "role": "system",
           "content": "You are a helpful assistant."
@@ -846,7 +846,6 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
                                      num_returns=len(result_futures),
                                      timeout=float(os.environ["FILTER_TOP_CONTEXTS_TIMEOUT_SECONDS"]),
                                      fetch_local=False)
-
   for task in in_progress:
     ray.cancel(task)
   results = ray.get(done_tasks)
@@ -854,22 +853,17 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
   print("🧠🧠 TOTAL RETURNS FROM ANYSCALE:", len(results))
   print(f"⏰ Total elapsed time: {(time.time() - start_time):.2f} seconds")
 
-  for r in results:
-    if parse_result(r['completion']):
-      yield r['context']
+  best_contexts_to_keep = [r['context'] for r in results if parse_result(r['completion'])]
+  return best_contexts_to_keep
 
 
 def run_main():
-  # ray.init()  # calling init twice. bad.
   start_time = time.monotonic()
-  # print(len(CONTEXTS))
-  final_passage_list = list(
-      run(contexts=CONTEXTS * 2, user_query=USER_QUERY, max_time_before_return=45, max_concurrency=200))
+  final_passage_list = run(contexts=CONTEXTS * 2, user_query=USER_QUERY, max_time_before_return=45, max_concurrency=180)
 
-  # print("✅✅✅ FINAL RESULTS: \n" + '\n'.join(json.dumps(r, indent=2) for r in final_passage_list))
   print("✅✅✅ TOTAL included in results: ", len(final_passage_list))
   print(f"⏰⏰⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
-  print("Total contexts:", len(CONTEXTS) * 2)
+  # print("Total contexts:", len(CONTEXTS) * 2)
 
 
 # ! CONDA ENV: llm-serving
