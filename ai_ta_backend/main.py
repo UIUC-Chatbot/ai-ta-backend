@@ -1,20 +1,27 @@
 import gc
-import json
 import os
 import time
 from typing import List
 
 from dotenv import load_dotenv
-from flask import Flask, Response, abort, jsonify, request
+from flask import (
+    Flask,
+    Response,
+    abort,
+    jsonify,
+    make_response,
+    request,
+    send_from_directory,
+)
 from flask_cors import CORS
 from flask_executor import Executor
-from sqlalchemy import JSON
 from ai_ta_backend.OLD_filtering_contexts import run_main
 
+from ai_ta_backend.canvas import CanvasAPI
+from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
-from ai_ta_backend.canvas import CanvasAPI
 
 app = Flask(__name__)
 CORS(app)
@@ -23,6 +30,7 @@ executor = Executor(app)
 
 # load API keys from globally-availabe .env file
 load_dotenv()
+
 
 @app.route('/')
 def index() -> Response:
@@ -68,7 +76,6 @@ def github() -> Response:
         description=
         f"Missing one or more required parameters: 'course_name' and 's3_path' must be provided. Course name: `{course_name}`, S3 path: `{github_url}`"
     )
-
 
   ingester = Ingest()
   results = ingester.ingest_github(github_url, course_name)
@@ -152,28 +159,6 @@ def getTopContexts() -> Response:
   return response
 
 
-
-@app.route('/run_filtering', methods=['GET'])
-def run_filtering() -> Response:
-  """Get most relevant contexts for a given search query.
-  
-  ## GET arguments
-  course name (optional) str
-      A json response with TBD fields.
-  search_query
-  top_n
-  
-  Returns
-  -------
-    String
-    
-  """
-  run_main()
-
-  response = jsonify("Done.")
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
 @app.route('/get_stuffed_prompt', methods=['GET'])
 def get_stuffed_prompt() -> Response:
   """Get most relevant contexts for a given search query.
@@ -231,6 +216,7 @@ def ingest() -> Response:
       str: Success or Failure message. Failure message if any failures. TODO: email on failure.
   """
   s3_paths: List[str] | str = request.args.get('s3_paths', default='')
+  readable_filename: List[str] | str = request.args.get('readable_filename', default='')
   course_name: List[str] | str = request.args.get('course_name', default='')
   print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}")
 
@@ -243,7 +229,10 @@ def ingest() -> Response:
     )
 
   ingester = Ingest()
-  success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+  if readable_filename == '':
+    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+  else:
+    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name, readable_filename=readable_filename)
   print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
   del ingester
 
@@ -269,7 +258,7 @@ def getContextStuffedPrompt() -> Response:
   course_name: str = request.args.get('course_name', default='', type=str)
   top_n: int = request.args.get('top_n', default=-1, type=int)
   top_k_to_search: int = request.args.get('top_k_to_search', default=-1, type=int)
-  
+
   if search_query == '' or course_name == '' or top_n == -1 or top_k_to_search == -1:
     # proper web error "400 Bad request"
     abort(
@@ -298,9 +287,7 @@ def getAll() -> Response:
     # proper web error "400 Bad request"
     abort(
         400,
-        description=
-        f"Missing the one required parameter: 'course_name' must be provided. Course name: `{course_name}`"
-    )
+        description=f"Missing the one required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   ingester = Ingest()
   distinct_dicts = ingester.getAll(course_name)
@@ -331,7 +318,7 @@ def delete():
 
   start_time = time.monotonic()
   ingester = Ingest()
-  # background execution of tasks!! 
+  # background execution of tasks!!
   executor.submit(ingester.delete_data, course_name, s3_path, source_url)
   print(f"From {course_name}, deleted file: {s3_path}")
   print(f"⏰ Runtime of FULL delete func: {(time.monotonic() - start_time):.2f} seconds")
@@ -342,6 +329,7 @@ def delete():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/web-scrape', methods=['GET'])
 def scrape() -> Response:
   url: str = request.args.get('url', default='', type=str)
@@ -351,7 +339,7 @@ def scrape() -> Response:
   timeout: int = request.args.get('timeout', default=3, type=int)
   # stay_on_baseurl = request.args.get('stay_on_baseurl', default='', type=str)
   stay_on_baseurl: bool = request.args.get('stay_on_baseurl', default=True, type=lambda x: x.lower() == 'true')
-  depth_or_breadth:str = request.args.get('depth_or_breadth', default='breadth', type=str)
+  depth_or_breadth: str = request.args.get('depth_or_breadth', default='breadth', type=str)
 
   if url == '' or max_urls == -1 or max_depth == -1 or timeout == -1 or course_name == '' or stay_on_baseurl is None:
     # proper web error "400 Bad request"
@@ -367,14 +355,16 @@ def scrape() -> Response:
   print(f"Max Depth: {max_depth}")
   print(f"Stay on BaseURL: {stay_on_baseurl}")
   print(f"Timeout in Seconds ⏰: {timeout}")
-  
+
   scraper = WebScrape()
-  success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl, depth_or_breadth)
+  success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl,
+                                           depth_or_breadth)
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
-  gc.collect() # manually invoke garbage collection, try to reduce memory on Railway $$$
+  gc.collect()  # manually invoke garbage collection, try to reduce memory on Railway $$$
   return response
+
 
 @app.route('/mit-download', methods=['GET'])
 def mit_download_course() -> Response:
@@ -398,6 +388,7 @@ def mit_download_course() -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/addCanvasUsers', methods=['GET'])
 def add_canvas_users():
   """
@@ -410,11 +401,12 @@ def add_canvas_users():
   course_name: str = request.args.get('course_name')
 
   success_or_failure = canvas.add_users(canvas_course_id, course_name)
-  
+
   response = jsonify({"outcome": success_or_failure})
 
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/ingestCanvas', methods=['GET'])
 def ingest_canvas():
@@ -450,16 +442,13 @@ def ingest_canvas():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/getNomicMap', methods=['GET'])
 def nomic_map():
   course_name: str = request.args.get('course_name', default='', type=str)
   if course_name == '':
     # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`"
-    )
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   map_id = get_nomic_map(course_name)
   print("nomic map\n", map_id)
@@ -467,6 +456,7 @@ def nomic_map():
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic():
@@ -482,12 +472,54 @@ def logToNomic():
     )
   print(f"In /onResponseCompletion for course: {course_name}")
 
-  # background execution of tasks!! 
+  # background execution of tasks!!
   response = executor.submit(log_convo_to_nomic, course_name, data)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
 
+@app.route('/export-convo-history-csv', methods=['GET'])
+def export_convo_history():
+  course_name: str = request.args.get('course_name', default='', type=str)
+  from_date: str = request.args.get('from_date', default='', type=str)
+  to_date: str = request.args.get('to_date', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  export_status = export_convo_history_csv(course_name, from_date, to_date)
+  print("EXPORT FILE LINKS: ", export_status)
+
+  response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
+
+  os.remove(export_status[0])
+  return response
+
+@app.route('/run_filtering', methods=['GET'])
+def run_filtering() -> Response:
+  """Get most relevant contexts for a given search query.
+  
+  ## GET arguments
+  course name (optional) str
+      A json response with TBD fields.
+  search_query
+  top_n
+  
+  Returns
+  -------
+    String
+    
+  """
+  run_main()
+
+  response = jsonify("Done.")
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 if __name__ == '__main__':
-  app.run(debug=True, port=int(os.getenv("PORT", default=8000)))
+  app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression
