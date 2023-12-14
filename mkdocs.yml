@@ -6,14 +6,13 @@ nav:
   - Vector Search: vector_search.md
   - API Reference: api_reference.md
 
-
 theme:
   name: "material"
   # can't get this to work. https://squidfunk.github.io/mkdocs-material/setup/changing-the-logo-and-icons/#image
-  # favicon: assets/images/favicon.png 
+  # favicon: assets/images/favicon.png
   # logo: assets/images/favicon.png
   palette:
-    # Light/dark mode follows user's system preferences 
+    # Light/dark mode follows user's system preferences
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
@@ -31,18 +30,16 @@ theme:
       toggle:
         icon: material/weather-night
         name: Switch to dark mode
-  features:
-    - navigation.footer
 
   shortcuts:
-    help: 191    # ?
-    next: 78     # n
+    help: 191 # ?
+    next: 78 # n
     previous: 80 # p
-    search: 83   # s
+    search: 83 # s
   features:
+    - navigation.footer
     - content.code.copy
-    - content.code.annotate 
-
+    - content.code.annotate
 
 plugins:
   - search

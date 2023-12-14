@@ -98,24 +98,27 @@ The script is structured as follows:
 import asyncio
 import json
 import logging
-import os
+
+# import os
 import re
 import time
-from dataclasses import (  # for storing API inputs, outputs, and metadata
-    dataclass, field)
+
+# for storing API inputs, outputs, and metadata
+from dataclasses import dataclass, field
 from typing import Any, List
 
 import aiohttp  # for making API calls concurrently
 import tiktoken  # for counting tokens
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Qdrant
-from qdrant_client import QdrantClient, models
+
+# from langchain.embeddings.openai import OpenAIEmbeddings
+# from langchain.vectorstores import Qdrant
+# from qdrant_client import QdrantClient, models
 
 
 class OpenAIAPIProcessor:
 
-  def __init__(self, input_prompts_list, request_url, api_key, max_requests_per_minute, max_tokens_per_minute, token_encoding_name,
-               max_attempts, logging_level):
+  def __init__(self, input_prompts_list, request_url, api_key, max_requests_per_minute, max_tokens_per_minute,
+               token_encoding_name, max_attempts, logging_level):
     self.request_url = request_url
     self.api_key = api_key
     self.max_requests_per_minute = max_requests_per_minute
@@ -154,11 +157,11 @@ class OpenAIAPIProcessor:
 
     # initialize flags
     file_not_finished = True  # after file is empty, we'll skip reading it
-    logging.debug(f"Initialization complete.")
+    logging.debug("Initialization complete.")
 
     requests = self.input_prompts_list.__iter__()
 
-    logging.debug(f"File opened. Entering main loop")
+    logging.debug("File opened. Entering main loop")
 
     task_list = []
 
@@ -176,8 +179,8 @@ class OpenAIAPIProcessor:
 
             next_request = APIRequest(task_id=next(task_id_generator),
                                       request_json=request_json,
-                                      token_consumption=num_tokens_consumed_from_request(request_json, api_endpoint,
-                                                                                         self.token_encoding_name),
+                                      token_consumption=num_tokens_consumed_from_request(
+                                          request_json, api_endpoint, self.token_encoding_name),
                                       attempts_left=self.max_attempts,
                                       metadata=request_json.pop("metadata", None))
             status_tracker.num_tasks_started += 1
@@ -244,11 +247,12 @@ class OpenAIAPIProcessor:
         )
 
     # after finishing, log final status
-    logging.info(f"""Parallel processing complete. About to return.""")
+    logging.info("""Parallel processing complete. About to return.""")
     if status_tracker.num_tasks_failed > 0:
       logging.warning(f"{status_tracker.num_tasks_failed} / {status_tracker.num_tasks_started} requests failed.")
     if status_tracker.num_rate_limit_errors > 0:
-      logging.warning(f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
+      logging.warning(
+          f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
 
     # asyncio wait for task_list
     await asyncio.wait(task_list)
@@ -274,7 +278,7 @@ def extract_context_from_results(results: List[Any]) -> List[str]:
               assistant_contents.append(choice['message']['content'])
               total_prompt_tokens += item['usage']['prompt_tokens']
               total_completion_tokens += item['usage']['completion_tokens']
-  # Note: I don't think the prompt_tokens or completion_tokens is working quite right... 
+  # Note: I don't think the prompt_tokens or completion_tokens is working quite right...
 
   return assistant_contents
 
@@ -347,7 +351,8 @@ class APIRequest:
         status_tracker.num_tasks_failed += 1
         return data
     else:
-      data = ([self.request_json, response, self.metadata] if self.metadata else [self.request_json, response])  # type: ignore
+      data = ([self.request_json, response, self.metadata] if self.metadata else [self.request_json, response]
+             )  # type: ignore
       #append_to_jsonl(data, save_filepath)
       status_tracker.num_tasks_in_progress -= 1
       status_tracker.num_tasks_succeeded += 1
@@ -432,83 +437,84 @@ def task_id_generator_function():
     yield task_id
     task_id += 1
 
+
 if __name__ == '__main__':
   pass
 
-# run script
-# if __name__ == "__main__":
-#   qdrant_client = QdrantClient(
-#     url=os.getenv('QDRANT_URL'),
-#     api_key=os.getenv('QDRANT_API_KEY'),
-#   )
-#   vectorstore = Qdrant(
-#         client=qdrant_client,
-#         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-#         embeddings=OpenAIEmbeddings())  # type: ignore
+  # run script
+  # if __name__ == "__main__":
+  #   qdrant_client = QdrantClient(
+  #     url=os.getenv('QDRANT_URL'),
+  #     api_key=os.getenv('QDRANT_API_KEY'),
+  #   )
+  #   vectorstore = Qdrant(
+  #         client=qdrant_client,
+  #         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
+  #         embeddings=OpenAIEmbeddings())  # type: ignore
 
-#   user_question = "What is the significance of Six Sigma?"
-#   k = 4
-#   fetch_k = 200
-#   found_docs = vectorstore.max_marginal_relevance_search(user_question, k=k, fetch_k=200)
+  #   user_question = "What is the significance of Six Sigma?"
+  #   k = 4
+  #   fetch_k = 200
+  #   found_docs = vectorstore.max_marginal_relevance_search(user_question, k=k, fetch_k=200)
 
-#   requests = []
-#   for i, doc in enumerate(found_docs):
-#     dictionary = {
-#         "model": "gpt-3.5-turbo-0613", # 4k context
-#         "messages": [{
-#             "role": "system",
-#             "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
-#         }, {
-#             "role":
-#                 "user",
-#             "content":
-#                 f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
-#         }],
-#         "n": 1,
-#         "max_tokens": 500,
-#         "metadata": doc.metadata
-#     }
-#     requests.append(dictionary)
+  #   requests = []
+  #   for i, doc in enumerate(found_docs):
+  #     dictionary = {
+  #         "model": "gpt-3.5-turbo-0613", # 4k context
+  #         "messages": [{
+  #             "role": "system",
+  #             "content": "You are a factual summarizer of partial documents. Stick to the facts (including partial info when necessary to avoid making up potentially incorrect details), and say I don't know when necessary."
+  #         }, {
+  #             "role":
+  #                 "user",
+  #             "content":
+  #                 f"What is a comprehensive summary of the given text, based on the question:\n{doc.page_content}\nQuestion: {user_question}\nThe summary should cover all the key points only relevant to the question, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. Feel free to include references, sentence fragments, keywords, or anything that could help someone learn about it, only as it relates to the given question. The length of the summary should be as short as possible, without losing relevant information.\n"
+  #         }],
+  #         "n": 1,
+  #         "max_tokens": 500,
+  #         "metadata": doc.metadata
+  #     }
+  #     requests.append(dictionary)
 
-#   oai = OpenAIAPIProcessor(
-#       input_prompts_list=requests,
-#       request_url='https://api.openai.com/v1/chat/completions',
-#       api_key=os.getenv("OPENAI_API_KEY"),
-#       max_requests_per_minute=1500,
-#       max_tokens_per_minute=90000,
-#       token_encoding_name='cl100k_base',
-#       max_attempts=5,
-#       logging_level=20,
-#   )
-#   # run script
-#   asyncio.run(oai.process_api_requests_from_file())
+  #   oai = OpenAIAPIProcessor(
+  #       input_prompts_list=requests,
+  #       request_url='https://api.openai.com/v1/chat/completions',
+  #       api_key=os.getenv("OPENAI_API_KEY"),
+  #       max_requests_per_minute=1500,
+  #       max_tokens_per_minute=90000,
+  #       token_encoding_name='cl100k_base',
+  #       max_attempts=5,
+  #       logging_level=20,
+  #   )
+  #   # run script
+  #   asyncio.run(oai.process_api_requests_from_file())
 
-#   assistant_contents = []
-#   total_prompt_tokens = 0
-#   total_completion_tokens = 0
+  #   assistant_contents = []
+  #   total_prompt_tokens = 0
+  #   total_completion_tokens = 0
 
-#   print("Results, end of main: ", oai.results)
-#   print("-"*50)
+  #   print("Results, end of main: ", oai.results)
+  #   print("-"*50)
 
-#   # jsonObject = json.loads(oai.results)
-#   for element in oai.results:
-#       for item in element:
-#           if 'choices' in item:
-#               for choice in item['choices']:
-#                   if choice['message']['role'] == 'assistant':
-#                       assistant_contents.append(choice['message']['content'])
-#               total_prompt_tokens += item['usage']['prompt_tokens']
-#               total_completion_tokens += item['usage']['completion_tokens']
+  #   # jsonObject = json.loads(oai.results)
+  #   for element in oai.results:
+  #       for item in element:
+  #           if 'choices' in item:
+  #               for choice in item['choices']:
+  #                   if choice['message']['role'] == 'assistant':
+  #                       assistant_contents.append(choice['message']['content'])
+  #               total_prompt_tokens += item['usage']['prompt_tokens']
+  #               total_completion_tokens += item['usage']['completion_tokens']
 
-#   print("Assistant Contents:", assistant_contents)
-#   print("Total Prompt Tokens:", total_prompt_tokens)
-#   print("Total Completion Tokens:", total_completion_tokens)
-#   turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
-#   print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
+  #   print("Assistant Contents:", assistant_contents)
+  #   print("Total Prompt Tokens:", total_prompt_tokens)
+  #   print("Total Completion Tokens:", total_completion_tokens)
+  #   turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
+  #   print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
 
-#   gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
-#   print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
-#   print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
+  #   gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
+  #   print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
+  #   print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
   '''
   Pricing:
   GPT4: 
