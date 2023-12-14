@@ -156,13 +156,14 @@ def get_nomic_map(course_name: str):
 
   project_name = NOMIC_MAP_NAME_PREFIX + course_name
   start_time = time.monotonic()
-  
-  try:
-    project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-  except Exception as e:
-    err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
-    print(err)
-    return {"map_id": None, "map_link": None}
+  project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
+  return {"map_id": None, "map_link": None}
+  # try:
+  #   project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
+  # except Exception as e:
+  #   err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
+  #   print(err)
+  #   return {"map_id": None, "map_link": None}
 
   map = project.get_map(project_name)
 
