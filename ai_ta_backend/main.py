@@ -31,7 +31,7 @@ executor = Executor(app)
 
 # load API keys from globally-availabe .env file
 load_dotenv()
-ray.init()
+ray.init(object_store_memory=5e+8, num_cpus=2)  # 500 MB
 
 
 @app.route('/')
