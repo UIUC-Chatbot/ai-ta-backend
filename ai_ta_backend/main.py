@@ -9,6 +9,7 @@ from flask import Flask, Response, abort, jsonify, request
 from flask_cors import CORS
 from flask_executor import Executor
 from sqlalchemy import JSON
+from ai_ta_backend.OLD_filtering_contexts import run_main
 
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
@@ -151,6 +152,27 @@ def getTopContexts() -> Response:
   return response
 
 
+
+@app.route('/get_stuffed_prompt', methods=['GET'])
+def run_filtering() -> Response:
+  """Get most relevant contexts for a given search query.
+  
+  ## GET arguments
+  course name (optional) str
+      A json response with TBD fields.
+  search_query
+  top_n
+  
+  Returns
+  -------
+    String
+    
+  """
+  run_main()
+
+  response = jsonify("Done.")
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 @app.route('/get_stuffed_prompt', methods=['GET'])
 def get_stuffed_prompt() -> Response:
