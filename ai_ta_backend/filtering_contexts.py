@@ -5,10 +5,10 @@ import time
 
 import openai
 import ray
-import replicate
 import requests
 from langchain import hub
-from transformers import AutoTokenizer
+# import replicate
+# from transformers import AutoTokenizer
 
 # load_dotenv(override=True)
 # tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")

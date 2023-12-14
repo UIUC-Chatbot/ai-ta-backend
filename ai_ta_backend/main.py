@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from flask import Flask, Response, abort, jsonify, request
 from flask_cors import CORS
 from flask_executor import Executor
+import ray
 from sqlalchemy import JSON
 
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
@@ -22,6 +23,8 @@ executor = Executor(app)
 
 # load API keys from globally-availabe .env file
 load_dotenv()
+
+ray.init()
 
 @app.route('/')
 def index() -> Response:
