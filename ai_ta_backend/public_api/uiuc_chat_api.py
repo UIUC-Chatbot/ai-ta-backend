@@ -52,7 +52,7 @@ def call_chat_endpoint(model_id,
       "course_name": course_name,
       "stream": stream
   }
-  response = requests.post(url, headers=headers, data=json.dumps(data), stream=True)
+  response = requests.post(url, headers=headers, data=json.dumps(data), stream=True, timeout=180)
 
   if stream:
     for line in response.iter_lines():
