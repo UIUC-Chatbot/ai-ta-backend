@@ -48,8 +48,9 @@ networkx==3.2.1 # unused part of excel partitioning :(
 python-pptx==0.6.23
 unstructured==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
 # unstructured[xlsx,image,pptx]==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
+pydantic==1.10.13
 newrelic
-ray
+ray[default]
 langchainhub
 replicate
 transformers
