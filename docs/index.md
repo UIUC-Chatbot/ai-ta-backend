@@ -1,5 +1,5 @@
 ---
-icon: material/emoticon-happy 
+icon: material/emoticon-happy
 ---
 
 # Welcome to UIUC AI Chatbot
@@ -8,7 +8,7 @@ icon: material/emoticon-happy
 
 It's just markdown, with _truly OPTIONAL_ extra features.
 
-``` python
+```python
 import numpy as np
 for i in range(10):
   print(i)
@@ -18,16 +18,16 @@ for i in range(10):
 
 !!! tip "Tip: Use callout boxes to highlight important information."
 
-  It's critical to avoid this.
+It's critical to avoid this.
 
-``` text title="how to use Admonitions, or 'callout' boxes"
+```text title="how to use Admonitions, or 'callout' boxes"
 !!! danger "Danger: don't do this!"
 
     It's critical to avoid this.
 
 ```
 
-``` text title="Types of Admonitions, or 'callout' boxes"
+```text title="Types of Admonitions, or 'callout' boxes"
 note
 abstract
 info
