@@ -44,7 +44,8 @@ def run_caii_hosted_llm(prompt, max_tokens=300, temp=0.3, **kwargs):
   except Exception as e:
     # Probably cuda OOM error.
     raise ValueError(
-        f"🚫🚫🚫 Failed inference attempt. Response: {response.json()}\nError: {e}\nPromt that caused error: {prompt}")
+        f"🚫🚫🚫 Failed inference attempt. Response: {response.json()}\nError: {e}\nPromt that caused error: {prompt}"
+    ) from e
 
 
 def run_replicate(prompt):
