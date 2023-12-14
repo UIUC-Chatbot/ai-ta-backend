@@ -15,6 +15,7 @@ from flask import (
 )
 from flask_cors import CORS
 from flask_executor import Executor
+import ray
 from ai_ta_backend.OLD_filtering_contexts import run_main
 
 from ai_ta_backend.canvas import CanvasAPI
@@ -30,6 +31,7 @@ executor = Executor(app)
 
 # load API keys from globally-availabe .env file
 load_dotenv()
+ray.init()
 
 
 @app.route('/')

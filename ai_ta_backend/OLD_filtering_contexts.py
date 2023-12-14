@@ -861,7 +861,7 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
 
 
 def run_main():
-  ray.init()
+  # ray.init()  # calling init twice. bad.
   start_time = time.monotonic()
   # print(len(CONTEXTS))
   final_passage_list = list(
