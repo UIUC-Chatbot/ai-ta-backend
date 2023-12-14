@@ -5,7 +5,7 @@ import json
 import os
 import time
 import traceback
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 
 import openai
 import ray
@@ -14,7 +14,7 @@ import requests
 from langchain import hub
 from transformers import AutoTokenizer
 
-# load_dotenv(override=True)
+load_dotenv(override=True)
 
 ## Local LLMs  USAGE DOCS: https://kastanday.notion.site/LLM-Serving-on-prem-OpenAI-Clone-bb06028266d842b0872465f552684177 ##
 
@@ -800,8 +800,8 @@ def run_anyscale(prompt, model_name="HuggingFaceH4/zephyr-7b-beta"):
   ret = openai.ChatCompletion.create(
       api_base="https://api.endpoints.anyscale.com/v1",
       api_key=os.environ["ANYSCALE_ENDPOINT_TOKEN"],
-      model="mistralai/Mistral-7B-Instruct-v0.1",
       api_type="openai",
+      model="mistralai/Mistral-7B-Instruct-v0.1",
       # model="HuggingFaceH4/zephyr-7b-beta",
       messages=[{
           "role": "system",
@@ -815,19 +815,19 @@ def run_anyscale(prompt, model_name="HuggingFaceH4/zephyr-7b-beta"):
   )
 
   output = ret["choices"][0]["message"]["content"]
-  print("Output:", output[:40])
+  print("Output:", output[:150])
 
   input_length = len(tokenizer.encode(prompt))
   output_length = len(tokenizer.encode(output))
 
   print(
-      f"🧠 ^^^^ one anyscale call Runtime: {(time.monotonic() - start_time):.2f} seconds. Input tokens {input_length}, output tokens: {output_length}"
+      f"^^^^ one anyscale call Runtime: {(time.monotonic() - start_time):.2f} seconds. Input tokens {input_length}, output tokens: {output_length}"
   )
 
   return output
 
 
-def parse_result(result):
+def parse_result(result: str):
   lines = result.split('\n')
   for line in lines:
     if 'Final answer' in line:
@@ -839,49 +839,29 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
   langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr")
 
   print("Max concurrency:", max_concurrency)
-
   print("Num jobs to run:", len(contexts))
+  TASK_TIMEOUT = 15  # seconds
 
+  # START TASKS
   actor = AsyncActor.options(max_concurrency=max_concurrency).remote()
   result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts]
 
   start_time = time.time()
-  for i in range(0, len(result_futures)):
-    try:
-      ready, not_ready = ray.wait(result_futures)
-      result = ray.get(ready[0])
+  done_tasks, in_progress = ray.wait(result_futures,
+                                     num_returns=len(result_futures),
+                                     timeout=TASK_TIMEOUT,
+                                     fetch_local=False)
 
-      if result is None:
-        print("RESULT WAS NONE, llm inference probably failed")
-        continue
+  for task in in_progress:
+    ray.cancel(task)
+  results = ray.get(done_tasks)
 
-      if parse_result(result['completion']):
-        yield result['context']
+  print("🧠🧠 TOTAL RETURNS FROM ANYSCALE:", len(results))
+  print(f"⏰ Total elapsed time: {(time.time() - start_time):.2f} seconds")
 
-      elapsed_time = (time.time() - start_time)
-      avg_task_time = elapsed_time / (i + 1)
-      estimated_total_runtime = avg_task_time * len(contexts)
-
-      print(f"📌 Completed {i+1} of {len(contexts)}")
-      print(
-          f"⏰ Running total of elapsed time: {elapsed_time:.2f} seconds\n🔮 Estimated total runtime: {estimated_total_runtime:.2f} seconds.\n"
-      )
-      print(f"⏰👻 avg_task_time (s): {avg_task_time:.2f}")
-      # print(f"📜 Passage: {result['context']['text']}")
-      # print(f"✅ Result: {result['completion']}")
-
-      if max_time_before_return is not None and elapsed_time >= max_time_before_return:
-        break
-
-    except Exception as e:
-      print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
-      print(f"Error in {inspect.currentframe().f_code.co_name}: {e}")  # print function name in error.
-      print("Traceback:")
-      print(traceback.print_exc())
-    finally:
-      result_futures = not_ready
-      if not result_futures:
-        break
+  for r in results:
+    if parse_result(r['completion']):
+      yield r['context']
 
 
 def run_main():
@@ -891,8 +871,8 @@ def run_main():
   final_passage_list = list(
       run(contexts=CONTEXTS * 2, user_query=USER_QUERY, max_time_before_return=45, max_concurrency=200))
 
-  print("✅✅✅ FINAL RESULTS: \n" + '\n'.join(json.dumps(r, indent=2) for r in final_passage_list))
-  print("✅✅✅ TOTAL RETURNED: ", len(final_passage_list))
+  # print("✅✅✅ FINAL RESULTS: \n" + '\n'.join(json.dumps(r, indent=2) for r in final_passage_list))
+  print("✅✅✅ TOTAL included in results: ", len(final_passage_list))
   print(f"⏰⏰⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
   print("Total contexts:", len(CONTEXTS) * 2)
 
