@@ -5,6 +5,6 @@
 pip list
 
 # 500 MB memory
-ray start --head --num-cpus=2 --object-store-memory=500000000
+ray start --head --num-cpus=8 --object-store-memory=800000000
 export PYTHONPATH=${PYTHONPATH}:$(pwd)/ai_ta_backend
 exec gunicorn --workers=3 --threads=16 --worker-class=gthread ai_ta_backend.main:app --timeout 1800
