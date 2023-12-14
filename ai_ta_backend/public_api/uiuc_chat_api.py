@@ -55,10 +55,9 @@ def call_chat_endpoint(model_id,
   response = requests.post(url, headers=headers, data=json.dumps(data), stream=True, timeout=180)
 
   if stream:
-    for line in response.iter_lines():
-      # Decode the line from bytes to string and print it
-      print(line.decode())
-      # Check if the stream is still open before trying to close it
+    for chunk in response.iter_content(chunk_size=1):
+      yield chunk.decode()
+    # Check if the stream is still open before trying to close it. Helps our server close connections.
     if not response.raw.closed:
       response.raw.close()
   else:
