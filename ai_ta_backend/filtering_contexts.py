@@ -862,7 +862,7 @@ def run(contexts, user_query, max_tokens_to_return=3000, max_time_before_return=
     except Exception as e:
       print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
       print(f"Error in {inspect.currentframe().f_code.co_name}: {e}")  # print function name in error.
-      print(f"Traceback:")
+      print("Traceback:")
       print(traceback.print_exc())
     finally:
       result_futures = not_ready
