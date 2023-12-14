@@ -156,7 +156,7 @@ def get_nomic_map(course_name: str):
 
   project_name = NOMIC_MAP_NAME_PREFIX + course_name
   start_time = time.monotonic()
-
+  
   try:
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
   except Exception as e:

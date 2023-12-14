@@ -16,11 +16,26 @@ from flask import (
 from flask_cors import CORS
 from flask_executor import Executor
 
+import sentry_sdk
+
 from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+
+sentry_sdk.init(
+    dsn="https://c79893b327dde9dee03e4d488b966870@o4506395331002368.ingest.sentry.io/4506395333885952",
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+)
+
+
 
 app = Flask(__name__)
 CORS(app)
@@ -41,6 +56,7 @@ def index() -> Response:
   Returns:
       JSON: _description_
   """
+  1/0
   response = jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
