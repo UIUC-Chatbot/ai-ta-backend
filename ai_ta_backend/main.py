@@ -33,6 +33,7 @@ load_dotenv()
 
 ray.init()
 
+
 @app.route('/')
 def index() -> Response:
   """_summary_
@@ -499,6 +500,7 @@ def export_convo_history():
 
   os.remove(export_status[0])
   return response
+
 
 @app.route('/getTopContextsWithMQR', methods=['GET'])
 def getTopContextsWithMQR() -> Response:

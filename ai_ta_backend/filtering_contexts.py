@@ -13,6 +13,7 @@ from langchain import hub
 # load_dotenv(override=True)
 # tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
 
+
 @ray.remote
 class AsyncActor:
 
@@ -47,15 +48,16 @@ def run_caii_hosted_llm(prompt, max_tokens=300, temp=0.3, **kwargs):
 
 
 def run_replicate(prompt):
-  output = replicate.run("tomasmcm/zephyr-7b-beta:961cd6665b811d0c43c0b9488b6dfa85ff5c7bfb875e93b4533e4c7f96c7c526",
-                         input={
-                             "top_k": 50,
-                             "top_p": 0.95,
-                             "prompt": prompt,
-                             "temperature": 0.3,
-                             "max_new_tokens": 250,
-                             "presence_penalty": 1
-                         })
+  output = None
+  # output = replicate.run("tomasmcm/zephyr-7b-beta:961cd6665b811d0c43c0b9488b6dfa85ff5c7bfb875e93b4533e4c7f96c7c526",
+  #                        input={
+  #                            "top_k": 50,
+  #                            "top_p": 0.95,
+  #                            "prompt": prompt,
+  #                            "temperature": 0.3,
+  #                            "max_new_tokens": 250,
+  #                            "presence_penalty": 1
+  #                        })
   print(output)
   return output
 
@@ -132,9 +134,8 @@ def filter_top_contexts(contexts, user_query: str, timeout: float = None, max_co
 
 def run_main():
   start_time = time.monotonic()
-  final_passage_list = filter_top_contexts(contexts=CONTEXTS * 2, user_query=USER_QUERY)
-
-  print("✅✅✅ TOTAL included in results: ", len(final_passage_list))
+  # final_passage_list = filter_top_contexts(contexts=CONTEXTS * 2, user_query=USER_QUERY)
+  # print("✅✅✅ TOTAL included in results: ", len(final_passage_list))
   print(f"⏰⏰⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
   # print("Total contexts:", len(CONTEXTS) * 2)
 
