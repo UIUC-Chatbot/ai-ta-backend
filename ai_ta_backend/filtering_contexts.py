@@ -126,10 +126,12 @@ def filter_top_contexts(contexts, user_query: str, timeout: float = None, max_co
     ray.cancel(task)
   results = ray.get(done_tasks)
 
-  print("🧠🧠 TOTAL RETURNS FROM ANYSCALE:", len(results))
+  best_contexts_to_keep = [r['context'] for r in results if parse_result(r['completion'])]
+
+  print("🧠🧠 TOTAL DOCS PROCESSED BY ANYSCALE FILTERING:", len(results))
+  print("🧠🧠 TOTAL DOCS KEPT, AFTER FILTERING:", len(best_contexts_to_keep))
   print(f"⏰ Total elapsed time: {(time.time() - start_time):.2f} seconds")
 
-  best_contexts_to_keep = [r['context'] for r in results if parse_result(r['completion'])]
   return best_contexts_to_keep
 
 

@@ -1176,7 +1176,6 @@ class Ingest():
 
       # 4. FILTER DOCS
       filtered_docs = filter_top_contexts(contexts=found_docs, user_query=search_query, timeout=30, max_concurrency=180)
-      print("Num docs after filtering: ", len(filtered_docs))
       if len(filtered_docs) == 0:
         return []
 
