@@ -153,7 +153,7 @@ def getTopContexts() -> Response:
 
 
 
-@app.route('/get_stuffed_prompt', methods=['GET'])
+@app.route('/run_filtering', methods=['GET'])
 def run_filtering() -> Response:
   """Get most relevant contexts for a given search query.
   
