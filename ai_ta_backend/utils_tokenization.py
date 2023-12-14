@@ -81,7 +81,7 @@ def count_tokens_and_cost(
 
 
 def analyze_conversations(supabase_client: Any = None):
-    import supabase
+  import supabase
 
   if supabase_client is None:
     supabase_client = supabase.create_client(  # type: ignore
