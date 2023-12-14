@@ -1,16 +1,16 @@
 import os
-import supabase
-import pandas as pd
 import time
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from multiprocessing import Manager
 
+import supabase
+
 DOCUMENTS_TABLE = os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']
-SUPABASE_CLIENT = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
+SUPABASE_CLIENT = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY']) # type: ignore
 
 
-def context_processing(found_docs, search_query, course_name):
+def context_parent_doc_padding(found_docs, search_query, course_name):
     """
     Takes top N contexts acquired from QRANT similarity search and pads them
     """

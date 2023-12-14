@@ -45,10 +45,10 @@ from qdrant_client.models import PointStruct
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
-from ai_ta_backend.parallel_context_processing import context_processing
+from ai_ta_backend.context_parent_doc_padding import context_parent_doc_padding
 #from ai_ta_backend.filtering_contexts import ray_context_filtering
 #from ai_ta_backend.filtering_contexts import run_context_filtering
-from ai_ta_backend.filtering_contexts import batch_context_filtering
+from ai_ta_backend.filtering_contexts import filter_top_contexts
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 OPENAI_API_TYPE = "azure" # "openai" or "azure"
@@ -1005,6 +1005,8 @@ class Ingest():
     """
     Perform a similarity search for all the generated queries at once.
     """
+    start_time = time.monotonic()
+    
     from qdrant_client.http import models as rest
     o = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)
     # Prepare the filter for the course name
@@ -1021,13 +1023,17 @@ class Ingest():
     for query in search_queries:
         user_query_embedding = o.embed_query(query)
         search_requests.append(
-            rest.SearchRequest(vector=user_query_embedding, filter=myfilter, limit=top_n, with_payload=True)
+            rest.SearchRequest(vector=user_query_embedding, filter=myfilter, limit=top_n, with_payload=True, params=models.SearchParams(
+            quantization=models.QuantizationSearchParams(
+              rescore=False
+            )
+          ))
         )
 
     # Perform the batch search
     search_results = self.qdrant_client.search_batch(
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-        requests=search_requests
+        requests=search_requests,
     )
     # process search results
     found_docs: list[list[Document]] = []
@@ -1046,6 +1052,8 @@ class Ingest():
         except Exception as e:
           print(traceback.print_exc())
       found_docs.append(docs)
+    
+    print(f"⏰ Qdrant Batch Search runtime: {(time.monotonic() - start_time):.2f} seconds")
     return found_docs
 
 
@@ -1152,17 +1160,15 @@ class Ingest():
     1. Generate multiple queries based on the input search query.
     2. Retrieve relevant docs for each query.
     3. Filter the relevant docs based on the user query and pass them to the rank fusion step.
-    4. Rank the docs based on the relevance score.
-    5. Pad the top 5 docs with context from the original document.
+    4. [CANCELED BEC POINTLESS] Rank the docs based on the relevance score.
+    5. Parent-doc-retrieval: Pad just the top 5 docs with expanded context from the original document.
     """
     try:
-      top_n = 80 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
+      top_n_per_query = 40 # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
       start_time_overall = time.monotonic()
-
-      # Vector search with ONLY original query
-      # found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
       mq_start_time = time.monotonic()
-      # Multi query retriever
+
+      # 1. GENERATE MULTIPLE QUERIES
       generate_queries = (
                 MULTI_QUERY_PROMPT
                 | self.llm
@@ -1174,53 +1180,36 @@ class Ingest():
       generated_queries = generate_queries.invoke({"original_query": search_query})
       print("generated_queries", generated_queries)
 
-      batch_found_docs: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries, course_name=course_name)
+      # 2. VECTOR SEARCH FOR EACH QUERY
+      batch_found_docs_nested: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries, course_name=course_name, top_n=top_n_per_query)
+      # batch_found_docs: list[Document] = [doc for sublist in batch_found_docs_nested for doc in sublist]
+      total_docs_retrieved = sum([len(docs) for docs in batch_found_docs_nested])
       
-      # use the below filtering code for batch context filtering - List[List[Document]] (only use between batch search and rank fusion)
-      filtered_docs = batch_context_filtering(batch_docs=batch_found_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
 
-      filtered_count = 0
-      for docs in filtered_docs:
-        filtered_count += len(docs)
-      print(f"Number of individual docs after context filtering: {filtered_count}")
-
-      # if filtered docs are between 0 to 5 (very less), use the pre-filter batch_found_docs
-      if 0 <= filtered_count <= 5:
-        found_docs = self.reciprocal_rank_fusion(batch_found_docs)
-      else:
-        found_docs = self.reciprocal_rank_fusion(filtered_docs)
-      
+      # 3. RANK REMAINING DOCUMENTS -- good for parent doc padding of top 5 at the end.
+      found_docs = self.reciprocal_rank_fusion(batch_found_docs_nested)
       found_docs = [doc for doc, score in found_docs]
-      print(f"Number of docs found with MQR after rank fusion: {len(found_docs)}")
+      print(f"Num docs after re-ranking: {len(found_docs)}")
       if len(found_docs) == 0:
-          return []
-
+        return []
       print(f"⏰ Total multi-query processing runtime: {(time.monotonic() - mq_start_time):.2f} seconds")
 
-      # 'context padding' // 'parent document retriever' 
-      final_docs = context_processing(found_docs, search_query, course_name)
+      # 4. FILTER DOCS
+      filtered_docs = filter_top_contexts(contexts=found_docs, user_query=search_query, timeout=30, max_concurrency=180)
+      print("Num docs after filtering: ", len(filtered_docs))
+      if len(filtered_docs) == 0:
+        return []
+
+      # 5. TOP DOC CONTEXT PADDING // parent document retriever
+      final_docs = context_parent_doc_padding(filtered_docs, search_query, course_name)
       print(f"Number of final docs after context padding: {len(final_docs)}")
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
-      # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' + search_query) # type: ignore
 
-      # use the below commented code for ray-based context filtering or List[dict] filtering
-
-      #filtered_docs = list_context_filtering(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100)
-      #filtered_docs = list(run(contexts=final_docs, user_query=search_query, max_time_before_return=45, max_concurrency=100))
-      # print(f"Number of docs after context filtering: {len(filtered_docs)}")
-      # if 0 <= len(filtered_docs) <= 5:
-      #   final_docs_used = final_docs
-      #   print("No docs passed context filtering, using all docs retrieved.")
-      # else:
-      #   final_docs_used = filtered_docs
-      
       valid_docs = []
       num_tokens = 0
-        
       for doc in final_docs:
-        
         doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string) # type: ignore
         
@@ -1232,9 +1221,7 @@ class Ingest():
           # filled our token size, time to return
           break
       
-      print("Length of valid docs: ", len(valid_docs))
-
-      print(f"Total tokens used: {token_counter} total docs: {len(found_docs)} num docs used: {len(valid_docs)}")
+      print(f"Total tokens used: {token_counter} Used {len(valid_docs)} of total docs {total_docs_retrieved}.")
       print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContextsWithMQR: {(time.monotonic() - start_time_overall):.2f} seconds")
 

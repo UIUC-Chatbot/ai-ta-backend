@@ -2,5 +2,7 @@
 
 # Docs https://docs.gunicorn.org/en/stable/settings.html#workers
 
+# 200 MB object store memory.. necessary to statically allocate or will crash in Railway env restrictions.
+ray start --head --num_cpus 8 --object-store-memory 200000000
 export PYTHONPATH=$PYTHONPATH:$(pwd)/ai_ta_backend
 exec gunicorn --workers=3 --threads=16 --worker-class=gthread ai_ta_backend.main:app --timeout 1800
