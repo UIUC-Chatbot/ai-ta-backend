@@ -27,6 +27,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   print(f"in log_convo_to_nomic() for course: {course_name}")
   print("conversation:", type(conversation))
   conversation = json.loads(conversation)
+  print("conversation:", type(conversation))
+  print("conversation:", conversation)
   #exit()
   
   messages = conversation['conversation']['messages']
