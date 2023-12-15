@@ -141,6 +141,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     else:
       # for rest of the errors - return fail
       print("ERROR in log_convo_to_nomic():", e)
+      sentry_sdk.capture_exception(e)
       return f"Logging failed for {course_name}"
 
 

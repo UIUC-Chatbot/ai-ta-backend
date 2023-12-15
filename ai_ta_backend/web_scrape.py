@@ -12,6 +12,7 @@ import boto3  # type: ignore
 import requests
 import supabase
 from bs4 import BeautifulSoup
+import sentry_sdk
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
@@ -213,6 +214,7 @@ class WebScrape():
           print("No", key[2], "to upload", key[1])
     except Exception as e:
       print("Error in upload:", e)
+      sentry_sdk.capture_exception(e)
 
   # def remove_duplicates(urls:list=[], _existing_urls:list=[]):
   # # Delete repeated sites, with different URLs and keeping one
