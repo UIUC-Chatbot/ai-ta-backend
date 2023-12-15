@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, List, Union
 import boto3
 import fitz
 import openai
+from posthog import Posthog
 import pytesseract
 import supabase
 from bs4 import BeautifulSoup
@@ -92,6 +93,9 @@ class Ingest():
         openai_api_key=os.getenv('AZURE_OPENAI_KEY'),  #type:ignore
         openai_api_version=os.getenv('OPENAI_API_VERSION'),  #type:ignore
         openai_api_type=OPENAI_API_TYPE)
+
+    self.posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+
     return None
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
@@ -1163,8 +1167,6 @@ class Ingest():
       batch_found_docs_nested: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries,
                                                                                course_name=course_name,
                                                                                top_n=top_n_per_query)
-      # batch_found_docs: list[Document] = [doc for sublist in batch_found_docs_nested for doc in sublist]
-      total_docs_retrieved = sum([len(docs) for docs in batch_found_docs_nested])
 
       # 3. RANK REMAINING DOCUMENTS -- good for parent doc padding of top 5 at the end.
       found_docs = self.reciprocal_rank_fusion(batch_found_docs_nested)
@@ -1201,12 +1203,25 @@ class Ingest():
           # filled our token size, time to return
           break
 
-      print(f"Total tokens used: {token_counter} Used {len(valid_docs)} of total docs {total_docs_retrieved}.")
+      print(f"Total tokens used: {token_counter} Used {len(valid_docs)} of total unique docs {len(found_docs)}.")
       print(f"Course: {course_name} ||| search_query: {search_query}")
       print(f"⏰ ^^ Runtime of getTopContextsWithMQR: {(time.monotonic() - start_time_overall):.2f} seconds")
 
       if len(valid_docs) == 0:
         return []
+
+      # posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+      self.posthog.capture('distinct_id_of_the_user',
+                           event='success_filter_top_contexts',
+                           properties={
+                               'user_query': search_query,
+                               'course_name': course_name,
+                               'token_limit': token_limit,
+                               'total_tokens_used': token_counter,
+                               'total_contexts_used': len(valid_docs),
+                               'total_unique_docs_retrieved': len(found_docs),
+                           })
+
       return self.format_for_json_mqr(valid_docs)
     except Exception as e:
       # return full traceback to front end
