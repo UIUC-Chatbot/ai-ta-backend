@@ -56,7 +56,6 @@ def index() -> Response:
   Returns:
       JSON: _description_
   """
-  1/0
   response = jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
