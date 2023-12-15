@@ -46,11 +46,11 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     print("in try block")
     # fetch project metadata and embbeddings
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
-    project_map = project.maps[1]
+    project_map = project.maps[0]
     print(type(project_map))
     map_data = project_map.data
     print(map_data)
-    
+
     exit()
     
     map_metadata_df = project.maps[1].data.df  # type: ignore
