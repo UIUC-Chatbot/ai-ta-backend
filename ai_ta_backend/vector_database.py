@@ -784,14 +784,17 @@ class Ingest():
       for i, context in enumerate(contexts):
         context.metadata['chunk_index'] = i
 
-      oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
-                               request_url='https://api.openai.com/v1/embeddings',
-                               api_key=os.getenv('OPENAI_API_KEY'),
-                               max_requests_per_minute=10_000,
-                               max_tokens_per_minute=20_000,
-                               max_attempts=20,
-                               logging_level=logging.INFO,
-                               token_encoding_name='cl100k_base')  # nosec -- reasonable bandit error suppression
+      oai = OpenAIAPIProcessor(
+          input_prompts_list=input_texts,
+          request_url=os.getenv('AZURE_OPENAI_ENDPOINT', '') + 'v1/embeddings',
+          #  request_url='https://api.openai.com/v1/embeddings',
+          #  api_key=os.getenv('OPENAI_API_KEY', ''),
+          api_key=os.getenv('AZURE_OPENAI_KEY'),
+          max_requests_per_minute=10_000,
+          max_tokens_per_minute=20_000,
+          max_attempts=20,
+          logging_level=logging.INFO,
+          token_encoding_name='cl100k_base')  # nosec -- reasonable bandit error suppression
       asyncio.run(oai.process_api_requests_from_file())
       # parse results into dict of shape page_content -> embedding
       embeddings_dict: dict[str, List[float]] = {
