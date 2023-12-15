@@ -25,12 +25,9 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   3. Keep current logic for map doesn't exist - update metadata
   """
   print(f"in log_convo_to_nomic() for course: {course_name}")
-  print("conversation:", type(conversation))
-  conversation = json.loads(conversation)
-  print("conversation:", type(conversation))
   print("conversation:", conversation)
-  #exit()
-  
+  conversation = json.loads(conversation)
+    
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
@@ -48,20 +45,12 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     print("in try block")
     # fetch project metadata and embbeddings
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
-    project_map = project.maps[0]
-    print(type(project_map))
-    map_data = project_map.data
-    print(map_data)
-
-    exit()
     
     map_metadata_df = project.maps[1].data.df  # type: ignore
-    
     map_embeddings_df = project.maps[1].embeddings.latent
     map_metadata_df['id'] = map_metadata_df['id'].astype(int)
     last_id = map_metadata_df['id'].max()
     
-
     if conversation_id in map_metadata_df.values:
       # store that convo metadata locally
       prev_data = map_metadata_df[map_metadata_df['conversation_id'] == conversation_id]
@@ -111,6 +100,9 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       user_queries.append(first_message)
 
       for message in messages:
+        print("in message loop")
+        print("message:", message['role'])
+        print("message:", message['content'])
         if message['role'] == 'user':
           emoji = "🙋 "
         else:
