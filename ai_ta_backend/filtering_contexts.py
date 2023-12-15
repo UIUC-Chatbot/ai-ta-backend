@@ -137,7 +137,7 @@ def filter_top_contexts(contexts, user_query: str, timeout: float = None, max_co
                   event='filter_top_contexts',
                   properties={
                       'user_query': user_query,
-                      'course_name': contexts[0].get('course_name'),
+                      'course_name': contexts[0].metadata.get('course_name', None),
                       'percent_kept': len(best_contexts_to_keep) / len(results),
                       'total_docs_processed': len(results),
                       'total_docs_kept': len(best_contexts_to_keep)
