@@ -786,7 +786,7 @@ class Ingest():
 
       oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
                                request_url='https://api.openai.com/v1/embeddings',
-                               api_key=os.getenv('OPENAI_API_KEY'),
+                               api_key=os.getenv('VLADS_OPENAI_KEY'),
                                max_requests_per_minute=10_000,
                                max_tokens_per_minute=20_000,
                                max_attempts=20,
