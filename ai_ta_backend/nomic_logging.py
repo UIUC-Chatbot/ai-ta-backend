@@ -8,6 +8,7 @@ import pandas as pd
 import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
+import json
 
 OPENAI_API_TYPE = "azure"
 
@@ -24,7 +25,10 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   3. Keep current logic for map doesn't exist - update metadata
   """
   print(f"in log_convo_to_nomic() for course: {course_name}")
-
+  print("conversation:", type(conversation))
+  conversation = json.loads(conversation)
+  #exit()
+  
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
@@ -39,12 +43,22 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   emoji = ""
 
   try:
+    print("in try block")
     # fetch project metadata and embbeddings
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
+    project_map = project.maps[1]
+    print(type(project_map))
+    map_data = project_map.data
+    print(map_data)
+    
+    exit()
+    
     map_metadata_df = project.maps[1].data.df  # type: ignore
+    
     map_embeddings_df = project.maps[1].embeddings.latent
     map_metadata_df['id'] = map_metadata_df['id'].astype(int)
     last_id = map_metadata_df['id'].max()
+    
 
     if conversation_id in map_metadata_df.values:
       # store that convo metadata locally
