@@ -15,6 +15,7 @@ from flask import (
 )
 from flask_cors import CORS
 from flask_executor import Executor
+from posthog import Posthog
 import ray
 
 from ai_ta_backend.canvas import CanvasAPI
@@ -521,6 +522,15 @@ def getTopContextsWithMQR() -> Response:
         description=
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
+
+  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog.capture('distinct_id_of_the_user',
+                  event='initiated_filter_top_contexts',
+                  properties={
+                      'user_query': search_query,
+                      'course_name': course_name,
+                      'token_limit': token_limit,
+                  })
 
   ingester = Ingest()
   found_documents = ingester.getTopContextsWithMQR(search_query, course_name, token_limit)
