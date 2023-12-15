@@ -9,6 +9,8 @@ import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 
+OPENAI_API_TYPE = "azure"
+
 
 def log_convo_to_nomic(course_name: str, conversation) -> str:
   nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
@@ -114,7 +116,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       }]
 
       # create embeddings
-      embeddings_model = OpenAIEmbeddings()  # type: ignore
+      embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
       embeddings = embeddings_model.embed_documents(user_queries)
 
     # add embeddings to the project
@@ -278,7 +280,7 @@ def create_nomic_map(course_name: str, log_data: list):
       metadata.append(metadata_row)
 
     metadata = pd.DataFrame(metadata)
-    embeddings_model = OpenAIEmbeddings()  # type: ignore
+    embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
     embeddings = embeddings_model.embed_documents(user_queries)
 
     # create Atlas project

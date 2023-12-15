@@ -15,6 +15,7 @@ from flask import (
 )
 from flask_cors import CORS
 from flask_executor import Executor
+import ray
 
 from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.export_data import export_convo_history_csv
@@ -29,6 +30,8 @@ executor = Executor(app)
 
 # load API keys from globally-availabe .env file
 load_dotenv()
+
+ray.init()
 
 
 @app.route('/')
@@ -496,6 +499,31 @@ def export_convo_history():
   response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
 
   os.remove(export_status[0])
+  return response
+
+
+@app.route('/getTopContextsWithMQR', methods=['GET'])
+def getTopContextsWithMQR() -> Response:
+  """
+  Get relevant contexts for a given search query, using Multi-query retrieval + filtering method.
+  """
+  search_query: str = request.args.get('search_query', default='', type=str)
+  course_name: str = request.args.get('course_name', default='', type=str)
+  token_limit: int = request.args.get('token_limit', default=3000, type=int)
+  if search_query == '' or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
+    )
+
+  ingester = Ingest()
+  found_documents = ingester.getTopContextsWithMQR(search_query, course_name, token_limit)
+  del ingester
+
+  response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
 

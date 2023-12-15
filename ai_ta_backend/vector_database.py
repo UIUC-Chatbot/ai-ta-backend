@@ -19,6 +19,8 @@ import openai
 import pytesseract
 import supabase
 from bs4 import BeautifulSoup
+from langchain import hub
+from langchain.chat_models import AzureChatOpenAI
 from git.repo import Repo
 from langchain.document_loaders import (
     Docx2txtLoader,
@@ -32,16 +34,23 @@ from langchain.document_loaders import (
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
+from langchain.load import loads, dumps
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 from PIL import Image
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
+from langchain.schema.output_parser import StrOutputParser
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
+from ai_ta_backend.context_parent_doc_padding import context_parent_doc_padding
+from ai_ta_backend.filtering_contexts import filter_top_contexts
+
+MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
+OPENAI_API_TYPE = "azure"  # "openai" or "azure"
 
 
 class Ingest():
@@ -63,7 +72,7 @@ class Ingest():
 
     self.vectorstore = Qdrant(client=self.qdrant_client,
                               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                              embeddings=OpenAIEmbeddings())  # type: ignore
+                              embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE))
 
     # S3
     self.s3_client = boto3.client(
@@ -75,6 +84,14 @@ class Ingest():
     # Create a Supabase client
     self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
+
+    self.llm = AzureChatOpenAI(
+        temperature=0,
+        deployment_name=os.getenv('AZURE_OPENAI_ENGINE'),  #type:ignore
+        openai_api_base=os.getenv('AZURE_OPENAI_ENDPOINT'),  #type:ignore
+        openai_api_key=os.getenv('AZURE_OPENAI_KEY'),  #type:ignore
+        openai_api_version=os.getenv('OPENAI_API_VERSION'),  #type:ignore
+        openai_api_type=OPENAI_API_TYPE)
     return None
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
@@ -958,7 +975,7 @@ class Ingest():
 
   def vector_search(self, search_query, course_name):
     top_n = 80
-    o = OpenAIEmbeddings()  # type: ignore
+    o = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)
     user_query_embedding = o.embed_query(search_query)
     myfilter = models.Filter(must=[
         models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name)),
@@ -1038,6 +1055,187 @@ class Ingest():
       err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
       print(err)
       return err
+
+  def batch_vector_search(self, search_queries: List[str], course_name: str, top_n: int = 50):
+    """
+    Perform a similarity search for all the generated queries at once.
+    """
+    start_time = time.monotonic()
+
+    from qdrant_client.http import models as rest
+    o = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)
+    # Prepare the filter for the course name
+    myfilter = rest.Filter(must=[
+        rest.FieldCondition(key='course_name', match=rest.MatchValue(value=course_name)),
+    ])
+
+    # Prepare the search requests
+    search_requests = []
+    for query in search_queries:
+      user_query_embedding = o.embed_query(query)
+      search_requests.append(
+          rest.SearchRequest(vector=user_query_embedding,
+                             filter=myfilter,
+                             limit=top_n,
+                             with_payload=True,
+                             params=models.SearchParams(quantization=models.QuantizationSearchParams(rescore=False))))
+
+    # Perform the batch search
+    search_results = self.qdrant_client.search_batch(
+        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+        requests=search_requests,
+    )
+    # process search results
+    found_docs: list[list[Document]] = []
+    for result in search_results:
+      docs = []
+      for doc in result:
+        try:
+          metadata = doc.payload
+          page_content = metadata['page_content']
+          del metadata['page_content']
+
+          if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys():
+            metadata["pagenumber"] = metadata["pagenumber_or_timestamp"]
+
+          docs.append(Document(page_content=page_content, metadata=metadata))
+        except Exception:
+          print(traceback.print_exc())
+      found_docs.append(docs)
+
+    print(f"⏰ Qdrant Batch Search runtime: {(time.monotonic() - start_time):.2f} seconds")
+    return found_docs
+
+  def reciprocal_rank_fusion(self, results: list[list], k=60):
+    """
+      Since we have multiple queries, and n documents returned per query, we need to go through all the results
+      and collect the documents with the highest overall score, as scored by qdrant similarity matching.
+      """
+    fused_scores = {}
+    count = 0
+    unique_count = 0
+    for docs in results:
+      # Assumes the docs are returned in sorted order of relevance
+      count += len(docs)
+      for rank, doc in enumerate(docs):
+        doc_str = dumps(doc)
+        if doc_str not in fused_scores:
+          fused_scores[doc_str] = 0
+          unique_count += 1
+        fused_scores[doc_str] += 1 / (rank + k)
+        # Uncomment for debugging
+        # previous_score = fused_scores[doc_str]
+        #print(f"Change score for doc: {doc_str}, previous score: {previous_score}, updated score: {fused_scores[doc_str]} ")
+    print(f"Total number of documents in rank fusion: {count}")
+    print(f"Total number of unique documents in rank fusion: {unique_count}")
+    reranked_results = [
+        (loads(doc), score) for doc, score in sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
+    ]
+    return reranked_results
+
+  def getTopContextsWithMQR(self,
+                            search_query: str,
+                            course_name: str,
+                            token_limit: int = 4_000) -> Union[List[Dict], str]:
+    """
+    New info-retrieval pipeline that uses multi-query retrieval + filtering + reciprocal rank fusion + context padding.
+    1. Generate multiple queries based on the input search query.
+    2. Retrieve relevant docs for each query.
+    3. Filter the relevant docs based on the user query and pass them to the rank fusion step.
+    4. [CANCELED BEC POINTLESS] Rank the docs based on the relevance score.
+    5. Parent-doc-retrieval: Pad just the top 5 docs with expanded context from the original document.
+    """
+    try:
+      top_n_per_query = 40  # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
+      start_time_overall = time.monotonic()
+      mq_start_time = time.monotonic()
+
+      # 1. GENERATE MULTIPLE QUERIES
+      generate_queries = (
+          MULTI_QUERY_PROMPT | self.llm | StrOutputParser() | (lambda x: x.split("\n")) |
+          (lambda x: list(filter(None, x)))  # filter out non-empty strings
+      )
+
+      generated_queries = generate_queries.invoke({"original_query": search_query})
+      print("generated_queries", generated_queries)
+
+      # 2. VECTOR SEARCH FOR EACH QUERY
+      batch_found_docs_nested: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries,
+                                                                               course_name=course_name,
+                                                                               top_n=top_n_per_query)
+      # batch_found_docs: list[Document] = [doc for sublist in batch_found_docs_nested for doc in sublist]
+      total_docs_retrieved = sum([len(docs) for docs in batch_found_docs_nested])
+
+      # 3. RANK REMAINING DOCUMENTS -- good for parent doc padding of top 5 at the end.
+      found_docs = self.reciprocal_rank_fusion(batch_found_docs_nested)
+      found_docs = [doc for doc, score in found_docs]
+      print(f"Num docs after re-ranking: {len(found_docs)}")
+      if len(found_docs) == 0:
+        return []
+      print(f"⏰ Total multi-query processing runtime: {(time.monotonic() - mq_start_time):.2f} seconds")
+
+      # 4. FILTER DOCS
+      filtered_docs = filter_top_contexts(contexts=found_docs, user_query=search_query, timeout=30, max_concurrency=180)
+      if len(filtered_docs) == 0:
+        return []
+
+      # 5. TOP DOC CONTEXT PADDING // parent document retriever
+      final_docs = context_parent_doc_padding(filtered_docs, search_query, course_name)
+      print(f"Number of final docs after context padding: {len(final_docs)}")
+
+      pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
+      token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' +
+                                               search_query)  # type: ignore
+
+      valid_docs = []
+      num_tokens = 0
+      for doc in final_docs:
+        doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
+        num_tokens, prompt_cost = count_tokens_and_cost(doc_string)  # type: ignore
+
+        print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
+        if token_counter + num_tokens <= token_limit:
+          token_counter += num_tokens
+          valid_docs.append(doc)
+        else:
+          # filled our token size, time to return
+          break
+
+      print(f"Total tokens used: {token_counter} Used {len(valid_docs)} of total docs {total_docs_retrieved}.")
+      print(f"Course: {course_name} ||| search_query: {search_query}")
+      print(f"⏰ ^^ Runtime of getTopContextsWithMQR: {(time.monotonic() - start_time_overall):.2f} seconds")
+
+      if len(valid_docs) == 0:
+        return []
+      return self.format_for_json_mqr(valid_docs)
+    except Exception as e:
+      # return full traceback to front end
+      err: str = f"ERROR: In /getTopContextsWithMQR. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.format_exc()}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
+      print(err)
+      return err
+
+  def format_for_json_mqr(self, found_docs) -> List[Dict]:
+    """
+    Same as format_for_json, but for the new MQR pipeline.
+    """
+    for found_doc in found_docs:
+      if "pagenumber" not in found_doc.keys():
+        print("found no pagenumber")
+        found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
+
+    contexts = [
+        {
+            'text': doc['text'],
+            'readable_filename': doc['readable_filename'],
+            'course_name ': doc['course_name'],
+            's3_path': doc['s3_path'],
+            'pagenumber': doc['pagenumber'],
+            'url': doc['url'],  # wouldn't this error out?
+            'base_url': doc['base_url'],
+        } for doc in found_docs
+    ]
+
+    return contexts
 
   def get_context_stuffed_prompt(self, user_question: str, course_name: str, top_n: int, top_k_to_search: int) -> str:
     """
@@ -1137,7 +1335,7 @@ Now please respond to my question: {user_question}"""
     try:
       top_n = 90
       start_time_overall = time.monotonic()
-      o = OpenAIEmbeddings()  # type: ignore
+      o = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)
       user_query_embedding = o.embed_documents(search_query)[0]  # type: ignore
       myfilter = models.Filter(must=[
           models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name)),

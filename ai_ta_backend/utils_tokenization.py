@@ -1,7 +1,6 @@
 import os
 from typing import Any
 
-import supabase
 import tiktoken
 
 
@@ -82,6 +81,7 @@ def count_tokens_and_cost(
 
 
 def analyze_conversations(supabase_client: Any = None):
+  import supabase
 
   if supabase_client is None:
     supabase_client = supabase.create_client(  # type: ignore
