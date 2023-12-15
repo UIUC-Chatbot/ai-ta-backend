@@ -7,6 +7,8 @@ import openai
 import ray
 import requests
 from langchain import hub
+from posthog import Posthog
+
 # import replicate
 # from transformers import AutoTokenizer
 
@@ -109,6 +111,7 @@ def filter_top_contexts(contexts, user_query: str, timeout: float = None, max_co
 
   timeout = timeout or float(os.environ["FILTER_TOP_CONTEXTS_TIMEOUT_SECONDS"])
   langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr")
+  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
 
   print("Max concurrency:", max_concurrency)
   print("Num contexts to filter:", len(contexts))
@@ -126,7 +129,19 @@ def filter_top_contexts(contexts, user_query: str, timeout: float = None, max_co
     ray.cancel(task)
   results = ray.get(done_tasks)
 
-  best_contexts_to_keep = [r['context'] for r in results if parse_result(r['completion'])]
+  best_contexts_to_keep = [
+      r['context'] for r in results if r and 'context' in r and 'completion' in r and parse_result(r['completion'])
+  ]
+
+  posthog.capture('distinct_id_of_the_user',
+                  event='filter_top_contexts',
+                  properties={
+                      'user_query': user_query,
+                      'course_name': contexts[0].get('course_name'),
+                      'percent_kept': len(best_contexts_to_keep) / len(results),
+                      'total_docs_processed': len(results),
+                      'total_docs_kept': len(best_contexts_to_keep)
+                  })
 
   print("🧠🧠 TOTAL DOCS PROCESSED BY ANYSCALE FILTERING:", len(results))
   print("🧠🧠 TOTAL DOCS KEPT, AFTER FILTERING:", len(best_contexts_to_keep))
