@@ -9,11 +9,12 @@ import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 
+OPENAI_API_TYPE = "azure"
+
 
 def log_convo_to_nomic(course_name: str, conversation) -> str:
   nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
   NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
-
   """
   Logs conversation to Nomic.
   1. Check if map exists for given course
@@ -40,7 +41,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   try:
     # fetch project metadata and embbeddings
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
-    map_metadata_df = project.maps[1].data.df # type: ignore
+    map_metadata_df = project.maps[1].data.df  # type: ignore
     map_embeddings_df = project.maps[1].embeddings.latent
     map_metadata_df['id'] = map_metadata_df['id'].astype(int)
     last_id = map_metadata_df['id'].max()
@@ -115,7 +116,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       }]
 
       # create embeddings
-      embeddings_model = OpenAIEmbeddings() # type: ignore
+      embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
       embeddings = embeddings_model.embed_documents(user_queries)
 
     # add embeddings to the project
@@ -142,8 +143,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       # for rest of the errors - return fail
       print("ERROR in log_convo_to_nomic():", e)
       return f"Logging failed for {course_name}"
-    
-    
+
+
 def get_nomic_map(course_name: str):
   """
   Returns the variables necessary to construct an iframe of the Nomic map given a course name.
@@ -181,7 +182,7 @@ def create_nomic_map(course_name: str, log_data: list):
   """
   nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
   NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
-  
+
   print(f"in create_nomic_map() for {course_name}")
   # initialize supabase
   supabase_client = supabase.create_client(  # type: ignore
@@ -203,11 +204,11 @@ def create_nomic_map(course_name: str, log_data: list):
     conversation_exists = False
 
     # current log details
-    log_messages = log_data['conversation']['messages'] # type: ignore
-    log_user_email = log_data['conversation']['user_email'] # type: ignore
-    log_conversation_id = log_data['conversation']['id'] # type: ignore
+    log_messages = log_data['conversation']['messages']  # type: ignore
+    log_user_email = log_data['conversation']['user_email']  # type: ignore
+    log_conversation_id = log_data['conversation']['id']  # type: ignore
 
-    for index, row in df.iterrows():
+    for _index, row in df.iterrows():
       user_email = row['user_email']
       created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
       convo = row['convo']
@@ -217,7 +218,7 @@ def create_nomic_map(course_name: str, log_data: list):
 
       # create metadata for multi-turn conversation
       conversation = ""
-      if message['role'] == 'user': # type: ignore
+      if message['role'] == 'user':  # type: ignore
         emoji = "🙋 "
       else:
         emoji = "🤖 "
@@ -228,7 +229,7 @@ def create_nomic_map(course_name: str, log_data: list):
       # append current chat to previous chat if convo already exists
       if convo['id'] == log_conversation_id:
         conversation_exists = True
-        if m['role'] == 'user': # type: ignore
+        if m['role'] == 'user':  # type: ignore
           emoji = "🙋 "
         else:
           emoji = "🤖 "
@@ -279,7 +280,7 @@ def create_nomic_map(course_name: str, log_data: list):
       metadata.append(metadata_row)
 
     metadata = pd.DataFrame(metadata)
-    embeddings_model = OpenAIEmbeddings()  # type: ignore
+    embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
     embeddings = embeddings_model.embed_documents(user_queries)
 
     # create Atlas project
@@ -287,7 +288,7 @@ def create_nomic_map(course_name: str, log_data: list):
     index_name = course_name + "_convo_index"
     project = atlas.map_embeddings(
         embeddings=np.array(embeddings),
-        data=metadata,  # type: ignore -- this is actually the correc type, the function signature from Nomic is incomplete
+        data=metadata,  # type: ignore - this is the correct type, the func signature from Nomic is incomplete
         id_field='id',
         build_topic_model=True,
         topic_label_field='first_query',
