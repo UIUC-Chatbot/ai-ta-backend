@@ -12,7 +12,7 @@ class CanvasAPI():
 
   def __init__(self):
     self.canvas_client = Canvas("https://canvas.illinois.edu", os.getenv('CANVAS_ACCESS_TOKEN'))
-    #self.headers = {"Authorization": "Bearer " + os.getenv('CANVAS_ACCESS_TOKEN')}
+    self.headers = {"Authorization": "Bearer " + os.getenv('CANVAS_ACCESS_TOKEN')}
 
   def add_users(self, canvas_course_id: str, course_name: str):
     """

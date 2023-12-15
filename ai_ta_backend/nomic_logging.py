@@ -8,6 +8,7 @@ import pandas as pd
 import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
+import sentry_sdk
 
 
 def log_convo_to_nomic(course_name: str, conversation) -> str:
@@ -162,6 +163,7 @@ def get_nomic_map(course_name: str):
   except Exception as e:
     err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
     print(err)
+    sentry_sdk.capture_exception(err)
     return {"map_id": None, "map_link": None}
 
   map = project.get_map(project_name)
