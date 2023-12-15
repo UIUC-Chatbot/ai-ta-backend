@@ -25,7 +25,7 @@ from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 
 sentry_sdk.init(
-    dsn="https://c79893b327dde9dee03e4d488b966870@o4506395331002368.ingest.sentry.io/4506395333885952",
+    dsn=os.getenv("SENTRY_DSN"),
     # Set traces_sample_rate to 1.0 to capture 100%
     # of transactions for performance monitoring.
     traces_sample_rate=1.0,
@@ -33,6 +33,7 @@ sentry_sdk.init(
     # of sampled transactions.
     # We recommend adjusting this value in production.
     profiles_sample_rate=1.0,
+    enable_tracing=True
 )
 
 
