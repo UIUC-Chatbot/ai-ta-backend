@@ -359,6 +359,19 @@ def scrape() -> Response:
   print(f"Stay on BaseURL: {stay_on_baseurl}")
   print(f"Timeout in Seconds ⏰: {timeout}")
 
+  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog.capture('distinct_id_of_the_user',
+                  event='web_scrape_invoked',
+                  properties={
+                      'url': url,
+                      'max_urls': max_urls,
+                      'max_depth': max_depth,
+                      'stay_on_baseurl': stay_on_baseurl,
+                      'timeout': timeout,
+                      'course_name': course_name,
+                      'depth_or_breadth': depth_or_breadth
+                  })
+
   scraper = WebScrape()
   success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl,
                                            depth_or_breadth)
@@ -521,7 +534,7 @@ def getTopContextsWithMQR() -> Response:
 
   posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   posthog.capture('distinct_id_of_the_user',
-                  event='initiated_filter_top_contexts',
+                  event='filter_top_contexts_invoked',
                   properties={
                       'user_query': search_query,
                       'course_name': course_name,

@@ -757,6 +757,16 @@ class Ingest():
         texts (List[str]): _description_
         metadatas (List[Dict[str, Any]]): _description_
     """
+    self.posthog.capture('distinct_id_of_the_user',
+                         event='split_and_upload_invoked',
+                         properties={
+                             'course_name': metadatas[0].get('course_name', None),
+                             's3_path': metadatas[0].get('s3_path', None),
+                             'readable_filename': metadatas[0].get('readable_filename', None),
+                             'url': metadatas[0].get('url', None),
+                             'base_url': metadatas[0].get('base_url', None),
+                         })
+
     print("In split and upload")
     print(f"metadatas: {metadatas}")
     print(f"Texts: {texts}")
@@ -787,8 +797,8 @@ class Ingest():
       oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
                                request_url='https://api.openai.com/v1/embeddings',
                                api_key=os.getenv('VLADS_OPENAI_KEY'),
-                               max_requests_per_minute=10_000,
-                               max_tokens_per_minute=20_000,
+                               max_requests_per_minute=5_000,
+                               max_tokens_per_minute=300_000,
                                max_attempts=20,
                                logging_level=logging.INFO,
                                token_encoding_name='cl100k_base')  # nosec -- reasonable bandit error suppression
@@ -830,6 +840,16 @@ class Ingest():
 
       self.supabase_client.table(
           os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
+
+      self.posthog.capture('distinct_id_of_the_user',
+                           event='split_and_upload_succeeded',
+                           properties={
+                               'course_name': metadatas[0].get('course_name', None),
+                               's3_path': metadatas[0].get('s3_path', None),
+                               'readable_filename': metadatas[0].get('readable_filename', None),
+                               'url': metadatas[0].get('url', None),
+                               'base_url': metadatas[0].get('base_url', None),
+                           })
       print("successful END OF split_and_upload")
       return "Success"
     except Exception as e:
@@ -1223,7 +1243,7 @@ class Ingest():
         return []
 
       self.posthog.capture('distinct_id_of_the_user',
-                           event='success_filter_top_contexts',
+                           event='filter_top_contexts_succeeded',
                            properties={
                                'user_query': search_query,
                                'course_name': course_name,
