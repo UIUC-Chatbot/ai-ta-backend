@@ -1,19 +1,50 @@
 import json
 import os
 import time
-# from dotenv import load_dotenv
 
 import openai
 import ray
 import requests
-from langchain import hub
+# from langchain import hub
+# import replicate
 from posthog import Posthog
 
-# import replicate
-# from transformers import AutoTokenizer
-
+# from dotenv import load_dotenv
 # load_dotenv(override=True)
+# from transformers import AutoTokenizer
 # tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
+
+filter_unrelated_contexts_zephyr = """<|system|>
+You are an expert at determining if a passage is relevant and helpful for answering a question.
+To be valuable, a passage must have at least some amount of useful and meaningful information with more than a passing mention of the topic.
+As part of your thinking process, you first write a few sentences evaluating the utility of the passage, given the question we're trying to answer. Limit yourself to writing only a sentence or two, no more.
+Finally, you must submit your final answer by adding two newline characters then "Yes." or "No." or "I don't know.". Provide a single answer only. Providing multiple final results will disqualify you.
+Here's a template code snippet of how it should work (with placeholder variables):
+```
+Passage: <The full text of the passage>
+Question: <The question we're using to determine relevancy of the passage>
+Your evaluation of the utility of the passage: <A few sentences exploring how useful the passage is for this particular question>
+
+
+Final answer: <Enter one of "Yes." or "No." or "I don't know."
+```
+Here's a complete example. Follow this formatting exactly.
+```
+Passage: Figure 4.6: Overview of the CUDA device memory model 
+ 
+In order to fully appreciate the difference between registers, shared memory and global memory, we need to go into a little more details of how these different memory types are realized and used in modern processors. Virtually all modern processors find their root in the model proposed by John von Neumann in 1945, which is shown in Figure 4.7. The CUDA devices are no exception. The Global Memory in a CUDA device maps to the Memory box in Figure 4.7. The processor box corresponds to the processor chip boundary that we typically see today. The Global Memory is off the processor chip and is implemented with DRAM technology, which implies long access latencies and relatively low access bandwidth.
+
+Question: Explain how tiling helps with global memory bandwidth.
+Your evaluation of the utility of the passage: The passage briefly mentions the use of shared memory as a means to reduce global memory bandwidth, but it doesn't provide a detailed explanation or analysis of how tiling helps with global memory bandwidth. Therefore, the passage is not helpful when answering the question.
+
+
+Final answer: No.
+```</s>
+<|user|>
+Passage: {context}
+Question: {user_query}
+Your evaluation of the utility of the passage: </s>
+<|assistant|>"""
 
 
 @ray.remote
@@ -110,7 +141,8 @@ def filter_top_contexts(contexts, user_query: str, timeout: float = None, max_co
   # raise ValueError("STOPPING HERE")
 
   timeout = timeout or float(os.environ["FILTER_TOP_CONTEXTS_TIMEOUT_SECONDS"])
-  langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr")
+  # langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr") # TOO UNSTABLE
+  langsmith_prompt_obj = filter_unrelated_contexts_zephyr
   posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
 
   print("Max concurrency:", max_concurrency)
