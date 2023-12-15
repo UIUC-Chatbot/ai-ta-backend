@@ -1053,6 +1053,18 @@ class Ingest():
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
       if len(valid_docs) == 0:
         return []
+
+      self.posthog.capture('distinct_id_of_the_user',
+                           event='success_get_top_contexts_OG',
+                           properties={
+                               'user_query': search_query,
+                               'course_name': course_name,
+                               'token_limit': token_limit,
+                               'total_tokens_used': token_counter,
+                               'total_contexts_used': len(valid_docs),
+                               'total_unique_docs_retrieved': len(found_docs),
+                           })
+
       return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
@@ -1210,7 +1222,6 @@ class Ingest():
       if len(valid_docs) == 0:
         return []
 
-      # posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
       self.posthog.capture('distinct_id_of_the_user',
                            event='success_filter_top_contexts',
                            properties={
