@@ -163,7 +163,7 @@ def get_nomic_map(course_name: str):
   except Exception as e:
     err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
     print(err)
-    sentry_sdk.capture_exception(err)
+    sentry_sdk.capture_exception(e)
     return {"map_id": None, "map_link": None}
 
   map = project.get_map(project_name)
