@@ -8,6 +8,7 @@ import requests
 # from langchain import hub
 # import replicate
 from posthog import Posthog
+import sentry_sdk
 
 # from dotenv import load_dotenv
 # load_dotenv(override=True)
@@ -59,6 +60,7 @@ class AsyncActor:
       completion = run_anyscale(final_prompt)
       return {"completion": completion, "context": context}
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       print(f"Error: {e}")
 
 
@@ -75,6 +77,7 @@ def run_caii_hosted_llm(prompt, max_tokens=300, temp=0.3, **kwargs):
     response = requests.post(url, headers=headers, data=json.dumps(data), timeout=180)
     return response.json()['choices'][0]['text']
   except Exception as e:
+    sentry_sdk.capture_exception(e)
     # Probably cuda OOM error.
     raise ValueError(
         f"🚫🚫🚫 Failed inference attempt. Response: {response.json()}\nError: {e}\nPromt that caused error: {prompt}"

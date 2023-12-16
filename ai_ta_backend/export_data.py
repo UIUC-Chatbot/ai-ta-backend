@@ -3,7 +3,7 @@ import uuid
 
 import pandas as pd
 import supabase
-
+import sentry_sdk
 
 def export_convo_history_csv(course_name: str, from_date='', to_date=''):
   """
@@ -70,6 +70,7 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
       return (file_path, filename, os.getcwd())
     except Exception as e:
       print(e)
+      sentry_sdk.capture_exception(e)
       return "Error downloading file"
   else:
     return "No data found between the dates"
