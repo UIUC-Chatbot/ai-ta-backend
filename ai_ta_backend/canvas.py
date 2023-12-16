@@ -3,6 +3,7 @@ import shutil
 
 import requests
 from canvasapi import Canvas
+import sentry_sdk
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
@@ -65,6 +66,7 @@ class CanvasAPI():
 
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def ingest_course_content(self, canvas_course_id: int, course_name: str, content_ingest_dict: dict = None) -> str:
@@ -122,6 +124,7 @@ class CanvasAPI():
 
     except Exception as e:
       print(e)
+      sentry_sdk.capture_exception(e)
       return "Failed"
 
   def download_files(self, dest_folder: str, api_path: str) -> str:
@@ -147,6 +150,7 @@ class CanvasAPI():
 
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def download_pages(self, dest_folder: str, api_path: str) -> str:
@@ -169,6 +173,7 @@ class CanvasAPI():
 
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def download_syllabus(self, dest_folder: str, api_path: str) -> str:
@@ -185,6 +190,7 @@ class CanvasAPI():
         html_file.write(syllabus_body)
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def download_modules(self, dest_folder: str, api_path: str) -> str:
@@ -213,6 +219,7 @@ class CanvasAPI():
                 html_file.write(response.text)
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def download_assignments(self, dest_folder: str, api_path: str) -> str:
@@ -233,6 +240,7 @@ class CanvasAPI():
             html_file.write(assignment_description)
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def download_discussions(self, dest_folder: str, api_path: str) -> str:
@@ -252,4 +260,5 @@ class CanvasAPI():
           html_file.write(discussion_content)
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)

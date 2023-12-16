@@ -17,12 +17,24 @@ from flask_cors import CORS
 from flask_executor import Executor
 from posthog import Posthog
 import ray
+import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+
+# Sentry.io error logging
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+    enable_tracing=True
+)
 
 app = Flask(__name__)
 CORS(app)
