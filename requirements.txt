@@ -55,5 +55,5 @@ unstructured==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: ht
 pydantic==1.10.13 # pydantic v1 works better for ray
 ray==2.8.1
 posthog==3.1.0
-sentry-sdk=1.39.1
+sentry-sdk==1.39.1
 # newrelic==9.3.0
