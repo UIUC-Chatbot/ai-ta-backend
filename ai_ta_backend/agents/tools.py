@@ -33,6 +33,8 @@ VERBOSE = True
 
 def get_tools(langsmith_run_id: str, sync=True):
   '''Main function to assemble tools for ML for Bio project.'''
+
+
   # How to get LangSmithRunID into the properties of a tool... to resume a stateful tool.
   code_execution_class = E2B_class(langsmith_run_id=langsmith_run_id)
   e2b_code_execution_tool = StructuredTool.from_function(
@@ -40,16 +42,20 @@ def get_tools(langsmith_run_id: str, sync=True):
     name="Code Execution",
     description="Executes code in a docker container",
     langsmith_run_id=langsmith_run_id,
-    # args_schema
   )
   e2b_shell_tool = StructuredTool.from_function(
     func=code_execution_class.run_shell,
     name="Code Execution",
     description="Executes code in a docker container",
     langsmith_run_id=langsmith_run_id,
-    # args_schema
   )
-  return e2b_code_execution_tool
+  
+  # SHELL & FILES
+  # shell = ShellTool()
+  # file_management = FileManagementToolkit(
+  #   # If you don't provide a root_dir, operations will default to the current working directory
+  #   # root_dir=str("/app")
+  # ).get_tools()
 
   # WEB BROWSER
   browser_toolkit = None
@@ -70,13 +76,6 @@ def get_tools(langsmith_run_id: str, sync=True):
   # human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)
   # GOOGLE SEARCH
   search = load_tools(["serpapi"])
-  
-  # SHELL & FILES
-  shell = ShellTool()
-  file_management = FileManagementToolkit(
-    # If you don't provide a root_dir, operations will default to the current working directory
-    # root_dir=str("/app")
-  ).get_tools()
 
   # GITHUB
   github = GitHubAPIWrapper()  # type: ignore
@@ -101,7 +100,7 @@ def get_tools(langsmith_run_id: str, sync=True):
   #   return execute_code(code, timeout, filename, work_dir, use_docker, lang)
 
   
-  tools: list[BaseTool] = browser_tools + github_tools + search + docs_tools + file_management + [e2b_code_execution_tool, e2b_shell_tool]
+  tools: list[BaseTool] = browser_tools + github_tools + search + docs_tools + [e2b_code_execution_tool, e2b_shell_tool]
   return tools
 
 ############# HELPERS ################

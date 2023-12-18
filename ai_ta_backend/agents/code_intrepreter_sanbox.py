@@ -17,15 +17,17 @@ from e2b import CodeInterpreter, EnvVars, Sandbox
 class E2B_class():
   def __init__(self, langsmith_run_id: str):
     self.langsmith_run_id = langsmith_run_id
-    # self.sandboxID = create_sandbox() # todo: keepalive
+    self.sandbox = Sandbox(env_vars={"FOO": "Hello"})
+    self.sandboxID = self.sandbox.id
+    self.sandbox.keep_alive(60 * 60 * 23) # 23 hours
     # TODO on agent finish, delete sandbox
   
   def delete_sandbox(self):
-    pass
+    self.sandbox.close()
   
   # def run_code(self, code):
   def run_python_code(self, code: str):
-    # todo: reconnect to sandbox
+    # self.sandbox.install_python_packages('ffmpeg')
     print("IN RUN PYTHON CODE")
     print("CODE: ", code)
     print("LANGSMITH RUN ID: ", self.langsmith_run_id)
@@ -34,9 +36,14 @@ class E2B_class():
   # def run_shell(code, cwd: str = "", timeout: Optional[int] = None, env_vars: Optional[EnvVars] = None) -> Tuple[str, str, list[Any]]:
   #   sandbox.run_command("sudo apt update")
   def run_shell(self, shell_command: str):
-    # todo: reconnect to sandbox
+    self.sandbox.terminal.start(on_data=self.handle_terminal_on_data, cols=120, rows=80, cmd=shell_command, timeout=2 * 60) # 2 minutes
     print("IN SHELL EXECUTION")
     print("CODE: ", shell_command)
+    print("LANGSMITH RUN ID: ", self.langsmith_run_id)
+    return "Success (placeholder)"
+
+  def handle_terminal_on_data(self, data: str):
+    print("DATA: ", data)
     print("LANGSMITH RUN ID: ", self.langsmith_run_id)
     return "Success (placeholder)"
 

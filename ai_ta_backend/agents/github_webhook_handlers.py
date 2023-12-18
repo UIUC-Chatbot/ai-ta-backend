@@ -23,7 +23,6 @@ from github.Repository import Repository
 from github.TimelineEvent import TimelineEvent
 from langchain import hub
 # from langchain.tools.github.utils import generate_branch_name
-from newrelic_telemetry_sdk import Log, LogClient
 
 from github_agent import GH_Agent
 from ml4bio_agent import WorkflowAgent
@@ -101,10 +100,10 @@ def handle_issue_opened(payload, langsmith_run_id):
   # logging.info(f"New issue created: #{number}", metadata)
   # logging.info(f"New issue created: #{number}. Metadata: {metadata}")
 
-  log = Log(message=f"New issue created: #{number}", metadata=metadata)
-  log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
-  response = log_client.send(log)
-  response.raise_for_status()
+  # log = Log(message=f"New issue created: #{number}", metadata=metadata)
+  # log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
+  # response = log_client.send(log)
+  # response.raise_for_status()
 
   try:
 

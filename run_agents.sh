@@ -63,7 +63,7 @@ if ! pgrep -f smee > /dev/null; then
 fi
 
 # Start Flask (with New Relic logging) in the background
-NEW_RELIC_CONFIG_FILE=newrelic.ini newrelic-admin run-program flask --app ai_ta_backend.main:app --debug run --port 8000 &
+flask --app ai_ta_backend.main:app --debug run --port 8000 &
 
 # Keep script running
 while true; do
