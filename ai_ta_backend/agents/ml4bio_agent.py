@@ -22,13 +22,13 @@ def get_user_info_string():
 
 
 class WorkflowAgent:
-  def __init__(self, run_id_in_metadata):
+  def __init__(self, langsmith_run_id):
     if os.environ['OPENAI_API_TYPE'] == 'azure':
       self.llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
     else:
       self.llm: ChatOpenAI = ChatOpenAI(temperature=0, model="gpt-4-0613",max_retries=500, request_timeout=60 * 3)  # type: ignore
     self.agent = self.make_agent()
-    self.run_id_in_metadata = run_id_in_metadata
+    self.langsmith_run_id = langsmith_run_id
 
   def run(self, input):
     result = self.agent.with_config({"run_name": "ML4BIO Plan & Execute Agent"}).invoke({"input":f"{input}"}, {"metadata": {"run_id_in_metadata": str(self.run_id_in_metadata)}})
@@ -38,7 +38,7 @@ class WorkflowAgent:
 
   def make_agent(self): 
     # TOOLS
-    tools = get_tools()
+    tools = get_tools(langsmith_run_id=self.langsmith_run_id)
 
     # PLANNER
     planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))

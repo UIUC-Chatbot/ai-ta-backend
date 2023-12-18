@@ -8,7 +8,7 @@ import os
 import time
 import traceback
 import uuid
-from typing import Union
+from typing import Any, Dict, Union
 
 import github
 import langchain
@@ -18,6 +18,7 @@ from github import Auth, GithubIntegration
 from github.Issue import Issue
 from github.PaginatedList import PaginatedList
 from github.PullRequest import PullRequest
+from github.IssueComment import IssueComment
 from github.Repository import Repository
 from github.TimelineEvent import TimelineEvent
 from langchain import hub
@@ -41,9 +42,33 @@ Feel free to comment in this thread to give me additional instructions, or I'll 
 If I think I'm successful I'll 'request your review' on the resulting PR. Just watch for emails while I work.
 """
 
-# app = newrelic.agent.application()
+def handle_github_event(gh_webhook_payload: str):
+  """Main entry point for all actions that take place on Github website.
 
-# @newrelic.agent.background_task() 
+  , langsmith_run_id: uuid.UUID
+
+  Args:
+      payload (str): Union[Issue, PullRequest, IssueComment]
+      langsmith_run_id (uuid.UUID): UUID to use for the Langsmith trace.
+
+  Raises:
+      ValueError: _description_
+  """
+  payload: Dict[str, Any] = json.loads(gh_webhook_payload)
+  langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
+  
+  if not payload:
+    raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
+
+  # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
+  if payload.get('action') == 'opened' and payload.get('pull_request'):
+    handle_pull_request_opened(payload, langsmith_run_id)
+  elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
+    handle_issue_opened(payload, langsmith_run_id)
+  elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
+    handle_comment_opened(payload, langsmith_run_id)
+
+
 def handle_issue_opened(payload, langsmith_run_id):
   """ This is the primary entry point to the app; Just open an issue!
 
@@ -93,13 +118,13 @@ def handle_issue_opened(payload, langsmith_run_id):
     result_futures.append(post_comment.remote(issue_or_pr=issue, text=MESSAGE_HANDLE_ISSUE_OPENED, time_delay_s=0))
 
     # 2. SHARABLE URL (in background)
-    result_futures.append(post_sharable_url.remote(issue=issue, run_id_in_metadata=langsmith_run_id, time_delay_s=30))
+    result_futures.append(post_sharable_url.remote(issue=issue, langsmith_run_id=langsmith_run_id, time_delay_s=30))
 
     # 3. RUN BOT
     # bot = github_agent.GH_Agent.remote()
     prompt = hub.pull("kastanday/new-github-issue").format(issue_description=format_issue(issue))
-    # result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, run_id_in_metadata=langsmith_run_id))
-    bot = WorkflowAgent(run_id_in_metadata=langsmith_run_id)
+    # result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, langsmith_run_id=langsmith_run_id))
+    bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
     result = bot.run(prompt)
 
     # COLLECT PARALLEL RESULTS
@@ -118,7 +143,7 @@ def handle_issue_opened(payload, langsmith_run_id):
     issue.create_comment(err_str)
 
 
-def handle_pull_request_opened(payload, langsmith_run_id):
+def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
@@ -156,12 +181,12 @@ def handle_pull_request_opened(payload, langsmith_run_id):
     result_futures.append(post_comment.remote(issue_or_pr=pr, text=messageForNewPRs, time_delay_s=0))
 
     # 2. SHARABLE URL (in background)
-    result_futures.append(post_sharable_url.remote(issue=pr, run_id_in_metadata=langsmith_run_id, time_delay_s=30))
+    result_futures.append(post_sharable_url.remote(issue=pr, langsmith_run_id=langsmith_run_id, time_delay_s=30))
 
     # 3. RUN BOT
     
     print("LAUNCHING BOT")
-    bot = WorkflowAgent(run_id_in_metadata=langsmith_run_id)
+    bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
     # pr_description = bot.github_api_wrapper.get_pull_request(number)
     # instruction = f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr_description)}"
     # result = bot.launch_gh_agent(instruction, active_branch=branch_name)
@@ -229,10 +254,10 @@ def handle_comment_opened(payload, langsmith_run_id):
       result_futures.append(post_comment.remote(issue_or_pr=pr, text=messageForNewPRs, time_delay_s=0))
 
       # 2. SHARABLE URL (in background)
-      result_futures.append(post_sharable_url.remote(issue=pr, run_id_in_metadata=langsmith_run_id, time_delay_s=30))
+      result_futures.append(post_sharable_url.remote(issue=pr, langsmith_run_id=langsmith_run_id, time_delay_s=30))
 
       # 3. RUN BOT
-      bot = WorkflowAgent(run_id_in_metadata=langsmith_run_id)
+      bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
       instruction = f"Please complete this work-in-progress pull request (PR number {number}) by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {format_issue(issue)}"
       result = bot.run(instruction)
       
@@ -255,7 +280,7 @@ def handle_comment_opened(payload, langsmith_run_id):
       result_futures.append(post_comment.remote(issue_or_pr=pr, text=messageForIssues, time_delay_s=0))
 
       # 2. SHARABLE URL (in background)
-      result_futures.append(post_sharable_url.remote(issue=pr, run_id_in_metadata=langsmith_run_id, time_delay_s=30))
+      result_futures.append(post_sharable_url.remote(issue=pr, langsmith_run_id=langsmith_run_id, time_delay_s=30))
 
       # 3. RUN BOT
 
@@ -265,7 +290,7 @@ def handle_comment_opened(payload, langsmith_run_id):
       # issue_description = bot.github_api_wrapper.get_issue(number)
       # instruction = f"Your boss has just commented on the Github issue that was assigned to you, please review their latest comments and complete the work assigned. There may or may not be an open PR related to this already. Open or complete that PR by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automatically on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's your latest PR assignment: {str(issue_description)}"
       # result = bot.launch_gh_agent(instruction, active_branch=unique_branch_name)
-      bot = WorkflowAgent(run_id_in_metadata=langsmith_run_id)
+      bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
       result = bot.run(comment)
       # COLLECT PARALLEL RESULTS
       for i in range(0, len(result_futures)): 
@@ -310,8 +335,8 @@ def extract_key_info_from_issue_or_pr(issue_or_pr: Union[Issue, PullRequest]):
 
 
 @ray.remote
-def post_sharable_url(issue, run_id_in_metadata, time_delay_s):
-  sharable_url = get_langsmith_trace_sharable_url(run_id_in_metadata, time_delay_s=time_delay_s)
+def post_sharable_url(issue, langsmith_run_id, time_delay_s):
+  sharable_url = get_langsmith_trace_sharable_url(langsmith_run_id, time_delay_s=time_delay_s)
   text = f"👉 [Follow the bot's progress in real time on LangSmith]({sharable_url})."
   ray.get(post_comment.remote(issue_or_pr=issue, text=text, time_delay_s=0))
 
@@ -376,27 +401,27 @@ def get_linked_issue_from_pr(pr: PullRequest) -> Issue | None:
         if e.source and e.source.issue:
             return e.source.issue
 
-if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description='Run the Lil-Jr-Dev agent over a single new input.')
+# if __name__ == "__main__":
+#   parser = argparse.ArgumentParser(description='Run the Lil-Jr-Dev agent over a single new input.')
 
-  """
-  Example usage: 
-  $ python github_webhook_handlers.py --payload "{issue_number: 4, ...}"
-  """
-  parser.add_argument('-p', '--payload', type=str, help='json.stringify(payload) directly from the Github wehbook.')
-  parser.add_argument('-lid', '--langsmith_run_id', type=str, help='Langsmith run ID.')
+#   """
+#   Example usage: 
+#   $ python github_webhook_handlers.py --payload "{issue_number: 4, ...}"
+#   """
+#   parser.add_argument('-p', '--payload', type=str, help='json.stringify(payload) directly from the Github wehbook.')
+#   parser.add_argument('-lid', '--langsmith_run_id', type=str, help='Langsmith run ID.')
 
-  args = parser.parse_args()
+#   args = parser.parse_args()
 
-  payload = json.loads(args.payload)
-  langsmith_run_id = args.langsmith_run_id
-  if not payload:
-    raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
+#   payload = json.loads(args.payload)
+#   langsmith_run_id = args.langsmith_run_id
+#   if not payload:
+#     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
 
-  # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
-  if payload.get('action') == 'opened' and payload.get('pull_request'):
-    handle_pull_request_opened(payload, langsmith_run_id)
-  elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
-    handle_issue_opened(payload, langsmith_run_id)
-  elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
-    handle_comment_opened(payload, langsmith_run_id)
+#   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
+#   if payload.get('action') == 'opened' and payload.get('pull_request'):
+#     handle_pull_request_opened(payload, langsmith_run_id)
+#   elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
+#     handle_issue_opened(payload, langsmith_run_id)
+#   elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
+#     handle_comment_opened(payload, langsmith_run_id)

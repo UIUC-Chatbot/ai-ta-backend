@@ -21,6 +21,7 @@ from sqlalchemy import JSON
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
 from ai_ta_backend.agents import webhooks
+from ai_ta_backend.agents.github_webhook_handlers import handle_github_event
 
 app = Flask(__name__)
 CORS(app)
@@ -347,7 +348,7 @@ def webhook():
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
   
-  webhooks.handle_event(payload)
+  handle_github_event(payload)
 
   return '', 200
 

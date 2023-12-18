@@ -61,3 +61,5 @@ newrelic-telemetry-sdk
 # arize[AutoEmbeddings, LLM_Evaluation]
 pyautogen
 docker
+
+e2b==0.13.13

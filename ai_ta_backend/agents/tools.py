@@ -17,7 +17,12 @@ from langchain.tools.playwright.utils import (create_async_playwright_browser,
                                               create_sync_playwright_browser)
 from langchain.utilities.github import GitHubAPIWrapper
 
-from vector_db import get_vectorstore_retriever_tool
+from langchain.tools import BaseTool, StructuredTool
+from pydantic import BaseModel
+from ai_ta_backend.agents.code_intrepreter_sanbox import E2B_class
+
+
+from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
 from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
 
 load_dotenv(override=True, dotenv_path='../.env')
@@ -26,8 +31,26 @@ os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution o
 langchain.debug = False
 VERBOSE = True
 
-def get_tools(sync=True):
+def get_tools(langsmith_run_id: str, sync=True):
   '''Main function to assemble tools for ML for Bio project.'''
+  # How to get LangSmithRunID into the properties of a tool... to resume a stateful tool.
+  code_execution_class = E2B_class(langsmith_run_id=langsmith_run_id)
+  e2b_code_execution_tool = StructuredTool.from_function(
+    func=code_execution_class.run_python_code,
+    name="Code Execution",
+    description="Executes code in a docker container",
+    langsmith_run_id=langsmith_run_id,
+    # args_schema
+  )
+  e2b_shell_tool = StructuredTool.from_function(
+    func=code_execution_class.run_shell,
+    name="Code Execution",
+    description="Executes code in a docker container",
+    langsmith_run_id=langsmith_run_id,
+    # args_schema
+  )
+  return e2b_code_execution_tool
+
   # WEB BROWSER
   browser_toolkit = None
   if sync:
@@ -77,13 +100,8 @@ def get_tools(sync=True):
   # def execute_code_tool(code: str, timeout: int = 60, filename: str = "execution_file.py", work_dir: str = "work_dir", use_docker: bool = True, lang: str = "python"):
   #   return execute_code(code, timeout, filename, work_dir, use_docker, lang)
 
-  # code_execution_tool = Tool.from_function(
-  #   func=execute_code_tool,
-  #   name="Code Execution",
-  #   description="Executes code in a docker container"
-  # )
-
-  tools: list[BaseTool] = browser_tools + github_tools + search + docs_tools + file_management + [shell]
+  
+  tools: list[BaseTool] = browser_tools + github_tools + search + docs_tools + file_management + [e2b_code_execution_tool, e2b_shell_tool]
   return tools
 
 ############# HELPERS ################
@@ -115,3 +133,9 @@ def get_human_input() -> str:
       break
     contents.append(line)
   return "\n".join(contents)
+
+if __name__ == "__main__":
+  tools = get_tools(sync=True, langsmith_run_id="MY RUN ID FROM OUTSIDE")
+  print(tools)
+  print("SCHEMA: ", tools.args_schema.schema_json(indent=2))
+  tools.run("print('Hello World')")
