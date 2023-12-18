@@ -34,22 +34,19 @@ VERBOSE = True
 def get_tools(langsmith_run_id: str, sync=True):
   '''Main function to assemble tools for ML for Bio project.'''
 
-
   # How to get LangSmithRunID into the properties of a tool... to resume a stateful tool.
   code_execution_class = E2B_class(langsmith_run_id=langsmith_run_id)
   e2b_code_execution_tool = StructuredTool.from_function(
     func=code_execution_class.run_python_code,
     name="Code Execution",
-    description="Executes code in a docker container",
-    langsmith_run_id=langsmith_run_id,
+    description="Executes code in an safe Docker container.",
   )
   e2b_shell_tool = StructuredTool.from_function(
     func=code_execution_class.run_shell,
-    name="Code Execution",
-    description="Executes code in a docker container",
-    langsmith_run_id=langsmith_run_id,
+    name="Shell commands (except for git)",
+    description="Run shell commands to, for example, execute shell scripts or R scripts. It is in the same environment as the Code Execution tool.",
   )
-  
+
   # SHELL & FILES
   # shell = ShellTool()
   # file_management = FileManagementToolkit(
@@ -135,6 +132,6 @@ def get_human_input() -> str:
 
 if __name__ == "__main__":
   tools = get_tools(sync=True, langsmith_run_id="MY RUN ID FROM OUTSIDE")
-  print(tools)
-  print("SCHEMA: ", tools.args_schema.schema_json(indent=2))
-  tools.run("print('Hello World')")
+  # print(tools)
+  # print("SCHEMA: ", tools.args_schema.schema_json(indent=2))
+  tools.run("print('Hello World from inside the tools.run() function!')")
