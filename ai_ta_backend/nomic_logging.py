@@ -9,6 +9,7 @@ import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 import sentry_sdk
+import json
 
 OPENAI_API_TYPE = "azure"
 
@@ -25,7 +26,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   3. Keep current logic for map doesn't exist - update metadata
   """
   print(f"in log_convo_to_nomic() for course: {course_name}")
-    
+  
+  conversation = json.loads(conversation)
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
