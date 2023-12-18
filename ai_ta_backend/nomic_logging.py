@@ -109,6 +109,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       # add new data point
       user_queries = []
       conversation_string = ""
+      print("messages: ", messages)
+      
       first_message = messages[0]['content']
       user_queries.append(first_message)
 
