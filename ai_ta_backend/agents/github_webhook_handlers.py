@@ -1,6 +1,5 @@
 ######## GITHUB WEBHOOK HANDLERS ########
 # from github import Github
-import argparse
 import inspect
 import json
 import logging
@@ -24,9 +23,9 @@ from github.TimelineEvent import TimelineEvent
 from langchain import hub
 # from langchain.tools.github.utils import generate_branch_name
 
-from github_agent import GH_Agent
-from ml4bio_agent import WorkflowAgent
-from utils import get_langsmith_trace_sharable_url
+# from github_agent import GH_Agent
+from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
+from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
 
 # load API keys from globally-availabe .env file
 load_dotenv(override=True)
