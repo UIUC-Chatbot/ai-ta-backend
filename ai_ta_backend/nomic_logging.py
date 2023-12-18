@@ -8,7 +8,7 @@ import pandas as pd
 import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
-import json
+import sentry_sdk
 
 OPENAI_API_TYPE = "azure"
 
@@ -150,6 +150,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     else:
       # for rest of the errors - return fail
       print("ERROR in log_convo_to_nomic():", e)
+      sentry_sdk.capture_exception(e)
       return f"Logging failed for {course_name}"
 
 
@@ -172,6 +173,7 @@ def get_nomic_map(course_name: str):
   except Exception as e:
     err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
     print(err)
+    sentry_sdk.capture_exception(e)
     return {"map_id": None, "map_link": None}
 
   map = project.get_map(project_name)

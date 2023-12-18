@@ -12,7 +12,7 @@ import uuid
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Callable, Dict, List, Union
-
+import sentry_sdk
 import boto3
 import fitz
 import openai
@@ -176,6 +176,7 @@ class Ingest():
       return success_status
     except Exception as e:
       success_status['failure_ingest'].append(f"MAJOR ERROR IN /bulk_ingest: Error: {str(e)}")
+      sentry_sdk.capture_exception(e)
       return success_status
 
   def _ingest_single_py(self, s3_path: str, course_name: str, **kwargs):
@@ -211,6 +212,7 @@ class Ingest():
       err = f"❌❌ Error in (Python ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_single_vtt(self, s3_path: str, course_name: str, **kwargs):
@@ -242,6 +244,7 @@ class Ingest():
       err = f"❌❌ Error in (VTT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_html(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -275,6 +278,7 @@ class Ingest():
     except Exception as e:
       err: str = f"ERROR IN _ingest_html: {e}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_single_video(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -352,6 +356,7 @@ class Ingest():
       err = f"❌❌ Error in (VIDEO ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_single_docx(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -380,6 +385,7 @@ class Ingest():
       err = f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_single_srt(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -409,6 +415,7 @@ class Ingest():
       err = f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_single_excel(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -439,6 +446,7 @@ class Ingest():
       err = f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_single_image(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -475,6 +483,7 @@ class Ingest():
       err = f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_single_csv(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -504,6 +513,7 @@ class Ingest():
       err = f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
@@ -564,6 +574,7 @@ class Ingest():
       err = f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
     return "Success"
 
@@ -602,6 +613,7 @@ class Ingest():
       err = f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def _ingest_single_ppt(self, s3_path: str, course_name: str, **kwargs) -> str:
@@ -635,6 +647,7 @@ class Ingest():
       err = f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def list_files_recursively(self, bucket, prefix):
@@ -745,6 +758,7 @@ class Ingest():
     except Exception as e:
       err = f"❌❌ Error in (GITHUB ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n{traceback.format_exc()}"
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
@@ -757,6 +771,16 @@ class Ingest():
         texts (List[str]): _description_
         metadatas (List[Dict[str, Any]]): _description_
     """
+    self.posthog.capture('distinct_id_of_the_user',
+                         event='split_and_upload_invoked',
+                         properties={
+                             'course_name': metadatas[0].get('course_name', None),
+                             's3_path': metadatas[0].get('s3_path', None),
+                             'readable_filename': metadatas[0].get('readable_filename', None),
+                             'url': metadatas[0].get('url', None),
+                             'base_url': metadatas[0].get('base_url', None),
+                         })
+
     print("In split and upload")
     print(f"metadatas: {metadatas}")
     print(f"Texts: {texts}")
@@ -784,14 +808,18 @@ class Ingest():
       for i, context in enumerate(contexts):
         context.metadata['chunk_index'] = i
 
-      oai = OpenAIAPIProcessor(input_prompts_list=input_texts,
-                               request_url='https://api.openai.com/v1/embeddings',
-                               api_key=os.getenv('OPENAI_API_KEY'),
-                               max_requests_per_minute=10_000,
-                               max_tokens_per_minute=20_000,
-                               max_attempts=20,
-                               logging_level=logging.INFO,
-                               token_encoding_name='cl100k_base')  # nosec -- reasonable bandit error suppression
+      oai = OpenAIAPIProcessor(
+          input_prompts_list=input_texts,
+          request_url='https://api.openai.com/v1/embeddings',
+          api_key=os.getenv('VLADS_OPENAI_KEY'),
+          # request_url=
+          # 'https://uiuc-chat-canada-east.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-05-15',
+          # api_key=os.getenv('AZURE_OPENAI_KEY'),
+          max_requests_per_minute=5_000,
+          max_tokens_per_minute=300_000,
+          max_attempts=20,
+          logging_level=logging.INFO,
+          token_encoding_name='cl100k_base')  # nosec -- reasonable bandit error suppression
       asyncio.run(oai.process_api_requests_from_file())
       # parse results into dict of shape page_content -> embedding
       embeddings_dict: dict[str, List[float]] = {
@@ -830,11 +858,22 @@ class Ingest():
 
       self.supabase_client.table(
           os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
+
+      self.posthog.capture('distinct_id_of_the_user',
+                           event='split_and_upload_succeeded',
+                           properties={
+                               'course_name': metadatas[0].get('course_name', None),
+                               's3_path': metadatas[0].get('s3_path', None),
+                               'readable_filename': metadatas[0].get('readable_filename', None),
+                               'url': metadatas[0].get('url', None),
+                               'base_url': metadatas[0].get('base_url', None),
+                           })
       print("successful END OF split_and_upload")
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def delete_entire_course(self, course_name: str):
@@ -856,6 +895,7 @@ class Ingest():
     except Exception as e:
       err: str = f"ERROR IN delete_entire_course(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
       pass
 
     try:
@@ -875,6 +915,7 @@ class Ingest():
     except Exception as e:
       err: str = f"ERROR IN delete_entire_course(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
       pass
 
     try:
@@ -887,6 +928,7 @@ class Ingest():
     except Exception as e:
       err: str = f"ERROR IN delete_entire_course(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
     # todo: delete from Vercel KV to fully make the coure not exist. Last db to delete from (as of now, Aug 15)
 
   def delete_data(self, course_name: str, s3_path: str, source_url: str):
@@ -902,6 +944,7 @@ class Ingest():
           self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
         except Exception as e:
           print("Error in deleting file from s3:", e)
+          sentry_sdk.capture_exception(e)
         # Delete from Qdrant
         # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
         # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training  ...
@@ -917,11 +960,13 @@ class Ingest():
           )
         except Exception as e:
           print("Error in deleting file from Qdrant:", e)
+          sentry_sdk.capture_exception(e)
         try:
           self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
               's3_path', s3_path).eq('course_name', course_name).execute()
         except Exception as e:
           print("Error in deleting file from supabase:", e)
+          sentry_sdk.capture_exception(e)
 
       # Delete files by their URL identifier
       elif source_url:
@@ -938,17 +983,20 @@ class Ingest():
           )
         except Exception as e:
           print("Error in deleting file from Qdrant:", e)
+          sentry_sdk.capture_exception(e)
         try:
           self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
               'url', source_url).eq('course_name', course_name).execute()
         except Exception as e:
           print("Error in deleting file from supabase:", e)
+          sentry_sdk.capture_exception(e)
 
       # Delete from Supabase
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def getAll(
@@ -1008,6 +1056,7 @@ class Ingest():
         found_docs.append(Document(page_content=page_content, metadata=metadata))  # type: ignore
       except Exception as e:
         print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
+        sentry_sdk.capture_exception(e)
     # print("found_docs", found_docs)
     return found_docs
 
@@ -1053,11 +1102,24 @@ class Ingest():
       print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
       if len(valid_docs) == 0:
         return []
+
+      self.posthog.capture('distinct_id_of_the_user',
+                           event='success_get_top_contexts_OG',
+                           properties={
+                               'user_query': search_query,
+                               'course_name': course_name,
+                               'token_limit': token_limit,
+                               'total_tokens_used': token_counter,
+                               'total_contexts_used': len(valid_docs),
+                               'total_unique_docs_retrieved': len(found_docs),
+                           })
+
       return self.format_for_json(valid_docs)
     except Exception as e:
       # return full traceback to front end
       err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def batch_vector_search(self, search_queries: List[str], course_name: str, top_n: int = 50):
@@ -1210,9 +1272,8 @@ class Ingest():
       if len(valid_docs) == 0:
         return []
 
-      # posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
       self.posthog.capture('distinct_id_of_the_user',
-                           event='success_filter_top_contexts',
+                           event='filter_top_contexts_succeeded',
                            properties={
                                'user_query': search_query,
                                'course_name': course_name,
@@ -1227,6 +1288,7 @@ class Ingest():
       # return full traceback to front end
       err: str = f"ERROR: In /getTopContextsWithMQR. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.format_exc()}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def format_for_json_mqr(self, found_docs) -> List[Dict]:
@@ -1412,6 +1474,7 @@ Now please respond to my question: {user_question}"""
       # return full traceback to front end
       err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
+      sentry_sdk.capture_exception(e)
       return err
 
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:

@@ -17,12 +17,24 @@ from flask_cors import CORS
 from flask_executor import Executor
 from posthog import Posthog
 import ray
+import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+
+# Sentry.io error logging
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+    enable_tracing=True
+)
 
 app = Flask(__name__)
 CORS(app)
@@ -359,6 +371,19 @@ def scrape() -> Response:
   print(f"Stay on BaseURL: {stay_on_baseurl}")
   print(f"Timeout in Seconds ⏰: {timeout}")
 
+  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog.capture('distinct_id_of_the_user',
+                  event='web_scrape_invoked',
+                  properties={
+                      'url': url,
+                      'max_urls': max_urls,
+                      'max_depth': max_depth,
+                      'stay_on_baseurl': stay_on_baseurl,
+                      'timeout': timeout,
+                      'course_name': course_name,
+                      'depth_or_breadth': depth_or_breadth
+                  })
+
   scraper = WebScrape()
   success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl,
                                            depth_or_breadth)
@@ -525,7 +550,7 @@ def getTopContextsWithMQR() -> Response:
 
   posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   posthog.capture('distinct_id_of_the_user',
-                  event='initiated_filter_top_contexts',
+                  event='filter_top_contexts_invoked',
                   properties={
                       'user_query': search_query,
                       'course_name': course_name,
