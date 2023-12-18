@@ -134,10 +134,13 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
           "created_at": current_time,
           "modified_at": current_time
       }]
-
+      print("metadata: ", metadata)
+      print("user_queries: ", user_queries)
       # create embeddings
       embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
       embeddings = embeddings_model.embed_documents(user_queries)
+
+      print("embeddings: ", len(embeddings))
 
     # add embeddings to the project
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
