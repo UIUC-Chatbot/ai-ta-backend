@@ -26,7 +26,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   3. Keep current logic for map doesn't exist - update metadata
   """
   print(f"in log_convo_to_nomic() for course: {course_name}")
-  
+  print("conversation:", type(conversation))
   conversation = json.loads(conversation)
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
@@ -177,6 +177,9 @@ def get_nomic_map(course_name: str):
 
   try:
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
+  except ValueError:
+    # Error: ValueError: You must specify a unique_id_field when creating a new project.
+    pass
   except Exception as e:
     err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
     print(err)
