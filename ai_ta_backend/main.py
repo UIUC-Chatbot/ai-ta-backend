@@ -489,13 +489,13 @@ def nomic_map():
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic():
   print("In /onResponseCompletion")
-
   course_name: str = request.args.get('course_name', default='', type=str)
   conversation: str = request.args.get('conversation', default='', type=str)
   
   # data = request.get_json()
   # course_name = data['course_name']
   # conversation = data['conversation']
+
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
     abort(

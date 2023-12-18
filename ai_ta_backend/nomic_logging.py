@@ -19,15 +19,24 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
   """
   Logs conversation to Nomic.
-  1. Check if map exists for given course
+  1. Check if ma
+  p exists for given course
   2. Check if conversation ID exists 
     - if yes, delete and add new data point
     - if no, add new data point
   3. Keep current logic for map doesn't exist - update metadata
   """
+ 
+  
   print(f"in log_convo_to_nomic() for course: {course_name}")
-  print("conversation:", type(conversation))
-  conversation = json.loads(conversation)
+    
+  try:
+    conversation = json.loads(conversation)
+    print("Fixed string is valid JSON")
+  except json.JSONDecodeError as e:
+    print(conversation[116:])
+    print(f"Error decoding fixed JSON: {e}")
+  
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
@@ -177,21 +186,19 @@ def get_nomic_map(course_name: str):
 
   try:
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-  except ValueError:
+    map = project.get_map(project_name)
+
+    print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
+    return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
+  except ValueError as ve:
     # Error: ValueError: You must specify a unique_id_field when creating a new project.
-    pass
-  except Exception as e:
-    err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
+    err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {ve}"
     print(err)
+    return {"map_id": None, "map_link": None}
+  except Exception as e:
     sentry_sdk.capture_exception(e)
     return {"map_id": None, "map_link": None}
-
-  map = project.get_map(project_name)
-
-  print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
-
-  return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
-
+    
 
 def create_nomic_map(course_name: str, log_data: list):
   """
@@ -238,22 +245,29 @@ def create_nomic_map(course_name: str, log_data: list):
 
       # create metadata for multi-turn conversation
       conversation = ""
-      if message['role'] == 'user':  # type: ignore
-        emoji = "🙋 "
-      else:
-        emoji = "🤖 "
       for message in messages:
         # string of role: content, role: content, ...
-        conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+        if message['role'] == 'user':  # type: ignore
+          emoji = "🙋 "
+        else:
+          emoji = "🤖 "
+
+        if type(message['content']) == list:
+          text = message['content'][0]['text']
+        else:
+          text = message['content']
+
+        conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
       # append current chat to previous chat if convo already exists
       if convo['id'] == log_conversation_id:
         conversation_exists = True
-        if m['role'] == 'user':  # type: ignore
-          emoji = "🙋 "
-        else:
-          emoji = "🤖 "
+        
         for m in log_messages:
+          if m['role'] == 'user':  # type: ignore
+            emoji = "🙋 "
+          else:
+            emoji = "🤖 "
           conversation += "\n>>> " + emoji + m['role'] + ": " + m['content'] + "\n"
 
       # adding modified timestamp
