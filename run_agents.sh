@@ -2,10 +2,6 @@
 
 echo "⚠️  Activate your ** VIRTUAL ENVIRONMENT ** before running this script!"
 
-# ensure env is up to date
-rm -f ./ai_ta_backend/agents/.env
-cp .env ai_ta_backend/agents/.env
-
 # Function to handle script termination
 cleanup() {
     echo "🧹 Cleaning up..."
@@ -15,25 +11,6 @@ cleanup() {
 }
 # Set trap for catching Ctrl+C and script termination
 trap cleanup SIGINT SIGTERM
-
-# start docker if it's not running
-if ! pgrep -f Docker.app > /dev/null; then
-    echo "Starting Docker... please hang tight while it get's started for you."
-    open -a "Docker"
-    while ! docker ps > /dev/null 2>&1; do
-        sleep 1
-    done
-    echo "✅ Docker is now running"
-elif [ $(uname) = "Linux" ]; then
-    docker ps > /dev/null 2>&1
-    if [ ! $? -eq 0 ]; then
-        # docker is NOT running
-        echo "Docker is NOT running, please start Docker."
-        # my attempts were unreliable... especially with WSL2.
-        sudo service docker start
-        sudo systemctl start docker
-    fi 
-fi
 
 #! Check if langchain is up to date with latest commit on branch `uiuc-dot-chat` of https://github.com/KastanDay/langchain-improved-agents.git 
 # Get the latest commit hash from the repository
