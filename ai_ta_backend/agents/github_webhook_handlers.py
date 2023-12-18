@@ -400,28 +400,3 @@ def get_linked_issue_from_pr(pr: PullRequest) -> Issue | None:
       if str(e.event) == 'cross-referenced':
         if e.source and e.source.issue:
             return e.source.issue
-
-# if __name__ == "__main__":
-#   parser = argparse.ArgumentParser(description='Run the Lil-Jr-Dev agent over a single new input.')
-
-#   """
-#   Example usage: 
-#   $ python github_webhook_handlers.py --payload "{issue_number: 4, ...}"
-#   """
-#   parser.add_argument('-p', '--payload', type=str, help='json.stringify(payload) directly from the Github wehbook.')
-#   parser.add_argument('-lid', '--langsmith_run_id', type=str, help='Langsmith run ID.')
-
-#   args = parser.parse_args()
-
-#   payload = json.loads(args.payload)
-#   langsmith_run_id = args.langsmith_run_id
-#   if not payload:
-#     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
-
-#   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
-#   if payload.get('action') == 'opened' and payload.get('pull_request'):
-#     handle_pull_request_opened(payload, langsmith_run_id)
-#   elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
-#     handle_issue_opened(payload, langsmith_run_id)
-#   elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
-#     handle_comment_opened(payload, langsmith_run_id)
