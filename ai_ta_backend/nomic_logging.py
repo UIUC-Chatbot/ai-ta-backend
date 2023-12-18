@@ -30,13 +30,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   
   print(f"in log_convo_to_nomic() for course: {course_name}")
     
-  try:
-    conversation = json.loads(conversation)
-    print("Fixed string is valid JSON")
-  except json.JSONDecodeError as e:
-    print(conversation[116:])
-    print(f"Error decoding fixed JSON: {e}")
-  
+  conversation = json.loads(conversation)
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
@@ -58,7 +52,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     map_embeddings_df = project.maps[1].embeddings.latent
     map_metadata_df['id'] = map_metadata_df['id'].astype(int)
     last_id = map_metadata_df['id'].max()
-    
+    print("last_id: ", last_id)
     if conversation_id in map_metadata_df.values:
       # store that convo metadata locally
       prev_data = map_metadata_df[map_metadata_df['conversation_id'] == conversation_id]
@@ -110,7 +104,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       user_queries = []
       conversation_string = ""
       print("messages: ", messages)
-      
+
       first_message = messages[0]['content']
       user_queries.append(first_message)
 
