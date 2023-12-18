@@ -25,8 +25,6 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   3. Keep current logic for map doesn't exist - update metadata
   """
   print(f"in log_convo_to_nomic() for course: {course_name}")
-  print("conversation:", conversation)
-  conversation = json.loads(conversation)
     
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
@@ -42,7 +40,6 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   emoji = ""
 
   try:
-    print("in try block")
     # fetch project metadata and embbeddings
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
     
@@ -74,7 +71,12 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         else:
           emoji = "🤖 "
 
-        prev_convo += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+        if type(message['content']) == list:
+          text = message['content'][0]['text']
+        else:
+          text = message['content']
+
+        prev_convo += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
       # modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -100,14 +102,17 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       user_queries.append(first_message)
 
       for message in messages:
-        print("in message loop")
-        print("message:", message['role'])
-        print("message:", message['content'])
         if message['role'] == 'user':
           emoji = "🙋 "
         else:
           emoji = "🤖 "
-        conversation_string += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+
+        if type(message['content']) == list:
+          text = message['content'][0]['text']
+        else:
+          text = message['content']
+
+        conversation_string += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
       # modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
