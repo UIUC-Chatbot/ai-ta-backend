@@ -120,7 +120,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
           text = message['content']
 
         conversation_string += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
-
+      print("conversation_string: ", conversation_string)
       # modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
