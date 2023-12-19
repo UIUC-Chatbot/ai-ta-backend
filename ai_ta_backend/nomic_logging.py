@@ -28,7 +28,6 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   """
    
   print(f"in log_convo_to_nomic() for course: {course_name}")
-    
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
@@ -45,12 +44,12 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   try:
     # fetch project metadata and embbeddings
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
-    
+
     map_metadata_df = project.maps[1].data.df  # type: ignore
     map_embeddings_df = project.maps[1].embeddings.latent
     map_metadata_df['id'] = map_metadata_df['id'].astype(int)
     last_id = map_metadata_df['id'].max()
-    
+
     if conversation_id in map_metadata_df.values:
       # store that convo metadata locally
       prev_data = map_metadata_df[map_metadata_df['conversation_id'] == conversation_id]
@@ -74,7 +73,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         else:
           emoji = "🤖 "
 
-        if type(message['content']) == list:
+        if isinstance(message['content'], list):
           text = message['content'][0]['text']
         else:
           text = message['content']
@@ -113,7 +112,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         else:
           emoji = "🤖 "
 
-        if type(message['content']) == list:
+        if isinstance(message['content'], list):
           text = message['content'][0]['text']
         else:
           text = message['content']
