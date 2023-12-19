@@ -60,3 +60,4 @@ ray[default]
 
 # pyautogen
 e2b==0.13.13
+termcolor==2.3.0

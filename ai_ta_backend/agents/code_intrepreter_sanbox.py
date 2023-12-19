@@ -18,11 +18,11 @@ class E2B_class():
     self.sandbox = Sandbox(env_vars=env_vars)
     self.sandboxID = self.sandbox.id
     self.sandbox.keep_alive(60 * 60 * 1) # 1 hour max
-    self.install_base_packages()
     self.command_timeout = 3 * 60 # 3 minutes
     self.existing_files = []
     self.working_dir = '/home/user/'
     self.curr_terminal_output = ''
+    # self.install_base_packages()
   
   def install_base_packages(self):
     self.run_shell("pip install -U numpy pandas matplotlib seaborn scikit-learn scipy")

@@ -4,6 +4,7 @@ import inspect
 import json
 import logging
 import os
+import socket
 import time
 import traceback
 import uuid
@@ -27,6 +28,11 @@ from langchain import hub
 from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
 from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
 
+hostname = socket.gethostname()
+RUNNING_ON_LOCAL = False
+if 'railway' not in hostname:
+  RUNNING_ON_LOCAL = True
+
 # load API keys from globally-availabe .env file
 load_dotenv(override=True)
 
@@ -40,7 +46,7 @@ Feel free to comment in this thread to give me additional instructions, or I'll 
 If I think I'm successful I'll 'request your review' on the resulting PR. Just watch for emails while I work.
 """
 
-def handle_github_event(gh_webhook_payload: str):
+def handle_github_event(payload: Dict[str, Any]):
   """Main entry point for all actions that take place on Github website.
 
   , langsmith_run_id: uuid.UUID
@@ -52,7 +58,7 @@ def handle_github_event(gh_webhook_payload: str):
   Raises:
       ValueError: _description_
   """
-  payload: Dict[str, Any] = json.loads(gh_webhook_payload)
+  # payload: Dict[str, Any] = json.loads(gh_webhook_payload)
   langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
   
   if not payload:
@@ -105,18 +111,14 @@ def handle_issue_opened(payload, langsmith_run_id):
   # response.raise_for_status()
 
   try:
-
-    # ! TODO: REENABLE: ROHAN's version of the bot.
-    
-
     result_futures = []
 
     # 1. INTRO COMMENT
     # issue.create_comment(messageForNewIssues)
-    result_futures.append(post_comment.remote(issue_or_pr=issue, text=MESSAGE_HANDLE_ISSUE_OPENED, time_delay_s=0))
+    # result_futures.append(post_comment.remote(issue_or_pr=issue, text=MESSAGE_HANDLE_ISSUE_OPENED, time_delay_s=0))
 
     # 2. SHARABLE URL (in background)
-    result_futures.append(post_sharable_url.remote(issue=issue, langsmith_run_id=langsmith_run_id, time_delay_s=30))
+    result_futures.append(post_sharable_url.remote(issue=issue, langsmith_run_id=langsmith_run_id, time_delay_s=20))
 
     # 3. RUN BOT
     # bot = github_agent.GH_Agent.remote()
@@ -138,7 +140,11 @@ def handle_issue_opened(payload, langsmith_run_id):
   except Exception as e:
     logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())    
     err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
-    issue.create_comment(err_str)
+    
+    if RUNNING_ON_LOCAL:
+      print(err_str)
+    else:
+      issue.create_comment(err_str)
 
 
 def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
@@ -203,7 +209,10 @@ def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
     print(f"Error: {e}")
     logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())
     err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
-    issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{err_str}")
+    if RUNNING_ON_LOCAL:
+      print(err_str)
+    else:
+      issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{err_str}")
 
 
 
@@ -303,7 +312,11 @@ def handle_comment_opened(payload, langsmith_run_id):
   except Exception as e:
     logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())    
     err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
-    issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {err_str}")
+    if RUNNING_ON_LOCAL:
+      print(err_str)
+    else:
+      issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {err_str}")
+
 
 @ray.remote
 def post_comment(issue_or_pr: Union[Issue, PullRequest], text: str, time_delay_s: int):
