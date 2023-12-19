@@ -26,11 +26,9 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     - if no, add new data point
   3. Keep current logic for map doesn't exist - update metadata
   """
- 
-  
+   
   print(f"in log_convo_to_nomic() for course: {course_name}")
     
-  conversation = json.loads(conversation)
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
@@ -52,7 +50,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     map_embeddings_df = project.maps[1].embeddings.latent
     map_metadata_df['id'] = map_metadata_df['id'].astype(int)
     last_id = map_metadata_df['id'].max()
-    print("last_id: ", last_id)
+    
     if conversation_id in map_metadata_df.values:
       # store that convo metadata locally
       prev_data = map_metadata_df[map_metadata_df['conversation_id'] == conversation_id]
@@ -103,7 +101,6 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       # add new data point
       user_queries = []
       conversation_string = ""
-      print("messages: ", messages)
 
       first_message = messages[0]['content']
       if type(first_message) == list:
@@ -122,7 +119,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
           text = message['content']
 
         conversation_string += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
-      print("conversation_string: ", conversation_string)
+      
       # modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -136,13 +133,10 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
           "created_at": current_time,
           "modified_at": current_time
       }]
-      print("metadata: ", metadata)
-      print("user_queries: ", user_queries)
+      
       # create embeddings
       embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
       embeddings = embeddings_model.embed_documents(user_queries)
-
-      print("embeddings: ", len(embeddings))
 
     # add embeddings to the project
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
@@ -241,7 +235,11 @@ def create_nomic_map(course_name: str, log_data: list):
       created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
       convo = row['convo']
       messages = convo['messages']
+
       first_message = messages[0]['content']
+      if type(first_message) == list:
+        first_message = first_message[0]['text']
+
       user_queries.append(first_message)
 
       # create metadata for multi-turn conversation
@@ -269,7 +267,12 @@ def create_nomic_map(course_name: str, log_data: list):
             emoji = "🙋 "
           else:
             emoji = "🤖 "
-          conversation += "\n>>> " + emoji + m['role'] + ": " + m['content'] + "\n"
+
+          if type(m['content']) == list:
+            text = m['content'][0]['text']
+          else:
+            text = m['content']
+          conversation += "\n>>> " + emoji + m['role'] + ": " + text + "\n"
 
       # adding modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -297,7 +300,12 @@ def create_nomic_map(course_name: str, log_data: list):
           emoji = "🙋 "
         else:
           emoji = "🤖 "
-        conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+        
+        if type(message['content']) == list:
+          text = message['content'][0]['text']
+        else:
+          text = message['content']
+        conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
       # adding timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
