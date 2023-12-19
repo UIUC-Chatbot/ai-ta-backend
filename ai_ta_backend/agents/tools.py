@@ -3,13 +3,13 @@ import os
 from typing import List
 
 import langchain
-from autogen.code_utils import execute_code
+# from autogen.code_utils import execute_code
 from dotenv import load_dotenv
 from langchain.agents import load_tools
 from langchain.agents.agent_toolkits import (FileManagementToolkit,
                                              PlayWrightBrowserToolkit)
 from langchain.agents.agent_toolkits.github.toolkit import GitHubToolkit
-from langchain.tools import (ArxivQueryRun, PubmedQueryRun, ShellTool,
+from langchain.tools import (ArxivQueryRun, PubmedQueryRun,
                              VectorStoreQATool, VectorStoreQAWithSourcesTool,
                              WikipediaQueryRun, WolframAlphaQueryRun)
 from langchain.tools.base import BaseTool
@@ -25,16 +25,16 @@ from ai_ta_backend.agents.code_intrepreter_sanbox import E2B_class
 from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
 from langchain.chat_models import ChatOpenAI, AzureChatOpenAI
 
-load_dotenv(override=True, dotenv_path='../.env')
+load_dotenv(override=True, dotenv_path='../../.env')
 
 os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution of the program, set to "true"
-langchain.debug = False
+langchain.debug = False # type: ignore
 VERBOSE = True
 
 def get_tools(langsmith_run_id: str, sync=True):
   '''Main function to assemble tools for ML for Bio project.'''
 
-  # How to get LangSmithRunID into the properties of a tool... to resume a stateful tool.
+  # CODE EXECUTION - langsmith_run_id as unique identifier for the sandbox
   code_execution_class = E2B_class(langsmith_run_id=langsmith_run_id)
   e2b_code_execution_tool = StructuredTool.from_function(
     func=code_execution_class.run_python_code,
@@ -46,6 +46,9 @@ def get_tools(langsmith_run_id: str, sync=True):
     name="Shell commands (except for git)",
     description="Run shell commands to, for example, execute shell scripts or R scripts. It is in the same environment as the Code Execution tool.",
   )
+  # AutoGen's Code Execution Tool
+  # def execute_code_tool(code: str, timeout: int = 60, filename: str = "execution_file.py", work_dir: str = "work_dir", use_docker: bool = True, lang: str = "python"):
+  #   return execute_code(code, timeout, filename, work_dir, use_docker, lang)
 
   # SHELL & FILES
   # shell = ShellTool()
@@ -92,10 +95,6 @@ def get_tools(langsmith_run_id: str, sync=True):
   # Probably unnecessary: WikipediaQueryRun, WolframAlphaQueryRun, PubmedQueryRun, ArxivQueryRun
   # arxiv_tool = ArxivQueryRun()
 
-  # Custom Code Execution Tool
-  # def execute_code_tool(code: str, timeout: int = 60, filename: str = "execution_file.py", work_dir: str = "work_dir", use_docker: bool = True, lang: str = "python"):
-  #   return execute_code(code, timeout, filename, work_dir, use_docker, lang)
-
   
   tools: list[BaseTool] = browser_tools + github_tools + search + docs_tools + [e2b_code_execution_tool, e2b_shell_tool]
   return tools
@@ -134,4 +133,8 @@ if __name__ == "__main__":
   tools = get_tools(sync=True, langsmith_run_id="MY RUN ID FROM OUTSIDE")
   # print(tools)
   # print("SCHEMA: ", tools.args_schema.schema_json(indent=2))
-  tools.run("print('Hello World from inside the tools.run() function!')")
+  if type(tools) == List:
+    # raise Exception("No tools found.")
+    pass
+  else:
+    tools[0].run("print('Hello World from inside the tools.run() function!')")

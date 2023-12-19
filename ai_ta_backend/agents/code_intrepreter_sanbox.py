@@ -1,5 +1,6 @@
 import threading
 import time
+import uuid
 import termcolor
 import io
 from typing import Any, Optional, Tuple
@@ -19,6 +20,9 @@ class E2B_class():
     self.sandbox.keep_alive(60 * 60 * 1) # 1 hour max
     self.install_base_packages()
     self.command_timeout = 3 * 60 # 3 minutes
+    self.existing_files = []
+    self.working_dir = '/home/user/'
+    self.curr_terminal_output = ''
   
   def install_base_packages(self):
     self.run_shell("pip install -U numpy pandas matplotlib seaborn scikit-learn scipy")
@@ -28,18 +32,17 @@ class E2B_class():
   
   def run_python_code(self, code: str):
     print(termcolor.colored(f"IN SHELL RUN PYTHON CODE...\n{code}", 'blue', attrs=['bold']))
+
     code_file = io.StringIO(code)
-    code_file.name = "my_code.py"
+    code_file.name = f"{uuid.uuid4}_code.py"
     filepath = self.sandbox.upload_file(code_file)
-    shell_command = f"python {filepath}"
-    self.sandbox.terminal.start(on_data=self.handle_terminal_on_data, cols=120, rows=80, cmd=shell_command, timeout=self.command_timeout) # 3 minutes
-    return "Success (placeholder)"
-  
-  # def run_shell(code, cwd: str = "", timeout: Optional[int] = None, env_vars: Optional[EnvVars] = None) -> Tuple[str, str, list[Any]]:
-  #   sandbox.run_command("sudo apt update")
+
+    shell_output = self.run_shell(f"python {filepath}")
+    return shell_output
   
   def run_shell(self, shell_command: str):
     print(termcolor.colored(f"IN SHELL EXECUTION with command: {shell_command}", 'blue', attrs=['bold']))
+    self.curr_terminal_output = ''
 
     def on_exit():
       """Block until the command has exited"""
@@ -47,15 +50,17 @@ class E2B_class():
 
     start_time = time.monotonic()
     self.exit_event = threading.Event()
-    self.sandbox.terminal.start(on_data=self.handle_terminal_on_data, cols=120, rows=80, cmd=shell_command, on_exit=on_exit, timeout=self.command_timeout) # 3 minutes
+    self.sandbox.terminal.start(cmd=shell_command, cwd=self.working_dir, on_data=self.handle_terminal_on_data, cols=120, rows=80, on_exit=on_exit, timeout=self.command_timeout)
     
     self.exit_event.wait()  # Block until on_exit is called
     print(termcolor.colored(f"＄ Shell execution complete, Runtime: {(time.monotonic() - start_time):.2f} seconds", 'blue', attrs=['bold']))
+    return self.curr_terminal_output
   
   def handle_terminal_on_data(self, data: str):
+    self.curr_terminal_output+=str(data)
     print(termcolor.colored(data, 'yellow', attrs=['bold']))
 
-def run_simple_notebook(code, cwd: str = "", timeout: Optional[int] = None, env_vars: Optional[EnvVars] = None) -> Tuple[str, str, list[Any]]:
+def EXPERIMENTAL_run_simple_notebook(code, cwd: str = "", timeout: Optional[int] = None, env_vars: Optional[EnvVars] = None) -> Tuple[str, str, list[Any]]:
   """
 
   TBD if this is helpful; the one thing it uniquely does is grab matplotlib outputs. Simply, plt.show() becomes an "artifact" that can be downloaded.
