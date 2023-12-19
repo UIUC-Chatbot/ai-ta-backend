@@ -18,14 +18,15 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
   """
   Logs conversation to Nomic.
-  1. Check if map exists for given course
+  1. Check if ma
+  p exists for given course
   2. Check if conversation ID exists 
     - if yes, delete and add new data point
     - if no, add new data point
   3. Keep current logic for map doesn't exist - update metadata
   """
-  print(f"in log_convo_to_nomic() for course: {course_name}")
 
+  print(f"in log_convo_to_nomic() for course: {course_name}")
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
@@ -42,6 +43,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   try:
     # fetch project metadata and embbeddings
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
+
     map_metadata_df = project.maps[1].data.df  # type: ignore
     map_embeddings_df = project.maps[1].embeddings.latent
     map_metadata_df['id'] = map_metadata_df['id'].astype(int)
@@ -70,7 +72,12 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
         else:
           emoji = "🤖 "
 
-        prev_convo += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+        if isinstance(message['content'], list):
+          text = message['content'][0]['text']
+        else:
+          text = message['content']
+
+        prev_convo += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
       # modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -92,7 +99,10 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       # add new data point
       user_queries = []
       conversation_string = ""
+
       first_message = messages[0]['content']
+      if isinstance(first_message, list):
+        first_message = first_message[0]['text']
       user_queries.append(first_message)
 
       for message in messages:
@@ -100,7 +110,13 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
           emoji = "🙋 "
         else:
           emoji = "🤖 "
-        conversation_string += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+
+        if isinstance(message['content'], list):
+          text = message['content'][0]['text']
+        else:
+          text = message['content']
+
+        conversation_string += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
       # modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -163,17 +179,18 @@ def get_nomic_map(course_name: str):
 
   try:
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-  except Exception as e:
-    err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {e}"
+    map = project.get_map(project_name)
+
+    print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
+    return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
+  except ValueError as ve:
+    # Error: ValueError: You must specify a unique_id_field when creating a new project.
+    err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {ve}"
     print(err)
+    return {"map_id": None, "map_link": None}
+  except Exception as e:
     sentry_sdk.capture_exception(e)
     return {"map_id": None, "map_link": None}
-
-  map = project.get_map(project_name)
-
-  print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
-
-  return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
 
 
 def create_nomic_map(course_name: str, log_data: list):
@@ -216,28 +233,44 @@ def create_nomic_map(course_name: str, log_data: list):
       created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
       convo = row['convo']
       messages = convo['messages']
+
       first_message = messages[0]['content']
+      if isinstance(first_message, list):
+        first_message = first_message[0]['text']
+
       user_queries.append(first_message)
 
       # create metadata for multi-turn conversation
       conversation = ""
-      if message['role'] == 'user':  # type: ignore
-        emoji = "🙋 "
-      else:
-        emoji = "🤖 "
       for message in messages:
         # string of role: content, role: content, ...
-        conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+        if message['role'] == 'user':  # type: ignore
+          emoji = "🙋 "
+        else:
+          emoji = "🤖 "
+
+        if isinstance(message['content'], list):
+          text = message['content'][0]['text']
+        else:
+          text = message['content']
+
+        conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
       # append current chat to previous chat if convo already exists
       if convo['id'] == log_conversation_id:
         conversation_exists = True
-        if m['role'] == 'user':  # type: ignore
-          emoji = "🙋 "
-        else:
-          emoji = "🤖 "
+
         for m in log_messages:
-          conversation += "\n>>> " + emoji + m['role'] + ": " + m['content'] + "\n"
+          if m['role'] == 'user':  # type: ignore
+            emoji = "🙋 "
+          else:
+            emoji = "🤖 "
+
+          if isinstance(m['content'], list):
+            text = m['content'][0]['text']
+          else:
+            text = m['content']
+          conversation += "\n>>> " + emoji + m['role'] + ": " + text + "\n"
 
       # adding modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -265,7 +298,12 @@ def create_nomic_map(course_name: str, log_data: list):
           emoji = "🙋 "
         else:
           emoji = "🤖 "
-        conversation += "\n>>> " + emoji + message['role'] + ": " + message['content'] + "\n"
+
+        if isinstance(message['content'], list):
+          text = message['content'][0]['text']
+        else:
+          text = message['content']
+        conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
       # adding timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

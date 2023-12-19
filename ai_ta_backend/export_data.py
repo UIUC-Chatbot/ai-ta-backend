@@ -5,6 +5,7 @@ import pandas as pd
 import supabase
 import sentry_sdk
 
+
 def export_convo_history_csv(course_name: str, from_date='', to_date=''):
   """
   This function exports the conversation history to a csv file.

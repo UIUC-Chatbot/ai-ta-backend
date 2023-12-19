@@ -33,8 +33,7 @@ sentry_sdk.init(
     # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
     # We recommend adjusting this value in production.
     profiles_sample_rate=1.0,
-    enable_tracing=True
-)
+    enable_tracing=True)
 
 app = Flask(__name__)
 CORS(app)
@@ -491,6 +490,7 @@ def logToNomic():
   data = request.get_json()
   course_name = data['course_name']
   conversation = data['conversation']
+
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
     abort(
