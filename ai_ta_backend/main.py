@@ -33,8 +33,7 @@ sentry_sdk.init(
     # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
     # We recommend adjusting this value in production.
     profiles_sample_rate=1.0,
-    enable_tracing=True
-)
+    enable_tracing=True)
 
 app = Flask(__name__)
 CORS(app)
@@ -488,10 +487,6 @@ def nomic_map():
 
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic():
-  print("In /onResponseCompletion")
-  # course_name: str = request.args.get('course_name', default='', type=str)
-  # conversation: str = request.args.get('conversation', default='', type=str)
-  
   data = request.get_json()
   course_name = data['course_name']
   conversation = data['conversation']
@@ -506,7 +501,6 @@ def logToNomic():
   print(f"In /onResponseCompletion for course: {course_name}")
 
   # background execution of tasks!!
-  #response = executor.submit(log_convo_to_nomic, course_name, conversation)
   response = executor.submit(log_convo_to_nomic, course_name, data)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
