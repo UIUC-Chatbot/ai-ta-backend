@@ -62,3 +62,4 @@ langchainhub==0.1.14
 e2b==0.13.13
 termcolor==2.3.0
 PyGithub==2.1.1
+playwright==1.40.0
