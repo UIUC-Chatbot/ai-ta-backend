@@ -9,7 +9,6 @@ import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 import sentry_sdk
-import json
 
 OPENAI_API_TYPE = "azure"
 
@@ -26,7 +25,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     - if no, add new data point
   3. Keep current logic for map doesn't exist - update metadata
   """
-   
+
   print(f"in log_convo_to_nomic() for course: {course_name}")
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
@@ -118,7 +117,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
           text = message['content']
 
         conversation_string += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
-      
+
       # modified timestamp
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -132,7 +131,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
           "created_at": current_time,
           "modified_at": current_time
       }]
-      
+
       # create embeddings
       embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
       embeddings = embeddings_model.embed_documents(user_queries)
@@ -192,7 +191,7 @@ def get_nomic_map(course_name: str):
   except Exception as e:
     sentry_sdk.capture_exception(e)
     return {"map_id": None, "map_link": None}
-    
+
 
 def create_nomic_map(course_name: str, log_data: list):
   """
@@ -260,7 +259,7 @@ def create_nomic_map(course_name: str, log_data: list):
       # append current chat to previous chat if convo already exists
       if convo['id'] == log_conversation_id:
         conversation_exists = True
-        
+
         for m in log_messages:
           if m['role'] == 'user':  # type: ignore
             emoji = "🙋 "
@@ -299,7 +298,7 @@ def create_nomic_map(course_name: str, log_data: list):
           emoji = "🙋 "
         else:
           emoji = "🤖 "
-        
+
         if type(message['content']) == list:
           text = message['content'][0]['text']
         else:
