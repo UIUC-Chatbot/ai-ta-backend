@@ -106,6 +106,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       print("messages: ", messages)
 
       first_message = messages[0]['content']
+      if type(first_message) == list:
+        first_message = first_message[0]['text']
       user_queries.append(first_message)
 
       for message in messages:
