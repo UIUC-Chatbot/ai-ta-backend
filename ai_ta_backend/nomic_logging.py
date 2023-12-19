@@ -101,7 +101,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       conversation_string = ""
 
       first_message = messages[0]['content']
-      if type(first_message) == list:
+      if isinstance(first_message, list):
         first_message = first_message[0]['text']
       user_queries.append(first_message)
 
@@ -235,7 +235,7 @@ def create_nomic_map(course_name: str, log_data: list):
       messages = convo['messages']
 
       first_message = messages[0]['content']
-      if type(first_message) == list:
+      if isinstance(first_message, list):
         first_message = first_message[0]['text']
 
       user_queries.append(first_message)
@@ -249,7 +249,7 @@ def create_nomic_map(course_name: str, log_data: list):
         else:
           emoji = "🤖 "
 
-        if type(message['content']) == list:
+        if isinstance(message['content'], list):
           text = message['content'][0]['text']
         else:
           text = message['content']
@@ -266,7 +266,7 @@ def create_nomic_map(course_name: str, log_data: list):
           else:
             emoji = "🤖 "
 
-          if type(m['content']) == list:
+          if isinstance(m['content'], list):
             text = m['content'][0]['text']
           else:
             text = m['content']
@@ -299,7 +299,7 @@ def create_nomic_map(course_name: str, log_data: list):
         else:
           emoji = "🤖 "
 
-        if type(message['content']) == list:
+        if isinstance(message['content'], list):
           text = message['content'][0]['text']
         else:
           text = message['content']
