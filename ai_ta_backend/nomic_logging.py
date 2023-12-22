@@ -55,7 +55,7 @@ def backoff_strategy():
   Function to define retry strategy. Is usualy defined in the decorator, 
   but passing parameters to it is giving errors.
   """
-  return backoff.expo(base=5, factor=2)
+  return backoff.expo(base=10, factor=1.5)
 
 @backoff.on_exception(backoff_strategy, Exception, max_tries=5, raise_on_giveup=False, giveup=giveup_hdlr, on_backoff=backoff_hdlr)
 def log_convo_to_nomic(course_name: str, conversation) -> str:
