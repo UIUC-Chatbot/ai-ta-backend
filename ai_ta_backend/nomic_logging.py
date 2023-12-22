@@ -32,9 +32,13 @@ def giveup_hdlr(e):
   conversation = e_args['conversation']
   print("giveup_hdlr() called with exception:", e_str)
   if e_str == 'You must specify a unique_id_field when creating a new project.':
-    print("Creating a new project...")
-    # call create_nomic_map() here
-    result = create_nomic_map(course_name, conversation)
+    try:
+      print("Creating a new project...")
+      # call create_nomic_map() here
+      result = create_nomic_map(course_name, conversation)
+    except Exception as e:
+      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+
     return True
   elif e_str not in LOCK_EXCEPTIONS and e_str != 'You must specify a unique_id_field when creating a new project.':
     print("Giving up: " + str(e))
