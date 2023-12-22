@@ -36,7 +36,7 @@ def giveup_hdlr(e):
     # call create_nomic_map() here
     result = create_nomic_map(course_name, conversation)
     return True
-  elif e_str not in LOCK_EXCEPTIONS:
+  elif e_str not in LOCK_EXCEPTIONS and e_str != 'You must specify a unique_id_field when creating a new project.':
     print("Giving up: " + str(e))
     sentry_sdk.capture_exception(e)
     return True
