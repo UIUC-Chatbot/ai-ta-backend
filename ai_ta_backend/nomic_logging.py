@@ -243,134 +243,144 @@ def create_nomic_map(course_name: str, log_data: list):
       supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
       supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
-  # fetch all conversations with this new course (we expect <=20 conversations, because otherwise the map should be made already)
-  response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
-  data = response.data
-  df = pd.DataFrame(data)
+  try:
+    # fetch all conversations with this new course (we expect <=20 conversations, because otherwise the map should be made already)
+    response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
+    data = response.data
+    df = pd.DataFrame(data)
 
-  if len(data) < 19:
-    return None
-  else:
-    # get all queries for course and create metadata
-    user_queries = []
-    metadata = []
-    i = 1
-    conversation_exists = False
+    if len(data) < 19:
+      return None
+    else:
+      # get all queries for course and create metadata
+      user_queries = []
+      metadata = []
+      i = 1
+      conversation_exists = False
 
-    # current log details
-    log_messages = log_data['conversation']['messages']  # type: ignore
-    log_user_email = log_data['conversation']['user_email']  # type: ignore
-    log_conversation_id = log_data['conversation']['id']  # type: ignore
+      # current log details
+      log_messages = log_data['conversation']['messages']  # type: ignore
+      log_user_email = log_data['conversation']['user_email']  # type: ignore
+      log_conversation_id = log_data['conversation']['id']  # type: ignore
 
-    for _index, row in df.iterrows():
-      user_email = row['user_email']
-      created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
-      convo = row['convo']
-      messages = convo['messages']
+      for _index, row in df.iterrows():
+        user_email = row['user_email']
+        created_at = pd.to_datetime(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
+        convo = row['convo']
+        messages = convo['messages']
 
-      first_message = messages[0]['content']
-      if isinstance(first_message, list):
-        first_message = first_message[0]['text']
+        first_message = messages[0]['content']
+        if isinstance(first_message, list):
+          first_message = first_message[0]['text']
 
-      user_queries.append(first_message)
+        user_queries.append(first_message)
 
-      # create metadata for multi-turn conversation
-      conversation = ""
-      for message in messages:
-        # string of role: content, role: content, ...
-        if message['role'] == 'user':  # type: ignore
-          emoji = "🙋 "
-        else:
-          emoji = "🤖 "
-
-        if isinstance(message['content'], list):
-          text = message['content'][0]['text']
-        else:
-          text = message['content']
-
-        conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
-
-      # append current chat to previous chat if convo already exists
-      if convo['id'] == log_conversation_id:
-        conversation_exists = True
-
-        for m in log_messages:
-          if m['role'] == 'user':  # type: ignore
+        # create metadata for multi-turn conversation
+        conversation = ""
+        for message in messages:
+          # string of role: content, role: content, ...
+          if message['role'] == 'user':  # type: ignore
             emoji = "🙋 "
           else:
             emoji = "🤖 "
 
-          if isinstance(m['content'], list):
-            text = m['content'][0]['text']
+          if isinstance(message['content'], list):
+            text = message['content'][0]['text']
           else:
-            text = m['content']
-          conversation += "\n>>> " + emoji + m['role'] + ": " + text + "\n"
+            text = message['content']
 
-      # adding modified timestamp
-      current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+          conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
-      # add to metadata
-      metadata_row = {
-          "course": row['course_name'],
-          "conversation": conversation,
-          "conversation_id": convo['id'],
-          "id": i,
-          "user_email": user_email,
-          "first_query": first_message,
-          "created_at": created_at,
-          "modified_at": current_time
-      }
-      metadata.append(metadata_row)
-      i += 1
+        # append current chat to previous chat if convo already exists
+        if convo['id'] == log_conversation_id:
+          conversation_exists = True
 
-    # add current log as a new data point if convo doesn't exist
-    if not conversation_exists:
-      user_queries.append(log_messages[0]['content'])
-      conversation = ""
-      for message in log_messages:
-        if message['role'] == 'user':
-          emoji = "🙋 "
-        else:
-          emoji = "🤖 "
+          for m in log_messages:
+            if m['role'] == 'user':  # type: ignore
+              emoji = "🙋 "
+            else:
+              emoji = "🤖 "
 
-        if isinstance(message['content'], list):
-          text = message['content'][0]['text']
-        else:
-          text = message['content']
-        conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
+            if isinstance(m['content'], list):
+              text = m['content'][0]['text']
+            else:
+              text = m['content']
+            conversation += "\n>>> " + emoji + m['role'] + ": " + text + "\n"
 
-      # adding timestamp
-      current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # adding modified timestamp
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-      metadata_row = {
-          "course": course_name,
-          "conversation": conversation,
-          "conversation_id": log_conversation_id,
-          "id": i,
-          "user_email": log_user_email,
-          "first_query": log_messages[0]['content'],
-          "created_at": current_time,
-          "modified_at": current_time
-      }
-      metadata.append(metadata_row)
+        # add to metadata
+        metadata_row = {
+            "course": row['course_name'],
+            "conversation": conversation,
+            "conversation_id": convo['id'],
+            "id": i,
+            "user_email": user_email,
+            "first_query": first_message,
+            "created_at": created_at,
+            "modified_at": current_time
+        }
+        metadata.append(metadata_row)
+        i += 1
 
-    metadata = pd.DataFrame(metadata)
-    embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
-    embeddings = embeddings_model.embed_documents(user_queries)
+      # add current log as a new data point if convo doesn't exist
+      if not conversation_exists:
+        user_queries.append(log_messages[0]['content'])
+        conversation = ""
+        for message in log_messages:
+          if message['role'] == 'user':
+            emoji = "🙋 "
+          else:
+            emoji = "🤖 "
 
-    # create Atlas project
-    project_name = NOMIC_MAP_NAME_PREFIX + course_name
-    index_name = course_name + "_convo_index"
-    project = atlas.map_embeddings(
-        embeddings=np.array(embeddings),
-        data=metadata,  # type: ignore - this is the correct type, the func signature from Nomic is incomplete
-        id_field='id',
-        build_topic_model=True,
-        topic_label_field='first_query',
-        name=project_name,
-        colorable_fields=['conversation_id', 'first_query'])
-    project.create_index(index_name, build_topic_model=True)
-    return f"Successfully created Nomic map for {course_name}"
+          if isinstance(message['content'], list):
+            text = message['content'][0]['text']
+          else:
+            text = message['content']
+          conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
+
+        # adding timestamp
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        metadata_row = {
+            "course": course_name,
+            "conversation": conversation,
+            "conversation_id": log_conversation_id,
+            "id": i,
+            "user_email": log_user_email,
+            "first_query": log_messages[0]['content'],
+            "created_at": current_time,
+            "modified_at": current_time
+        }
+        metadata.append(metadata_row)
+
+      metadata = pd.DataFrame(metadata)
+      embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
+      embeddings = embeddings_model.embed_documents(user_queries)
+
+      # create Atlas project
+      project_name = NOMIC_MAP_NAME_PREFIX + course_name
+      index_name = course_name + "_convo_index"
+      project = atlas.map_embeddings(
+          embeddings=np.array(embeddings),
+          data=metadata,  # type: ignore - this is the correct type, the func signature from Nomic is incomplete
+          id_field='id',
+          build_topic_model=True,
+          topic_label_field='first_query',
+          name=project_name,
+          colorable_fields=['conversation_id', 'first_query'])
+      project.create_index(index_name, build_topic_model=True)
+      return f"Successfully created Nomic map for {course_name}"
+  except Exception as e:
+    # Error: ValueError: You must specify a unique_id_field when creating a new project.
+    if str(e) == 'You must specify a unique_id_field when creating a new project.':  # type: ignore
+      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+    else:
+      print("ERROR in create_nomic_map():", e)
+      sentry_sdk.capture_exception(e)
+        
+    return None
 
 
 if __name__ == '__main__':
