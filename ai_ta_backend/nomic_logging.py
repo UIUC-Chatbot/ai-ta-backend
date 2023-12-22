@@ -30,7 +30,7 @@ def giveup_hdlr(e):
   e_str = e_args['exception']
   course_name = e_args['course_name']
   conversation = e_args['conversation']
-
+  print("giveup_hdlr() called with exception:", e_str)
   if e_str == 'You must specify a unique_id_field when creating a new project.':
     print("Creating a new project...")
     # call create_nomic_map() here
