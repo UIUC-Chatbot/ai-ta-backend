@@ -9,17 +9,61 @@ import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 import sentry_sdk
+import backoff
+import json
 
 OPENAI_API_TYPE = "azure"
 
+LOCK_EXCEPTIONS = ['Project is locked for state access! Please wait until the project is unlocked to access embeddings.', 
+                   'Project is locked for state access! Please wait until the project is unlocked to access data.', 
+                   'Project is currently indexing and cannot ingest new datums. Try again later.']
 
+def giveup_hdlr(e):
+  """
+  Function to handle giveup conditions in backoff decorator
+  Args: 
+    e: Exception raised by the decorated function
+  Returns:
+    True if we want to stop retrying, False otherwise
+  """
+  (e_args,) = e.args
+  e_str = e_args['exception']
+  course_name = e_args['course_name']
+  conversation = e_args['conversation']
+
+  if e_str == 'You must specify a unique_id_field when creating a new project.':
+    print("Creating a new project...")
+    # call create_nomic_map() here
+    result = create_nomic_map(course_name, conversation)
+    return True
+  elif e_str not in LOCK_EXCEPTIONS:
+    print("Giving up: " + str(e))
+    sentry_sdk.capture_exception(e)
+    return True
+  else:
+    return False
+
+def backoff_hdlr(details):
+  """
+  Function to handle backup conditions in backoff decorator.
+  Currently just prints the details of the backoff.
+  """
+  print("Backing off {wait:0.1f} seconds after {tries} tries, calling function {target} with args {args} and kwargs {kwargs}".format(**details))
+
+def backoff_strategy():
+  """
+  Function to define retry strategy. Is usualy defined in the decorator, 
+  but passing parameters to it is giving errors.
+  """
+  return backoff.expo(base=5, factor=2)
+
+@backoff.on_exception(backoff_strategy, Exception, max_tries=5, raise_on_giveup=False, giveup=giveup_hdlr, on_backoff=backoff_hdlr)
 def log_convo_to_nomic(course_name: str, conversation) -> str:
   nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
   NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
   """
   Logs conversation to Nomic.
-  1. Check if ma
-  p exists for given course
+  1. Check if map exists for given course
   2. Check if conversation ID exists 
     - if yes, delete and add new data point
     - if no, add new data point
@@ -27,6 +71,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   """
 
   print(f"in log_convo_to_nomic() for course: {course_name}")
+  conversation = json.loads(conversation)
   messages = conversation['conversation']['messages']
   user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
@@ -46,6 +91,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
     map_metadata_df = project.maps[1].data.df  # type: ignore
     map_embeddings_df = project.maps[1].embeddings.latent
+    # create a function which returns project, data and embeddings df here
     map_metadata_df['id'] = map_metadata_df['id'].astype(int)
     last_id = map_metadata_df['id'].max()
 
@@ -136,7 +182,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
       embeddings = embeddings_model.embed_documents(user_queries)
 
-    # add embeddings to the project
+    # add embeddings to the project - create a new function for this
     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
     with project.wait_for_project_lock():
       project.add_embeddings(embeddings=np.array(embeddings), data=pd.DataFrame(metadata))
@@ -146,23 +192,10 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     return f"Successfully logged for {course_name}"
 
   except Exception as e:
-    # Error handling - the below error is for when the project does not exist
-    if str(e) == 'You must specify a unique_id_field when creating a new project.':
-      # project does not exist, so create it
-      result = create_nomic_map(course_name, conversation)
-      if result is None:
-        print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
-        return f"Logging failed for {course_name}"
-      else:
-        print(f"⏰ Nomic logging runtime: {(time.monotonic() - start_time):.2f} seconds")
-        return f"Successfully logged for {course_name}"
-    else:
-      # for rest of the errors - return fail
-      print("ERROR in log_convo_to_nomic():", e)
-      sentry_sdk.capture_exception(e)
-      return f"Logging failed for {course_name}"
-
-
+    # raising exception again to trigger backoff and passing parameters to use in create_nomic_map()
+    raise Exception({"exception": str(e), "course_name": course_name, "conversation": conversation})
+      
+    
 def get_nomic_map(course_name: str):
   """
   Returns the variables necessary to construct an iframe of the Nomic map given a course name.
@@ -183,13 +216,14 @@ def get_nomic_map(course_name: str):
 
     print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
     return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
-  except ValueError as ve:
-    # Error: ValueError: You must specify a unique_id_field when creating a new project.
-    err = f"Nomic map does not exist yet, probably because you have less than 20 queries on your project: {ve}"
-    print(err)
-    return {"map_id": None, "map_link": None}
   except Exception as e:
-    sentry_sdk.capture_exception(e)
+    # Error: ValueError: You must specify a unique_id_field when creating a new project.
+    if str(e) == 'You must specify a unique_id_field when creating a new project.':  # type: ignore
+      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+    else:
+      print("ERROR in get_nomic_map():", e)
+      sentry_sdk.capture_exception(e)
+        
     return {"map_id": None, "map_link": None}
 
 
