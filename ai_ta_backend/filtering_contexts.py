@@ -1,6 +1,7 @@
 import json
 import os
 import time
+from typing import Optional
 
 import openai
 import ray
@@ -73,14 +74,16 @@ def run_caii_hosted_llm(prompt, max_tokens=300, temp=0.3, **kwargs):
   headers = {'Content-Type': 'application/json'}
   data = {"prompt": prompt, "max_tokens": max_tokens, "temperature": temp, **kwargs}
 
+  response = None
   try:
     response = requests.post(url, headers=headers, data=json.dumps(data), timeout=180)
     return response.json()['choices'][0]['text']
   except Exception as e:
     sentry_sdk.capture_exception(e)
     # Probably cuda OOM error.
+    response_content = response.json() if response else "No response"
     raise ValueError(
-        f"🚫🚫🚫 Failed inference attempt. Response: {response.json()}\nError: {e}\nPromt that caused error: {prompt}"
+        f"🚫🚫🚫 Failed inference attempt. Response: {response_content}\nError: {e}\nPromt that caused error: {prompt}"
     ) from e
 
 
@@ -118,7 +121,7 @@ def run_anyscale(prompt, model_name="HuggingFaceH4/zephyr-7b-beta"):
       max_tokens=250,
   )
 
-  output = ret["choices"][0]["message"]["content"]
+  output = ret["choices"][0]["message"]["content"]  # type: ignore
   print("Response from Anyscale:", output[:150])
 
   # input_length = len(tokenizer.encode(prompt))
@@ -136,15 +139,15 @@ def parse_result(result: str):
   return False
 
 
-def filter_top_contexts(contexts, user_query: str, timeout: float = None, max_concurrency: int = 180):
+def filter_top_contexts(contexts,
+                        user_query: str,
+                        timeout: Optional[float] = None,
+                        max_concurrency: Optional[int] = 180):
 
   print("⏰⏰⏰ Starting filter_top_contexts() ⏰⏰⏰")
-  # print(len(contexts))
-  # print(contexts)
-  # raise ValueError("STOPPING HERE")
 
   timeout = timeout or float(os.environ["FILTER_TOP_CONTEXTS_TIMEOUT_SECONDS"])
-  # langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr") # TOO UNSTABLE
+  # langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr") # TOO UNSTABLE, service offline
   langsmith_prompt_obj = filter_unrelated_contexts_zephyr
   posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
 
@@ -152,21 +155,29 @@ def filter_top_contexts(contexts, user_query: str, timeout: float = None, max_co
   print("Num contexts to filter:", len(contexts))
 
   # START TASKS
-  actor = AsyncActor.options(max_concurrency=max_concurrency, num_cpus=0.001).remote()
+  actor = AsyncActor.options(max_concurrency=max_concurrency, num_cpus=0.001).remote()  # type: ignore
   result_futures = [actor.filter_context.remote(c, user_query, langsmith_prompt_obj) for c in contexts]
 
-  start_time = time.time()
+  start_time = time.monotonic()
   done_tasks, in_progress = ray.wait(result_futures,
                                      num_returns=len(result_futures),
                                      timeout=timeout,
                                      fetch_local=False)
+
+  # Cleanup
   for task in in_progress:
     ray.cancel(task)
   results = ray.get(done_tasks)
+  ray.kill(actor)
 
   best_contexts_to_keep = [
       r['context'] for r in results if r and 'context' in r and 'completion' in r and parse_result(r['completion'])
   ]
+
+  print("🧠🧠 TOTAL DOCS PROCESSED BY ANYSCALE FILTERING:", len(results))
+  print("🧠🧠 TOTAL DOCS KEPT, AFTER FILTERING:", len(best_contexts_to_keep))
+  mqr_runtime = round(time.monotonic() - start_time, 2)
+  print(f"⏰ Total elapsed time: {mqr_runtime} seconds")
 
   posthog.capture('distinct_id_of_the_user',
                   event='filter_top_contexts',
@@ -175,13 +186,9 @@ def filter_top_contexts(contexts, user_query: str, timeout: float = None, max_co
                       'course_name': contexts[0].metadata.get('course_name', None),
                       'percent_kept': len(best_contexts_to_keep) / len(results),
                       'total_docs_processed': len(results),
-                      'total_docs_kept': len(best_contexts_to_keep)
+                      'total_docs_kept': len(best_contexts_to_keep),
+                      'MQR_total_runtime_sec': mqr_runtime,
                   })
-
-  print("🧠🧠 TOTAL DOCS PROCESSED BY ANYSCALE FILTERING:", len(results))
-  print("🧠🧠 TOTAL DOCS KEPT, AFTER FILTERING:", len(best_contexts_to_keep))
-  print(f"⏰ Total elapsed time: {(time.time() - start_time):.2f} seconds")
-
   return best_contexts_to_keep
 
 
