@@ -218,6 +218,7 @@ def get_nomic_map(course_name: str):
     # Error: ValueError: You must specify a unique_id_field when creating a new project.
     if str(e) == 'You must specify a unique_id_field when creating a new project.':  # type: ignore
       print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+      sentry_sdk.capture_exception(e)
     else:
       print("ERROR in get_nomic_map():", e)
       sentry_sdk.capture_exception(e)
