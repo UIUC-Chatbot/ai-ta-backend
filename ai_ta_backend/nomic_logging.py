@@ -32,27 +32,21 @@ def giveup_hdlr(e):
   conversation = e_args['conversation']
   print("giveup_hdlr() called with exception:", e_str)
   if e_str == 'You must specify a unique_id_field when creating a new project.':
-    try:
-      print("Creating a new project...")
-      # call create_nomic_map() here
-      result = create_nomic_map(course_name, conversation)
-    except Exception as e:
-      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
-
+    print("inside if block")
+    create_nomic_map(course_name, conversation)
     return True
-  elif e_str not in LOCK_EXCEPTIONS and e_str != 'You must specify a unique_id_field when creating a new project.':
-    print("Giving up: " + str(e))
+  elif e_str in LOCK_EXCEPTIONS:
+    return False
+  else:
     sentry_sdk.capture_exception(e)
     return True
-  else:
-    return False
 
 def backoff_hdlr(details):
   """
   Function to handle backup conditions in backoff decorator.
   Currently just prints the details of the backoff.
   """
-  print("Backing off {wait:0.1f} seconds after {tries} tries, calling function {target} with args {args} and kwargs {kwargs}".format(**details))
+  print("\nBacking off {wait:0.1f} seconds after {tries} tries, calling function {target} with args {args} and kwargs {kwargs}".format(**details))
 
 def backoff_strategy():
   """
@@ -196,8 +190,13 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     return f"Successfully logged for {course_name}"
 
   except Exception as e:
-    # raising exception again to trigger backoff and passing parameters to use in create_nomic_map()
-    raise Exception({"exception": str(e), "course_name": course_name, "conversation": conversation})
+    if str(e) == 'You must specify a unique_id_field when creating a new project.':
+      print("inside except block of log_convo_to_nomic()")
+      result = create_nomic_map(course_name, conversation)
+      print("result of create_nomic_map():", result)
+    else:
+      # raising exception again to trigger backoff and passing parameters to use in create_nomic_map()
+      raise Exception({"exception": str(e), "course_name": course_name, "conversation": conversation})
       
     
 def get_nomic_map(course_name: str):
@@ -384,7 +383,7 @@ def create_nomic_map(course_name: str, log_data: list):
       print("ERROR in create_nomic_map():", e)
       sentry_sdk.capture_exception(e)
         
-    return None
+    return "failed"
 
 
 if __name__ == '__main__':
