@@ -28,14 +28,9 @@ def giveup_hdlr(e):
   """
   (e_args,) = e.args
   e_str = e_args['exception']
-  course_name = e_args['course_name']
-  conversation = e_args['conversation']
+
   print("giveup_hdlr() called with exception:", e_str)
-  if e_str == 'You must specify a unique_id_field when creating a new project.':
-    print("inside if block")
-    create_nomic_map(course_name, conversation)
-    return True
-  elif e_str in LOCK_EXCEPTIONS:
+  if e_str in LOCK_EXCEPTIONS:
     return False
   else:
     sentry_sdk.capture_exception(e)
@@ -191,12 +186,12 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
   except Exception as e:
     if str(e) == 'You must specify a unique_id_field when creating a new project.':
-      print("inside except block of log_convo_to_nomic()")
+      print("Attempting to create Nomic map...")
       result = create_nomic_map(course_name, conversation)
       print("result of create_nomic_map():", result)
     else:
       # raising exception again to trigger backoff and passing parameters to use in create_nomic_map()
-      raise Exception({"exception": str(e), "course_name": course_name, "conversation": conversation})
+      raise Exception({"exception": str(e)})
       
     
 def get_nomic_map(course_name: str):
