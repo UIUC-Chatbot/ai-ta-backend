@@ -13,15 +13,6 @@ from langchain.schema import AgentAction
 from langsmith import Client
 from langsmith.schemas import Run
 import tiktoken
-from newrelic_telemetry_sdk import Log, LogClient
-from supabase.client import create_client
-from dotenv import load_dotenv
-load_dotenv(override=True, dotenv_path='.env')
-
-# Initialize New Relic Client
-log_client = LogClient(os.environ['NEW_RELIC_LICENSE_KEY'])
-
-langsmith_id = str(uuid.uuid4())  # for Langsmith
 
 def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> List[Tuple[AgentAction, str]]:
   """
@@ -74,14 +65,14 @@ def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> Lis
       steps.pop(0)
       total_tokens = sum(count_tokens(action) for action, _ in steps)
 
-    log = Log(message=f"trim_intermediate_steps", 
-      original_steps=str(original_steps),
-      final_steps=str(steps),
-      original_tokens=original_total_tokens,
-      final_tokens=total_tokens,
-    )
-    response = log_client.send(log)
-    response.raise_for_status()
+    # log = Log(message=f"trim_intermediate_steps", 
+    #   original_steps=str(original_steps),
+    #   final_steps=str(steps),
+    #   original_tokens=original_total_tokens,
+    #   final_tokens=total_tokens,
+    # )
+    # response = log_client.send(log)
+    # response.raise_for_status()
 
     return steps
   except Exception as e:
