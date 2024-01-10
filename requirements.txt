@@ -35,7 +35,7 @@ ffprobe==0.5
 ffmpeg==1.4
 beautifulsoup4==4.12.2
 canvasapi==3.2.0
-GitPython==3.1.40
+GitPython==3.1.41
 flask-executor==1.0.0
 # pdf packages for unstructured
 # pdf2image==1.16.3
