@@ -9,7 +9,7 @@ from flask_cors import CORS
 from sqlalchemy import JSON
 
 from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend.web_scrape import main_crawler, mit_course_download
+from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 from ai_ta_backend.agents.github_webhook_handlers import handle_github_event
 
 app = Flask(__name__)

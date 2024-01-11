@@ -7,7 +7,7 @@ from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks import tracing_enabled
 from langchain.llms import OpenAI
 from langchain import hub
-from utils import SupabaseDB, get_langsmith_id
+from ai_ta_backend.agents.utils import SupabaseDB, get_langsmith_id
 import marvin
 from marvin import ai_model
 from pydantic import BaseModel, Field

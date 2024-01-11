@@ -26,7 +26,7 @@ from langchain import hub
 
 # from github_agent import GH_Agent
 from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
-from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
+from ai_ta_backend.agents.utils import SupabaseDB, get_langsmith_id, get_langsmith_trace_sharable_url
 
 
 hostname = socket.gethostname()
@@ -60,7 +60,9 @@ def handle_github_event(payload: Dict[str, Any]):
       ValueError: _description_
   """
   # payload: Dict[str, Any] = json.loads(gh_webhook_payload)
-  langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
+  langsmith_run_id = get_langsmith_id() # for Langsmith 
+
+  
   
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
@@ -105,6 +107,9 @@ def handle_issue_opened(payload, langsmith_run_id):
   # Construct Docker image name as ID for supabase table
   image_name = f"{repo_name}_{number}:our_tag"
 
+  # Add image name to supabase table
+  SupabaseDB("docker_images", image_name=image_name).check_and_insert_image_name(image_name)
+
   metadata = {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
   # logging.info(f"New issue created: #{number}", metadata)
   # logging.info(f"New issue created: #{number}. Metadata: {metadata}")
@@ -128,7 +133,7 @@ def handle_issue_opened(payload, langsmith_run_id):
     # bot = github_agent.GH_Agent.remote()
     prompt = hub.pull("kastanday/new-github-issue").format(issue_description=format_issue(issue))
     # result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, langsmith_run_id=langsmith_run_id))
-    bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
+    bot = WorkflowAgent(langsmith_run_id=langsmith_run_id, image_name=image_name)
     result = bot.run(prompt)
 
     # COLLECT PARALLEL RESULTS

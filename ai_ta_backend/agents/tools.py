@@ -31,7 +31,7 @@ os.environ["LANGCHAIN_TRACING"] = "true"  # If you want to trace the execution o
 langchain.debug = False # type: ignore
 VERBOSE = True
 
-def get_tools(langsmith_run_id: str, sync=True):
+def get_tools(langsmith_run_id: str, sync=True, callback=None):
   '''Main function to assemble tools for ML for Bio project.'''
 
   # CODE EXECUTION - langsmith_run_id as unique identifier for the sandbox
@@ -40,11 +40,13 @@ def get_tools(langsmith_run_id: str, sync=True):
     func=code_execution_class.run_python_code,
     name="Code Execution",
     description="Executes code in an safe Docker container.",
+    callbacks=[callback]
   )
   e2b_shell_tool = StructuredTool.from_function(
     func=code_execution_class.run_shell,
     name="Shell commands (except for git)",
     description="Run shell commands to, for example, execute shell scripts or R scripts. It is in the same environment as the Code Execution tool.",
+    callbacks=[callback]
   )
   # AutoGen's Code Execution Tool
   # def execute_code_tool(code: str, timeout: int = 60, filename: str = "execution_file.py", work_dir: str = "work_dir", use_docker: bool = True, lang: str = "python"):
@@ -75,7 +77,7 @@ def get_tools(langsmith_run_id: str, sync=True):
     llm = ChatOpenAI(temperature=0.1, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
   # human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)
   # GOOGLE SEARCH
-  search = load_tools(["serpapi"])
+  search = load_tools(["serpapi"], callbacks=[callback])
 
   # GITHUB
   github = GitHubAPIWrapper()  # type: ignore

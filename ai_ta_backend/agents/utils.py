@@ -13,6 +13,7 @@ from langchain.schema import AgentAction
 from langsmith import Client
 from langsmith.schemas import Run
 import tiktoken
+from supabase.client import create_client
 
 def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> List[Tuple[AgentAction, str]]:
   """
@@ -224,7 +225,7 @@ def get_supabase_client():
 
 
 def get_langsmith_id():
-    return langsmith_id  # for Langsmith
+    return str(uuid.uuid4())  # for Langsmith
 
 
 class SupabaseDB:
@@ -275,3 +276,13 @@ class SupabaseDB:
     response = self.supabase_client.table("docker_images").upsert({field: value}). \
       eq("image_name", self.image_name).execute()
     return response
+  
+  def check_and_insert_image_name(self, image_name):
+    """Check if the image name exists in the Supabase table, if not, insert it and build a Docker image.
+    Args:
+        image_name (str): The Docker image name.
+    """
+
+    # If the image name does not exist in the table, insert it and build a Docker image
+    if self.is_exists_image() is False:
+        self.supabase_client.table("docker_images").insert({"image_name": image_name}).execute()

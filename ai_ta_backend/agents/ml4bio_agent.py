@@ -17,10 +17,10 @@ from langchain.schema.language_model import BaseLanguageModel
 from langchain.tools import BaseTool
 
 from langchain_experimental.plan_and_execute.executors.base import ChainExecutor
-from tools import get_tools
-from utils import fancier_trim_intermediate_steps
-from utils import SupabaseDB
-from customcallbacks import CustomCallbackHandler
+from ai_ta_backend.agents.tools import get_tools
+from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
+from ai_ta_backend.agents.utils import SupabaseDB
+from ai_ta_backend.agents.customcallbacks import CustomCallbackHandler
 
 HUMAN_MESSAGE_TEMPLATE = """Previous steps: {previous_steps}
 
@@ -71,11 +71,10 @@ def get_memory_context(table_name: str, image_name: str):
 
 
 class WorkflowAgent:
-    def __init__(self, run_id_in_metadata, image_name):
-        self.run_id_in_metadata = run_id_in_metadata
+    def __init__(self, langsmith_run_id, image_name):
+        self.langsmith_run_id = langsmith_run_id
         self.image_name = image_name
-        self.callback_handler = CustomCallbackHandler(run_id=self.run_id_in_metadata,
-                                                                      image_name=self.image_name)
+        self.callback_handler = CustomCallbackHandler(run_id=self.image_name)
         if os.environ['OPENAI_API_TYPE'] == 'azure':
             self.llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3,
                                        deployment_name=os.environ['AZURE_OPENAI_ENGINE'],
@@ -89,7 +88,15 @@ class WorkflowAgent:
 
     def run(self, input):
         result = self.agent.with_config({"run_name": "ML4BIO Plan & Execute Agent"}).invoke({"input": f"{input}"}, {
-            "metadata": {"run_id_in_metadata": str(self.run_id_in_metadata)}})
+            "metadata": {"run_id_in_metadata": str(self.langsmith_run_id)}})
+        
+				# Todo: Remove this once on_agent_finish has been tested, otherwise this can be explored to capture individual agent output
+        # print(result["intermediate_steps"])
+        # Add agent output from intermediate steps to the database
+        # SupabaseDB(table_name="docker_images", image_name=self.image_name).upsert_field_in_db("on_agent_action", result["intermediate_steps"])
+        # for step in self.agent.stream({"input": f"{input}"}, {
+            # "metadata": {"run_id_in_metadata": str(self.langsmith_run_id)}}):
+            # print(f"Step: {step}")
 
         print(f"Result: {result}")
         return result
@@ -137,7 +144,7 @@ class WorkflowAgent:
 
     def make_agent(self):
         # TOOLS
-        tools = get_tools(callback=self.callback_handler)
+        tools = get_tools(langsmith_run_id=self.langsmith_run_id, callback=self.callback_handler)
 
         # PLANNER
         planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
