@@ -98,6 +98,13 @@ class Ingest():
 
     return None
 
+  def __del__(self):
+    # Gracefully shutdown the Posthog client -- this was a main cause of dangling threads.
+    self.posthog.shutdown()
+    self.qdrant_client.close()
+    del self.s3_client
+    del self.supabase_client
+
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
 
     def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
