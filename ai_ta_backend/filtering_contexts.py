@@ -184,11 +184,12 @@ def filter_top_contexts(contexts,
                   properties={
                       'user_query': user_query,
                       'course_name': contexts[0].metadata.get('course_name', None),
-                      'percent_kept': len(best_contexts_to_keep) / len(results),
+                      'percent_kept': len(best_contexts_to_keep) / max(1, len(results)),
                       'total_docs_processed': len(results),
                       'total_docs_kept': len(best_contexts_to_keep),
                       'MQR_total_runtime_sec': mqr_runtime,
                   })
+  posthog.shutdown()
   return best_contexts_to_keep
 
 
