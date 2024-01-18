@@ -1,8 +1,0 @@
-<eSearchResult><Count>6</Count><RetMax>6</RetMax><RetStart>0</RetStart><IdList>
-<Id>19008416</Id>
-<Id>18927361</Id>
-<Id>18787170</Id>
-<Id>18487186</Id>
-<Id>18239126</Id>
-<Id>18239125</Id>
-</IdList><TranslationSet><Translation>     <From>science[journal]</From>     <To>"Science"[Journal:__jid0404511] OR "Science (1979)"[Journal:__jid8000640]</To>    </Translation><Translation>     <From>breast cancer</From>     <To>"breast neoplasms"[MeSH Terms] OR ("breast"[All Fields] AND "neoplasms"[All Fields]) OR "breast neoplasms"[All Fields] OR ("breast"[All Fields] AND "cancer"[All Fields]) OR "breast cancer"[All Fields]</To>    </Translation></TranslationSet><QueryTranslation>("science"[Journal] OR "science 1979"[Journal]) AND ("breast neoplasms"[MeSH Terms] OR ("breast"[All Fields] AND "neoplasms"[All Fields]) OR "breast neoplasms"[All Fields] OR ("breast"[All Fields] AND "cancer"[All Fields]) OR "breast cancer"[All Fields]) AND 2008/01/01:2008/12/31[Date - Publication]</QueryTranslation></eSearchResult>
