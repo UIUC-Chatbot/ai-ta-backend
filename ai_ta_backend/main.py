@@ -386,10 +386,12 @@ def scrape() -> Response:
   scraper = WebScrape()
   success_fail_dict = scraper.main_crawler(url, course_name, max_urls, max_depth, timeout, stay_on_baseurl,
                                            depth_or_breadth)
+  del scraper
+  posthog.shutdown()
+  gc.collect()  # manually invoke garbage collection, try to reduce memory on Railway $$$
 
   response = jsonify(success_fail_dict)
   response.headers.add('Access-Control-Allow-Origin', '*')
-  gc.collect()  # manually invoke garbage collection, try to reduce memory on Railway $$$
   return response
 
 
@@ -491,6 +493,9 @@ def logToNomic():
   course_name = data['course_name']
   conversation = data['conversation']
 
+  #course_name: str = request.args.get('course_name', default='', type=str)
+  #conversation: str = request.args.get('conversation', default='', type=str)
+
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
     abort(
@@ -502,6 +507,7 @@ def logToNomic():
 
   # background execution of tasks!!
   response = executor.submit(log_convo_to_nomic, course_name, data)
+  #response = executor.submit(log_convo_to_nomic, course_name, conversation)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -556,6 +562,7 @@ def getTopContextsWithMQR() -> Response:
   ingester = Ingest()
   found_documents = ingester.getTopContextsWithMQR(search_query, course_name, token_limit)
   del ingester
+  posthog.shutdown()
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
