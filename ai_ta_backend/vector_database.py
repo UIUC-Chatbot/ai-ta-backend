@@ -186,6 +186,49 @@ class Ingest():
       sentry_sdk.capture_exception(e)
       return success_status
 
+  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, title: str):
+    """Crawlee integration
+    """
+    self.posthog.capture('distinct_id_of_the_user',
+                         event='ingest_single_web_text_invoked',
+                         properties={
+                             'course_name': course_name,
+                             'base_url': base_url,
+                             'url': url,
+                             'content': content,
+                             'title': title
+                         })
+    try:
+      # if not, ingest the text
+      print("Start Ingesting web text. Course name: ", course_name, "base_url: ", base_url, "url: ", url)
+      text = [content]
+      metadatas: List[Dict[str, Any]] = [{
+          'course_name': course_name,
+          's3_path': '',
+          'readable_filename': title,
+          'pagenumber': '',
+          'timestamp': '',
+          'url': url,
+          'base_url': base_url,
+      }]
+      self.split_and_upload(texts=text, metadatas=metadatas)
+      self.posthog.capture('distinct_id_of_the_user',
+                           event='ingest_single_web_text_succeeded',
+                           properties={
+                               'course_name': course_name,
+                               'base_url': base_url,
+                               'url': url,
+                               'title': title
+                           })
+
+      return "Success"
+    except Exception as e:
+      err = f"❌❌ Error in (web text ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )  # type: ignore
+      print(err)
+      sentry_sdk.capture_exception(e)
+      return err
+
   def _ingest_single_py(self, s3_path: str, course_name: str, **kwargs):
     try:
       file_name = s3_path.split("/")[-1]

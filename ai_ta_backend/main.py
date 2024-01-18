@@ -255,6 +255,46 @@ def ingest() -> Response:
   return response
 
 
+@app.route('/ingest-web-text', methods=['GET'])
+def ingest() -> Response:
+  """Recursively ingests anything from S3 filepath and below. 
+  Pass a s3_paths filepath (not URL) into our S3 bucket.
+  
+  Ingests all files, not just PDFs. 
+  
+  args:
+    s3_paths: str | List[str]
+
+  Returns:
+      str: Success or Failure message. Failure message if any failures. TODO: email on failure.
+  """
+  url: str = request.args.get('url', default='')
+  base_url: str = request.args.get('base_url', default='')
+  title: str = request.args.get('title', default='')
+  content: str = request.args.get('content', default='')
+  course_name: str = request.args.get('course_name', default='')
+
+  print(f"In top of /ingest-web-text. course: {course_name}, s3paths: {s3_paths}")
+
+  if course_name == '' or url == '' or content == '' or title == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: course_name, url, content or title. Course name: `{course_name}`, url: `{url}`, content: `{content}`, title: `{title}`"
+    )
+
+  ingester = Ingest()
+  success_fail = ingester.ingest_single_web_text(course_name, base_url, url, content, title)
+  del ingester
+
+  print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
+
+  response = jsonify(success_fail)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/getContextStuffedPrompt', methods=['GET'])
 def getContextStuffedPrompt() -> Response:
   """
