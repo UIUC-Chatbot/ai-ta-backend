@@ -256,7 +256,7 @@ def ingest() -> Response:
 
 
 @app.route('/ingest-web-text', methods=['GET'])
-def ingest() -> Response:
+def ingest_web_text() -> Response:
   """Recursively ingests anything from S3 filepath and below. 
   Pass a s3_paths filepath (not URL) into our S3 bucket.
   
@@ -274,7 +274,7 @@ def ingest() -> Response:
   content: str = request.args.get('content', default='')
   course_name: str = request.args.get('course_name', default='')
 
-  print(f"In top of /ingest-web-text. course: {course_name}, s3paths: {s3_paths}")
+  print(f"In top of /ingest-web-text. course: {course_name}, base_url: {base_url}, url: {url}")
 
   if course_name == '' or url == '' or content == '' or title == '':
     # proper web error "400 Bad request"
@@ -288,7 +288,7 @@ def ingest() -> Response:
   success_fail = ingester.ingest_single_web_text(course_name, base_url, url, content, title)
   del ingester
 
-  print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
+  print(f"Bottom of /ingest route. success or fail dict: {success_fail}")
 
   response = jsonify(success_fail)
   response.headers.add('Access-Control-Allow-Origin', '*')
