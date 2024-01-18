@@ -255,24 +255,26 @@ def ingest() -> Response:
   return response
 
 
-@app.route('/ingest-web-text', methods=['GET'])
+@app.route('/ingest-web-text', methods=['POST'])
 def ingest_web_text() -> Response:
-  """Recursively ingests anything from S3 filepath and below. 
-  Pass a s3_paths filepath (not URL) into our S3 bucket.
+  """Ingests web text data provided in the POST request body.
   
-  Ingests all files, not just PDFs. 
-  
-  args:
-    s3_paths: str | List[str]
+  Expects JSON data containing:
+    - url: The URL of the web text to ingest.
+    - base_url: The base URL of the web text to ingest.
+    - title: The title of the web text.
+    - content: The content of the web text.
+    - course_name: The name of the course associated with the web text.
 
   Returns:
       str: Success or Failure message. Failure message if any failures. TODO: email on failure.
   """
-  url: str = request.args.get('url', default='')
-  base_url: str = request.args.get('base_url', default='')
-  title: str = request.args.get('title', default='')
-  content: str = request.args.get('content', default='')
-  course_name: str = request.args.get('course_name', default='')
+  data = request.get_json()
+  url: str = data.get('url', '')
+  base_url: str = data.get('base_url', '')
+  title: str = data.get('title', '')
+  content: str = data.get('content', '')
+  course_name: str = data.get('course_name', '')
 
   print(f"In top of /ingest-web-text. course: {course_name}, base_url: {base_url}, url: {url}")
 
