@@ -200,7 +200,6 @@ class Ingest():
                          })
     try:
       # if not, ingest the text
-      print("Start Ingesting web text. Course name: ", course_name, "base_url: ", base_url, "url: ", url)
       text = [content]
       metadatas: List[Dict[str, Any]] = [{
           'course_name': course_name,

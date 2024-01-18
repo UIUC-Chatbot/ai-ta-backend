@@ -274,7 +274,7 @@ def ingest_web_text() -> Response:
   base_url: str = data.get('base_url', '')
   title: str = data.get('title', '')
   content: str = data.get('content', '')
-  course_name: str = data.get('course_name', '')
+  course_name: str = data.get('courseName', '')
 
   print(f"In top of /ingest-web-text. course: {course_name}, base_url: {base_url}, url: {url}")
 
