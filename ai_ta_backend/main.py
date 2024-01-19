@@ -24,7 +24,7 @@ from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
-from ai_ta_backend.journal_ingest import get_arxiv_fulltext
+from ai_ta_backend.journal_ingest import get_arxiv_fulltext, downloadSpringerFulltext
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -588,6 +588,30 @@ def get_arxiv_data():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/get-springer-fulltext', methods=['GET'])
+def get_springer_data():
+  
+  issn = request.args.get('issn', default='', type=str)
+  subject = request.args.get('subject', default='', type=str)
+  journal = request.args.get('journal', default='', type=str)
+  title = request.args.get('title', default='', type=str)
+  doi = request.args.get('doi', default='', type=str)
+
+  print("In /get-springer-fulltext")
+
+  if issn == '' and subject == '' and journal == '' and title == '' and doi == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameters: 'issn' or 'subject' or 'title' or 'journal' must be provided."
+    )
+
+  fulltext = downloadSpringerFulltext(issn, subject, journal, title, doi)
+
+  response = jsonify(fulltext)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 if __name__ == '__main__':
   app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression

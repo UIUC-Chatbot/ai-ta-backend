@@ -5,6 +5,8 @@ import arxiv
 import crossref_commons.retrieval
 
 # Below functions hit API endpoints from sites like arXiv, Elsevier, and Sringer Nature to retrieve journal articles
+SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
+ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
 
 def get_arxiv_fulltext(query: str):
     """
@@ -44,6 +46,77 @@ def get_article_metadata_from_crossref(doi: str):
     metadata = crossref_commons.retrieval.get_publication_as_json(doi)
 
     return metadata
+
+def downloadSpringerFulltext(issn: str, subject: str, journal: str, title: str, doi: str):
+    """
+    This function uses the Springer Nature API to download openaccess journal articles.
+    Args:
+        issn: limit to ISSN number of the journal/book
+        subject: limit articles to a specific subject - Chemistry, Physics, etc.
+        journal: limit to keywords occuring in journal title
+        title: limit to keywords occuring in article title
+    The initial API response returns a list of articles with metadata.
+    
+    """
+    directory = os.path.join(os.getcwd(), 'springer_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    api_url = "http://api.springernature.com/openaccess/json?q="
+    headers = {'Accept': 'application/json'}
+    if doi:
+        # query by doi
+        query_str = "doi:" + doi
+    elif issn:
+        # query by issn
+        query_str = "issn:" + issn
+    elif journal:   
+        # query by journal title
+        query_str = "journal:" + journal
+    elif title:
+        # query by article title
+        query_str = "title:" + title
+    else:
+        # query by subject
+        query_str = "subject:" + subject
+    
+    main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY)
+    print("Full URL: ", main_url)
+
+    response = requests.get(main_url)
+    print("Status: ", response.status_code)
+    data = response.json()
+    print("Total records: ", len(data['records']))
+    
+
+    for record in data['records']: 
+        urls = record['url']
+        filename = record['doi'].replace("/", "_")
+        
+        print("Filename: ", filename)
+        if len(urls) > 0:
+            url = urls[0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
+            print("DX URL: ", url)
+            url_response = requests.get(url, headers=headers)
+            dx_doi_data = url_response.json()
+            print("DX DOI Links: ", dx_doi_data['link'])
+            links = dx_doi_data['link']
+            pdf_link = None
+            for link in links:
+                if link['content-type'] == 'application/pdf' and link['intended-application'] == 'text-mining':
+                    pdf_link = link['URL']
+                    print("PDF Link: ", pdf_link)
+                    break
+            
+            if pdf_link:
+                response = requests.get(pdf_link)
+
+                with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+                    for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+                        f.write(chunk)
+                print("Downloaded: ", filename)
+                
+    return "success"
+
 
 
 
