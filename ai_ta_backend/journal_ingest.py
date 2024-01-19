@@ -44,7 +44,6 @@ def get_article_metadata_from_crossref(doi: str):
     This function calls the crossref.org API to retrieve the metadata of the journal article
     """    
     metadata = crossref_commons.retrieval.get_publication_as_json(doi)
-
     return metadata
 
 def downloadSpringerFulltext(issn: str, subject: str, journal: str, title: str, doi: str):
@@ -63,6 +62,7 @@ def downloadSpringerFulltext(issn: str, subject: str, journal: str, title: str, 
         os.makedirs(directory)
     api_url = "http://api.springernature.com/openaccess/json?q="
     headers = {'Accept': 'application/json'}
+
     if doi:
         # query by doi
         query_str = "doi:" + doi
@@ -91,14 +91,13 @@ def downloadSpringerFulltext(issn: str, subject: str, journal: str, title: str, 
     for record in data['records']: 
         urls = record['url']
         filename = record['doi'].replace("/", "_")
-        
         print("Filename: ", filename)
+
         if len(urls) > 0:
             url = urls[0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
             print("DX URL: ", url)
             url_response = requests.get(url, headers=headers)
             dx_doi_data = url_response.json()
-            print("DX DOI Links: ", dx_doi_data['link'])
             links = dx_doi_data['link']
             pdf_link = None
             for link in links:
@@ -109,7 +108,6 @@ def downloadSpringerFulltext(issn: str, subject: str, journal: str, title: str, 
             
             if pdf_link:
                 response = requests.get(pdf_link)
-
                 with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
                     for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
                         f.write(chunk)
@@ -117,6 +115,27 @@ def downloadSpringerFulltext(issn: str, subject: str, journal: str, title: str, 
                 
     return "success"
 
+
+def downloadElsevierFulltextFromDoi(doi: str):
+    """
+    This function downloads articles from Elsevier for a given DOI.
+    """
+    directory = os.path.join(os.getcwd(), 'elsevier_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    headers = {'X-ELS-APIKey': ELSEVIER_API_KEY, 'Accept':'application/pdf'}
+
+    url = 'https://api.elsevier.com/content/article/doi/' + doi
+    response = requests.get(url, headers=headers)
+    print("Status: ", response.status_code)
+    data = response.text
+    filename = doi.replace("/", "_")
+    with open(directory + "/" + doi + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+        for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+            f.write(chunk)
+
+    return "success"
 
 
 

@@ -24,7 +24,7 @@ from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
-from ai_ta_backend.journal_ingest import get_arxiv_fulltext, downloadSpringerFulltext
+from ai_ta_backend.journal_ingest import get_arxiv_fulltext, downloadSpringerFulltext, downloadElsevierFulltextFromDoi
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -604,7 +604,7 @@ def get_springer_data():
     abort(
         400,
         description=
-        f"Missing required parameters: 'issn' or 'subject' or 'title' or 'journal' must be provided."
+        f"Missing required parameters: 'issn' or 'subject' or 'title' or 'journal' or 'doi' must be provided."
     )
 
   fulltext = downloadSpringerFulltext(issn, subject, journal, title, doi)
@@ -612,6 +612,27 @@ def get_springer_data():
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+@app.route('/get-elsevier-fulltext', methods=['GET'])
+def get_elsevier_data():
+  doi = request.args.get('doi', default='', type=str)
+
+  print("In /get-elsevier-fulltext")
+
+  if doi == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameters: 'doi' must be provided."
+    )
+
+  fulltext = downloadElsevierFulltextFromDoi(doi)
+
+  response = jsonify(fulltext)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 if __name__ == '__main__':
   app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression
