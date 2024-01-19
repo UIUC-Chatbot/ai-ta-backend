@@ -24,6 +24,7 @@ from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+from ai_ta_backend.journal_ingest import get_arxiv_fulltext
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -565,6 +566,25 @@ def getTopContextsWithMQR() -> Response:
   posthog.shutdown()
 
   response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/get-arxiv-fulltext', methods=['GET'])
+def get_arxiv_data():
+  search_query: str = request.args.get('search_query', default='', type=str)
+  print("In /get-arxiv-fulltext: ", search_query)
+
+  if search_query == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameters: 'arxiv_id' or 'search_query' must be provided."
+    )
+
+  fulltext = get_arxiv_fulltext(search_query)
+
+  response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
