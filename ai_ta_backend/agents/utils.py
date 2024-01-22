@@ -251,7 +251,10 @@ class SupabaseDB:
     """
     response = self.supabase_client.table("docker_images").select(field). \
       eq("image_name", self.image_name).execute()
-    return response.data[0][field]
+    if response.data is not None:
+      return response.data[0][field]
+    else:
+      return None
 
   def update_field_in_db(self, field: str, value: Any):
     """Method to update field in  supabase DB.
@@ -263,7 +266,10 @@ class SupabaseDB:
     """
     response = self.supabase_client.table("docker_images").update({field: value}). \
       eq("image_name", self.image_name).execute()
-    return response
+    if response.data is not None:
+      return response
+    else:
+      return None
 
   def upsert_field_in_db(self, field, value):
     """Method to upsert field in  supabase DB.
@@ -273,9 +279,11 @@ class SupabaseDB:
         Returns:
             APIResponse: Response from Supabase.
     """
-    response = self.supabase_client.table("docker_images").upsert({field: value}). \
-      eq("image_name", self.image_name).execute()
-    return response
+    response = self.supabase_client.table("docker_images").upsert({"image_name": self.image_name, field: value}).execute()
+    if response.data is not None:
+      return response
+    else:
+      return None
   
   def check_and_insert_image_name(self, image_name):
     """Check if the image name exists in the Supabase table, if not, insert it and build a Docker image.
