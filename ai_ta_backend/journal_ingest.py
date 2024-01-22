@@ -8,6 +8,31 @@ import crossref_commons.retrieval
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
 
+def getFromDoi(doi: str):
+    """
+    This function takes DOI string as input and downloads the 
+    article from the publisher's website.
+    Args:
+        doi: DOI string
+    Returns:
+        success: string
+        failed: string (if the article is not accessible)
+    """
+    # get metadata from crossref
+    metadata = get_article_metadata_from_crossref(doi)
+    print("Publisher: ", metadata['publisher'])
+    publisher = metadata['publisher'].lower().split()
+    
+    if 'springer' in publisher:
+        # download from springer
+        downloadSpringerFulltext(doi=doi)
+
+    elif 'elsevier' in publisher:
+        # download from elsevier
+        downloadElsevierFulltextFromDoi(doi=doi)
+
+    return "success"
+
 def get_arxiv_fulltext(query: str):
     """
     This function retrieves journal articles from arXiv
@@ -46,7 +71,7 @@ def get_article_metadata_from_crossref(doi: str):
     metadata = crossref_commons.retrieval.get_publication_as_json(doi)
     return metadata
 
-def downloadSpringerFulltext(issn: str, subject: str, journal: str, title: str, doi: str):
+def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, doi=None):
     """
     This function uses the Springer Nature API to download openaccess journal articles.
     Args:
@@ -75,9 +100,11 @@ def downloadSpringerFulltext(issn: str, subject: str, journal: str, title: str, 
     elif title:
         # query by article title
         query_str = "title:" + title
-    else:
+    elif subject:
         # query by subject
         query_str = "subject:" + subject
+    else:
+        return "No query parameters provided"
     
     main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY)
     print("Full URL: ", main_url)
@@ -131,7 +158,7 @@ def downloadElsevierFulltextFromDoi(doi: str):
     print("Status: ", response.status_code)
     data = response.text
     filename = doi.replace("/", "_")
-    with open(directory + "/" + doi + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+    with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
         for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
             f.write(chunk)
 
