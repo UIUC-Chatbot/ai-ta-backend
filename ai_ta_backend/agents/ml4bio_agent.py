@@ -35,7 +35,7 @@ TASK_PREFIX = """{objective}
 MEMORY_CONTEXT = """
 Memory:
 Tools used in chronological order(1 is oldest) : {tools_used}
-Actions taken in chronological order(1 is oldest) : {agent_action_steps}
+Actions taken in chronological order(1 is oldest) : {agent_action}
 """
 
 
@@ -55,18 +55,22 @@ def get_memory_context(table_name: str, image_name: str):
 
     if db.is_exists_image():
         tool_data = db.fetch_field_from_db("on_tool_start")
-        if tool_data:
+        if tool_data is not None:
             tools_used = [item['name'] for item in tool_data]
             tools_used = ", ".join(tools_used)
 
         action_data = db.fetch_field_from_db("on_agent_action")
-        if action_data:
-            action_data_string = [item['log'] for item in action_data]
-            action_data_string = ", ".join(action_data_string)
+        if action_data is not None:
+            action_data_string += f"{action_data['action']} {action_data['action_input']}\n"
+
+        final_action = db.fetch_field_from_db("on_agent_finish")
+        if final_action is not None:
+            action_data_string += final_action
+
 
     return MEMORY_CONTEXT.format(
         tools_used=tools_used,
-        agent_action_steps=action_data_string,
+        agent_action=action_data_string,
     )
 
 
