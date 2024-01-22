@@ -3,6 +3,11 @@ import requests
 import json
 import arxiv
 import crossref_commons.retrieval
+import xml.etree.ElementTree as ET
+import ftplib
+from urllib.parse import urlparse
+
+
 
 # Below functions hit API endpoints from sites like arXiv, Elsevier, and Sringer Nature to retrieve journal articles
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
@@ -26,11 +31,11 @@ def getFromDoi(doi: str):
     if 'springer' in publisher:
         # download from springer
         downloadSpringerFulltext(doi=doi)
-
     elif 'elsevier' in publisher:
         # download from elsevier
         downloadElsevierFulltextFromDoi(doi=doi)
-
+    else:
+        print("Publisher not supported yet. Please try again later.")
     return "success"
 
 def get_arxiv_fulltext(query: str):
@@ -164,5 +169,94 @@ def downloadElsevierFulltextFromDoi(doi: str):
 
     return "success"
 
+def extract_record_data(xml_string):
+    """Extracts record ID, license, and href elements from an XML string.
+    Args:
+        xml_string: XML string --> Response from the OA Web Service API
+    Returns:
+        extracted_data: list of dictionaries
+    """
+    root = ET.fromstring(xml_string)
+    records = root.findall(".//record")
+    extracted_data = []
 
+    for record in records:
+        record_id = record.get("id")
+        license = record.get("license")
+        href = record.find(".//link").get("href")
+        extracted_data.append({
+            "record_id": record_id,
+            "license": license,
+            "href": href
+        })
 
+    return extracted_data
+
+def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None):
+    """
+    This function downloads articles from PubMed using the OA Web Service API.
+    """
+    main_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?"
+    if id:
+        main_url += "id=" + id
+    elif from_date and until_date:
+        main_url += "from=" + from_date + "&until=" + until_date
+    elif from_date:
+        main_url += "from=" + from_date
+    else:
+        return "No query parameters provided"
+    
+    if format != None and format in ['tgz', 'pdf']:
+        main_url += "&format=" + format
+
+    print("Full URL: ", main_url)
+
+    xml_response = requests.get(main_url)
+
+    # parse xml response and extract pdf links and other metadata
+    records = extract_record_data(xml_response.text)
+
+    print("Total records: ", len(records))
+    print("Sample record: ", records[0])
+
+    if len(records) > 0:
+        # download articles
+        directory = os.path.join(os.getcwd(), 'pubmed_papers')
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        download_status = downloadFromFTP(records, directory, ftp_address="ftp.ncbi.nlm.nih.gov")
+
+        return download_status
+    else:
+        print("No articles found for the given query parameters.")
+        return "failed"
+    
+
+def downloadFromFTP(paths, local_dir, ftp_address):
+    """
+    This function downloads files from an FTP server.
+    Args:
+        paths: list of FTP paths
+        local_dir: local directory to save the files
+        ftp_address: ftp address
+    """
+    # Connect to the FTP server anonymously
+    ftp = ftplib.FTP(ftp_address)
+    ftp.login()  # Use anonymous login
+
+    # Download each file in the list
+    for path in paths:
+        ftp_url = urlparse(path['href'])
+        ftp_path = ftp_url.path[1:]
+        print("Downloading from FTP path: ", ftp_path)
+
+        filename = ftp_path.split('/')[-1]
+        local_file = os.path.join(local_dir, filename)
+        with open(local_file, 'wb') as f:
+            ftp.retrbinary("RETR " + ftp_path, f.write)
+
+        ftp.quit()
+        print("Downloaded: ", filename)
+    
+    return "success"

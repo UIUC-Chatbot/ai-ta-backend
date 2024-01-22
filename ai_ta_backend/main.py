@@ -24,7 +24,9 @@ from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
-from ai_ta_backend.journal_ingest import get_arxiv_fulltext, downloadSpringerFulltext, downloadElsevierFulltextFromDoi, getFromDoi
+from ai_ta_backend.journal_ingest import (get_arxiv_fulltext, downloadSpringerFulltext, 
+                                          downloadElsevierFulltextFromDoi, getFromDoi, 
+                                          downloadPubmedArticles)
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -649,6 +651,29 @@ def getArticleFromDoi():
     )
 
   fulltext = getFromDoi(doi)
+
+  response = jsonify(fulltext)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/getArticleFromPubmed', methods=['GET'])
+def getArticleFromPubmed():
+  id = request.args.get('id', default='', type=str)
+  from_date = request.args.get('from_date', default='', type=str)
+  until_date = request.args.get('until_date', default='', type=str)
+  format = request.args.get('format', default='', type=str)
+
+  print("In /getArticleFromPubmed")
+
+  if id == '' and from_date  == '' and until_date == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameters: 'id', 'from_date', or 'until_date' must be provided."
+    )
+
+  fulltext = downloadPubmedArticles(id, from_date, until_date, format)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
