@@ -73,7 +73,7 @@ class CustomCallbackHandler(BaseCallbackHandler):
 
         if self.db.is_exists_image():
             data = self.db.fetch_field_from_db("on_tool_end")
-            if data:
+            if data is not None or len(data) > 0:
                 data.append(output)
                 response = self.db.update_field_in_db("on_tool_end", data)
             else:
@@ -92,15 +92,16 @@ class CustomCallbackHandler(BaseCallbackHandler):
 
     def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
         """Run when LLM predicts an action. Parse the action and store it in a database."""
-        action = action.dict()
-        parsed_action = AgentActionParser(action)
-        action_data = {"log": parsed_action.log, "action": parsed_action.action, "action_input": parsed_action.action_input,
-                       "action_output": parsed_action.action_output, "tool": parsed_action.tool,
-                       "tool_input": parsed_action.tool_input, "tool_output": parsed_action.tool_output}
+        action_data = {"action": action.tool, "action_input" : action.tool_input}
+        # action = action.dict()
+        # parsed_action = AgentActionParser(action)
+        # action_data = {"log": parsed_action.log, "action": parsed_action.action, "action_input": parsed_action.action_input,
+        #                "action_output": parsed_action.action_output, "tool": parsed_action.tool,
+        #                "tool_input": parsed_action.tool_input, "tool_output": parsed_action.tool_output}
 
         if self.db.is_exists_image():
             data = self.db.fetch_field_from_db("on_agent_action")
-            if data:
+            if data is not None:
                 data.append(action_data)
                 response = self.db.update_field_in_db("on_agent_action", data)
             else:
@@ -111,16 +112,17 @@ class CustomCallbackHandler(BaseCallbackHandler):
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run when LLM finishes. Store the finish in a database."""
         finish = finish.dict()
+        finish_output = finish["return_values"]["output"]
 
         if self.db.is_exists_image():
             data = self.db.fetch_field_from_db("on_agent_finish")
-            if data:
-                data.append(finish)
+            if data is not None:
+                data.append(finish_output)
                 response = self.db.update_field_in_db("on_agent_finish", data)
             else:
-                response = self.db.update_field_in_db("on_agent_finish", finish)
+                response = self.db.update_field_in_db("on_agent_finish", [finish_output])
         else:
-            response = self.db.upsert_field_in_db("on_agent_finish", finish)
+            response = self.db.upsert_field_in_db("on_agent_finish", [finish_output])
 
 
     # def agent_output():
