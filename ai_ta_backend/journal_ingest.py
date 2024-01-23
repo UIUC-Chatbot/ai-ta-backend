@@ -8,7 +8,6 @@ import ftplib
 from urllib.parse import urlparse
 
 
-
 # Below functions hit API endpoints from sites like arXiv, Elsevier, and Sringer Nature to retrieve journal articles
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
@@ -26,6 +25,7 @@ def getFromDoi(doi: str):
     # get metadata from crossref
     metadata = get_article_metadata_from_crossref(doi)
     print("Publisher: ", metadata['publisher'])
+    print("Content domain: ", metadata['content-domain'])
     publisher = metadata['publisher'].lower().split()
     
     if 'springer' in publisher:
@@ -196,6 +196,10 @@ def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None
     """
     This function downloads articles from PubMed using the OA Web Service API.
     """
+    directory = os.path.join(os.getcwd(), 'pubmed_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     main_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?"
     if id:
         main_url += "id=" + id
@@ -212,25 +216,35 @@ def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None
     print("Full URL: ", main_url)
 
     xml_response = requests.get(main_url)
+    root = ET.fromstring(xml_response.text)
+    resumption = root.find(".//resumption")
 
-    # parse xml response and extract pdf links and other metadata
+    while resumption is not None: # download current articles and query 
+        # parse xml response and extract pdf links and other metadata
+        records = extract_record_data(xml_response.text)
+        print("Total records: ", len(records))
+        if len(records) > 0:
+            # download articles
+            download_status = downloadFromFTP(records, directory, ftp_address="ftp.ncbi.nlm.nih.gov")
+
+        # query for next set of articles    
+        resumption_url = resumption.find(".//link").get("href")
+        print("Resumption URL: ", resumption_url)
+
+        xml_response = requests.get(resumption_url)
+        root = ET.fromstring(xml_response.text)
+        resumption = root.find(".//resumption")
+
+    # download current articles if resumption is None
     records = extract_record_data(xml_response.text)
-
-    print("Total records: ", len(records))
-    print("Sample record: ", records[0])
-
+    print("Current total records: ", len(records))
     if len(records) > 0:
         # download articles
-        directory = os.path.join(os.getcwd(), 'pubmed_papers')
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-
         download_status = downloadFromFTP(records, directory, ftp_address="ftp.ncbi.nlm.nih.gov")
 
-        return download_status
-    else:
-        print("No articles found for the given query parameters.")
-        return "failed"
+    return "success"
+
+    
     
 
 def downloadFromFTP(paths, local_dir, ftp_address):
