@@ -245,11 +245,9 @@ def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None
     return "success"
 
     
-    
-
 def downloadFromFTP(paths, local_dir, ftp_address):
     """
-    This function downloads files from an FTP server.
+    This function downloads files from an FTP server. Used in conjunction with downloadPubmedArticles().
     Args:
         paths: list of FTP paths
         local_dir: local directory to save the files
