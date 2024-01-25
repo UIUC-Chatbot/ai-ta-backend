@@ -380,5 +380,13 @@ def create_nomic_map(course_name: str, log_data: list):
     return "failed"
 
 
+def create_document_map():
+  """
+  This is a function which creates a map for the document embeddings.
+  """
+  print("in create_document_map()")
+
+  return "success"
+
 if __name__ == '__main__':
   pass
