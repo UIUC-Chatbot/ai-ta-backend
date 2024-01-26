@@ -39,6 +39,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.idea/
+node_modules/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -118,7 +120,7 @@ celerybeat.pid
 
 # Environments
 .env
-.venv
+.venv*
 env/
 venv/
 ENV/
@@ -167,4 +169,5 @@ pip-selfcheck.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 .aider*
 
-node_modules
+# Input/Output files
+payload.json
