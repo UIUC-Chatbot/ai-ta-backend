@@ -15,7 +15,7 @@ from ai_ta_backend.vector_database import Ingest
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
 
-def getFromDoi(doi: str):
+def getFromDoi(doi: str, course_name: str):
     """
     This function takes DOI string as input and downloads the 
     article from the publisher's website.
@@ -26,26 +26,25 @@ def getFromDoi(doi: str):
         failed: string (if the article is not accessible)
     """
     # get metadata from crossref
-    # metadata = get_article_metadata_from_crossref(doi)
-    # print("Publisher: ", metadata['publisher'])
-    # print("Content domain: ", metadata['content-domain'])
-    # publisher = metadata['publisher'].lower().split()
-    # course_name = 'cropwizard'
+    metadata = get_article_metadata_from_crossref(doi)
+    print("Publisher: ", metadata['publisher'])
+    print("Content domain: ", metadata['content-domain'])
+    publisher = metadata['publisher'].lower().split()
     
-    # if 'springer' in publisher:
-    #     # download from springer
-    #     downloadSpringerFulltext(doi=doi)
-    #     folder_path = os.path.join(os.getcwd(), 'springer_papers')
-    # elif 'elsevier' in publisher:
-    #     # download from elsevier
-    #     downloadElsevierFulltextFromDoi(doi=doi)
-    #     folder_path = os.path.join(os.getcwd(), 'elsevier_papers')
-    # else:
-    #     print("Publisher not supported yet. Please try again later.")
-    #     folder_path = None
+    if 'springer' in publisher:
+        # download from springer
+        downloadSpringerFulltext(doi=doi)
+        folder_path = os.path.join(os.getcwd(), 'springer_papers')
+    elif 'elsevier' in publisher:
+        # download from elsevier
+        downloadElsevierFulltextFromDoi(doi=doi)
+        folder_path = os.path.join(os.getcwd(), 'elsevier_papers')
+    else:
+        print("Publisher not supported yet. Please try again later.")
+        folder_path = None
 
-    folder_path = os.path.join(os.getcwd(), 'springer_papers')
-    course_name = 'cropwizard'
+    # folder_path = os.path.join(os.getcwd(), 'springer_papers')
+    # course_name = 'cropwizard'
     # upload files to s3
     if folder_path:    
         s3_paths = upload_data_files_to_s3(course_name, folder_path)
@@ -94,7 +93,7 @@ def get_article_metadata_from_crossref(doi: str):
     metadata = crossref_commons.retrieval.get_publication_as_json(doi)
     return metadata
 
-def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, doi=None):
+def downloadSpringerFulltext(issn:str, subject:str, journal:str, title:str, doi:str, course_name: str):
     """
     This function uses the Springer Nature API to download openaccess journal articles.
     Args:
@@ -129,7 +128,8 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
     else:
         return "No query parameters provided"
     
-    main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY)
+    
+    main_url = api_url + query_str + "&s=11&api_key=" + str(SPRINGER_API_KEY)
     print("Full URL: ", main_url)
 
     response = requests.get(main_url)
@@ -137,6 +137,39 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
     data = response.json()
     print("Total records: ", len(data['records']))
     
+    while 'nextPage' in data:
+        # extract current page data
+        for record in data['records']: 
+            urls = record['url']
+            filename = record['doi'].replace("/", "_")
+            print("Filename: ", filename)
+
+            if len(urls) > 0:
+                url = urls[0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
+                print("DX URL: ", url)
+                url_response = requests.get(url, headers=headers)
+                dx_doi_data = url_response.json()
+                links = dx_doi_data['link']
+                pdf_link = None
+                for link in links:
+                    if link['content-type'] == 'application/pdf' and link['intended-application'] == 'text-mining':
+                        pdf_link = link['URL']
+                        print("PDF Link: ", pdf_link)
+                        break
+                
+                if pdf_link:
+                    response = requests.get(pdf_link)
+                    with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+                        for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+                            f.write(chunk)
+                    print("Downloaded: ", filename)
+
+        # query for next page
+        next_page_url = "http://api.springernature.com" + data['nextPage']
+        response = requests.get(next_page_url)
+        print("Status: ", response.status_code)
+        data = response.json()
+        print("Total records: ", len(data['records']))
 
     for record in data['records']: 
         urls = record['url']
@@ -162,7 +195,15 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
                     for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
                         f.write(chunk)
                 print("Downloaded: ", filename)
-                
+    
+    # upload to s3
+    s3_paths = upload_data_files_to_s3(course_name, directory)
+
+    # ingest into QDRANT
+    ingest = Ingest()
+    
+    journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
+                                
     return "success"
 
 

@@ -634,7 +634,7 @@ def get_arxiv_data():
 
 @app.route('/get-springer-fulltext', methods=['GET'])
 def get_springer_data():
-  
+  course_name: str = request.args.get('course_name', default='', type=str)
   issn = request.args.get('issn', default='', type=str)
   subject = request.args.get('subject', default='', type=str)
   journal = request.args.get('journal', default='', type=str)
@@ -643,15 +643,15 @@ def get_springer_data():
 
   print("In /get-springer-fulltext")
 
-  if issn == '' and subject == '' and journal == '' and title == '' and doi == '':
+  if (issn == '' and subject == '' and journal == '' and title == '' and doi == '') or course_name == '':
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing required parameters: 'issn' or 'subject' or 'title' or 'journal' or 'doi' must be provided."
+        f"Missing required parameters: 'issn' or 'subject' or 'title' or 'journal' or 'doi' and 'course_name' must be provided."
     )
 
-  fulltext = downloadSpringerFulltext(issn, subject, journal, title, doi)
+  fulltext = downloadSpringerFulltext(issn, subject, journal, title, doi, course_name)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -681,15 +681,16 @@ def get_elsevier_data():
 @app.route('/getArticleFromDoi', methods=['GET'])
 def getArticleFromDoi():
   doi = request.args.get('doi', default='', type=str)
+  course_name = request.args.get('course_name', default='', type=str)
 
   print("In /getArticleFromDoi")
 
-  if doi == '':
+  if doi == '' or course_name == '':
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing required parameters: 'doi' must be provided."
+        f"Missing required parameters: 'doi' and 'course_name' must be provided."
     )
 
   fulltext = getFromDoi(doi)

@@ -51,7 +51,7 @@ from ai_ta_backend.context_parent_doc_padding import context_parent_doc_padding
 from ai_ta_backend.filtering_contexts import filter_top_contexts
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
-OPENAI_API_TYPE = "azure"  # "openai" or "azure"
+OPENAI_API_TYPE = "openai"  # "openai" or "azure"
 
 
 class Ingest():
@@ -73,7 +73,8 @@ class Ingest():
 
     self.vectorstore = Qdrant(client=self.qdrant_client,
                               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                              embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE))
+                              embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE, 
+                                                          openai_api_key=os.getenv('OPENAI_API_KEY')))
 
     # S3
     self.s3_client = boto3.client(
@@ -185,48 +186,6 @@ class Ingest():
       success_status['failure_ingest'].append(f"MAJOR ERROR IN /bulk_ingest: Error: {str(e)}")
       sentry_sdk.capture_exception(e)
       return success_status
-
-  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, title: str):
-    """Crawlee integration
-    """
-    self.posthog.capture('distinct_id_of_the_user',
-                         event='ingest_single_web_text_invoked',
-                         properties={
-                             'course_name': course_name,
-                             'base_url': base_url,
-                             'url': url,
-                             'content': content,
-                             'title': title
-                         })
-    try:
-      # if not, ingest the text
-      text = [content]
-      metadatas: List[Dict[str, Any]] = [{
-          'course_name': course_name,
-          's3_path': '',
-          'readable_filename': title,
-          'pagenumber': '',
-          'timestamp': '',
-          'url': url,
-          'base_url': base_url,
-      }]
-      self.split_and_upload(texts=text, metadatas=metadatas)
-      self.posthog.capture('distinct_id_of_the_user',
-                           event='ingest_single_web_text_succeeded',
-                           properties={
-                               'course_name': course_name,
-                               'base_url': base_url,
-                               'url': url,
-                               'title': title
-                           })
-
-      return "Success"
-    except Exception as e:
-      err = f"❌❌ Error in (web text ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
-      )  # type: ignore
-      print(err)
-      sentry_sdk.capture_exception(e)
-      return err
 
   def _ingest_single_py(self, s3_path: str, course_name: str, **kwargs):
     try:
@@ -860,7 +819,7 @@ class Ingest():
       oai = OpenAIAPIProcessor(
           input_prompts_list=input_texts,
           request_url='https://api.openai.com/v1/embeddings',
-          api_key=os.getenv('VLADS_OPENAI_KEY'),
+          api_key=os.getenv('OPENAI_API_KEY'),
           # request_url=
           # 'https://uiuc-chat-canada-east.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-05-15',
           # api_key=os.getenv('AZURE_OPENAI_KEY'),
@@ -1076,23 +1035,12 @@ class Ingest():
 
   def vector_search(self, search_query, course_name):
     top_n = 80
-    # EMBED
-    openai_start_time = time.monotonic()
     o = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)
     user_query_embedding = o.embed_query(search_query)
-    openai_embedding_latency = time.monotonic() - openai_start_time
-
-    # SEARCH
     myfilter = models.Filter(must=[
         models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name)),
     ])
-    self.posthog.capture('distinct_id_of_the_user',
-                         event='vector_search_invoked',
-                         properties={
-                             'user_query': search_query,
-                             'course_name': course_name,
-                         })
-    qdrant_start_time = time.monotonic()
+
     search_results = self.qdrant_client.search(
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
         query_filter=myfilter,
@@ -1117,15 +1065,6 @@ class Ingest():
       except Exception as e:
         print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
         sentry_sdk.capture_exception(e)
-
-    self.posthog.capture('distinct_id_of_the_user',
-                         event='vector_search_succeded',
-                         properties={
-                             'user_query': search_query,
-                             'course_name': course_name,
-                             'qdrant_latency_sec': time.monotonic() - qdrant_start_time,
-                             'openai_embedding_latency_sec': openai_embedding_latency
-                         })
     # print("found_docs", found_docs)
     return found_docs
 
@@ -1181,7 +1120,6 @@ class Ingest():
                                'total_tokens_used': token_counter,
                                'total_contexts_used': len(valid_docs),
                                'total_unique_docs_retrieved': len(found_docs),
-                               'getTopContext_total_latency_sec': time.monotonic() - start_time_overall,
                            })
 
       return self.format_for_json(valid_docs)
