@@ -7,6 +7,9 @@ import xml.etree.ElementTree as ET
 import ftplib
 from urllib.parse import urlparse
 
+from ai_ta_backend.aws import upload_data_files_to_s3
+from ai_ta_backend.vector_database import Ingest
+
 
 # Below functions hit API endpoints from sites like arXiv, Elsevier, and Sringer Nature to retrieve journal articles
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
@@ -23,19 +26,34 @@ def getFromDoi(doi: str):
         failed: string (if the article is not accessible)
     """
     # get metadata from crossref
-    metadata = get_article_metadata_from_crossref(doi)
-    print("Publisher: ", metadata['publisher'])
-    print("Content domain: ", metadata['content-domain'])
-    publisher = metadata['publisher'].lower().split()
+    # metadata = get_article_metadata_from_crossref(doi)
+    # print("Publisher: ", metadata['publisher'])
+    # print("Content domain: ", metadata['content-domain'])
+    # publisher = metadata['publisher'].lower().split()
+    # course_name = 'cropwizard'
     
-    if 'springer' in publisher:
-        # download from springer
-        downloadSpringerFulltext(doi=doi)
-    elif 'elsevier' in publisher:
-        # download from elsevier
-        downloadElsevierFulltextFromDoi(doi=doi)
-    else:
-        print("Publisher not supported yet. Please try again later.")
+    # if 'springer' in publisher:
+    #     # download from springer
+    #     downloadSpringerFulltext(doi=doi)
+    #     folder_path = os.path.join(os.getcwd(), 'springer_papers')
+    # elif 'elsevier' in publisher:
+    #     # download from elsevier
+    #     downloadElsevierFulltextFromDoi(doi=doi)
+    #     folder_path = os.path.join(os.getcwd(), 'elsevier_papers')
+    # else:
+    #     print("Publisher not supported yet. Please try again later.")
+    #     folder_path = None
+
+    folder_path = os.path.join(os.getcwd(), 'springer_papers')
+    course_name = 'cropwizard'
+    # upload files to s3
+    if folder_path:    
+        s3_paths = upload_data_files_to_s3(course_name, folder_path)
+
+        # ingest into QDRANT
+        ingest = Ingest()
+        journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
+
     return "success"
 
 def get_arxiv_fulltext(query: str):
