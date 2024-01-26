@@ -25,7 +25,7 @@ from langchain import hub
 # from langchain.tools.github.utils import generate_branch_name
 
 # from github_agent import GH_Agent
-from ai_ta_backend.agents.ml4bio_agent import WorkflowAgent
+from ai_ta_backend.agents.langgraph_agent import WorkflowAgent
 from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
 
 hostname = socket.gethostname()
@@ -80,7 +80,6 @@ def handle_issue_opened(payload, langsmith_run_id):
       payload (_type_): From github, see their webhook docs.
   """
   logging.warning(f'fAuth {os.environ["GITHUB_APP_ID"]}')
-  logging.error(f'Auth {os.environ["GITHUB_APP_PRIVATE_KEY"]}')
   # print("Auth ", os.environ["GITHUB_APP_ID"])
   # print("Auth ", os.environ["GITHUB_APP_PRIVATE_KEY"])
   auth = Auth.AppAuth(
@@ -91,7 +90,6 @@ def handle_issue_opened(payload, langsmith_run_id):
   installation = gi.get_installations()[0]
   g = installation.get_github_for_installation()
 
-  print("After get instillation")
   logging.info("After get instillation")
 
   issue = payload['issue']
