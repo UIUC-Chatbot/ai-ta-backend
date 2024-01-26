@@ -1,119 +1,144 @@
 from langchain_community.tools.tavily_search import TavilySearchResults
+import getpass
 import os
+import platform
+
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import ToolExecutor
-from langchain.tools.render import format_tool_to_openai_function
-from typing import TypedDict, Annotated, Sequence
+from typing import TypedDict, Annotated, Union
 import operator
+from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.messages import BaseMessage
-from langgraph.prebuilt import ToolInvocation
-import json
-from langchain_core.messages import FunctionMessage
+from langgraph.graph import StateGraph, END
+from langchain import hub
+from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain_experimental.plan_and_execute import (PlanAndExecute,
+                                                     load_agent_executor,
+                                                     load_chat_planner)
+from ai_ta_backend.agents.tools import get_tools
+from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 
-from langchain.agents import load_tools
 load_dotenv(override=True)
-#os.getenv["SERPAPI_API_KEY"] = os.getenv("SERPAPI_API_KEY")
-tools = load_tools(["serpapi"])
-
-tool_executor = ToolExecutor(tools)
 
 
-# We will set streaming=True so that we can stream tokens
-# See the streaming section for more information on this.
-model = ChatOpenAI(temperature=0, streaming=True)
-functions = [format_tool_to_openai_function(t) for t in tools]
-model = model.bind_functions(functions)
+def get_user_info_string():
+  username = getpass.getuser()
+  current_working_directory = os.getcwd()
+  operating_system = platform.system()
+  default_shell = os.environ.get("SHELL")
+
+  return f"[User Info]\nName: {username}\nCWD: {current_working_directory}\nSHELL: {default_shell}\nOS: {operating_system}"
 
 
 class AgentState(TypedDict):
-    messages: Annotated[Sequence[BaseMessage], operator.add]
-
-def should_continue(state):
-    messages = state['messages']
-    last_message = messages[-1]
-    # If there is no function call, then we finish
-    if "function_call" not in last_message.additional_kwargs:
-        return "end"
-    # Otherwise if there is, we continue
-    else:
-        return "continue"
-
-# Define the function that calls the model
-def call_model(state):
-    messages = state['messages'][-5:]
-    response = model.invoke(messages)
-    # We return a list, because this will get added to the existing list
-    return {"messages": [response]}
-
-# Define the function to execute tools
-def call_tool(state):
-    messages = state['messages']
-    # Based on the continue condition
-    # we know the last message involves a function call
-    last_message = messages[-1]
-    # We construct an ToolInvocation from the function_call
-    action = ToolInvocation(
-        tool=last_message.additional_kwargs["function_call"]["name"],
-        tool_input=json.loads(last_message.additional_kwargs["function_call"]["arguments"]),
-    )
-    # We call the tool_executor and get back a response
-    response = tool_executor.invoke(action)
-    # We use the response to create a FunctionMessage
-    function_message = FunctionMessage(content=str(response), name=action.tool)
-    # We return a list, because this will get added to the existing list
-    return {"messages": [function_message]}
+    # The input string
+    input: str
+    # The list of previous messages in the conversation
+    chat_history: list[BaseMessage]
+    # The outcome of a given call to the agent
+    # Needs `None` as a valid type, since this is what this will start as
+    agent_outcome: Union[AgentAction, AgentFinish, None]
+    # List of actions and corresponding observations
+    # Here we annotate this with `operator.add` to indicate that operations to
+    # this state should be ADDED to the existing values (not overwrite it)
+    intermediate_steps: Annotated[list[tuple[AgentAction, str]], operator.add]
 
 
-from langgraph.graph import StateGraph, END
-# Define a new graph
-workflow = StateGraph(AgentState)
+class WorkflowAgent:
+    def __init__(self, langsmith_run_id):
+        self.langsmith_run_id = langsmith_run_id
+        if os.environ['OPENAI_API_TYPE'] == 'azure':
+            self.llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3,
+                                       deployment_name=os.environ['AZURE_OPENAI_ENGINE'],
+                                       streaming=True)  # type: ignore
+        else:
+            self.llm: ChatOpenAI = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=500,
+                                              request_timeout=60 * 3, streaming=True)  # type: ignore
+        self.tools = get_tools(langsmith_run_id=self.langsmith_run_id)
+        self.agent = self.make_agent()
 
-# Define the two nodes we will cycle between
-workflow.add_node("agent", call_model)
-workflow.add_node("action", call_tool)
 
-# Set the entrypoint as `agent`
-# This means that this node is the first one called
-workflow.set_entry_point("agent")
+    def make_agent(self):
+        # PLANNER
+        planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(
+                                    user_info=get_user_info_string))
 
-# We now add a conditional edge
-workflow.add_conditional_edges(
-    # First, we define the start node. We use `agent`.
-    # This means these are the edges taken after the `agent` node is called.
-    "agent",
-    # Next, we pass in the function that will determine which node is called next.
-    should_continue,
-    # Finally we pass in a mapping.
-    # The keys are strings, and the values are other nodes.
-    # END is a special node marking that the graph should finish.
-    # What will happen is we will call `should_continue`, and then the output of that
-    # will be matched against the keys in this mapping.
-    # Based on which one it matches, that node will then be called.
-    {
-        # If `tools`, then we call the tool node.
-        "continue": "action",
-        # Otherwise we finish.
-        "end": END
-    }
-)
+        # EXECUTOR
+        executor = load_agent_executor(self.llm, self.tools, verbose=True,
+                                       trim_intermediate_steps=fancier_trim_intermediate_steps,
+                                       handle_parsing_errors=True)
+        # executor = load_agent_executor(self.llm, tools, verbose=True, handle_parsing_errors=True)
 
-# We now add a normal edge from `tools` to `agent`.
-# This means that after `tools` is called, `agent` node is called next.
-workflow.add_edge('action', 'agent')
+        # Create PlanAndExecute Agent
+        workflow_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True)
 
-# Finally, we compile it!
-# This compiles it into a LangChain Runnable,
-# meaning you can use it as you would any other runnable
-app = workflow.compile()
+        return workflow_agent
 
-from langchain_core.messages import HumanMessage
+    # Invoke the agent
+    def execute_agent(self, data):
+        agent_outcome = self.agent.invoke(data, {
+                    "metadata": {"langsmith_run_id": str(self.langsmith_run_id)}})
+        return {"agent_outcome": agent_outcome}
 
-inputs = {"messages": [HumanMessage(content="what is the weather in sf")]}
-for output in app.stream(inputs):
-    # stream() yields dictionaries with output keyed by node name
-    for key, value in output.items():
-        print(f"Output from node '{key}':")
-        print("---")
-        print(value)
-    print("\n---\n")
+    # Define the function to execute tools
+    def execute_tools(self, data):
+        # Get the most recent agent_outcome - this is the key added in the `agent` above
+        agent_action = data['agent_outcome']
+        tool_executor = ToolExecutor(self.tools)
+        output = tool_executor.invoke(agent_action)
+        return {"intermediate_steps": [(agent_action, str(output))]}
+
+    # Define logic that will be used to determine which conditional edge to go down
+    def should_continue(self, data):
+        # The return string will be used when setting up the graph to define the flow
+        # If the agent outcome is an AgentFinish, then we return `exit` string
+        if isinstance(data['agent_outcome'], AgentFinish):
+            return "end"
+        # Otherwise, an AgentAction is returned. Return `continue` string
+        else:
+            return "continue"
+
+    def run(self, input_prompt):
+        # Define a new graph
+        workflow = StateGraph(AgentState)
+
+        # Define the two nodes we will cycle between
+        workflow.add_node("agent", self.execute_agent)
+        workflow.add_node("action", self.execute_tools)
+
+        # Set the entrypoint as `agent`
+        workflow.set_entry_point("agent")
+        workflow.add_conditional_edges(
+            # First, we define the start node. We use `agent`.
+            # This means these are the edges taken after the `agent` node is called.
+            "agent",
+            # Next, we pass in the function that will determine which node is called next.
+            self.should_continue,
+            # Pass in a mapping. The keys are strings, and the values are other nodes.
+            # END is a special node marking that the graph should finish.
+            # The output of `should_continue`, will be matched against this mapping and the respective node is called
+            {
+                # If `tools`, then we call the tool node.
+                "continue": "action",
+                # Otherwise we finish.
+                "end": END
+            }
+        )
+
+        # Add a normal edge from `tools` to `agent`. This means that after `tools` is called, `agent` node is called next.
+        workflow.add_edge('action', 'agent')
+        app = workflow.compile()
+
+        key, value = '', ''
+        inputs = {"input": input_prompt, "chat_history": [], "intermediate_steps": []}
+        for output in app.stream(inputs):
+            # stream() yields dictionaries with output keyed by node name
+            for key, value in output.items():
+                print(f"Output from node '{key}':")
+                print("---")
+                print(value)
+            print("\n---\n")
+
+        result = key + value
+        return result
