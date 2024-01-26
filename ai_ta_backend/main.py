@@ -258,6 +258,48 @@ def ingest() -> Response:
   return response
 
 
+@app.route('/ingest-web-text', methods=['POST'])
+def ingest_web_text() -> Response:
+  """Ingests web text data provided in the POST request body.
+  
+  Expects JSON data containing:
+    - url: The URL of the web text to ingest.
+    - base_url: The base URL of the web text to ingest.
+    - title: The title of the web text.
+    - content: The content of the web text.
+    - course_name: The name of the course associated with the web text.
+
+  Returns:
+      str: Success or Failure message. Failure message if any failures. TODO: email on failure.
+  """
+  data = request.get_json()
+  url: str = data.get('url', '')
+  base_url: str = data.get('base_url', '')
+  title: str = data.get('title', '')
+  content: str = data.get('content', '')
+  course_name: str = data.get('courseName', '')
+
+  print(f"In top of /ingest-web-text. course: {course_name}, base_url: {base_url}, url: {url}")
+
+  if course_name == '' or url == '' or content == '' or title == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: course_name, url, content or title. Course name: `{course_name}`, url: `{url}`, content: `{content}`, title: `{title}`"
+    )
+
+  ingester = Ingest()
+  success_fail = ingester.ingest_single_web_text(course_name, base_url, url, content, title)
+  del ingester
+
+  print(f"Bottom of /ingest route. success or fail dict: {success_fail}")
+
+  response = jsonify(success_fail)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/getContextStuffedPrompt', methods=['GET'])
 def getContextStuffedPrompt() -> Response:
   """
