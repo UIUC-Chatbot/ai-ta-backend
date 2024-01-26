@@ -2,12 +2,12 @@ from langchain_community.tools.tavily_search import TavilySearchResults
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from tool_executor import ToolExecutor
+from langgraph.prebuilt import ToolExecutor
 from langchain.tools.render import format_tool_to_openai_function
 from typing import TypedDict, Annotated, Sequence
 import operator
 from langchain_core.messages import BaseMessage
-from tool_executor import ToolInvocation
+from langgraph.prebuilt import ToolInvocation
 import json
 from langchain_core.messages import FunctionMessage
 
