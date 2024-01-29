@@ -1,18 +1,15 @@
-
 import inspect
 import logging
 import os
 import time
 import traceback
-import uuid
 from typing import List, Tuple
 
 import langsmith
-import ray
+import tiktoken
 from langchain.schema import AgentAction
 from langsmith import Client
-from langsmith.schemas import Run
-import tiktoken
+
 
 def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> List[Tuple[AgentAction, str]]:
   """
@@ -26,15 +23,16 @@ def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> Lis
         List[Tuple[AgentAction, str]]: A list of the most recent actions that fit within the token limit.
     """
   try:
+
     def count_tokens(action: AgentAction) -> int:
       return sum(count_tokens_and_cost(str(getattr(action, attr)))[0] for attr in ['tool', 'tool_input', 'log'])
 
     token_limit = 4_000
     total_tokens = sum(count_tokens(action) for action, _ in steps)
-    
+
     # for logging
-    original_total_tokens = sum(count_tokens(action) for action, _ in steps)
-    original_steps = steps.copy()
+    sum(count_tokens(action) for action, _ in steps)
+    steps.copy()
 
     # Remove the logs if over the limit
     if total_tokens > token_limit:
@@ -65,7 +63,7 @@ def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> Lis
       steps.pop(0)
       total_tokens = sum(count_tokens(action) for action, _ in steps)
 
-    # log = Log(message=f"trim_intermediate_steps", 
+    # log = Log(message=f"trim_intermediate_steps",
     #   original_steps=str(original_steps),
     #   final_steps=str(steps),
     #   original_tokens=original_total_tokens,
@@ -77,10 +75,11 @@ def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> Lis
     return steps
   except Exception as e:
     print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
-    print(f"Error in {inspect.currentframe().f_code.co_name}: {e}") # type: ignore # print function name in error.
-    print(f"Traceback:")
+    print(f"Error in {inspect.currentframe().f_code.co_name}: {e}")  # type: ignore # print function name in error.
+    print("Traceback:")
     traceback.print_exc()
     return [steps[-1]]
+
 
 def get_langsmit_run_from_metadata(metadata_value, metadata_key="run_id_in_metadata") -> langsmith.schemas.Run:
   """This will only return the FIRST match on single metadta field
@@ -96,7 +95,7 @@ def get_langsmit_run_from_metadata(metadata_value, metadata_key="run_id_in_metad
   runs = langsmith_client.list_runs(project_name=os.environ['LANGCHAIN_PROJECT'])
 
   count = 0
-  for r in runs: 
+  for _r in runs:
     count += 1
   print(f"Found num runs: {count}")
 
@@ -108,8 +107,9 @@ def get_langsmit_run_from_metadata(metadata_value, metadata_key="run_id_in_metad
         while curr_run.parent_run_id:
           curr_run = langsmith_client.read_run(str(curr_run.parent_run_id))
         return curr_run
-      else: 
+      else:
         return run
+
 
 def get_langsmith_trace_sharable_url(run_id_in_metadata, project_name='', time_delay_s=0):
   """
@@ -126,14 +126,14 @@ def get_langsmith_trace_sharable_url(run_id_in_metadata, project_name='', time_d
   time.sleep(time_delay_s)
   if project_name == '':
     project_name = os.environ['LANGCHAIN_PROJECT']
-  
+
   langsmith_client = Client()
 
   # re-attempt to find the run, maybe it hasn't started yet.
   run = None
-  for i in range(8):
+  for _i in range(8):
     run = get_langsmit_run_from_metadata(str(run_id_in_metadata), metadata_key="run_id_in_metadata")
-    if run is not None: 
+    if run is not None:
       break
     time.sleep(5)
 
@@ -147,7 +147,11 @@ def get_langsmith_trace_sharable_url(run_id_in_metadata, project_name='', time_d
   logging.info(f'⭐️ sharable_url: {sharable_url}')
   return sharable_url
 
-def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: str = "gpt-3.5-turbo"): # -> tuple[int, float] | tuple[int, float, int, float]:
+
+def count_tokens_and_cost(
+    prompt: str,
+    completion: str = '',
+    openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
   """
   Returns the number of tokens in a text string.
 
@@ -166,13 +170,13 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
   """
   # encoding = tiktoken.encoding_for_model(openai_model_name)
   openai_model_name = openai_model_name.lower()
-  encoding = tiktoken.encoding_for_model("gpt-3.5-turbo") # I think they all use the same encoding
+  encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")  # I think they all use the same encoding
   prompt_cost = 0
   completion_cost = 0
-  
-  prompt_token_cost = 0 
+
+  prompt_token_cost = 0
   completion_token_cost = 0
-  
+
   if openai_model_name.startswith("gpt-3.5-turbo"):
     if "16k" in openai_model_name:
       prompt_token_cost: float = 0.003 / 1_000
@@ -181,7 +185,7 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
       # 3.5-turbo regular (4k context)
       prompt_token_cost: float = 0.0015 / 1_000
       completion_token_cost: float = 0.002 / 1_000
-      
+
   elif openai_model_name.startswith("gpt-4"):
     if "32k" in openai_model_name:
       prompt_token_cost = 0.06 / 1_000
@@ -193,12 +197,14 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
   elif openai_model_name.startswith("text-embedding-ada-002"):
     prompt_token_cost = 0.0001 / 1_000
     completion_token_cost = 0.0001 / 1_000
-  else: 
+  else:
     # no idea of cost
-    print(f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`. (Defaulting to GPT-4 pricing...)")
+    print(
+        f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`. (Defaulting to GPT-4 pricing...)"
+    )
     prompt_token_cost = 0.03 / 1_000
     completion_token_cost = 0.06 / 1_000
-  
+
   if completion == '':
     num_tokens_prompt: int = len(encoding.encode(prompt))
     prompt_cost = float(prompt_token_cost * num_tokens_prompt)
@@ -213,4 +219,3 @@ def count_tokens_and_cost(prompt: str, completion: str = '', openai_model_name: 
     prompt_cost = float(prompt_token_cost * num_tokens_prompt)
     completion_cost = float(completion_token_cost * num_tokens_completion)
     return num_tokens_prompt, prompt_cost, num_tokens_completion, completion_cost
-

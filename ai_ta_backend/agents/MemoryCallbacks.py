@@ -1,55 +1,46 @@
+from typing import Any, Dict, Union
 
-from typing import Dict, Union, Any, List
-
-from langchain.callbacks.base import BaseCallbackHandler
-from langchain.schema import AgentAction, AgentFinish
-from langchain.agents import AgentType, initialize_agent, load_tools
-from langchain.callbacks import tracing_enabled
-from langchain.llms import OpenAI
 import supabase
+from langchain.agents import AgentType, initialize_agent, load_tools
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.llms import OpenAI
+from langchain.schema import AgentAction, AgentFinish
 
 
 class MemoryCallbackHandler(BaseCallbackHandler):
+
   def __init__(self):
-    self.tool_in_progress = False # usage TBD
-    
-    self.supabase_client = supabase.create_client( # type: ignore
-            supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-            supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+    self.tool_in_progress = False  # usage TBD
 
-  def on_tool_start(
-      self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
-  ) -> Any:
-      print(f"on_tool_start {serialized}")
-      self.tool_in_progress = True
+    self.supabase_client = supabase.create_client(  # type: ignore
+        supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
-  def on_tool_end(
-      self, output: str, **kwargs: Any
-  ) -> Any:
-      """Run when LLM errors."""
-      print(f"On tool end: {output}")
-      if self.tool_in_progress:
-          self.tool_in_progress = False
-          print(f"Tool output: {output}")
-  
-  def on_tool_error(
-      self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-  ) -> Any:
-      """Run when LLM errors."""
-      pass
-  
-  def on_llm_error(
-      self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any
-  ) -> Any:
-      """Run when LLM errors."""
-      pass
+  def on_tool_start(self, serialized: Dict[str, Any], input_str: str, **kwargs: Any) -> Any:
+    print(f"on_tool_start {serialized}")
+    self.tool_in_progress = True
+
+  def on_tool_end(self, output: str, **kwargs: Any) -> Any:
+    """Run when LLM errors."""
+    print(f"On tool end: {output}")
+    if self.tool_in_progress:
+      self.tool_in_progress = False
+      print(f"Tool output: {output}")
+
+  def on_tool_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
+    """Run when LLM errors."""
+    pass
+
+  def on_llm_error(self, error: Union[Exception, KeyboardInterrupt], **kwargs: Any) -> Any:
+    """Run when LLM errors."""
+    pass
 
   def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
     print(f"on_agent_action {action}")
-    
+
   def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
     print(f"on_agent_finish {finish}")
-  
+
   # def on_llm_start(
   #     self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
   # ) -> Any:

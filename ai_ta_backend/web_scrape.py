@@ -17,7 +17,7 @@ def valid_url(url):
   '''Returns the URL and it's content if it's good, otherwise returns false. Prints the status code.'''
   try:
     response = requests.get(url, allow_redirects=True, timeout=20)
-    
+
     redirect_loop_counter = 0
     while response.status_code == 301:
       # Check for permanent redirect
@@ -27,10 +27,10 @@ def valid_url(url):
       redirect_url = response.headers['Location']
       response = requests.head(redirect_url)
       redirect_loop_counter += 1
-    
+
     if response.status_code == 200:
       if ".pdf" in response.url:
-        if f"<!DOCTYPE html>" not in str(response.content):
+        if "<!DOCTYPE html>" not in str(response.content):
           content = response.content
       elif str(response.content).startswith("%PDF"):
         content = response.content
@@ -44,22 +44,23 @@ def valid_url(url):
     print("URL is invalid:", url, "Error:", e)
     return (False, False)
 
+
 # Ensures url is in the correct format
-def base_url(url:str):
+def base_url(url: str):
   try:
     # Get rid of double slashes in url
     # Create a base site for incomplete hrefs
     if url.startswith("https:"):
-      site= re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
+      site = re.match(pattern=r'https:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0)  # type: ignore
       url = re.sub(pattern=r"https:\/\/", repl="", string=url)
       url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
-      url = "https://"+url
+      url = "https://" + url
       return site
     elif url.startswith("http:"):
-      site = re.match(pattern=r'http:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0) # type: ignore
+      site = re.match(pattern=r'http:\/\/[a-zA-Z0-9.]*[a-z]', string=url).group(0)  # type: ignore
       url = re.sub(pattern=r"http:\/\/", repl="", string=url)
       url = re.sub(pattern=r"[\/\/]{2,}", repl="", string=url)
-      url = "http://"+url
+      url = "http://" + url
       return site
     else:
       return []
@@ -67,11 +68,12 @@ def base_url(url:str):
     print("Error:", e)
     return []
 
-def find_urls(soup:BeautifulSoup, urls:set, site:str):
+
+def find_urls(soup: BeautifulSoup, urls: set, site: str):
   try:
-    for i in soup.find_all("a"): # type: ignore
+    for i in soup.find_all("a"):  # type: ignore
       try:
-      # getting the href tag
+        # getting the href tag
         href = i.attrs['href']
       except KeyError as e:
         print("KeyError:", e, "for", i)
@@ -81,9 +83,9 @@ def find_urls(soup:BeautifulSoup, urls:set, site:str):
       if href.startswith("http"):
         pass
       elif href.startswith("/"):
-        href = site+href
+        href = site + href
       else:
-        href = site+'/'+href
+        href = site + '/' + href
       urls.add(href)
 
   except Exception as e:
@@ -92,8 +94,9 @@ def find_urls(soup:BeautifulSoup, urls:set, site:str):
 
   return urls
 
-def remove_duplicates(urls:list):
-# Delete repeated sites, with different URLs and keeping one
+
+def remove_duplicates(urls: list):
+  # Delete repeated sites, with different URLs and keeping one
   not_repeated_files = []
   og_len = len(urls)
   print("deleting duplicate files")
@@ -103,10 +106,18 @@ def remove_duplicates(urls:list):
     else:
       urls.remove(row)
       continue
-  print("deleted", og_len-len(not_repeated_files), "duplicate files")
+  print("deleted", og_len - len(not_repeated_files), "duplicate files")
   return urls
 
-def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url_on:str=None, _depth:int=0, _soup:BeautifulSoup=None,  _invalid_urls:list=[]):
+
+def crawler(url: str,
+            max_urls: int = 1000,
+            max_depth: int = 3,
+            timeout: int = 1,
+            base_url_on: str = None,
+            _depth: int = 0,
+            _soup: BeautifulSoup = None,
+            _invalid_urls: list = []):
   '''Function gets titles of urls and the urls themselves'''
   # Prints the depth of the current search
   print("depth: ", _depth)
@@ -118,43 +129,41 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   base_url_on = str(base_url_on)
 
   amount = max_urls
-  
+
   # Get rid of double slashes in url
   # Create a base site for incomplete hrefs
   base = base_url(url)
-  if base ==[]:
+  if base == []:
     return []
   else:
     site = base
 
-  urls= set()
+  urls = set()
 
   if _soup:
     s = _soup
   else:
     url, s = valid_url(url)
     time.sleep(timeout)
-    url_contents.append((url,s))
+    url_contents.append((url, s))
   if url:
     try:
       body = s.find("body")
-      header = s.find("head") 
+      header = s.find("head")
     except Exception as e:
       print("Error:", e)
       body = ""
       header = ""
 
-
-    
     # Check for 403 Forbidden urls
     try:
-      if s.title.string.lower() == "403 forbidden" or s.title.string.lower() == 'page not found': # type: ignore
+      if s.title.string.lower() == "403 forbidden" or s.title.string.lower() == 'page not found':  # type: ignore
         print("403 Forbidden")
       else:
         pass
     except Exception as e:
       print("Error:", e)
-      pass 
+      pass
     if body != "" and header != "":
       urls = find_urls(body, urls, site)
       urls = find_urls(header, urls, site)
@@ -192,12 +201,12 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
         url_contents.append((url, s))
       else:
         _invalid_urls.append(url)
-  
+
   url_contents = remove_duplicates(url_contents)
   max_urls = max_urls - len(url_contents)
   print(max_urls, "urls left")
 
-  # recursively go through crawler until we reach the max amount of urls. 
+  # recursively go through crawler until we reach the max amount of urls.
   for url in url_contents:
     if url[0] not in _invalid_urls:
       if max_urls > 0:
@@ -209,13 +218,13 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
           url_contents.extend(temp_data)
           url_contents = remove_duplicates(url_contents)
         else:
-          print("Depth exceeded:", _depth+1, "out of", max_depth)
+          print("Depth exceeded:", _depth + 1, "out of", max_depth)
           break
       else:
         break
     else:
       pass
-  
+
   if _depth == 0:
     if len(url_contents) < amount:
       print("Max URLS not reached, returning all urls found:", len(url_contents), "out of", amount)
@@ -226,7 +235,13 @@ def crawler(url:str, max_urls:int=1000, max_depth:int=3, timeout:int=1, base_url
   print(len(url_contents), "urls found")
   return url_contents
 
-def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, timeout:int=1, base_url_on:str=None):
+
+def main_crawler(url: str,
+                 course_name: str,
+                 max_urls: int = 100,
+                 max_depth: int = 3,
+                 timeout: int = 1,
+                 base_url_on: str = None):
   """
   Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
 
@@ -247,10 +262,10 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   base_url_on = str(base_url_on)
   ingester = Ingest()
   s3_client = boto3.client(
-        's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-    )
+      's3',
+      aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+      aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+  )
 
   if url.startswith("https://github.com/"):
     print("Begin Ingesting GitHub page")
@@ -261,8 +276,6 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     print("Begin Ingesting Web page")
     data = crawler(url, max_urls, max_depth, timeout, base_url_on)
 
-
-
   # Clean some keys for a proper file name
   # todo: have a default title
   # titles = [value[1][1].title.string for value in data]
@@ -270,18 +283,18 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   titles = []
   for value in data:
     try:
-      titles.append(value[1].title.string)  
-    except AttributeError as e:
+      titles.append(value[1].title.string)
+    except AttributeError:
       # if no title
       try:
         placeholder_title = re.findall(pattern=r'[a-zA-Z0-9.]*[a-z]', string=value[0])[1]
-      except Exception as e:
+      except Exception:
         placeholder_title = "Title Not Found"
       titles.append(placeholder_title)
       print(f"URL is missing a title, using this title instead: {placeholder_title}")
 
   try:
-    clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles] # type: ignore
+    clean = [re.match(r"[a-zA-Z0-9\s]*", title).group(0) for title in titles]  # type: ignore
   except Exception as e:
     print("Error:", e)
     clean = titles
@@ -298,9 +311,8 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     else:
       path_name.append(value)
       counter += 1
-      
-  print("Cleaned title names", path_name)
 
+  print("Cleaned title names", path_name)
 
   # Upload each html to S3
   print("Uploading files to S3")
@@ -310,10 +322,10 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
     for i, key in enumerate(data):
       if ".pdf" in key[0]:
         with NamedTemporaryFile(suffix=".pdf") as temp_pdf:
-          if key[1] != "" or key[1] != None:
+          if key[1] != "" or key[1] is not None:
             temp_pdf.write(key[1])
             temp_pdf.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".pdf"
+            s3_upload_path = "courses/" + course_name + "/" + path_name[i] + ".pdf"
             paths.append(s3_upload_path)
             with open(temp_pdf.name, 'rb') as f:
               print("Uploading PDF to S3")
@@ -324,10 +336,10 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
             print("No PDF to upload", key[1])
       else:
         with NamedTemporaryFile(suffix=".html") as temp_html:
-          if key[1] != "" or key[1] != None:
+          if key[1] != "" or key[1] is not None:
             temp_html.write(key[1].encode('utf-8'))
             temp_html.seek(0)
-            s3_upload_path = "courses/"+ course_name + "/" + path_name[i] + ".html"
+            s3_upload_path = "courses/" + course_name + "/" + path_name[i] + ".html"
             paths.append(s3_upload_path)
             with open(temp_html.name, 'rb') as f:
               print("Uploading html to S3")
@@ -342,46 +354,45 @@ def main_crawler(url:str, course_name:str, max_urls:int=100, max_depth:int=3, ti
   print("Successfully uploaded", counter, "files to S3")
   print("Finished /web-scrape")
 
+
 # Download an MIT course using its url
-def mit_course_download(url:str, course_name:str, local_dir:str):
-    ingester = Ingest()
-    base = "https://ocw.mit.edu"
-    if url.endswith("download"):
-        pass
-    else:
-        url = url + "download"
+def mit_course_download(url: str, course_name: str, local_dir: str):
+  ingester = Ingest()
+  if url.endswith("download"):
+    pass
+  else:
+    url = url + "download"
 
-    r = requests.get(url)
-    soup = BeautifulSoup(r.text,"html.parser")
+  r = requests.get(url)
+  soup = BeautifulSoup(r.text, "html.parser")
 
-    zip = ''
-    for ref in soup.find_all("a"):
-        if ref.attrs['href'].endswith("zip"):
-            zip = ref.attrs['href']
-    
-    site =  zip
-    print('site', site)
-    r = requests.get(url=site, stream=True)
+  zip = ''
+  for ref in soup.find_all("a"):
+    if ref.attrs['href'].endswith("zip"):
+      zip = ref.attrs['href']
 
-    zip_file = local_dir + ".zip"
+  site = zip
+  print('site', site)
+  r = requests.get(url=site, stream=True)
 
-    try:
-        with open(zip_file, 'wb') as fd:
-            for chunk in r.iter_content(chunk_size=128):
-                fd.write(chunk)
-        print("course downloaded!")
-    except Exception as e:
-        print("Error:", e, site)
+  zip_file = local_dir + ".zip"
 
-    with ZipFile(zip_file, 'r') as zObject:
-      zObject.extractall(
-        path=local_dir)
-    
-    shutil.move(local_dir+"/"+"robots.txt", local_dir+"/static_resources")
-    s3_paths = upload_data_files_to_s3(course_name, local_dir+"/static_resources")
-    success_fail = ingester.bulk_ingest(s3_paths, course_name) # type: ignore
+  try:
+    with open(zip_file, 'wb') as fd:
+      for chunk in r.iter_content(chunk_size=128):
+        fd.write(chunk)
+    print("course downloaded!")
+  except Exception as e:
+    print("Error:", e, site)
 
-    shutil.move(zip_file, local_dir)
-    shutil.rmtree(local_dir)
-    print("Finished Ingest")
-    return success_fail
+  with ZipFile(zip_file, 'r') as zObject:
+    zObject.extractall(path=local_dir)
+
+  shutil.move(local_dir + "/" + "robots.txt", local_dir + "/static_resources")
+  s3_paths = upload_data_files_to_s3(course_name, local_dir + "/static_resources")
+  success_fail = ingester.bulk_ingest(s3_paths, course_name)  # type: ignore
+
+  shutil.move(zip_file, local_dir)
+  shutil.rmtree(local_dir)
+  print("Finished Ingest")
+  return success_fail

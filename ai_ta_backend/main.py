@@ -1,19 +1,18 @@
 import os
 import time
-from typing import Any, List, Union
+from typing import List
 
 import ray
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from h11 import Response
-from regex import D
+
 # from qdrant_client import QdrantClient
 from sqlalchemy import JSON
 
+from ai_ta_backend.agents.github_webhook_handlers import handle_github_event
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import main_crawler, mit_course_download
-from ai_ta_backend.agents.github_webhook_handlers import handle_github_event
 
 app = Flask(__name__)
 CORS(app)
@@ -21,7 +20,7 @@ CORS(app)
 # load API keys from globally-availabe .env file
 load_dotenv(dotenv_path='.env', override=True)
 
-ray.init() 
+ray.init()
 
 # @app.route('/')
 # def index() -> JSON:
@@ -123,7 +122,7 @@ def getTopContexts():
     course_name: str = request.args.get('course_name')
     search_query: str = request.args.get('search_query')
     token_limit: int = request.args.get('token_limit')
-  except Exception as e:
+  except Exception:
     print("No course name provided.")
 
   if search_query is None:
@@ -161,7 +160,7 @@ def get_stuffed_prompt():
     course_name: str = request.args.get('course_name')
     search_query: str = request.args.get('search_query')
     token_limit: int = request.args.get('token_limit')
-  except Exception as e:
+  except Exception:
     print("No course name provided.")
 
   print("In /getTopContexts: ", search_query)
@@ -294,7 +293,7 @@ def scrape():
   base_url_bool: str = request.args.get('base_url_on')
 
   # print all input params
-  print(f"Web scrape!")
+  print("Web scrape!")
   print(f"Url: {url}")
   print(f"Max Urls: {max_urls}")
   print(f"Max Depth: {max_depth}")
@@ -323,7 +322,7 @@ def mit_download_course():
 # TODO: add a way to delete items from course based on base_url
 
 
-@app.route('/', methods=['POST']) # RUN: $ smee -u https://smee.io/nRnJDGnCbWYUaSGg --port 8000
+@app.route('/', methods=['POST'])  # RUN: $ smee -u https://smee.io/nRnJDGnCbWYUaSGg --port 8000
 # @app.route('/api/webhook', methods=['POST']) # https://flask-ai-ta-backend-pr-34.up.railway.app/api/webhook
 def webhook():
   """
@@ -339,7 +338,7 @@ def webhook():
   # print(f"{payload}\n","-"*50, "\n")
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
-  
+
   handle_github_event(payload)
 
   return '', 200

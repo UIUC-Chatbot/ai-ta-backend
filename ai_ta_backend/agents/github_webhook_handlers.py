@@ -1,7 +1,6 @@
 ######## GITHUB WEBHOOK HANDLERS ########
 # from github import Github
 import inspect
-import json
 import logging
 import os
 import socket
@@ -18,15 +17,15 @@ from github import Auth, GithubIntegration
 from github.Issue import Issue
 from github.PaginatedList import PaginatedList
 from github.PullRequest import PullRequest
-from github.IssueComment import IssueComment
 from github.Repository import Repository
 from github.TimelineEvent import TimelineEvent
 from langchain import hub
-# from langchain.tools.github.utils import generate_branch_name
 
 # from github_agent import GH_Agent
 from ai_ta_backend.agents.langgraph_agent import WorkflowAgent
 from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
+
+# from langchain.tools.github.utils import generate_branch_name
 
 hostname = socket.gethostname()
 RUNNING_ON_LOCAL = False
@@ -46,6 +45,7 @@ Feel free to comment in this thread to give me additional instructions, or I'll 
 If I think I'm successful I'll 'request your review' on the resulting PR. Just watch for emails while I work.
 """
 
+
 def handle_github_event(payload: Dict[str, Any]):
   """Main entry point for all actions that take place on Github website.
 
@@ -59,8 +59,8 @@ def handle_github_event(payload: Dict[str, Any]):
       ValueError: _description_
   """
   # payload: Dict[str, Any] = json.loads(gh_webhook_payload)
-  langsmith_run_id = str(uuid.uuid4()) # for Langsmith 
-  
+  langsmith_run_id = str(uuid.uuid4())  # for Langsmith
+
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
 
@@ -95,11 +95,11 @@ def handle_issue_opened(payload, langsmith_run_id):
   issue = payload['issue']
   repo_name = payload["repository"]["full_name"]
   repo: Repository = g.get_repo(repo_name)
-  base_branch = repo.get_branch(payload["repository"]["default_branch"])
+  repo.get_branch(payload["repository"]["default_branch"])
   number = payload.get('issue').get('number')
   issue: Issue = repo.get_issue(number=number)
 
-  metadata = {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
+  {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
   # logging.info(f"New issue created: #{number}", metadata)
   # logging.info(f"New issue created: #{number}. Metadata: {metadata}")
 
@@ -126,7 +126,7 @@ def handle_issue_opened(payload, langsmith_run_id):
     result = bot.run(prompt)
 
     # COLLECT PARALLEL RESULTS
-    for i in range(0, len(result_futures)): 
+    for _i in range(0, len(result_futures)):
       ready, not_ready = ray.wait(result_futures)
       result = ray.get(ready[0])
       result_futures = not_ready
@@ -136,9 +136,10 @@ def handle_issue_opened(payload, langsmith_run_id):
     # FIN: Conclusion & results comment
     ray.get(post_comment.remote(issue_or_pr=issue, text=str(result['output']), time_delay_s=0))
   except Exception as e:
-    logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())    
-    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
-    
+    logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())
+    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(
+        traceback.format_exc()) + "\n```"
+
     if RUNNING_ON_LOCAL:
       print(err_str)
     else:
@@ -151,8 +152,7 @@ def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
       os.environ["GITHUB_APP_PRIVATE_KEY"],
   )
 
-
-  # TODO: 
+  # TODO:
   #     File "/Users/kastanday/code/ncsa/ai-ta/ai-ta-backend/ai_ta_backend/agents/github_webhook_handlers.py", line 120, in handle_pull_request_opened
   #     number = payload.get('issue').get('number') # AttributeError: 'NoneType' object has no attribute 'get'
   # AttributeError: 'NoneType' object has no attribute 'get'
@@ -163,16 +163,15 @@ def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
   repo_name = payload["repository"]["full_name"]
   repo = g.get_repo(repo_name)
 
-  number = payload.get('issue').get('number') # TODO: AttributeError: 'NoneType' object has no attribute 'get'
+  number = payload.get('issue').get('number')  # TODO: AttributeError: 'NoneType' object has no attribute 'get'
   comment = payload.get('comment')
-  comment_author = comment['user']['login']
+  comment['user']['login']
   issue: Issue = repo.get_issue(number=number)
-  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
+  True if comment.get('performed_via_github_app') else False
   pr: PullRequest = repo.get_pull(number=number)
 
   print(f"Received a pull request event for #{number}")
   try:
-    branch_name = pr.head.ref
     messageForNewPRs = "Thanks for opening a new PR! I'll now try to finish this implementation and I'll comment if I get blocked or (WIP) 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
     # issue.create_comment(messageForNewPRs)
 
@@ -186,7 +185,7 @@ def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
     result_futures.append(post_sharable_url.remote(issue=pr, langsmith_run_id=langsmith_run_id, time_delay_s=30))
 
     # 3. RUN BOT
-    
+
     print("LAUNCHING BOT")
     bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
     # pr_description = bot.github_api_wrapper.get_pull_request(number)
@@ -194,7 +193,7 @@ def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
     # result = bot.launch_gh_agent(instruction, active_branch=branch_name)
     result = bot.run(comment)
     # COLLECT PARALLEL RESULTS
-    for i in range(0, len(result_futures)): 
+    for _i in range(0, len(result_futures)):
       ready, not_ready = ray.wait(result_futures)
       result = ray.get(ready[0])
       result_futures = not_ready
@@ -206,12 +205,13 @@ def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
   except Exception as e:
     print(f"Error: {e}")
     logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())
-    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
+    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(
+        traceback.format_exc()) + "\n```"
     if RUNNING_ON_LOCAL:
       print(err_str)
     else:
-      issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{err_str}")
-
+      issue.create_comment(
+          f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{err_str}")
 
 
 def handle_comment_opened(payload, langsmith_run_id):
@@ -236,7 +236,7 @@ def handle_comment_opened(payload, langsmith_run_id):
   # issue_response = payload.get('issue')
   issue: Issue = repo.get_issue(number=number)
   is_pr = True if payload.get('issue').get('pull_request') else False
-  comment_made_by_bot = True if comment.get('performed_via_github_app') else False
+  True if comment.get('performed_via_github_app') else False
 
   # DON'T REPLY TO SELF (inf loop)
   if comment_author == 'lil-jr-dev[bot]':
@@ -251,8 +251,8 @@ def handle_comment_opened(payload, langsmith_run_id):
       pr: PullRequest = repo.get_pull(number=number)
       branch_name = pr.head.ref
       print(f"Head branch_name: {branch_name}")
-      
-      # LAUNCH NEW PR COMMENT BOT 
+
+      # LAUNCH NEW PR COMMENT BOT
       messageForNewPRs = "Thanks for commenting on this PR!! I'll now try to finish this implementation and I'll comment if I get blocked or (WIP) 'request your review' if I think I'm successful. So just watch for emails while I work. Please comment to give me additional instructions."
       # 1. INTRO COMMENT
       # issue.create_comment(messageForNewIssues)
@@ -265,9 +265,9 @@ def handle_comment_opened(payload, langsmith_run_id):
       bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
       instruction = f"Please complete this work-in-progress pull request (PR number {number}) by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {format_issue(issue)}"
       result = bot.run(instruction)
-      
-        # COLLECT PARALLEL RESULTS
-      for i in range(0, len(result_futures)): 
+
+      # COLLECT PARALLEL RESULTS
+      for _i in range(0, len(result_futures)):
         ready, not_ready = ray.wait(result_futures)
         result = ray.get(ready[0])
         result_futures = not_ready
@@ -290,7 +290,7 @@ def handle_comment_opened(payload, langsmith_run_id):
       # 3. RUN BOT
 
       # todo: refactor with new branch name creation
-      unique_branch_name = ensure_unique_branch_name(repo, "bot-branch")
+      ensure_unique_branch_name(repo, "bot-branch")
       # bot = github_agent.GH_Agent()
       # issue_description = bot.github_api_wrapper.get_issue(number)
       # instruction = f"Your boss has just commented on the Github issue that was assigned to you, please review their latest comments and complete the work assigned. There may or may not be an open PR related to this already. Open or complete that PR by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automatically on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's your latest PR assignment: {str(issue_description)}"
@@ -298,7 +298,7 @@ def handle_comment_opened(payload, langsmith_run_id):
       bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
       result = bot.run(comment)
       # COLLECT PARALLEL RESULTS
-      for i in range(0, len(result_futures)): 
+      for _i in range(0, len(result_futures)):
         ready, not_ready = ray.wait(result_futures)
         result = ray.get(ready[0])
         result_futures = not_ready
@@ -308,12 +308,14 @@ def handle_comment_opened(payload, langsmith_run_id):
       # FIN: Conclusion & results comment
       ray.get(post_comment.remote(issue_or_pr=pr, text=str(result['output']), time_delay_s=0))
   except Exception as e:
-    logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())    
-    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
+    logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())
+    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(
+        traceback.format_exc()) + "\n```"
     if RUNNING_ON_LOCAL:
       print(err_str)
     else:
-      issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {err_str}")
+      issue.create_comment(
+          f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {err_str}")
 
 
 @ray.remote
@@ -328,6 +330,7 @@ def post_comment(issue_or_pr: Union[Issue, PullRequest], text: str, time_delay_s
   time.sleep(time_delay_s)
   issue_or_pr.create_comment(str(text))
 
+
 def extract_key_info_from_issue_or_pr(issue_or_pr: Union[Issue, PullRequest]):
   """Filter out useless info, format nicely. Especially filter out comment if comment 'performed_via_github_app'.
   comment_made_by_bot = True if comment.get('performed_via_github_app') else False
@@ -339,7 +342,7 @@ def extract_key_info_from_issue_or_pr(issue_or_pr: Union[Issue, PullRequest]):
   Returns: 
       full_description: str
   """
-  
+
   pass
 
 
@@ -357,6 +360,7 @@ def format_issue(issue):
   opened_by = f"Opened by user: {issue.user.login}" if type(issue.user) == github.NamedUser.NamedUser else ''
   body = f"Body: {issue.body}"
   return "\n".join([title, opened_by, existing_pr, body])
+
 
 def get_linked_pr_from_issue(issue: Issue) -> PullRequest | None:
   """Check if the given issue has a linked pull request.
@@ -382,7 +386,8 @@ def get_linked_pr_from_issue(issue: Issue) -> PullRequest | None:
     for e in page:
       if str(e.event) == 'cross-referenced':
         if e.source and e.source.issue:
-            return e.source.issue.as_pull_request()
+          return e.source.issue.as_pull_request()
+
 
 def get_linked_issue_from_pr(pr: PullRequest) -> Issue | None:
   """Check if the given pull request has a linked issue.
@@ -408,4 +413,4 @@ def get_linked_issue_from_pr(pr: PullRequest) -> Issue | None:
     for e in page:
       if str(e.event) == 'cross-referenced':
         if e.source and e.source.issue:
-            return e.source.issue
+          return e.source.issue

@@ -9,17 +9,17 @@ import traceback
 import langchain
 import ray
 from dotenv import load_dotenv
-from langchain.agents import (AgentExecutor, AgentType, initialize_agent)
+from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
-from langchain.memory import (ConversationSummaryBufferMemory)
-from langchain.prompts import (MessagesPlaceholder)
-from langchain.prompts.chat import (MessagesPlaceholder)
+from langchain.memory import ConversationSummaryBufferMemory
+from langchain.prompts import MessagesPlaceholder
+from langchain.prompts.chat import MessagesPlaceholder
 from langchain.utilities.github import GitHubAPIWrapper
+
 # from langchain_experimental.autonomous_agents.autogpt.agent import AutoGPT
 # from langchain_experimental.autonomous_agents.baby_agi import BabyAGI
 from langsmith import Client
-
 from tools import get_tools
 from utils import fancier_trim_intermediate_steps
 
@@ -30,6 +30,7 @@ langchain.debug = False  # True for more detailed logs
 VERBOSE = True
 
 GH_Agent_SYSTEM_PROMPT = """You are a senior developer who helps others finish the work faster and to a higher quality than anyone else on the team. People often tag you on pull requests (PRs), and you will finish the PR to the best of your ability and commit your changes. If you're blocked or stuck, feel free to leave a comment on the PR and the rest of the team will help you out. Remember to keep trying, and reflecting on how you solved previous problems will usually help you fix the current issue. Please work hard, stay organized, and follow best practices.\nYou have access to the following tools:"""
+
 
 @ray.remote
 class GH_Agent():
@@ -42,17 +43,33 @@ class GH_Agent():
   def make_bot(self):
     # LLMs
     if os.environ['OPENAI_API_TYPE'] == 'azure':
-      llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
-      human_llm = AzureChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
-      summarizer_llm = AzureChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3, request_timeout=60 * 3, deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
-    else: 
+      llm = AzureChatOpenAI(temperature=0,
+                            model="gpt-4-0613",
+                            max_retries=3,
+                            request_timeout=60 * 3,
+                            deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+      AzureChatOpenAI(temperature=0,
+                      model="gpt-4-0613",
+                      max_retries=3,
+                      request_timeout=60 * 3,
+                      deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+      summarizer_llm = AzureChatOpenAI(temperature=0,
+                                       model="gpt-3.5-turbo-0613",
+                                       max_retries=3,
+                                       request_timeout=60 * 3,
+                                       deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+    else:
       llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-      human_llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-      summarizer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
+      ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
+      summarizer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3,
+                                  request_timeout=60 * 3)  # type: ignore
 
     # MEMORY
     chat_history = MessagesPlaceholder(variable_name="chat_history")
-    memory = ConversationSummaryBufferMemory(memory_key="chat_history", return_messages=True, llm=summarizer_llm, max_token_limit=2_000)
+    memory = ConversationSummaryBufferMemory(memory_key="chat_history",
+                                             return_messages=True,
+                                             llm=summarizer_llm,
+                                             max_token_limit=2_000)
 
     # TOOLS
     # toolkit: GitHubToolkit = GitHubToolkit.from_github_api_wrapper(self.github_api_wrapper)
@@ -76,7 +93,7 @@ class GH_Agent():
             "memory_prompts": [chat_history],
             "input_variables": ["input", "agent_scratchpad", "chat_history"],
             "prefix": GH_Agent_SYSTEM_PROMPT,
-            # pretty sure this is wack: # "extra_prompt_messages": [MessagesPlaceholder(variable_name="GH_Agent_SYSTEM_PROMPT")] 
+            # pretty sure this is wack: # "extra_prompt_messages": [MessagesPlaceholder(variable_name="GH_Agent_SYSTEM_PROMPT")]
         })
 
   def launch_gh_agent(self, instruction: str, run_id_in_metadata, active_branch='bot-branch'):
@@ -86,28 +103,37 @@ class GH_Agent():
   def bot_runner_with_retries(self, bot: AgentExecutor, run_instruction, run_id_in_metadata, total_retries=1):
     """Runs the given bot with attempted retries. First prototype.
     """
-    langsmith_client = Client()
+    Client()
     print("LIMITING TOTAL RETRIES TO 0, wasting too much money....")
     runtime_exceptions = []
     result = ''
-    for num_retries in range(1,total_retries+1):
-      
-      with tracing_v2_enabled(project_name="ML4Bio", tags=['lil-jr-dev']) as cb:
+    for num_retries in range(1, total_retries + 1):
+
+      with tracing_v2_enabled(project_name="ML4Bio", tags=['lil-jr-dev']):
         try:
           #! MAIN RUN FUNCTION
           if len(runtime_exceptions) >= 1:
             warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
-            result = bot.with_config({"run_name": "ReAct ML4Bio Agent"}).invoke({"input": f"{run_instruction}\n{warning_to_bot}"}, {"metadata": {"run_id_in_metadata": str(run_id_in_metadata)}})
+            result = bot.with_config({
+                "run_name": "ReAct ML4Bio Agent"
+            }).invoke({"input": f"{run_instruction}\n{warning_to_bot}"},
+                      {"metadata": {
+                          "run_id_in_metadata": str(run_id_in_metadata)
+                      }})
           else:
-            result = bot.with_config({"run_name": "ReAct ML4Bio Agent"}).invoke({"input": run_instruction}, {"metadata": {"run_id_in_metadata": str(run_id_in_metadata)}})
-          break # no error, so break retry loop
+            result = bot.with_config({
+                "run_name": "ReAct ML4Bio Agent"
+            }).invoke({"input": run_instruction}, {"metadata": {
+                "run_id_in_metadata": str(run_id_in_metadata)
+            }})
+          break  # no error, so break retry loop
 
         except Exception as e:
           print("-----------❌❌❌❌------------START OF ERROR-----------❌❌❌❌------------")
           print(f"❌❌❌ num_retries: {num_retries}. Bot hit runtime exception: {e}")
           print(f"Error in {inspect.currentframe().f_code.co_name}: {e}\n Traceback: ", traceback.print_exc())
           runtime_exceptions.append(traceback.format_exc())
-    
+
     if result == '':
       formatted_exceptions = '\n'.join([f'```\n{exc}\n```' for exc in runtime_exceptions])
       result = f"{total_retries} agents ALL FAILED with runtime exceptions: \n{formatted_exceptions}"

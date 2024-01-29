@@ -1,6 +1,7 @@
 ## Usage
 
 To start, run this from the top level of git repo:
+
 ```bash
 conda create -n ai-ta-backend python=3.10 -y
 conda activate ai-ta-backend
@@ -18,12 +19,13 @@ flask --app ai_ta_backend.main:app --debug run --port 8000
 
 **All dev tracked here: https://github.com/orgs/UIUC-Chatbot/projects/5**
 
-## Accounts // services 
+## Accounts // services
 
 As a dev, request to be added here:
-* [LangSmith org](https://smith.langchain.com/o/f7abb6a0-31f6-400c-8bc1-62ade4b67dc1)
-* Sentry.io and PostHog for python errors and logs, respectively.
-* [Github Org](https://github.com/UIUC-Chatbot)
+
+- [LangSmith org](https://smith.langchain.com/o/f7abb6a0-31f6-400c-8bc1-62ade4b67dc1)
+- Sentry.io and PostHog for python errors and logs, respectively.
+- [Github Org](https://github.com/UIUC-Chatbot)
 
 ## Overview (in progress)
 
@@ -32,30 +34,33 @@ As a dev, request to be added here:
 2. Our agents respond to the issue/PR and try to implement it.
 
 # Top level agents
+
 1. Plan & Execute agent in `workflow_agent.py`
 1. ReAct agent in `github_agent.py`
 1. TOT agent tbd: https://api.python.langchain.com/en/latest/experimental_api_reference.html#module-langchain_experimental.tot
 
 ## Prompts
-Store all prompts in LangSmith Hub: https://smith.langchain.com/hub/kastanday?organizationId=f7abb6a0-31f6-400c-8bc1-62ade4b67dc1
 
+Store all prompts in LangSmith Hub: https://smith.langchain.com/hub/kastanday?organizationId=f7abb6a0-31f6-400c-8bc1-62ade4b67dc1
 
 # Cool features to implement
 
 ### Tools for search / retrieval
 
-* Make an embedding for every FUNCTION in the repo.
+- Make an embedding for every FUNCTION in the repo.
 
 ### Tools for Github agent
 
-* Get a list of all docstrings in the repo (w/ and w/out function signatures)
+- Get a list of all docstrings in the repo (w/ and w/out function signatures)
 
 ### Planner
 
-* Plan re-prioritization. Especially when listening to new comments coming in from the user.
+- Plan re-prioritization. Especially when listening to new comments coming in from the user.
 
 # Memory System
+
 Workflow:
+
 1. Ingest content via [Langchain Callbacks](https://python.langchain.com/docs/modules/callbacks/custom_callbacks) to populate our Memory object.
 2. Store memory object in a persistent DB (probably Supabase Postgres SQL)
 3. On every LLM call, do a DB fetch and construct a prompt in [`create_prompt()` method](langchain/agents/structured_chat/base.py).
@@ -63,16 +68,18 @@ Workflow:
 Maybe use this library to extract structured data from the callback functions: https://www.askmarvin.ai/components/ai_model/. See the `Auto-output-parsing` section below.
 
 ### Prompt template for memory system
-* `{some_variable}` represents variables we'll inject
-* `<some comment>` represents comments for us to use, not to be part of the final prompt. 
+
+- `{some_variable}` represents variables we'll inject
+- `<some comment>` represents comments for us to use, not to be part of the final prompt.
 
 ## Actual prompt template [(on langsmith hub)](https://smith.langchain.com/hub/my-prompts?organizationId=f7abb6a0-31f6-400c-8bc1-62ade4b67dc1)
+
 ```text
-## Core memory 
+## Core memory
 ### Latest assignment
 {Github issue string}
 
-Plan: 
+Plan:
 {plan}
 
 ## Agent action steps, AKA tool use history. (In chronological order, 1 is oldest)
@@ -83,8 +90,9 @@ Plan:
 ```
 
 ## Example prompts
+
 ```text
-## Core memory 
+## Core memory
 ### Latest assignment
 {Github issue string}
 
@@ -145,7 +153,7 @@ You should write a series of bash scripts and R scripts that can accomplish this
 
 ## Tool use history (chronological order, 1 is oldest)
 1. tool='Calculator' tool_input='2^0.235' log=' I need to use a calculator to solve this. Action Input: 2^0.235'
-2. Another tool use... 
+2. Another tool use...
 
 ## Conversation history
 
@@ -155,12 +163,12 @@ AI: Could you please specify the file you want to read?
 Boss: The files in directory data/report
 ```
 
-### Auto-output-parsing 
+### Auto-output-parsing
 
-Seems to work great. Can add more detail to the parsing of each variable via the "instruction()" param. 
+Seems to work great. Can add more detail to the parsing of each variable via the "instruction()" param.
 
 ```python
-## AUTO PARSING !! 
+## AUTO PARSING !!
 # https://www.askmarvin.ai/components/ai_model/
 
 from typing import List, Optional
@@ -169,7 +177,7 @@ from marvin import ai_model
 from dotenv import load_dotenv
 load_dotenv(override=True)
 import os
-import marvin 
+import marvin
 marvin.settings.openai.api_key = os.environ['OPENAI_API_KEY']
 # @ai_model(model="gpt-35-turbo", temperature=0)
 # @ai_model
@@ -185,8 +193,8 @@ PackagesToInstall(input) # Github issue string as input
 '''
 Result:
 PackagesToInstall(
-    apt_packages_to_install=['samtools'], 
-    pip_packages_to_install=['multiqc', 'star'], 
+    apt_packages_to_install=['samtools'],
+    pip_packages_to_install=['multiqc', 'star'],
     r_packages_to_install=['DESeq2', 'rsem']
 )
 '''
