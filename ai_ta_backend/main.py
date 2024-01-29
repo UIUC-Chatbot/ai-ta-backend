@@ -21,7 +21,7 @@ import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.export_data import export_convo_history_csv
-from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
+from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, create_document_map
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 
@@ -609,6 +609,24 @@ def getTopContextsWithMQR() -> Response:
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+
+@app.route('/createDocumentMap', methods=['GET'])
+def createDocumentMap() -> Response:
+  """
+  Create a map of documents for a given course.
+  """
+  course_name: str = request.args.get('course_name', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  result = create_document_map(course_name)
+  response = jsonify(result)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 
 if __name__ == '__main__':

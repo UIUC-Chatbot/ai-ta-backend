@@ -380,11 +380,94 @@ def create_nomic_map(course_name: str, log_data: list):
     return "failed"
 
 
-def create_document_map():
+def create_document_map(course_name: str):
   """
-  This is a function which creates a map for the document embeddings.
+  This is a function which creates a map of all document embeddings.
   """
   print("in create_document_map()")
+  nomic.login(os.getenv('NOMIC_API_KEY'))
+  NOMIC_MAP_NAME_PREFIX = 'Document Map for '
+
+  # initialize supabase
+  supabase_client = supabase.create_client(  # type: ignore
+      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+  
+  
+  try:
+    # fetch relevant document data from Supabase
+    response = supabase_client.table("documents").select("id", count="exact").eq("course_name", course_name).order('id', desc=False).execute()
+    doc_count = response.count
+    print("Total number of documents: ", doc_count)
+
+    # minimum 20 docs needed to create map
+    if doc_count > 19:  
+      print("Creating document map...")
+      first_id = response.data[0]['id']
+      last_id = response.data[-1]['id']
+
+      combined_dfs = []
+      print("First id: ", first_id)   
+      print("Last id: ", last_id)
+
+      # iteratively query in batches of 25
+      while first_id <= last_id:
+        print("Fetching data from id: ", first_id)
+        response = supabase_client.table("documents").select("id, created_at, s3_path, readable_filename, contexts").eq("course_name", course_name).gte(
+          'id', first_id).lte('id', last_id).order('id', desc=False).limit(25).execute()
+        df = pd.DataFrame(response.data)
+        combined_dfs.append(df)
+
+        first_id = response.data[-1]['id'] + 1
+
+      # concat all dfs from the combined_dfs list
+      final_df = pd.concat(combined_dfs, ignore_index=True)
+      print("Total number of documents: ", final_df.shape)
+
+      # create embeddings and metadata input
+      metadata = []
+      embeddings = []
+
+      for index, row in final_df.iterrows():
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        meta_row = {
+            "id": row['id'],
+            "doc_ingested_at": row['created_at'],
+            "s3_path": row['s3_path'],
+            "readable_filename": row['readable_filename'],
+            "created_at": current_time,
+            "text": row['contexts'][0]['text']
+            #"pagenumber": row['contexts'][0]['pagenumber']
+        }
+        embeddings_row = row['contexts'][0]['embedding']
+        metadata.append(meta_row)
+        embeddings.append(embeddings_row)
+      
+      print("Total number of metadata rows: ", len(metadata))
+      print("Total number of embeddings rows: ", len(embeddings))
+      metadata = pd.DataFrame(metadata)
+
+      # create Atlas project
+      project_name = NOMIC_MAP_NAME_PREFIX + course_name
+      index_name = course_name + "-index"
+      print("Creating project: ", project_name) 
+
+      project = atlas.map_embeddings(
+        embeddings=np.array(embeddings),
+        data=metadata,
+        id_field="id",
+        build_topic_model=True,
+        name=project_name,
+        topic_label_field="text",
+        colorable_fields=["readable_filename", "text"]
+      )
+      project.create_index(index_name, build_topic_model=True)
+      return f"Successfully created Nomic map for {course_name}"
+  except Exception as e:
+    print(e)
+
+
+
 
   return "success"
 
