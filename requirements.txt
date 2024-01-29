@@ -64,3 +64,4 @@ termcolor==2.3.0
 PyGithub==2.1.1
 playwright==1.40.0
 langgraph==0.0.16
+langchain-openai==0.0.5

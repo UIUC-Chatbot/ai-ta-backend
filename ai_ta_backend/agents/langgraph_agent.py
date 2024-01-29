@@ -46,6 +46,8 @@ class AgentState(TypedDict):
   # this state should be ADDED to the existing values (not overwrite it)
   intermediate_steps: Annotated[list[tuple[AgentAction, str]], operator.add]
 
+  plan: Union[list[str], None]
+
 
 class WorkflowAgent:
 
