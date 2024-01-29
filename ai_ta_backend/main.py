@@ -517,9 +517,11 @@ def ingest_canvas():
 @app.route('/getNomicMap', methods=['GET'])
 def nomic_map():
   course_name: str = request.args.get('course_name', default='', type=str)
-  if course_name == '':
+  map_type: str = request.args.get('map_type', default='', type=str)
+
+  if course_name == '' or map_type == '':
     # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+    abort(400, description=f"Missing required parameter: 'course_name' and 'map_type' must be provided. Course name: `{course_name}`")
 
   map_id = get_nomic_map(course_name)
   print("nomic map\n", map_id)

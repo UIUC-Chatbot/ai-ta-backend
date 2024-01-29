@@ -194,7 +194,7 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       raise Exception({"exception": str(e)})
       
     
-def get_nomic_map(course_name: str):
+def get_nomic_map(course_name: str, type: str):
   """
   Returns the variables necessary to construct an iframe of the Nomic map given a course name.
   We just need the ID and URL.
@@ -203,7 +203,10 @@ def get_nomic_map(course_name: str):
     map id: f4967ad7-ff37-4098-ad06-7e1e1a93dd93
   """
   nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
-  NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+  if type.lower() == 'document':
+    NOMIC_MAP_NAME_PREFIX = 'Document Map for '
+  else:
+    NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
 
   project_name = NOMIC_MAP_NAME_PREFIX + course_name
   start_time = time.monotonic()
@@ -217,7 +220,7 @@ def get_nomic_map(course_name: str):
   except Exception as e:
     # Error: ValueError: You must specify a unique_id_field when creating a new project.
     if str(e) == 'You must specify a unique_id_field when creating a new project.':  # type: ignore
-      print("Nomic map does not exist yet, probably because you have less than 20 queries on your project: ", e)
+      print("Nomic map does not exist yet, probably because you have less than 20 queries/documents on your project: ", e)
     else:
       print("ERROR in get_nomic_map():", e)
       sentry_sdk.capture_exception(e)
@@ -393,83 +396,178 @@ def create_document_map(course_name: str):
       supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
       supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
   
-  
   try:
     # fetch relevant document data from Supabase
     response = supabase_client.table("documents").select("id", count="exact").eq("course_name", course_name).order('id', desc=False).execute()
-    doc_count = response.count
-    print("Total number of documents: ", doc_count)
+    total_doc_count = response.count
+    print("Total number of documents: ", total_doc_count)
 
     # minimum 20 docs needed to create map
-    if doc_count > 19:  
+    if total_doc_count > 19:  
       print("Creating document map...")
       first_id = response.data[0]['id']
-      last_id = response.data[-1]['id']
-
       combined_dfs = []
-      print("First id: ", first_id)   
-      print("Last id: ", last_id)
-
+      curr_total_doc_count = 0
+      doc_count = 0
+      first_batch = True
+      
       # iteratively query in batches of 25
-      while first_id <= last_id:
+      while curr_total_doc_count < total_doc_count:
+
         print("Fetching data from id: ", first_id)
         response = supabase_client.table("documents").select("id, created_at, s3_path, readable_filename, contexts").eq("course_name", course_name).gte(
-          'id', first_id).lte('id', last_id).order('id', desc=False).limit(25).execute()
+          'id', first_id).order('id', desc=False).limit(25).execute()
         df = pd.DataFrame(response.data)
-        combined_dfs.append(df)
+        combined_dfs.append(df) # list of dfs
 
+        curr_total_doc_count += len(response.data)
+        doc_count += len(response.data)
+        print("No. of docs downloaded: ", curr_total_doc_count)
+
+        if doc_count >= 1000: # upload to Nomic every 1000 docs
+          
+          # concat all dfs from the combined_dfs list
+          final_df = pd.concat(combined_dfs, ignore_index=True)
+          print("Total number of documents to be uploaded: ", final_df.shape)
+
+          # prep data for nomic upload
+          embeddings, metadata = data_prep_for_doc_map(final_df)
+
+          if first_batch:
+            # create a new map
+            print("Creating new map...")
+            # create Atlas project
+            project_name = NOMIC_MAP_NAME_PREFIX + course_name
+            index_name = course_name + "_doc_index"
+            topic_label_field = "text"
+            colorable_fields = ["readable_filename", "text"]
+            result = create_map(embeddings, metadata, project_name, index_name, topic_label_field, colorable_fields)
+            print("Result: ", result)
+
+            # update flag
+            first_batch = False
+
+          else:
+            # append to existing map
+            print("Appending to existing map...")
+            project_name = NOMIC_MAP_NAME_PREFIX + course_name
+            # add project lock logic here
+            result = append_to_map(embeddings, metadata, project_name)
+            print("Result: ", result)
+          
+          # reset variables
+          combined_dfs = []
+          doc_count = 0
+        
+        
         first_id = response.data[-1]['id'] + 1
-
-      # concat all dfs from the combined_dfs list
-      final_df = pd.concat(combined_dfs, ignore_index=True)
-      print("Total number of documents: ", final_df.shape)
-
-      # create embeddings and metadata input
-      metadata = []
-      embeddings = []
-
-      for index, row in final_df.iterrows():
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        meta_row = {
-            "id": row['id'],
-            "doc_ingested_at": row['created_at'],
-            "s3_path": row['s3_path'],
-            "readable_filename": row['readable_filename'],
-            "created_at": current_time,
-            "text": row['contexts'][0]['text']
-            #"pagenumber": row['contexts'][0]['pagenumber']
-        }
-        embeddings_row = row['contexts'][0]['embedding']
-        metadata.append(meta_row)
-        embeddings.append(embeddings_row)
       
-      print("Total number of metadata rows: ", len(metadata))
-      print("Total number of embeddings rows: ", len(embeddings))
-      metadata = pd.DataFrame(metadata)
+      # upload last set of docs
+      print("Appending remaining docs...")
+      final_df = pd.concat(combined_dfs, ignore_index=True)
+      print("Total number of documents to be uploaded: ", final_df.shape)
 
-      # create Atlas project
+      embeddings, metadata = data_prep_for_doc_map(final_df)
       project_name = NOMIC_MAP_NAME_PREFIX + course_name
-      index_name = course_name + "-index"
-      print("Creating project: ", project_name) 
+      result = append_to_map(embeddings, metadata, project_name)
+      print("Result: ", result)
 
-      project = atlas.map_embeddings(
-        embeddings=np.array(embeddings),
-        data=metadata,
-        id_field="id",
-        build_topic_model=True,
-        name=project_name,
-        topic_label_field="text",
-        colorable_fields=["readable_filename", "text"]
-      )
-      project.create_index(index_name, build_topic_model=True)
-      return f"Successfully created Nomic map for {course_name}"
   except Exception as e:
     print(e)
-
-
-
-
   return "success"
+
+
+def create_map(embeddings, metadata, map_name, index_name, topic_label_field, colorable_fields):
+  """
+  Generic function to create a Nomic map from given data.
+  Args:
+    embeddings: np.array of embeddings
+    metadata: pd.DataFrame of metadata
+    map_name: str
+    index_name: str
+    topic_label_field: str
+    colorable_fields: list of str
+  """
+  nomic.login(os.getenv('NOMIC_API_KEY'))  
+  try:
+    project = atlas.map_embeddings(
+      embeddings=embeddings,
+      data=metadata,
+      id_field="id",
+      build_topic_model=True,
+      name=map_name,
+      topic_label_field=topic_label_field,
+      colorable_fields=colorable_fields
+    )
+    project.create_index(index_name, build_topic_model=True)
+    return "Successfully created Nomic map for {course_name}"
+  except Exception as e:
+    print(e)
+    return "Error in creating map: {e}"
+  
+def append_to_map(embeddings, metadata, map_name):
+  """
+  Generic function to append new data to an existing Nomic map.
+  """
+  nomic.login(os.getenv('NOMIC_API_KEY'))  
+  try:
+    project = atlas.AtlasProject(name=map_name, add_datums_if_exists=True)
+    with project.wait_for_project_lock():
+      project.add_embeddings(embeddings=embeddings, data=metadata)
+      project.rebuild_maps()
+    return "Successfully appended to Nomic map for {course_name}"
+  except Exception as e:
+    print(e)
+    return "Error in appending to map: {e}"
+  
+
+def data_prep_for_doc_map(df: pd.DataFrame):
+  """
+  This function prepares embeddings and metadata for nomic upload in document map creation.
+  """
+  print("in data_prep_for_doc_map()")
+
+  metadata = []
+  embeddings = []
+  texts = []  # storing texts to create new embeddings incase the existing ones are bad/missing
+
+  for index, row in df.iterrows():
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    meta_row = {
+      "id": row['id'],
+      "doc_ingested_at": row['created_at'],
+      "s3_path": row['s3_path'],
+      "readable_filename": row['readable_filename'],
+      "created_at": current_time,
+      "text": row['contexts'][0]['text']
+      #"pagenumber": row['contexts'][0]['pagenumber']
+    }
+    embeddings_row = row['contexts'][0]['embedding']
+    text_row = row['contexts'][0]['text']
+    metadata.append(meta_row)
+    embeddings.append(embeddings_row)
+    texts.append(text_row)
+
+  print("Total number of metadata rows: ", len(metadata))
+  print("Total number of embeddings rows: ", len(embeddings))
+  print("Total number of texts rows: ", len(texts))
+      
+  embeddings_np = np.array(embeddings, dtype=object)
+  print("Shape of embeddings_np: ", embeddings_np.shape)
+
+  # check dimension if embeddings_np is (n, 1536)
+  if len(embeddings_np.shape) < 2:
+    print("Creating new embeddings...")
+    embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE, 
+                                        openai_api_base=os.getenv('AZURE_OPENAI_BASE'),
+                                        openai_api_key=os.getenv('AZURE_OPENAI_KEY'))
+    embeddings = embeddings_model.embed_documents(texts)
+
+  metadata = pd.DataFrame(metadata)
+  embeddings = np.array(embeddings)
+
+  return embeddings, metadata
+
 
 if __name__ == '__main__':
   pass

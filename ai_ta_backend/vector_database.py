@@ -929,7 +929,7 @@ class Ingest():
     """Delete entire course.
 
     Delete materials from S3, Supabase SQL, Vercel KV, and QDrant vector DB
-
+    Add delete doc map logic here
     Args:
         course_name (str): _description_
     """
@@ -983,6 +983,7 @@ class Ingest():
   def delete_data(self, course_name: str, s3_path: str, source_url: str):
     """Delete file from S3, Qdrant, and Supabase."""
     print(f"Deleting {s3_path} from S3, Qdrant, and Supabase for course {course_name}")
+    # add delete from doc map logic here
     try:
       # Delete file from S3
       bucket_name = os.getenv('S3_BUCKET_NAME')
