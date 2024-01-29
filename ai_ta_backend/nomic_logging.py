@@ -528,40 +528,50 @@ def data_prep_for_doc_map(df: pd.DataFrame):
   print("in data_prep_for_doc_map()")
 
   metadata = []
-  embeddings = []
-  texts = []  # storing texts to create new embeddings incase the existing ones are bad/missing
+  #embeddings = []
+  texts = [] 
 
   for index, row in df.iterrows():
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    text_str = ""
+    
+    for context in row['contexts']:
+      text_str += context['text'] + " "
+
     meta_row = {
       "id": row['id'],
       "doc_ingested_at": row['created_at'],
       "s3_path": row['s3_path'],
       "readable_filename": row['readable_filename'],
       "created_at": current_time,
-      "text": row['contexts'][0]['text']
-      #"pagenumber": row['contexts'][0]['pagenumber']
+      "text": text_str
     }
-    embeddings_row = row['contexts'][0]['embedding']
-    text_row = row['contexts'][0]['text']
+    #embeddings_row = context['embeddings']
+    text_row = text_str
     metadata.append(meta_row)
-    embeddings.append(embeddings_row)
+    #embeddings.append(embeddings_row)
     texts.append(text_row)
 
   print("Total number of metadata rows: ", len(metadata))
-  print("Total number of embeddings rows: ", len(embeddings))
+  #print("Total number of embeddings rows: ", len(embeddings))
   print("Total number of texts rows: ", len(texts))
       
-  embeddings_np = np.array(embeddings, dtype=object)
-  print("Shape of embeddings_np: ", embeddings_np.shape)
+  # embeddings_np = np.array(embeddings, dtype=object)
+  # print("Shape of embeddings_np: ", embeddings_np.shape)
 
   # check dimension if embeddings_np is (n, 1536)
-  if len(embeddings_np.shape) < 2:
-    print("Creating new embeddings...")
-    embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE, 
+  # if len(embeddings_np.shape) < 2:
+  #   print("Creating new embeddings...")
+  #   embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE, 
+  #                                       openai_api_base=os.getenv('AZURE_OPENAI_BASE'),
+  #                                       openai_api_key=os.getenv('AZURE_OPENAI_KEY'))
+  #   embeddings = embeddings_model.embed_documents(texts)
+
+  print("Creating new embeddings...")
+  embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE, 
                                         openai_api_base=os.getenv('AZURE_OPENAI_BASE'),
                                         openai_api_key=os.getenv('AZURE_OPENAI_KEY'))
-    embeddings = embeddings_model.embed_documents(texts)
+  embeddings = embeddings_model.embed_documents(texts)
 
   metadata = pd.DataFrame(metadata)
   embeddings = np.array(embeddings)
