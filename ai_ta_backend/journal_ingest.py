@@ -1,4 +1,5 @@
 import os
+import shutil
 import requests
 import json
 import arxiv
@@ -34,24 +35,11 @@ def getFromDoi(doi: str, course_name: str):
     if 'springer' in publisher:
         # download from springer
         downloadSpringerFulltext(doi=doi)
-        folder_path = os.path.join(os.getcwd(), 'springer_papers')
     elif 'elsevier' in publisher:
         # download from elsevier
         downloadElsevierFulltextFromDoi(doi=doi)
-        folder_path = os.path.join(os.getcwd(), 'elsevier_papers')
     else:
         print("Publisher not supported yet. Please try again later.")
-        folder_path = None
-
-    # folder_path = os.path.join(os.getcwd(), 'springer_papers')
-    # course_name = 'cropwizard'
-    # upload files to s3
-    if folder_path:    
-        s3_paths = upload_data_files_to_s3(course_name, folder_path)
-
-        # ingest into QDRANT
-        ingest = Ingest()
-        journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
 
     return "success"
 
@@ -93,7 +81,7 @@ def get_article_metadata_from_crossref(doi: str):
     metadata = crossref_commons.retrieval.get_publication_as_json(doi)
     return metadata
 
-def downloadSpringerFulltext(issn:str, subject:str, journal:str, title:str, doi:str, course_name: str):
+def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, doi=None, course_name=None):
     """
     This function uses the Springer Nature API to download openaccess journal articles.
     Args:
@@ -199,9 +187,11 @@ def downloadSpringerFulltext(issn:str, subject:str, journal:str, title:str, doi:
     # upload to s3
     s3_paths = upload_data_files_to_s3(course_name, directory)
 
+    # Delete files from local directory
+    shutil.rmtree(directory)
+
     # ingest into QDRANT
     ingest = Ingest()
-    
     journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
                                 
     return "success"
