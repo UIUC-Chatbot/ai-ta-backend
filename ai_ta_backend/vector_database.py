@@ -1077,12 +1077,23 @@ class Ingest():
 
   def vector_search(self, search_query, course_name):
     top_n = 80
+    # EMBED
+    openai_start_time = time.monotonic()
     o = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)
     user_query_embedding = o.embed_query(search_query)
+    openai_embedding_latency = time.monotonic() - openai_start_time
+
+    # SEARCH
     myfilter = models.Filter(must=[
         models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name)),
     ])
-
+    self.posthog.capture('distinct_id_of_the_user',
+                         event='vector_search_invoked',
+                         properties={
+                             'user_query': search_query,
+                             'course_name': course_name,
+                         })
+    qdrant_start_time = time.monotonic()
     search_results = self.qdrant_client.search(
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
         query_filter=myfilter,
@@ -1107,6 +1118,15 @@ class Ingest():
       except Exception as e:
         print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
         sentry_sdk.capture_exception(e)
+
+    self.posthog.capture('distinct_id_of_the_user',
+                         event='vector_search_succeded',
+                         properties={
+                             'user_query': search_query,
+                             'course_name': course_name,
+                             'qdrant_latency_sec': time.monotonic() - qdrant_start_time,
+                             'openai_embedding_latency_sec': openai_embedding_latency
+                         })
     # print("found_docs", found_docs)
     return found_docs
 
@@ -1162,6 +1182,7 @@ class Ingest():
                                'total_tokens_used': token_counter,
                                'total_contexts_used': len(valid_docs),
                                'total_unique_docs_retrieved': len(found_docs),
+                               'getTopContext_total_latency_sec': time.monotonic() - start_time_overall,
                            })
 
       return self.format_for_json(valid_docs)
