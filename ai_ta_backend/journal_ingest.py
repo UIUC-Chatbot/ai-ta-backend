@@ -34,10 +34,10 @@ def getFromDoi(doi: str, course_name: str):
     
     if 'springer' in publisher:
         # download from springer
-        downloadSpringerFulltext(doi=doi)
+        downloadSpringerFulltext(doi=doi, course_name=course_name)
     elif 'elsevier' in publisher:
         # download from elsevier
-        downloadElsevierFulltextFromDoi(doi=doi)
+        downloadElsevierFulltextFromDoi(doi=doi, course_name=course_name)
     else:
         print("Publisher not supported yet. Please try again later.")
 
@@ -115,7 +115,6 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
         query_str = "subject:" + subject
     else:
         return "No query parameters provided"
-    
     
     main_url = api_url + query_str + "&s=11&api_key=" + str(SPRINGER_API_KEY)
     print("Full URL: ", main_url)
@@ -197,7 +196,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
     return "success"
 
 
-def downloadElsevierFulltextFromDoi(doi: str):
+def downloadElsevierFulltextFromDoi(doi: str, course_name: str):
     """
     This function downloads articles from Elsevier for a given DOI.
     """
@@ -215,6 +214,16 @@ def downloadElsevierFulltextFromDoi(doi: str):
     with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
         for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
             f.write(chunk)
+
+    # upload to s3
+    s3_paths = upload_data_files_to_s3(course_name, directory)
+
+    # Delete files from local directory
+    shutil.rmtree(directory)
+
+    # ingest into QDRANT
+    ingest = Ingest()
+    journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
 
     return "success"
 
@@ -241,7 +250,7 @@ def extract_record_data(xml_string):
 
     return extracted_data
 
-def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None):
+def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None, course_name=None):
     """
     This function downloads articles from PubMed using the OA Web Service API.
     """
@@ -291,6 +300,16 @@ def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None
         # download articles
         download_status = downloadFromFTP(records, directory, ftp_address="ftp.ncbi.nlm.nih.gov")
 
+    # upload to s3
+    s3_paths = upload_data_files_to_s3(course_name, directory)
+
+    # Delete files from local directory
+    shutil.rmtree(directory)
+
+    # ingest into QDRANT
+    ingest = Ingest()
+    journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
+
     return "success"
 
     
@@ -316,8 +335,8 @@ def downloadFromFTP(paths, local_dir, ftp_address):
         local_file = os.path.join(local_dir, filename)
         with open(local_file, 'wb') as f:
             ftp.retrbinary("RETR " + ftp_path, f.write)
-
-        ftp.quit()
         print("Downloaded: ", filename)
+    ftp.quit()
+        
     
     return "success"

@@ -660,18 +660,19 @@ def get_springer_data():
 @app.route('/get-elsevier-fulltext', methods=['GET'])
 def get_elsevier_data():
   doi = request.args.get('doi', default='', type=str)
+  course_name = request.args.get('course_name', default='', type=str)
 
   print("In /get-elsevier-fulltext")
 
-  if doi == '':
+  if doi == '' or course_name == '':
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing required parameters: 'doi' must be provided."
+        f"Missing required parameters: 'doi' and 'course_name' must be provided."
     )
 
-  fulltext = downloadElsevierFulltextFromDoi(doi)
+  fulltext = downloadElsevierFulltextFromDoi(doi, course_name)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -693,7 +694,7 @@ def getArticleFromDoi():
         f"Missing required parameters: 'doi' and 'course_name' must be provided."
     )
 
-  fulltext = getFromDoi(doi)
+  fulltext = getFromDoi(doi, course_name)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -705,18 +706,19 @@ def getArticleFromPubmed():
   from_date = request.args.get('from_date', default='', type=str)
   until_date = request.args.get('until_date', default='', type=str)
   format = request.args.get('format', default='', type=str)
+  course_name = request.args.get('course_name', default='', type=str)
 
   print("In /getArticleFromPubmed")
 
-  if id == '' and from_date  == '' and until_date == '':
+  if (id == '' and from_date  == '' and until_date == '') or course_name == '':
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing required parameters: 'id', 'from_date', or 'until_date' must be provided."
+        f"Missing required parameters: 'id', 'from_date', or 'until_date' and 'course_name' must be provided."
     )
 
-  fulltext = downloadPubmedArticles(id, from_date, until_date, format)
+  fulltext = downloadPubmedArticles(id, from_date, until_date, format, course_name)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
