@@ -908,6 +908,10 @@ class Ingest():
       self.supabase_client.table(
           os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
 
+      # add to Nomic document map
+      
+
+
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
                            properties={
