@@ -616,9 +616,10 @@ def getTopContextsWithMQR() -> Response:
 @app.route('/get-arxiv-fulltext', methods=['GET'])
 def get_arxiv_data():
   search_query: str = request.args.get('search_query', default='', type=str)
+  arxiv_id = request.args.get('arxiv_id', default='', type=str)
   print("In /get-arxiv-fulltext: ", search_query)
 
-  if search_query == '':
+  if search_query == '' and arxiv_id == '':
     # proper web error "400 Bad request"
     abort(
         400,
@@ -626,7 +627,7 @@ def get_arxiv_data():
         f"Missing required parameters: 'arxiv_id' or 'search_query' must be provided."
     )
 
-  fulltext = get_arxiv_fulltext(search_query)
+  fulltext = get_arxiv_fulltext(search_query, arxiv_id)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')

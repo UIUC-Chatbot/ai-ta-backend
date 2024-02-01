@@ -18,20 +18,18 @@ ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
 
 def getFromDoi(doi: str, course_name: str):
     """
-    This function takes DOI string as input and downloads the 
-    article from the publisher's website.
+    This function takes DOI string as input and downloads the article from the publisher's website.
+    Publishers covered: Springer Nature, Elsevier, PubMed
     Args:
         doi: DOI string
-    Returns:
-        success: string
-        failed: string (if the article is not accessible)
     """
     # get metadata from crossref
     metadata = get_article_metadata_from_crossref(doi)
     print("Publisher: ", metadata['publisher'])
     print("Content domain: ", metadata['content-domain'])
     publisher = metadata['publisher'].lower().split()
-    
+    #print("Metadata:", metadata)
+
     if 'springer' in publisher:
         # download from springer
         downloadSpringerFulltext(doi=doi, course_name=course_name)
@@ -39,17 +37,31 @@ def getFromDoi(doi: str, course_name: str):
         # download from elsevier
         downloadElsevierFulltextFromDoi(doi=doi, course_name=course_name)
     else:
-        print("Publisher not supported yet. Please try again later.")
+        print("No direct openaccess link found. Searching PubMed...")
+
+        pmcid = pubmed_id_converter(doi)
+        if pmcid:
+            print("Article found in PubMed. Downloading...")
+            downloadPubmedArticles(id=pmcid, course_name=course_name)
+        else:
+            print("Article not found in our current databases, please try again later.")
 
     return "success"
 
-def get_arxiv_fulltext(query: str):
+def get_arxiv_fulltext(query = "", ids = None, course_name = None):
     """
     This function retrieves journal articles from arXiv
+    based on search query or article IDs or a combination of both.
     """
-    search = arxiv.Search(query=query, 
+    
+    if ids:
+        search = arxiv.Search(id_list=[ids], 
                           max_results=10, 
                           sort_by = arxiv.SortCriterion.SubmittedDate)
+    elif query:
+        search = arxiv.Search(query=query, 
+                            max_results=10, 
+                            sort_by = arxiv.SortCriterion.SubmittedDate)
 
     directory = os.path.join(os.getcwd(), 'arxiv_papers')
     if not os.path.exists(directory):
@@ -63,7 +75,7 @@ def get_arxiv_fulltext(query: str):
 
 def get_article_link_from_doi(doi: str) -> str:
     """
-    This function calls the doi.org API to retrieve the link to the journal article
+    This function calls the doi.org API to retrieve the link to the journal article.
     """    
     prefix = "https://doi.org/api/handles/"
 
@@ -76,7 +88,7 @@ def get_article_link_from_doi(doi: str) -> str:
 
 def get_article_metadata_from_crossref(doi: str):
     """
-    This function calls the crossref.org API to retrieve the metadata of the journal article
+    This function calls the crossref.org API to retrieve the metadata of a journal article.
     """    
     metadata = crossref_commons.retrieval.get_publication_as_json(doi)
     return metadata
@@ -106,18 +118,22 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
         query_str = "issn:" + issn
     elif journal:   
         # query by journal title
+        journal = "%22" + journal.replace(" ", "%20") + "%22"
         query_str = "journal:" + journal
     elif title:
         # query by article title
+        title = "%22" + title.replace(" ", "%20") + "%22"
         query_str = "title:" + title
+        print("Title: ", title)
     elif subject:
         # query by subject
         query_str = "subject:" + subject
     else:
         return "No query parameters provided"
     
-    main_url = api_url + query_str + "&s=11&api_key=" + str(SPRINGER_API_KEY)
+    main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY)
     print("Full URL: ", main_url)
+    
 
     response = requests.get(main_url)
     print("Status: ", response.status_code)
@@ -183,15 +199,15 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
                         f.write(chunk)
                 print("Downloaded: ", filename)
     
-    # upload to s3
-    s3_paths = upload_data_files_to_s3(course_name, directory)
+    # # upload to s3
+    # s3_paths = upload_data_files_to_s3(course_name, directory)
 
-    # Delete files from local directory
-    shutil.rmtree(directory)
+    # # Delete files from local directory
+    # shutil.rmtree(directory)
 
-    # ingest into QDRANT
-    ingest = Ingest()
-    journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
+    # # ingest into QDRANT
+    # ingest = Ingest()
+    # journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
                                 
     return "success"
 
@@ -215,20 +231,22 @@ def downloadElsevierFulltextFromDoi(doi: str, course_name: str):
         for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
             f.write(chunk)
 
-    # upload to s3
-    s3_paths = upload_data_files_to_s3(course_name, directory)
+    # # upload to s3
+    # s3_paths = upload_data_files_to_s3(course_name, directory)
 
-    # Delete files from local directory
-    shutil.rmtree(directory)
+    # # Delete files from local directory
+    # shutil.rmtree(directory)
 
-    # ingest into QDRANT
-    ingest = Ingest()
-    journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
+    # # ingest into QDRANT
+    # ingest = Ingest()
+    # journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
 
     return "success"
 
 def extract_record_data(xml_string):
-    """Extracts record ID, license, and href elements from an XML string.
+    """
+    It is used to parse the response from the OA Web Service API - downloadPubmedArticles().
+    Extracts record ID, license, and href elements from an XML string.
     Args:
         xml_string: XML string --> Response from the OA Web Service API
     Returns:
@@ -253,6 +271,11 @@ def extract_record_data(xml_string):
 def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None, course_name=None):
     """
     This function downloads articles from PubMed using the OA Web Service API.
+    Args:
+        id: PubMed ID
+        from_date: start date
+        until_date: end date
+        format: file format - pdf or tgz
     """
     directory = os.path.join(os.getcwd(), 'pubmed_papers')
     if not os.path.exists(directory):
@@ -300,22 +323,43 @@ def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None
         # download articles
         download_status = downloadFromFTP(records, directory, ftp_address="ftp.ncbi.nlm.nih.gov")
 
-    # upload to s3
-    s3_paths = upload_data_files_to_s3(course_name, directory)
+    # # upload to s3
+    # s3_paths = upload_data_files_to_s3(course_name, directory)
 
-    # Delete files from local directory
-    shutil.rmtree(directory)
+    # # Delete files from local directory
+    # shutil.rmtree(directory)
 
-    # ingest into QDRANT
-    ingest = Ingest()
-    journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
+    # # ingest into QDRANT
+    # ingest = Ingest()
+    # journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
 
     return "success"
 
+def pubmed_id_converter(id: str):
+    """
+    This function is used to convert DOI to PubMed ID.
+    Can also be used to convert PubMed ID to DOI.
+    """
+    pmcid = None
+    base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
+    app_details = "?tool=ncsa_uiuc&email=caiincsa@gmail.com"
+    url = base_url + app_details + "&ids=" + id
+    print("URL: ", url)
+
+    response = requests.get(url)
+    print("Status: ", response.status_code)
+    print("Response: ", response.text)
+    root = ET.fromstring(response.text)
+    record = root.find("record")
+    pmcid = record.get("pmcid")
+    
+    print("PMCID: ", pmcid)
+    return pmcid
     
 def downloadFromFTP(paths, local_dir, ftp_address):
     """
-    This function downloads files from an FTP server. Used in conjunction with downloadPubmedArticles().
+    This function downloads files from an FTP server. 
+    Used in conjunction with downloadPubmedArticles().
     Args:
         paths: list of FTP paths
         local_dir: local directory to save the files
