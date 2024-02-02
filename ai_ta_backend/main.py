@@ -629,21 +629,23 @@ def createDocumentMap() -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@app.route('/addToDocMap', methods=['GET'])
-def add_to_map() -> Response:
-  """
-  Function to test adding to the document map.
-  """
-  course_name: str = request.args.get('course_name', default='', type=str)
+# @app.route('/addToDocMap', methods=['GET'])
+# def add_to_map() -> Response:
+#   """
+#   Function to test adding to the document map.
+#   """
+#   course_name: str = request.args.get('course_name', default='', type=str)
+#   s3_path: str = request.args.get('s3_path', default='', type=str)
+#   url: str = request.args.get('url', default='', type=str)
 
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+#   if course_name == '' or (s3_path == '' and url == ''):
+#     # proper web error "400 Bad request"
+#     abort(400, description=f"Missing required parameter: 'course_name' and 's3_path' or 'url' must be provided.")
 
-  result = add_to_document_map(course_name)
-  response = jsonify(result)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   result = add_to_document_map(course_name, s3_path, url)
+#   response = jsonify(result)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 
 
