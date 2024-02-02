@@ -248,6 +248,8 @@ def ingest() -> Response:
         f"Missing one or more required parameters: 'course_name' and 's3_path' must be provided. Course name: `{course_name}`, S3 path: `{s3_paths}`"
     )
 
+  print("NUM ACTIVE THREADS (top of /ingest):", threading.active_count())
+
   ingester = Ingest()
   if readable_filename == '':
     success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
@@ -291,6 +293,8 @@ def ingest_web_text() -> Response:
         description=
         f"Missing one or more required parameters: course_name, url, content or title. Course name: `{course_name}`, url: `{url}`, content: `{content}`, title: `{title}`"
     )
+
+  print("NUM ACTIVE THREADS (top of /ingest-web-text):", threading.active_count())
 
   ingester = Ingest()
   success_fail = ingester.ingest_single_web_text(course_name, base_url, url, content, title)
