@@ -100,10 +100,22 @@ class Ingest():
 
   def __del__(self):
     # Gracefully shutdown the Posthog client -- this was a main cause of dangling threads.
-    self.posthog.shutdown()
-    self.qdrant_client.close()
-    del self.s3_client
-    del self.supabase_client
+    try:
+      self.posthog.shutdown()
+    except Exception as e:
+      print("Failed to shutdown PostHog. Probably fine. Error: ", e)
+    try:
+      self.qdrant_client.close()
+    except Exception as e:
+      print("Failed to shutdown Qdrant. Probably fine. Error: ", e)
+    try:
+      del self.supabase_client
+    except Exception as e:
+      print("Failed delete supabase_client. Probably fine. Error: ", e)
+    try:
+      del self.s3_client
+    except Exception as e:
+      print("Failed to delete s3_client. Probably fine. Error: ", e)
 
   def bulk_ingest(self, s3_paths: Union[List[str], str], course_name: str, **kwargs) -> Dict[str, List[str]]:
 
