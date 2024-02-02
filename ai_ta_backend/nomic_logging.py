@@ -489,7 +489,31 @@ def create_document_map(course_name: str):
   return "success"
 
 
-def add_to_document_map(course_name: str, s3_path: str):
+def delete_from_document_map(course_name: str, ids: list):
+  """
+  This function is used to delete datapoints from a document map.
+  Args:
+    course_name: str
+    ids: list of str
+  """
+  print("in delete_from_document_map()")
+  print("course_name: ", course_name)
+  print("ids: ", ids)
+  
+  try:
+    # fetch project metadata and embbeddings
+    project_name = "Document Map for " + course_name
+    project = AtlasProject(name=project_name, add_datums_if_exists=True)
+
+    # delete the ids from Nomic
+    print("Deleting point from nomic:", project.delete_data(ids))
+
+    return "Successfully deleted from Nomic map"
+  except Exception as e:
+    print(e)
+    return "Error in deleting from map: {e}"
+
+def add_to_document_map(course_name: str):
   """
   This is a function which appends new documents to an existing document map. It's called 
   at the end of split_and_upload()
@@ -499,18 +523,44 @@ def add_to_document_map(course_name: str, s3_path: str):
   """
   print("in add_to_document_map()")
   print("course_name: ", course_name)
-  print("s3_path: ", s3_path)
   
   try:
     # download data from Supabase using s3_path
     response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).order("id", desc=True).limit(1).execute()
     data = response.data[0]
+    #print("data: ", data)
+    df = pd.DataFrame(data)
+    #print(data)
+
+    embeddings = []
+    metadata = []
+    context_count = 0
+    # prep data for nomic upload
+    for row in data['contexts']:
+      context_count += 1
+      embeddings.append(row['embedding'])
+      metadata.append({
+        "id": str(data['id']) + "_" + str(context_count),
+        #"id": "1234" + "_" + str(context_count),
+        "doc_ingested_at": data['created_at'],
+        "s3_path": data['s3_path'],
+        "readable_filename": data['readable_filename'],
+        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "text": row['text']
+      })
+    
+    embeddings = np.array(embeddings)
+    metadata = pd.DataFrame(metadata)
+    print("Shape of embeddings: ", embeddings.shape)
+    
+    # append to existing map
+    project_name = "Document Map for " + course_name
+    result = append_to_map(embeddings, metadata, project_name)
+    
+    return result
+
   except Exception as e:
     print(e)
-
-
-  
-
 
 def create_map(embeddings, metadata, map_name, index_name, topic_label_field, colorable_fields):
   """
@@ -578,7 +628,7 @@ def data_prep_for_doc_map(df: pd.DataFrame):
       context_count += 1
       text_row = context['text']
       embeddings_row = context['embedding']
-
+      
       meta_row = {
         "id": str(row['id']) + "_" + str(context_count),
         "doc_ingested_at": row['created_at'],
@@ -587,7 +637,6 @@ def data_prep_for_doc_map(df: pd.DataFrame):
         "created_at": current_time,
         "text": text_row
       }
-      #print("meta_row: ", meta_row)
       embeddings.append(embeddings_row)
       metadata.append(meta_row)
       texts.append(text_row)

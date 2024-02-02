@@ -49,6 +49,7 @@ from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 from ai_ta_backend.context_parent_doc_padding import context_parent_doc_padding
 from ai_ta_backend.filtering_contexts import filter_top_contexts
+from ai_ta_backend.nomic_logging import add_to_document_map
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
@@ -909,7 +910,8 @@ class Ingest():
           os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
 
       # add to Nomic document map
-      
+      course_name = contexts[0].metadata.get('course_name')
+      res = add_to_document_map(course_name)
 
 
       self.posthog.capture('distinct_id_of_the_user',
@@ -933,7 +935,6 @@ class Ingest():
     """Delete entire course.
 
     Delete materials from S3, Supabase SQL, Vercel KV, and QDrant vector DB
-    Add delete doc map logic here
     Args:
         course_name (str): _description_
     """
@@ -1039,11 +1040,25 @@ class Ingest():
           print("Error in deleting file from Qdrant:", e)
           sentry_sdk.capture_exception(e)
         try:
+          # delete from Nomic
+          response = self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select("id, url, contexts").eq('url', source_url).eq('course_name', course_name).execute()
+          data = response.data[0] #single record fetched
+          nomic_ids_to_delete = []
+          context_count = len(data['contexts'])
+          for i in range(1, context_count+1):
+            nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
+          
+          # delete from Nomic
+          res = delete_from_document_map(course_name, nomic_ids_to_delete)
+            
+
           self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
               'url', source_url).eq('course_name', course_name).execute()
         except Exception as e:
           print("Error in deleting file from supabase:", e)
           sentry_sdk.capture_exception(e)
+
+      
 
       # Delete from Supabase
       return "Success"
