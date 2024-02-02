@@ -510,6 +510,7 @@ def create_document_map(course_name: str):
       return "Cannot create a map because there are less than 20 documents in the course."
   except Exception as e:
     print(e)
+    sentry_sdk.capture_exception(e)
     return "failed" 
   
 
@@ -542,6 +543,7 @@ def delete_from_document_map(course_name: str, ids: list):
     return "Successfully deleted from Nomic map"
   except Exception as e:
     print(e)
+    sentry_sdk.capture_exception(e)
     return "Error in deleting from document map: {e}"
 
 def log_to_document_map(data: dict):
@@ -601,6 +603,7 @@ def log_to_document_map(data: dict):
 
   except Exception as e:
     print(e)
+    sentry_sdk.capture_exception(e)
     return "Error in appending to map: {e}"
     
 
