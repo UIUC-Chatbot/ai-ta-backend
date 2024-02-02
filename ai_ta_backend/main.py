@@ -1,5 +1,6 @@
 import gc
 import os
+import threading
 import time
 from typing import List
 
@@ -44,6 +45,8 @@ executor = Executor(app)
 load_dotenv()
 
 ray.init()
+
+print("NUM ACTIVE THREADS (top of main):", threading.active_count())
 
 
 @app.route('/')
@@ -164,8 +167,11 @@ def getTopContexts() -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
+  print("NUM ACTIVE THREADS (top of getTopContexts):", threading.active_count())
+
   ingester = Ingest()
   found_documents = ingester.getTopContexts(search_query, course_name, token_limit)
+  print("NUM ACTIVE THREADS (after instantiating Ingest() class in getTopContexts):", threading.active_count())
   del ingester
 
   response = jsonify(found_documents)
