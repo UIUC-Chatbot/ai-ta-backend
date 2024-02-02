@@ -154,8 +154,8 @@ def filter_top_contexts(contexts,
 
   print("NUM ACTIVE THREADS (top of filtering_contexts):", threading.active_count())
 
-  max_concurrency = 20
-  print("HARD CODED MAX CONCURRENCY TO 20 --- Max concurrency:", max_concurrency)
+  max_concurrency = min(100, len(contexts))
+  print("max_concurrency is max of 100, or len(contexts), whichever is less ---- Max concurrency:", max_concurrency)
   print("Num contexts to filter:", len(contexts))
 
   # START TASKS
