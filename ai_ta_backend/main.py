@@ -21,7 +21,7 @@ import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.export_data import export_convo_history_csv
-from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, create_document_map, add_to_document_map
+from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, create_document_map
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 
