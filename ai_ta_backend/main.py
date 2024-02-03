@@ -533,7 +533,7 @@ def nomic_map():
     # proper web error "400 Bad request"
     abort(400, description=f"Missing required parameter: 'course_name' and 'map_type' must be provided. Course name: `{course_name}`")
 
-  map_id = get_nomic_map(course_name)
+  map_id = get_nomic_map(course_name, map_type)
   print("nomic map\n", map_id)
 
   response = jsonify(map_id)

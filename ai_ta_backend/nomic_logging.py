@@ -539,7 +539,8 @@ def delete_from_document_map(course_name: str, ids: list):
 
     # delete the ids from Nomic
     print("Deleting point from document map:", project.delete_data(ids))
-    project.rebuild_maps()
+    with project.wait_for_project_lock():
+      project.rebuild_maps()
     return "Successfully deleted from Nomic map"
   except Exception as e:
     print(e)
@@ -598,7 +599,9 @@ def log_to_document_map(data: dict):
     # append to existing map
     project_name = "Document Map for " + course_name
     result = append_to_map(embeddings, metadata, project_name)
-    project.rebuild_maps()
+
+    with project.wait_for_project_lock():
+      project.rebuild_maps()
     return result
 
   except Exception as e:
