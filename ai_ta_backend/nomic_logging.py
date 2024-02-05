@@ -439,7 +439,7 @@ def create_document_map(course_name: str):
       while curr_total_doc_count < total_doc_count:
 
         print("Fetching data from id: ", first_id)
-        response = supabase_client.table("documents").select("id, created_at, s3_path, readable_filename, contexts").eq("course_name", course_name).gte(
+        response = supabase_client.table("documents").select("id, created_at, s3_path, url, readable_filename, contexts").eq("course_name", course_name).gte(
           'id', first_id).order('id', desc=False).limit(25).execute()
         df = pd.DataFrame(response.data)
         combined_dfs.append(df) # list of dfs
@@ -574,7 +574,7 @@ def log_to_document_map(data: dict):
 
     
     project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
-    print("Inserted data: ", data)  
+    #print("Inserted data: ", data)  
     
     embeddings = []
     metadata = []
@@ -585,9 +585,9 @@ def log_to_document_map(data: dict):
       embeddings.append(row['embedding'])
       metadata.append({
         "id": str(data['id']) + "_" + str(context_count),
-        #"id": "4321" + "_" + str(context_count),
         "doc_ingested_at": data['created_at'],
         "s3_path": data['s3_path'],
+        "url": data['url'], 
         "readable_filename": data['readable_filename'],
         "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "text": row['text']
@@ -600,8 +600,13 @@ def log_to_document_map(data: dict):
     project_name = "Document Map for " + course_name
     result = append_to_map(embeddings, metadata, project_name)
 
-    with project.wait_for_project_lock():
-      project.rebuild_maps()
+    # check if project is accepting new datums
+    if project.is_accepting_data:
+      with project.wait_for_project_lock():
+        project.rebuild_maps()
+
+    # with project.wait_for_project_lock():
+    #   project.rebuild_maps()
     return result
 
   except Exception as e:
@@ -679,12 +684,14 @@ def data_prep_for_doc_map(df: pd.DataFrame):
     for context in row['contexts']:
       context_count += 1
       text_row = context['text']
+      print("Length of single embedding: ", len(context['embedding']))
       embeddings_row = context['embedding']
       
       meta_row = {
         "id": str(row['id']) + "_" + str(context_count),
         "doc_ingested_at": row['created_at'],
         "s3_path": row['s3_path'],
+        "url": row['url'],
         "readable_filename": row['readable_filename'],
         "created_at": current_time,
         "text": text_row
