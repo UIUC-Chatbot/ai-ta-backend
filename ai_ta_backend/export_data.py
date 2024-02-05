@@ -6,6 +6,17 @@ import supabase
 import sentry_sdk
 
 
+def export_documents_csv(course_name: str, from_date='', to_date=''):
+  """
+  This function exports the documents to a csv file.
+  Args:
+      course_name (str): The name of the course.
+      from_date (str, optional): The start date for the data export. Defaults to ''.
+      to_date (str, optional): The end date for the data export. Defaults to ''.
+  """
+
+  return "success"
+
 def export_convo_history_csv(course_name: str, from_date='', to_date=''):
   """
   This function exports the conversation history to a csv file.
