@@ -11,13 +11,13 @@ itsdangerous==2.1.2
 wheel==0.41.3
 Flask==3.0.0
 gunicorn==21.2.0
-tiktoken==0.5.1
+tiktoken==0.5.2
 Jinja2==3.1.2
 python-dotenv==1.0.0
 flask-cors==4.0.0
 qdrant-client==1.6.4
 mkdocs==1.5.3
-openai==0.28.1
+openai==1.10.0
 supabase==2.0.2
 SQLAlchemy==2.0.22
 boto3==1.28.79
@@ -65,3 +65,4 @@ PyGithub==2.1.1
 playwright==1.40.0
 langgraph==0.0.16
 langchain-openai==0.0.5
+google-search-results==2.4.2
