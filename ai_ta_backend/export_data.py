@@ -54,7 +54,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
     first_id = response.data[0]['id']
     last_id = response.data[-1]['id']
     curr_doc_count = 0
-    filename = course_name + '_' + str(uuid.uuid4()) + '_documents.csv'
+    filename = course_name + '_' + str(uuid.uuid4()) + '_documents.json'
     file_path = os.path.join(os.getcwd(), filename)
 
     while curr_doc_count < total_doc_count:
@@ -64,9 +64,9 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       df = pd.DataFrame(response.data)
 
       if not os.path.isfile(file_path):
-        df.to_csv(file_path, mode='a', header=True, index=False)
+        df.to_json(file_path, orient='records')
       else:
-        df.to_csv(file_path, mode='a', header=False, index=False)
+        df.to_json(file_path, orient='records', lines=True, mode='a')
 
       first_id = response.data[-1]['id'] + 1
       curr_doc_count += len(response.data)
@@ -145,9 +145,9 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
       df = pd.DataFrame(response.data)
       # Append to csv file
       if not os.path.isfile(file_path):
-        df.to_csv(file_path, mode='a', header=True, index=False)
+        df.to_json(file_path, orient='records', lines=True)
       else:
-        df.to_csv(file_path, mode='a', header=False, index=False)
+        df.to_json(file_path, orient='records', lines=True, mode='a')
 
       # Update first_id
       first_id = response.data[-1]['id'] + 1
