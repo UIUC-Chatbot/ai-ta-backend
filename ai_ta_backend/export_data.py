@@ -20,6 +20,11 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       to_date (str, optional): The end date for the data export. Defaults to ''.
   """
   print("Exporting documents to csv file...")
+  print("course_name: ", course_name)
+  print("from_date: ", from_date)
+  print("to_date: ", to_date)
+  
+
 
   if from_date != '' and to_date != '':
     # query between the dates
@@ -47,6 +52,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
     total_doc_count = response.count
     first_id = response.data[0]['id']
     last_id = response.data[-1]['id']
+    
     curr_doc_count = 0
     filename = course_name + '_' + str(uuid.uuid4()) + '_documents.csv'
     file_path = os.path.join(os.getcwd(), filename)
@@ -82,6 +88,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       return "Error downloading file"
 
   else:
+    
     return "No data found between the dates"
 
 
@@ -95,8 +102,7 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
       to_date (str, optional): The end date for the data export. Defaults to ''.
   """
   print("Exporting conversation history to csv file...")
-
-
+  
   if from_date == '' and to_date == '':
     # Get all data
     print("No dates")
