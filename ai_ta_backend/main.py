@@ -621,5 +621,40 @@ def getTopContextsWithMQR() -> Response:
   return response
 
 
+@app.route('/resource-report', methods=['GET'])
+def resource_report() -> Response:
+  """
+  Print server resources.
+  # https://manpages.debian.org/bookworm/manpages-dev/getrlimit.2.en.html
+  """
+  import resource
+  from resource import getrusage, RUSAGE_SELF, RUSAGE_CHILDREN
+  print("👇👇👇👇👇👇👇👇👇 <RESOURCE REPORT> 👇👇👇👇👇👇👇👇👇")
+  print("NUM ACTIVE THREADS (top of /resource-report):", threading.active_count())
+  print("RLIMIT_NPROC: ", resource.getrlimit(resource.RLIMIT_NPROC))
+  print("RLIMIT_AS: ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_AS)])
+  print("RLIMIT_DATA: ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_DATA)])
+  print("RLIMIT_STACK: ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_STACK)])
+  print("RLIMIT_MEMLOCK: ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_MEMLOCK)
+                            ])  # The maximum address space which may be locked in memory.
+
+  print("RUSAGE_SELF", getrusage(RUSAGE_SELF))
+  print()
+  print("RUSAGE_CHILDREN", getrusage(RUSAGE_CHILDREN))
+  print("resource.getpagesize()", resource.getpagesize() / (1024 * 1024))
+
+  try:
+    print("RUSAGE_THREAD: ", resource.getrlimit(resource.RUSAGE_THREAD))
+  except Exception as e:
+    pass
+    # print("Error in RUSAGE_THREAD: ", e)
+
+  print("👆👆👆👆👆👆👆👆👆 </RESOURCE REPORT> 👆👆👆👆👆👆👆👆👆")
+
+  response = jsonify({"outcome": "success"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 if __name__ == '__main__':
   app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression
