@@ -57,25 +57,36 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
     total_doc_count = response.count
     first_id = response.data[0]['id']
     last_id = response.data[-1]['id']
+
+    print("total_doc_count: ", total_doc_count)
+    print("first_id: ", first_id)
+    print("last_id: ", last_id)
+    
+    # make directory
+    # if not os.path.exists('exported_files'):
+    #   os.makedirs('exported_files')
     
     curr_doc_count = 0
     filename = course_name + '_' + str(uuid.uuid4()) + '_documents.json'
-    file_path = os.path.join(os.getcwd(), filename)
-
+    file_path = os.path.join('exported_files', filename)
+    files_created = []
+    files_created.append(file_path)
     while curr_doc_count < total_doc_count:
       print("Fetching data from id: ", first_id)
-      response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).gte('id', first_id).lte(
-          'id', last_id).order('id', desc=False).limit(25).execute()
+      response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).gte('id', first_id).order('id', desc=False).limit(100).execute()
       df = pd.DataFrame(response.data)
-
+      curr_doc_count += len(response.data)
+            
+      # writing to file
       if not os.path.isfile(file_path):
         df.to_json(file_path, orient='records')
       else:
         df.to_json(file_path, orient='records', lines=True, mode='a')
 
+      #print("len: ", len(response.data))
       if len(response.data) > 0:
         first_id = response.data[-1]['id'] + 1
-        curr_doc_count += len(response.data)
+        
 
     # Download file
     try:
@@ -87,7 +98,6 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
         zipf.write(file_path, filename)
 
       os.remove(file_path)
-
       return (zip_file_path, zip_filename, os.getcwd())
     except Exception as e:
       print(e)
