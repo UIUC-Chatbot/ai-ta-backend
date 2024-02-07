@@ -422,7 +422,7 @@ def scrape() -> Response:
   print(f"Stay on BaseURL: {stay_on_baseurl}")
   print(f"Timeout in Seconds ⏰: {timeout}")
 
-  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   posthog.capture('distinct_id_of_the_user',
                   event='web_scrape_invoked',
                   properties={
@@ -602,7 +602,7 @@ def getTopContextsWithMQR() -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   posthog.capture('distinct_id_of_the_user',
                   event='filter_top_contexts_invoked',
                   properties={
