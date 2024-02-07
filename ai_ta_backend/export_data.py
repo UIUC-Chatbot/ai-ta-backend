@@ -144,16 +144,20 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
     print("id count greater than zero")
     first_id = response.data[0]['id']
     last_id = response.data[-1]['id']
+    total_count = response.count
 
     filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.csv'
     file_path = os.path.join(os.getcwd(), filename)
+    curr_count = 0
     # Fetch data in batches of 25 from first_id to last_id
-    while first_id <= last_id:
+    while curr_count < total_count:
       print("Fetching data from id: ", first_id)
       response = SUPABASE_CLIENT.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
           'id', first_id).lte('id', last_id).order('id', desc=False).limit(25).execute()
       # Convert to pandas dataframe
       df = pd.DataFrame(response.data)
+      curr_count += len(response.data)
+      
       # Append to csv file
       if not os.path.isfile(file_path):
         df.to_json(file_path, orient='records', lines=True)
