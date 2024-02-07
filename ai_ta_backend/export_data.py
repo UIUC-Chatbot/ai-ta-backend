@@ -68,7 +68,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
     
     curr_doc_count = 0
     filename = course_name + '_' + str(uuid.uuid4()) + '_documents.json'
-    file_path = os.path.join('exported_files', filename)
+    file_path = os.path.join(os.getcwd(), filename)
     files_created = []
     files_created.append(file_path)
     while curr_doc_count < total_doc_count:
@@ -157,7 +157,7 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
       # Convert to pandas dataframe
       df = pd.DataFrame(response.data)
       curr_count += len(response.data)
-      
+
       # Append to csv file
       if not os.path.isfile(file_path):
         df.to_json(file_path, orient='records', lines=True)
