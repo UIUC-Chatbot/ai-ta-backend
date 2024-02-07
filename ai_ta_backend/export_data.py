@@ -94,7 +94,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       sentry_sdk.capture_exception(e)
       return "Error downloading file"
   else:
-    return "No data found between the dates"
+    return "No data found between the given dates."
 
 
 def export_convo_history_csv(course_name: str, from_date='', to_date=''):
