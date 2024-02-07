@@ -620,6 +620,7 @@ def getTopContextsWithMQR() -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/exportDocuments', methods=['GET'])
 def exportDocuments() -> Response:
   """
@@ -631,12 +632,10 @@ def exportDocuments() -> Response:
 
   if course_name == '':
     # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'course_name' must be provided. Course name: `{course_name}`"
-    )
-  
+    abort(400,
+          description=
+          f"Missing one or more required parameters: 'course_name' must be provided. Course name: `{course_name}`")
+
   export_status = export_documents_csv(course_name, from_date, to_date)
   print("EXPORT FILE LINKS: ", export_status)
 
@@ -646,7 +645,6 @@ def exportDocuments() -> Response:
 
   os.remove(export_status[0])
   return response
-
 
 
 if __name__ == '__main__':
