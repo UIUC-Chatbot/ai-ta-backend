@@ -641,6 +641,27 @@ def resource_report() -> Response:
   except Exception as e:
     print("Error executing ulimit -a: ", e)
 
+  try:
+    with open('/etc/security/limits.conf', 'r') as file:
+      print("/etc/security/limits.conf:\n", file.read())
+  except Exception as e:
+    print("Error reading /etc/security/limits.conf: ", e)
+
+  try:
+    with open('/proc/sys/kernel/threads-max', 'r') as file:
+      print("/proc/sys/kernel/threads-max: ", file.read())
+  except Exception as e:
+    print("Error reading /proc/sys/kernel/threads-max: ", e)
+
+  # Check container or virtualization platform limits if applicable
+  # This is highly dependent on the specific platform and setup
+  # Here is an example for Docker, adjust as needed for your environment
+  try:
+    result = subprocess.run('docker stats --no-stream', shell=True, stdout=subprocess.PIPE)
+    print("Docker stats:\n", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error getting Docker stats: ", e)
+
   print("RLIMIT_NPROC: ", resource.getrlimit(resource.RLIMIT_NPROC))
   print("RLIMIT_AS (GB): ", [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_AS)])
   print("RLIMIT_DATA (GB): ", [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_DATA)])
@@ -654,14 +675,14 @@ def resource_report() -> Response:
   print("RUSAGE_CHILDREN", getrusage(RUSAGE_CHILDREN), end="\n")
 
   try:
-    result = subprocess.run(['ulimit', '-u'], stdout=subprocess.PIPE)
+    result = subprocess.run('ulimit -u', shell=True, stdout=subprocess.PIPE)
     print("ulimit -u: ", result.stdout.decode('utf-8'))
   except Exception as e:
     print("Error executing ulimit -u: ", e)
 
   try:
-    result = subprocess.run(['ulimit', '-a'], stdout=subprocess.PIPE)
-    print("ulimit -a:\n", result.stdout.decode('utf-8'))
+    result = subprocess.run('ulimit -a', shell=True, stdout=subprocess.PIPE)
+    print(f"ulimit -a:\n{result.stdout.decode('utf-8')}")
   except Exception as e:
     print("Error executing ulimit -a: ", e)
 
