@@ -629,19 +629,41 @@ def resource_report() -> Response:
   """
   import resource
   from resource import getrusage, RUSAGE_SELF, RUSAGE_CHILDREN
-  print("👇👇👇👇👇👇👇👇👇 <RESOURCE REPORT> 👇👇👇👇👇👇👇👇👇")
-  print("NUM ACTIVE THREADS (top of /resource-report):", threading.active_count())
-  print("RLIMIT_NPROC: ", resource.getrlimit(resource.RLIMIT_NPROC))
-  print("RLIMIT_AS: ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_AS)])
-  print("RLIMIT_DATA: ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_DATA)])
-  print("RLIMIT_STACK: ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_STACK)])
-  print("RLIMIT_MEMLOCK: ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_MEMLOCK)
-                            ])  # The maximum address space which may be locked in memory.
+  import subprocess
 
-  print("RUSAGE_SELF", getrusage(RUSAGE_SELF))
-  print()
-  print("RUSAGE_CHILDREN", getrusage(RUSAGE_CHILDREN))
-  print("resource.getpagesize()", resource.getpagesize() / (1024 * 1024))
+  print("👇👇👇👇👇👇👇👇👇 <RESOURCE REPORT> 👇👇👇👇👇👇👇👇👇")
+
+  print("NUM ACTIVE THREADS (top of /resource-report):", threading.active_count())
+  try:
+    # result = subprocess.run(['ps', '-u', '$(whoami)', '|', 'wc', '-l'], stdout=subprocess.PIPE)
+    result = subprocess.run('ps -u $(whoami) | wc -l', shell=True, stdout=subprocess.PIPE)
+    print("Current active threads: ", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error executing ulimit -a: ", e)
+
+  print("RLIMIT_NPROC: ", resource.getrlimit(resource.RLIMIT_NPROC))
+  print("RLIMIT_AS (GB): ", [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_AS)])
+  print("RLIMIT_DATA (GB): ", [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_DATA)])
+  print("RLIMIT_MEMLOCK (GB): ",
+        [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_MEMLOCK)
+        ])  # The maximum address space which may be locked in memory.
+  print("RLIMIT_STACK (MB): ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_STACK)])
+  print("getpagesize (MB): ", resource.getpagesize() / (1024 * 1024))
+
+  print("RUSAGE_SELF", getrusage(RUSAGE_SELF), end="\n")
+  print("RUSAGE_CHILDREN", getrusage(RUSAGE_CHILDREN), end="\n")
+
+  try:
+    result = subprocess.run(['ulimit', '-u'], stdout=subprocess.PIPE)
+    print("ulimit -u: ", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error executing ulimit -u: ", e)
+
+  try:
+    result = subprocess.run(['ulimit', '-a'], stdout=subprocess.PIPE)
+    print("ulimit -a:\n", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error executing ulimit -a: ", e)
 
   try:
     print("RUSAGE_THREAD: ", resource.getrlimit(resource.RUSAGE_THREAD))
