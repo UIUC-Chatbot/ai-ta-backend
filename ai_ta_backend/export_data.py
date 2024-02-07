@@ -6,6 +6,10 @@ import pandas as pd
 import supabase
 import sentry_sdk
 
+# Initialize Supabase client
+SUPABASE_CLIENT = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+                                        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+
 
 def export_documents_csv(course_name: str, from_date='', to_date=''):
   """
@@ -24,25 +28,25 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
   if from_date != '' and to_date != '':
     # query between the dates
     print("from_date and to_date")
-    response = supabase_client.table("documents").select("id", count='exact').eq("course_name", course_name).gte(
+    response = SUPABASE_CLIENT.table("documents").select("id", count='exact').eq("course_name", course_name).gte(
         'created_at', from_date).lte('created_at', to_date).order('id', desc=False).execute()
 
   elif from_date != '' and to_date == '':
     # query from from_date to now
     print("only from_date")
-    response = supabase_client.table("documents").select("id", count='exact').eq("course_name", course_name).gte(
+    response = SUPABASE_CLIENT.table("documents").select("id", count='exact').eq("course_name", course_name).gte(
         'created_at', from_date).order('id', desc=False).execute()
 
   elif from_date == '' and to_date != '':
     # query from beginning to to_date
     print("only to_date")
-    response = supabase_client.table("documents").select("id", count='exact').eq("course_name", course_name).lte(
+    response = SUPABASE_CLIENT.table("documents").select("id", count='exact').eq("course_name", course_name).lte(
         'created_at', to_date).order('id', desc=False).execute()
 
   else:
     # query all data
     print("No dates")
-    response = supabase_client.table("documents").select("id",
+    response = SUPABASE_CLIENT.table("documents").select("id",
                                                          count='exact').eq("course_name",
                                                                            course_name).order('id',
                                                                                               desc=False).execute()
@@ -60,7 +64,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
 
     while curr_doc_count < total_doc_count:
       print("Fetching data from id: ", first_id)
-      response = supabase_client.table("documents").select("*").eq("course_name", course_name).gte('id', first_id).lte(
+      response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).gte('id', first_id).lte(
           'id', last_id).order('id', desc=False).limit(25).execute()
       df = pd.DataFrame(response.data)
 
@@ -69,8 +73,9 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       else:
         df.to_json(file_path, orient='records', lines=True, mode='a')
 
-      first_id = response.data[-1]['id'] + 1
-      curr_doc_count += len(response.data)
+      if len(response.data) > 0:
+        first_id = response.data[-1]['id'] + 1
+        curr_doc_count += len(response.data)
 
     # Download file
     try:
@@ -88,9 +93,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       print(e)
       sentry_sdk.capture_exception(e)
       return "Error downloading file"
-
   else:
-    
     return "No data found between the dates"
 
 
@@ -107,22 +110,22 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
   if from_date == '' and to_date == '':
     # Get all data
     print("No dates")
-    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+    response = SUPABASE_CLIENT.table("llm-convo-monitor").select("id", count='exact').eq(
         "course_name", course_name).order('id', desc=False).execute()
   elif from_date != '' and to_date == '':
     print("only from_date")
     # Get data from from_date to now
-    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+    response = SUPABASE_CLIENT.table("llm-convo-monitor").select("id", count='exact').eq(
         "course_name", course_name).gte('created_at', from_date).order('id', desc=False).execute()
   elif from_date == '' and to_date != '':
     print("only to_date")
     # Get data from beginning to to_date
-    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+    response = SUPABASE_CLIENT.table("llm-convo-monitor").select("id", count='exact').eq(
         "course_name", course_name).lte('created_at', to_date).order('id', desc=False).execute()
   else:
     print("both from_date and to_date")
     # Get data from from_date to to_date
-    response = supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+    response = SUPABASE_CLIENT.table("llm-convo-monitor").select("id", count='exact').eq(
         "course_name", course_name).gte('created_at', from_date).lte('created_at', to_date).order('id',
                                                                                                   desc=False).execute()
 
@@ -137,7 +140,7 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
     # Fetch data in batches of 25 from first_id to last_id
     while first_id <= last_id:
       print("Fetching data from id: ", first_id)
-      response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
+      response = SUPABASE_CLIENT.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
           'id', first_id).lte('id', last_id).order('id', desc=False).limit(25).execute()
       # Convert to pandas dataframe
       df = pd.DataFrame(response.data)
@@ -148,8 +151,9 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
         df.to_json(file_path, orient='records', lines=True, mode='a')
 
       # Update first_id
-      first_id = response.data[-1]['id'] + 1
-      print("updated first_id: ", first_id)
+      if len(response.data) > 0:
+        first_id = response.data[-1]['id'] + 1
+        print("updated first_id: ", first_id)
 
     # Download file
     try:

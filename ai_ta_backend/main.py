@@ -639,11 +639,16 @@ def exportDocuments() -> Response:
   export_status = export_documents_csv(course_name, from_date, to_date)
   print("EXPORT FILE LINKS: ", export_status)
 
-  response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
-
-  os.remove(export_status[0])
+  if export_status == "No data found between the given dates.":
+    response = Response(status=204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    
+  else:
+    response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
+    os.remove(export_status[0])
+  
   return response
 
 
