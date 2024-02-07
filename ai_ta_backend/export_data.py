@@ -87,7 +87,6 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       if len(response.data) > 0:
         first_id = response.data[-1]['id'] + 1
         
-
     # Download file
     try:
       # zip file
