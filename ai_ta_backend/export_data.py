@@ -1,7 +1,7 @@
 import os
 import uuid
 import zipfile
-
+import io
 import pandas as pd
 import supabase
 import sentry_sdk
@@ -11,6 +11,7 @@ SUPABASE_CLIENT = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'),
                                         supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
 
+
 def export_documents_csv(course_name: str, from_date='', to_date=''):
   """
   This function exports the documents to a csv file.
@@ -18,12 +19,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       course_name (str): The name of the course.
       from_date (str, optional): The start date for the data export. Defaults to ''.
       to_date (str, optional): The end date for the data export. Defaults to ''.
-  """
-  print("Exporting documents to csv file...")
-  print("course_name: ", course_name)
-  print("from_date: ", from_date)
-  print("to_date: ", to_date)
-  
+  """ 
 
   if from_date != '' and to_date != '':
     # query between the dates
@@ -62,10 +58,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
     print("first_id: ", first_id)
     print("last_id: ", last_id)
     
-    # make directory
-    # if not os.path.exists('exported_files'):
-    #   os.makedirs('exported_files')
-    
+        
     curr_doc_count = 0
     filename = course_name + '_' + str(uuid.uuid4()) + '_documents.json'
     file_path = os.path.join(os.getcwd(), filename)
@@ -96,7 +89,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       with zipfile.ZipFile(zip_file_path, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
         zipf.write(file_path, filename)
 
-      os.remove(file_path)
+      #os.remove(file_path)
       return (zip_file_path, zip_filename, os.getcwd())
     except Exception as e:
       print(e)

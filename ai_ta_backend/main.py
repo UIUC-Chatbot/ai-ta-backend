@@ -13,6 +13,7 @@ from flask import (
     make_response,
     request,
     send_from_directory,
+    stream_with_context,
 )
 from flask_cors import CORS
 from flask_executor import Executor
@@ -40,6 +41,7 @@ app = Flask(__name__)
 CORS(app)
 executor = Executor(app)
 # app.config['EXECUTOR_MAX_WORKERS'] = 5 nothing == picks defaults for me
+#app.config['SERVER_TIMEOUT'] = 1000  # seconds
 
 # load API keys from globally-availabe .env file
 load_dotenv()
@@ -641,20 +643,63 @@ def exportDocuments() -> Response:
           description=
           f"Missing one or more required parameters: 'course_name' must be provided. Course name: `{course_name}`")
 
-  export_status = export_documents_csv(course_name, from_date, to_date)
-  print("EXPORT FILE LINKS: ", export_status)
+  def generate_export():
+    export_status = export_documents_csv(course_name, from_date, to_date)
+    print("EXPORT FILE LINKS: ", export_status)
+    return export_status
 
-  if export_status == "No data found between the given dates.":
-    response = Response(status=204)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    
-  else:
-    response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
-    os.remove(export_status[0])
+  def generate_response(export_status):
+    if export_status == "No data found between the given dates.":
+      response = Response(status=204)
+      response.headers.add('Access-Control-Allow-Origin', '*')
+    else:
+      response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
+      response.headers.add('Access-Control-Allow-Origin', '*')
+      response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
+      os.remove(export_status[0])
+    return response
   
-  return response
+  def keep_alive() -> Response:
+    """
+    Sends keep-alive signals to prevent time outs.
+    """
+    def generate():
+      while True:
+        yield b" "
+        time.sleep(10)
+    print("Keep-alive signal sent.")
+    return Response(stream_with_context(generate()))
+
+  # start export generation in a separate thread
+  export_thread = threading.Thread(target=generate_export)
+  export_thread.start()
+
+  # return a keep-alive response initially
+  keep_alive()
+
+  # check for export completion periodically and send the actual response
+  while export_thread.is_alive():
+    time.sleep(5)
+    if not export_thread.is_alive():
+      export_status = export_thread
+      
+      return generate_response(export_status)
+    
+  
+  # export_status = export_documents_csv(course_name, from_date, to_date)
+  # print("EXPORT FILE LINKS: ", export_status)
+
+  # if export_status == "No data found between the given dates.":
+  #   response = Response(status=204)
+  #   response.headers.add('Access-Control-Allow-Origin', '*')
+    
+  # else:
+  #   response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
+  #   response.headers.add('Access-Control-Allow-Origin', '*')
+  #   response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
+  #   os.remove(export_status[0])
+  
+  # return response
 
 
 if __name__ == '__main__':
