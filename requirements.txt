@@ -57,3 +57,4 @@ ray==2.8.1
 posthog==3.1.0
 sentry-sdk==1.39.1
 # newrelic==9.3.0
+ultralytics==8.1.0
