@@ -9,7 +9,9 @@
           "cmds": [
             "python -m venv --copies /opt/venv && . /opt/venv/bin/activate",
             "pip install pip==23.3.1",
-            "pip install -r requirements.txt"
+            "pip install -r requirements.txt",
+            "pip uninstall opencv-python"
+
           ],
           "aptPkgs": ["ffmpeg", "tesseract-ocr"]
         },
