@@ -666,8 +666,9 @@ def exportDocuments() -> Response:
     def generate():
       while True:
         yield b" "
+        print("Keep-alive signal sent.")
         time.sleep(10)
-    print("Keep-alive signal sent.")
+    
     return Response(stream_with_context(generate()))
 
   # start export generation in a separate thread
