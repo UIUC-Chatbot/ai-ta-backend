@@ -13,7 +13,6 @@ from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from langchain.callbacks.manager import tracing_v2_enabled
 from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
 from langchain.memory import ConversationSummaryBufferMemory
-from langchain.prompts import MessagesPlaceholder
 from langchain.prompts.chat import MessagesPlaceholder
 from langchain.utilities.github import GitHubAPIWrapper
 

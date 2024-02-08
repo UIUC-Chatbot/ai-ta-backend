@@ -1,5 +1,4 @@
 import io
-import threading
 import time
 import uuid
 from typing import Any, Optional, Tuple
@@ -17,11 +16,11 @@ class E2B_class():
   """
 
   def __init__(self, langsmith_run_id: str, env_vars: Optional[EnvVars] = None):
-    '''
+    """
     # TODOs:
     1. Maybe `git clone` the repo to a temp folder and run the code there
     2. On agent finish, delete sandbox
-    '''
+    """
 
     self.langsmith_run_id = langsmith_run_id
     try:
@@ -48,7 +47,7 @@ class E2B_class():
     try:
       self.sandbox.close()
     except Exception:
-      pass
+      print("Failed to close e2b sandbox, probably fine.")
 
   def install_base_packages(self):
     self.run_shell("pip install -U numpy pandas matplotlib seaborn scikit-learn scipy")

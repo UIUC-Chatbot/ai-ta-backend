@@ -9,7 +9,6 @@ from langchain.agents.agent_toolkits.github.toolkit import GitHubToolkit
 from langchain_openai import ChatOpenAI, AzureChatOpenAI
 from langchain_community.tools import VectorStoreQATool
 from langchain.tools import (BaseTool, StructuredTool)
-from langchain.tools.base import BaseTool
 # from langchain.tools.playwright.utils import (
 #     create_async_playwright_browser,
 #     create_sync_playwright_browser,
@@ -27,7 +26,7 @@ VERBOSE = True
 
 
 def get_tools(langsmith_run_id: str, sync=True):
-  '''Main function to assemble tools for ML for Bio project.'''
+  """Main function to assemble tools for ML for Bio project."""
 
   # CODE EXECUTION - langsmith_run_id as unique identifier for the sandbox
   code_execution_class = E2B_class(langsmith_run_id=langsmith_run_id)

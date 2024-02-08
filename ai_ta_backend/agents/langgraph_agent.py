@@ -1,8 +1,7 @@
 import getpass
-import operator
 import os
 import platform
-from typing import Annotated, TypedDict, Union
+from typing import TypedDict, Union
 
 from dotenv import load_dotenv
 from langchain import hub
