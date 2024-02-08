@@ -620,6 +620,39 @@ def getTopContextsWithMQR() -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/pest-detection', methods=['POST'])
+def pest_detection():
+    """
+    Endpoint to detect pests in an image using the pest detection plugin.
+    Expects a JSON payload with an 'image_url' key pointing to the image to be processed.
+    
+    Returns:
+        Response: A response containing the annotated image with bounding boxes and class labels.
+    """
+    data = request.get_json()
+    image_urls = data.get('image_urls', [])
+
+    if not image_urls:
+        abort(400, description="Missing 'image_urls' parameter in the request body.")
+
+    # Deduplicate the image urls
+    image_urls = list(set(image_urls))
+
+    try:
+        posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+        posthog.capture('distinct_id_of_the_user', event='pest_detection_invoked', properties={'image_urls': image_urls})
+        ingester = Ingest()
+        # Call the pest detection plugin function
+        annotated_images = ingester.run_pest_detection(image_urls)
+        del ingester
+        posthog.shutdown()
+        # Send the annotated image urls in the response
+        response = jsonify(annotated_images)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+
+        return response
+    except Exception as e:
+        abort(500, description=str(e))
 
 if __name__ == '__main__':
   app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression
