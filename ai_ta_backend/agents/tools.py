@@ -3,18 +3,12 @@ from typing import List
 
 import langchain
 
-# from autogen.code_utils import execute_code
 from dotenv import load_dotenv
 from langchain.agents import load_tools
-from langchain.agents.agent_toolkits import (
-    PlayWrightBrowserToolkit,)
 from langchain.agents.agent_toolkits.github.toolkit import GitHubToolkit
-from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
-from langchain.tools import (
-    BaseTool,
-    StructuredTool,
-    VectorStoreQATool,
-)
+from langchain_openai import ChatOpenAI, AzureChatOpenAI
+from langchain_community.tools import VectorStoreQATool
+from langchain.tools import (BaseTool, StructuredTool)
 from langchain.tools.base import BaseTool
 # from langchain.tools.playwright.utils import (
 #     create_async_playwright_browser,
@@ -39,8 +33,8 @@ def get_tools(langsmith_run_id: str, sync=True):
   code_execution_class = E2B_class(langsmith_run_id=langsmith_run_id)
   e2b_code_execution_tool = StructuredTool.from_function(
       func=code_execution_class.run_python_code,
-      name="Code Execution",
-      description="Executes code in an safe Docker container.",
+      name="Python Code Execution",
+      description="Executes Python3 code in an safe Docker container.",
   )
   e2b_shell_tool = StructuredTool.from_function(
       func=code_execution_class.run_shell,
@@ -72,11 +66,13 @@ def get_tools(langsmith_run_id: str, sync=True):
 
   # HUMAN
   if os.environ['OPENAI_API_TYPE'] == 'azure':
-    AzureChatOpenAI(temperature=0.1,
-                    model="gpt-4-0613",
-                    max_retries=3,
-                    request_timeout=60 * 3,
-                    deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
+    AzureChatOpenAI(
+        temperature=0.1,
+        model="gpt-4-1106-Preview",
+    )
+    # max_retries=3,
+    # request_timeout=60 * 3,
+    # deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
   else:
     ChatOpenAI(temperature=0.1, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
   # human_tools = load_tools(["human"], llm=llm, input_func=get_human_input)

@@ -11,13 +11,11 @@ itsdangerous==2.1.2
 wheel==0.41.3
 Flask==3.0.0
 gunicorn==21.2.0
-tiktoken==0.5.2
 Jinja2==3.1.2
 python-dotenv==1.0.0
 flask-cors==4.0.0
 qdrant-client==1.6.4
 mkdocs==1.5.3
-openai==1.10.0
 supabase==2.0.2
 SQLAlchemy==2.0.22
 boto3==1.28.79
@@ -56,13 +54,18 @@ sentry-sdk==1.39.1
 # langchain==0.0.331
 git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain&subdirectory=libs/langchain
 git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain-experimental&subdirectory=libs/experimental
-langchainhub==0.1.14
+langgraph==0.0.*
+langchainhub==0.1.*
+langchain-community==0.0.*
+langsmith==0.0.*
+langchain-openai==0.0.5
+openai==1.10.0
 
 # pyautogen
-e2b==0.13.13
+# openai==0.28.1
+tiktoken==0.5.2
+e2b==0.14.1
+google-search-results==2.4.2
 termcolor==2.3.0
 PyGithub==2.1.1
 playwright==1.40.0
-langgraph==0.0.16
-langchain-openai==0.0.5
-google-search-results==2.4.2

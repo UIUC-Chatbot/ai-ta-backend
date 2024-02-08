@@ -6,7 +6,9 @@ from typing import Annotated, TypedDict, Union
 
 from dotenv import load_dotenv
 from langchain import hub
-from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+# from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain_openai import ChatOpenAI, AzureChatOpenAI
+
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.messages import BaseMessage
 from langchain_experimental.plan_and_execute import (
@@ -14,12 +16,11 @@ from langchain_experimental.plan_and_execute import (
     load_agent_executor,
     load_chat_planner,
 )
-from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolExecutor
 
 from ai_ta_backend.agents.tools import get_tools
-from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
+# from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 
 load_dotenv(override=True)
 
@@ -51,18 +52,18 @@ class WorkflowAgent:
   def __init__(self, langsmith_run_id):
     self.langsmith_run_id = langsmith_run_id
     if os.environ['OPENAI_API_TYPE'] == 'azure':
-      self.llm = AzureChatOpenAI(temperature=0,
-                                 model="gpt-4-0613",
-                                 max_retries=3,
-                                 request_timeout=60 * 3,
-                                 deployment_name=os.environ['AZURE_OPENAI_ENGINE'],
-                                 streaming=True)  # type: ignore
+
+      self.llm = AzureChatOpenAI(
+          azure_deployment="gpt-4-32k",
+          openai_api_version="2023-05-15",
+      )
     else:
-      self.llm: ChatOpenAI = ChatOpenAI(temperature=0,
-                                        model="gpt-4-0613",
-                                        max_retries=500,
-                                        request_timeout=60 * 3,
-                                        streaming=True)  # type: ignore
+      self.llm: ChatOpenAI = ChatOpenAI(
+          temperature=0,
+          model="gpt-4-0613",
+          max_retries=500,
+          # request_timeout=60 * 3,
+          streaming=True)
     self.tools = get_tools(langsmith_run_id=self.langsmith_run_id)
     self.agent = self.make_agent()
 
@@ -72,11 +73,14 @@ class WorkflowAgent:
         self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
 
     # EXECUTOR
-    executor = load_agent_executor(self.llm,
-                                   self.tools,
-                                   verbose=True,
-                                   trim_intermediate_steps=fancier_trim_intermediate_steps,
-                                   handle_parsing_errors=True)
+    executor = load_agent_executor(
+        self.llm,
+        self.tools,
+        verbose=True,
+    )
+    #  trim_intermediate_steps=fancier_trim_intermediate_steps,
+    #  handle_parsing_errors=True)
+
     # executor = load_agent_executor(self.llm, tools, verbose=True, handle_parsing_errors=True)
 
     # Create PlanAndExecute Agent

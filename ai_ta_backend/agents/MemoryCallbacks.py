@@ -5,6 +5,7 @@ from langchain.agents import AgentType, initialize_agent, load_tools
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.llms import OpenAI
 from langchain.schema import AgentAction, AgentFinish
+import os
 
 
 class MemoryCallbackHandler(BaseCallbackHandler):

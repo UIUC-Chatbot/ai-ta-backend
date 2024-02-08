@@ -6,11 +6,10 @@ import langchain
 from dotenv import load_dotenv
 from langchain.agents import AgentType, Tool, initialize_agent
 from langchain.agents.react.base import DocstoreExplorer
-from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings, ChatOpenAI, OpenAIEmbeddings
 from langchain.docstore.base import Docstore
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.tools import VectorStoreQATool
-from langchain.vectorstores import Qdrant
+from langchain_community.tools import VectorStoreQATool
+from langchain_community.vectorstores import Qdrant
 from qdrant_client import QdrantClient
 
 load_dotenv(override=True)
@@ -46,7 +45,7 @@ def get_vectorstore_retriever_tool(course_name: str,
     langchain_docs_vectorstore = Qdrant(
         client=qdrant_client,
         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
-        embeddings=OpenAIEmbeddings())
+        embeddings=AzureOpenAIEmbeddings() if os.environ['OPENAI_API_TYPE'] == 'azure' else OpenAIEmbeddings())
 
     return VectorStoreQATool(
         vectorstore=langchain_docs_vectorstore,
@@ -60,7 +59,7 @@ def get_vectorstore_retriever_tool(course_name: str,
   except Exception as e:
     # return full traceback to front end
     print(
-        f"In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"
+        f"In /getTopContexts. Course: {course_name} \nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"
     )  # type: ignore
     raise e
 
