@@ -1,7 +1,8 @@
 import getpass
 import os
 import platform
-from typing import TypedDict, Union
+import operator
+from typing import TypedDict, Annotated, Union
 
 from dotenv import load_dotenv
 from langchain import hub
@@ -42,8 +43,9 @@ class AgentState(TypedDict):
   # Needs `None` as a valid type, since this is what this will start as
   agent_outcome: Union[AgentAction, AgentFinish, None]
   # intermediate steps are present in agent input arg as well
-  #intermediate_steps: Annotated[list[tuple[AgentAction, str]], operator.add]
+  intermediate_steps: Annotated[list[tuple[AgentAction, str]], operator.add]
   plan: Union[list[str], None]
+  # agent_scratchpad: Annotated[list[tuple[AgentAction, str]], operator.add]
 
 
 class WorkflowAgent:
@@ -51,7 +53,6 @@ class WorkflowAgent:
   def __init__(self, langsmith_run_id):
     self.langsmith_run_id = langsmith_run_id
     if os.environ['OPENAI_API_TYPE'] == 'azure':
-
       self.llm = AzureChatOpenAI(
           azure_deployment="gpt-4-32k",
           openai_api_version="2023-05-15",
@@ -75,12 +76,9 @@ class WorkflowAgent:
     executor = load_agent_executor(
         self.llm,
         self.tools,
-        verbose=True,
+        trim_intermediate_steps = 1,
+        handle_parsing_errors = True
     )
-    #  trim_intermediate_steps=fancier_trim_intermediate_steps,
-    #  handle_parsing_errors=True)
-
-    # executor = load_agent_executor(self.llm, tools, verbose=True, handle_parsing_errors=True)
 
     # Create PlanAndExecute Agent
     workflow_agent = PlanAndExecute(planner=planner, executor=executor, verbose=True)
@@ -95,9 +93,9 @@ class WorkflowAgent:
   # Define the function to execute tools
   def execute_tools(self, data):
     # Get the most recent agent_outcome - this is the key added in the `agent` above
-    agent_action = data['agent_outcome']
+    agent_action = data.pop('agent_outcome')
     tool_executor = ToolExecutor(self.tools)
-    output = tool_executor.invoke(agent_action)
+    output = tool_executor.invoke(agent_action.tool_input)
     return {"intermediate_steps": [(agent_action, str(output))]}
 
   # Define logic that will be used to determine which conditional edge to go down
@@ -142,6 +140,10 @@ class WorkflowAgent:
 
     key, value = '', ''
     inputs = {"input": input_prompt, "chat_history": [], "intermediate_steps": []}
+    # result = app.invoke(inputs)
+    # print("RESULT", result)
+    # output = result['agent_outcome'].return_values["output"]
+    # print(output)
     for output in app.stream(inputs):
       # stream() yields dictionaries with output keyed by node name
       for key, value in output.items():
