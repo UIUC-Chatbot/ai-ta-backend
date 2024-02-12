@@ -47,9 +47,25 @@ def get_vectorstore_retriever_tool(course_name: str,
         collection_name=os.getenv('QDRANT_COLLECTION_NAME'),  # type: ignore
         embeddings=AzureOpenAIEmbeddings() if os.environ['OPENAI_API_TYPE'] == 'azure' else OpenAIEmbeddings())
 
+    if os.environ['OPENAI_API_TYPE'] == 'azure':
+      llm = AzureChatOpenAI(
+          temperature=0,
+          model="gpt-4-0613",
+          max_retries=3,
+          request_timeout=60 * 3,
+          deployment_name=os.environ['AZURE_OPENAI_ENGINE']
+      )
+    else:
+      llm: ChatOpenAI = ChatOpenAI(
+          temperature=0,
+          model="gpt-4-0613",
+          max_retries=500,
+          # request_timeout=60 * 3,
+          streaming=True)
+
     return VectorStoreQATool(
         vectorstore=langchain_docs_vectorstore,
-        llm=ChatOpenAI(model_name=openai_model_name, temperature=temperature),  # type: ignore
+        llm=llm,  # type: ignore
         name=name,
         description=description,
         retriever_kwargs={'filter': {
