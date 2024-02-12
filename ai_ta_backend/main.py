@@ -3,6 +3,9 @@ import os
 import threading
 import time
 from typing import List
+import requests
+from threading import Thread
+
 
 from dotenv import load_dotenv
 from flask import (
@@ -22,7 +25,7 @@ import ray
 import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
-from ai_ta_backend.export_data import export_convo_history_csv, export_documents_csv
+from ai_ta_backend.export_data import export_convo_history_csv, export_documents_csv, check_s3_path_and_download
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
@@ -643,64 +646,45 @@ def exportDocuments() -> Response:
           description=
           f"Missing one or more required parameters: 'course_name' must be provided. Course name: `{course_name}`")
 
-  def generate_export():
-    export_status = export_documents_csv(course_name, from_date, to_date)
-    print("EXPORT FILE LINKS: ", export_status)
-    return export_status
+  export_status = export_documents_csv(course_name, from_date, to_date)
+  print("EXPORT FILE LINKS: ", export_status)
 
-  def generate_response(export_status):
-    if export_status == "No data found between the given dates.":
-      response = Response(status=204)
-      response.headers.add('Access-Control-Allow-Origin', '*')
-    else:
-      response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
-      response.headers.add('Access-Control-Allow-Origin', '*')
-      response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
-      os.remove(export_status[0])
-    return response
+  if export_status['response'] == "No data found between the given dates.":
+    response = Response(status=204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  elif export_status['response'] == "Download from S3":
+    response = jsonify({"response": "Download from S3", "s3_path": export_status['s3_path']})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  else:
+    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
+    os.remove(export_status['response'][0])
   
-  def keep_alive() -> Response:
-    """
-    Sends keep-alive signals to prevent time outs.
-    """
-    def generate():
-      while True:
-        yield b" "
-        print("Keep-alive signal sent.")
-        time.sleep(10)
-    
-    return Response(stream_with_context(generate()))
+  return response
 
-  # start export generation in a separate thread
-  export_thread = threading.Thread(target=generate_export)
-  export_thread.start()
+@app.route('/getExportFromS3', methods=['GET'])
+def getExportFromS3() -> Response:
+  """
+  Downloads all documents from the project into a zip file.
+  """
+  s3_path: str = request.args.get('s3_path', default='', type=str)
 
-  # return a keep-alive response initially
-  keep_alive()
+  if s3_path == '':
+    # proper web error "400 Bad request"
+    abort(400,
+          description=
+          f"Missing one or more required parameters: 's3_path' must be provided. S3 path: `{s3_path}`")
 
-  # check for export completion periodically and send the actual response
-  while export_thread.is_alive():
-    time.sleep(5)
-    if not export_thread.is_alive():
-      export_status = export_thread
-      
-      return generate_response(export_status)
-    
-  
-  # export_status = export_documents_csv(course_name, from_date, to_date)
-  # print("EXPORT FILE LINKS: ", export_status)
+  # call a function which checks if given s3_path exists and then downloads it
+  status = check_s3_path_and_download(s3_path)
 
-  # if export_status == "No data found between the given dates.":
-  #   response = Response(status=204)
-  #   response.headers.add('Access-Control-Allow-Origin', '*')
-    
-  # else:
-  #   response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
-  #   response.headers.add('Access-Control-Allow-Origin', '*')
-  #   response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
-  #   os.remove(export_status[0])
-  
-  # return response
+  response = jsonify(status)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+
+  return response
 
 
 if __name__ == '__main__':
