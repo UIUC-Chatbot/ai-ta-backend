@@ -199,6 +199,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     course_metadata = json.loads(course_metadata['result'])
     admin_emails = course_metadata['course_admins']
     admin_emails.append(course_metadata['course_owner'])
+    admin_emails = list(set(admin_emails))
     print("admin_emails: ", admin_emails)
 
     # send email to admins
