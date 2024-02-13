@@ -11,7 +11,7 @@
             "pip install pip==23.3.1",
             "pip install -r requirements.txt",
             "echo 'ABOUT TO ECHO LD_LIBRARY_PATH'",
-            "export LD_LIBRARY_PATH=$(find / -name libGL.so.1):$LD_LIBRARY_PATH",
+            "export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu/libGL.so.1:$LD_LIBRARY_PATH",
             "echo $LD_LIBRARY_PATH"
           ],
           "aptPkgs": ["ffmpeg", "tesseract-ocr"]
