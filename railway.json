@@ -17,6 +17,8 @@
           "aptPkgs": [
             "libcap-dev",
             "libgl1",
+            "libsm6",
+            "libxext6",
             "libglib2.0-0",
             "libgl1-mesa-dev",
             "libgl1-mesa-glx"
