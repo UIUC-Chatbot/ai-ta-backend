@@ -2,18 +2,20 @@ import pycurl
 import json
 from io import BytesIO
 
+
 class Flows():
 
   def __init__(self):
     admin_api = "n8n_api_fb0b8cc89fc69c1dfe7e8ff16d8ca277ad0ce9b41a02911dee6587b36ca5c28c2a2b0ae5ead29b8d"
     self.flows = []
 
-  def get_users(self, limit:int=50, pagination:bool=True, api_key:str=None):
+  def get_users(self, limit: int = 50, pagination: bool = True, api_key: str = None):
     all_users = []
     headers = ["X-N8N-API-KEY: %s" % api_key, "Accept: application/json"]
     buffer = BytesIO()
     c = pycurl.Curl()
-    c.setopt(c.URL, 'https://primary-production-60d0.up.railway.app/api/v1/users?limit=%s&includeRole=true' % str(limit))
+    c.setopt(c.URL,
+             'https://primary-production-60d0.up.railway.app/api/v1/users?limit=%s&includeRole=true' % str(limit))
     c.setopt(c.HTTPHEADER, headers)
     c.setopt(c.WRITEDATA, buffer)
     c.perform()
@@ -31,7 +33,9 @@ class Flows():
         c = pycurl.Curl()
         c.setopt(c.HTTPHEADER, headers)
         c.setopt(c.WRITEDATA, buffer)
-        c.setopt(c.URL, 'https://primary-production-60d0.up.railway.app/api/v1/users?limit=%s&cursor=%s&includeRole=true' % (str(limit), cursor))
+        c.setopt(
+            c.URL, 'https://primary-production-60d0.up.railway.app/api/v1/users?limit=%s&cursor=%s&includeRole=true' %
+            (str(limit), cursor))
         c.perform()
         c.close()
         body = buffer.getvalue()
@@ -40,8 +44,8 @@ class Flows():
         cursor = data.get('nextCursor')
 
     return all_users
-  
-  def execute_flow(self, hook:str, api_key:str=None):
+
+  def execute_flow(self, hook: str, api_key: str = None):
     headers = ["X-N8N-API-KEY: %s" % api_key, "Accept: application/json"]
     url = hook
     buffer = BytesIO()
@@ -54,8 +58,8 @@ class Flows():
 
     body = buffer.getvalue()
     return body.decode('utf-8')
-  
-  def get_executions(self, limit, id=None, pagination:bool=True, api_key:str=None):
+
+  def get_executions(self, limit, id=None, pagination: bool = True, api_key: str = None):
     headers = ["X-N8N-API-KEY: %s" % api_key, "Accept: application/json"]
     url = "https://primary-production-60d0.up.railway.app/api/v1/executions?includeData=true&status=success&limit=%s" % limit
     buffer = BytesIO()
@@ -80,7 +84,10 @@ class Flows():
         c = pycurl.Curl()
         c.setopt(c.HTTPHEADER, headers)
         c.setopt(c.WRITEDATA, buffer)
-        c.setopt(c.URL, 'https://primary-production-60d0.up.railway.app/api/v1/executions?includeData=true&status=success&limit=%s&cursor=%s' % (str(limit), cursor))
+        c.setopt(
+            c.URL,
+            'https://primary-production-60d0.up.railway.app/api/v1/executions?includeData=true&status=success&limit=%s&cursor=%s'
+            % (str(limit), cursor))
         c.perform()
         c.close()
         body = buffer.getvalue()
@@ -91,7 +98,6 @@ class Flows():
           for execution[0] in all_executions:
             if execution['workflowId'] == id:
               return execution
-        
 
     if id:
       for execution in executions['data']:
@@ -99,8 +105,8 @@ class Flows():
           return execution
     else:
       return all_executions
-    
-  def get_workflows(self, limit, pagination:bool=True, api_key:str=None):
+
+  def get_workflows(self, limit, pagination: bool = True, api_key: str = None):
     headers = ["X-N8N-API-KEY: %s" % api_key, "Accept: application/json"]
     url = "https://primary-production-60d0.up.railway.app/api/v1/workflows?limit=%s" % limit
     buffer = BytesIO()
@@ -113,10 +119,10 @@ class Flows():
 
     body = buffer.getvalue()
     workflows = json.loads(body.decode('utf-8'))
-  
+
     if pagination == False:
       return workflows['data']
-    else: 
+    else:
       all_workflows = []
       all_workflows.append(workflows['data'])
       cursor = workflows.get('nextCursor')
@@ -126,7 +132,9 @@ class Flows():
         c = pycurl.Curl()
         c.setopt(c.HTTPHEADER, headers)
         c.setopt(c.WRITEDATA, buffer)
-        c.setopt(c.URL, 'https://primary-production-60d0.up.railway.app/api/v1/workflows?limit=%s&cursor=%s' % (str(limit), cursor))
+        c.setopt(
+            c.URL,
+            'https://primary-production-60d0.up.railway.app/api/v1/workflows?limit=%s&cursor=%s' % (str(limit), cursor))
         c.perform()
         c.close()
         body = buffer.getvalue()
@@ -134,15 +142,14 @@ class Flows():
         all_workflows.append(workflows['data'])
         cursor = workflows.get('nextCursor')
     return all_workflows
-  
+
   # TODO: Take the last one/ ALWAYS end in JSON
   def get_data(self, id):
     self.get_executions(20, id)
 
-
-  def main_flow(self, hook:str, api_key:str=None):
+  def main_flow(self, hook: str, api_key: str = None):
     workflows = self.get_workflows(20, api_key)
-    id = workflows[0]['id'] + 1 
+    id = workflows[0]['id'] + 1
     self.flows.append(id)
     self.execute_flow(hook)
     executions = self.get_executions(20, id, True, api_key)
