@@ -422,7 +422,7 @@ def scrape() -> Response:
   print(f"Stay on BaseURL: {stay_on_baseurl}")
   print(f"Timeout in Seconds ⏰: {timeout}")
 
-  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   posthog.capture('distinct_id_of_the_user',
                   event='web_scrape_invoked',
                   properties={
@@ -602,7 +602,7 @@ def getTopContextsWithMQR() -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   posthog.capture('distinct_id_of_the_user',
                   event='filter_top_contexts_invoked',
                   properties={
@@ -654,6 +654,85 @@ def pest_detection():
     return response
   except Exception as e:
     abort(500, description=str(e))
+
+    
+@app.route('/resource-report', methods=['GET'])
+def resource_report() -> Response:
+  """
+  Print server resources.
+  # https://manpages.debian.org/bookworm/manpages-dev/getrlimit.2.en.html
+  """
+  import resource
+  from resource import getrusage, RUSAGE_SELF, RUSAGE_CHILDREN
+  import subprocess
+
+  print("👇👇👇👇👇👇👇👇👇 <RESOURCE REPORT> 👇👇👇👇👇👇👇👇👇")
+
+  print("NUM ACTIVE THREADS (top of /resource-report):", threading.active_count())
+  try:
+    # result = subprocess.run(['ps', '-u', '$(whoami)', '|', 'wc', '-l'], stdout=subprocess.PIPE)
+    result = subprocess.run('ps -u $(whoami) | wc -l', shell=True, stdout=subprocess.PIPE)
+    print("Current active threads: ", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error executing ulimit -a: ", e)
+
+  try:
+    with open('/etc/security/limits.conf', 'r') as file:
+      print("/etc/security/limits.conf:\n", file.read())
+  except Exception as e:
+    print("Error reading /etc/security/limits.conf: ", e)
+
+  try:
+    with open('/proc/sys/kernel/threads-max', 'r') as file:
+      print("/proc/sys/kernel/threads-max: ", file.read())
+  except Exception as e:
+    print("Error reading /proc/sys/kernel/threads-max: ", e)
+
+  # Check container or virtualization platform limits if applicable
+  # This is highly dependent on the specific platform and setup
+  # Here is an example for Docker, adjust as needed for your environment
+  try:
+    result = subprocess.run('docker stats --no-stream', shell=True, stdout=subprocess.PIPE)
+    print("Docker stats:\n", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error getting Docker stats: ", e)
+
+  print("RLIMIT_NPROC: ", resource.getrlimit(resource.RLIMIT_NPROC))
+  print("RLIMIT_AS (GB): ", [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_AS)])
+  print("RLIMIT_DATA (GB): ", [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_DATA)])
+  print("RLIMIT_MEMLOCK (GB): ",
+        [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_MEMLOCK)
+        ])  # The maximum address space which may be locked in memory.
+  print("RLIMIT_STACK (MB): ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_STACK)])
+  print("getpagesize (MB): ", resource.getpagesize() / (1024 * 1024))
+
+  print("RUSAGE_SELF", getrusage(RUSAGE_SELF), end="\n")
+  print("RUSAGE_CHILDREN", getrusage(RUSAGE_CHILDREN), end="\n")
+
+  try:
+    result = subprocess.run('ulimit -u', shell=True, stdout=subprocess.PIPE)
+    print("ulimit -u: ", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error executing ulimit -u: ", e)
+
+  try:
+    result = subprocess.run('ulimit -a', shell=True, stdout=subprocess.PIPE)
+    print(f"ulimit -a:\n{result.stdout.decode('utf-8')}")
+  except Exception as e:
+    print("Error executing ulimit -a: ", e)
+
+  try:
+    print("RUSAGE_THREAD: ", resource.getrlimit(resource.RUSAGE_THREAD))
+  except Exception as e:
+    pass
+    # print("Error in RUSAGE_THREAD: ", e)
+
+  print("👆👆👆👆👆👆👆👆👆 </RESOURCE REPORT> 👆👆👆👆👆👆👆👆👆")
+
+  response = jsonify({"outcome": "success"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 
 if __name__ == '__main__':
