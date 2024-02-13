@@ -8,13 +8,16 @@ import sentry_sdk
 import boto3
 import botocore
 from concurrent.futures import ProcessPoolExecutor
+import requests
+import json
+from ai_ta_backend.emails import send_email
 
 # Initialize Supabase client
 SUPABASE_CLIENT = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
                                         supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
 
-def export_documents_csv(course_name: str, from_date='', to_date=''):
+def export_documents_json(course_name: str, from_date='', to_date=''):
   """
   This function exports the documents to a csv file.
   Args:
@@ -57,7 +60,7 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
     s3_filepath = s3_file = f"courses/{course_name}/{filename}"
     # background task of downloading data - map it with above ID
     executor = ProcessPoolExecutor()
-    executor.submit(download_documents_in_bg, response, course_name, s3_filepath)
+    executor.submit(export_data_in_bg, response, "documents", course_name, s3_filepath)
     return {"response": 'Download from S3', "s3_path": s3_filepath}
 
   else:
@@ -110,19 +113,23 @@ def export_documents_csv(course_name: str, from_date='', to_date=''):
       return {"response": "No data found between the given dates."}
   
 
-def download_documents_in_bg(response, course_name, s3_path):
+def export_data_in_bg(response, download_type, course_name, s3_path):
   """
   This function is called in export_documents_csv() to upload the documents to S3.
-  It downloads the documents in batches of 100 and uploads them to S3.
-  It then returns the S3 URL of the uploaded file.
+  1. download the documents in batches of 100 and upload them to S3.
+  2. generate a pre-signed URL for the S3 file.
+  3. send an email to the course admins with the pre-signed URL.
+
   Args:
       response (dict): The response from the Supabase query.
+      download_type (str): The type of download - 'documents' or 'conversations'.
       course_name (str): The name of the course.
+      s3_path (str): The S3 path where the file will be uploaded.
   """
   total_doc_count = response.count
   first_id = response.data[0]['id']
   print("total_doc_count: ", total_doc_count)
-  print("s3_path: ", s3_path)
+  print("pre-defined s3_path: ", s3_path)
 
   curr_doc_count = 0
   filename = s3_path.split('/')[-1].split('.')[0] + '.json'
@@ -131,7 +138,10 @@ def download_documents_in_bg(response, course_name, s3_path):
   # download data in batches of 100
   while curr_doc_count < total_doc_count:
     print("Fetching data from id: ", first_id)
-    response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).gte('id', first_id).order('id', desc=False).limit(100).execute()
+    if download_type == 'documents':
+      response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).gte('id', first_id).order('id', desc=False).limit(100).execute()
+    else:
+      response = SUPABASE_CLIENT.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte('id', first_id).order('id', desc=False).limit(100).execute()
     df = pd.DataFrame(response.data)
     curr_doc_count += len(response.data)
             
@@ -153,24 +163,55 @@ def download_documents_in_bg(response, course_name, s3_path):
 
   print("zip file created: ", zip_file_path)
 
-  # upload to S3
-  s3 = boto3.client(
-      's3',
-      aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-      aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-  )
+  try:
+    # upload to S3
+    s3 = boto3.client(
+        's3',
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    )
 
-  #s3_file = f"courses/{course_name}/exports/{os.path.basename(zip_file_path)}"
-  s3_file = f"courses/{course_name}/{os.path.basename(zip_file_path)}"
-  s3.upload_file(zip_file_path, os.getenv('S3_BUCKET_NAME'), s3_file)
-  
-  # remove local files
-  os.remove(file_path)
-  os.remove(zip_file_path)
+    #s3_file = f"courses/{course_name}/exports/{os.path.basename(zip_file_path)}"
+    s3_file = f"courses/{course_name}/{os.path.basename(zip_file_path)}"
+    s3.upload_file(zip_file_path, os.getenv('S3_BUCKET_NAME'), s3_file)
+    
+    # remove local files
+    os.remove(file_path)
+    os.remove(zip_file_path)
 
-  print("file uploaded to s3: ", s3_file)
+    print("file uploaded to s3: ", s3_file)
 
-  return s3_file
+    # pre-signed URL
+    s3_object = s3.head_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
+    
+    # generate presigned URL
+    s3_url = s3.generate_presigned_url('get_object', Params={'Bucket': os.getenv('S3_BUCKET_NAME'), 'Key': s3_path}, ExpiresIn=3600)
+      
+    # get admin email IDs
+    headers = {
+              "Authorization": f"Bearer {os.getenv('VERCEL_READ_ONLY_API_KEY')}",
+              "Content-Type": "application/json"
+          }
+    
+    hget_url = str(os.getenv('VERCEL_BASE_URL')) + "course_metadatas/" + course_name
+    response = requests.get(hget_url, headers=headers)
+    course_metadata = response.json()
+    course_metadata = json.loads(course_metadata['result'])
+    admin_emails = course_metadata['course_admins']
+    admin_emails.append(course_metadata['course_owner'])
+    print("admin_emails: ", admin_emails)
+
+    # send email to admins
+    subject = "UIUC.chat Data Export Complete for " + course_name
+    body_text = "The data export for " + course_name + " is complete.\n\nYou can download the file from the following link: \n\n" + s3_url + "\n\nThis link will expire in 48 hours."
+    email_status = send_email(subject, body_text, os.getenv('EMAIL_SENDER'), admin_emails)
+    print("email_status: ", email_status)
+
+    return "File uploaded to S3. Email sent to admins."
+
+  except Exception as e:
+    print(e)
+    return "Error: " + str(e)
 
 def check_s3_path_and_download(s3_path):
   """
@@ -189,7 +230,7 @@ def check_s3_path_and_download(s3_path):
     s3_object = s3.head_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
   
     # generate presigned URL
-    s3_url = s3.generate_presigned_url('get_object', Params={'Bucket': os.getenv('S3_BUCKET_NAME'), 'Key': s3_path}, ExpiresIn=3600)
+    s3_url = s3.generate_presigned_url('get_object', Params={'Bucket': os.getenv('S3_BUCKET_NAME'), 'Key': s3_path}, ExpiresIn=172800)
     print("Presigned URL: ", s3_url)
     return {"response": s3_url}  
                            
@@ -203,8 +244,7 @@ def check_s3_path_and_download(s3_path):
       return {"response": "Error downloading file."}
       
 
-
-def export_convo_history_csv(course_name: str, from_date='', to_date=''):
+def export_convo_history_json(course_name: str, from_date='', to_date=''):
   """
   This function exports the conversation history to a csv file.
   Args:
@@ -235,6 +275,15 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
     response = SUPABASE_CLIENT.table("llm-convo-monitor").select("id", count='exact').eq(
         "course_name", course_name).gte('created_at', from_date).lte('created_at', to_date).order('id',
                                                                                                   desc=False).execute()
+  
+  if response.count > 1000:
+    # call background task to upload to s3
+    filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.zip'
+    s3_filepath = s3_file = f"courses/{course_name}/{filename}"
+    # background task of downloading data - map it with above ID
+    executor = ProcessPoolExecutor()
+    executor.submit(export_data_in_bg, response, "conversations", course_name, s3_filepath)
+    return {"response": 'Download from S3', "s3_path": s3_filepath}
 
   # Fetch data
   if response.count > 0:
@@ -276,10 +325,10 @@ def export_convo_history_csv(course_name: str, from_date='', to_date=''):
         zipf.write(file_path, filename)
       os.remove(file_path)
 
-      return (zip_file_path, zip_filename, os.getcwd())
+      return {"response": (zip_file_path, zip_filename, os.getcwd())}
     except Exception as e:
       print(e)
       sentry_sdk.capture_exception(e)
-      return "Error downloading file"
+      return {"response": "Error downloading file!"}
   else:
-    return "No data found between the given dates."
+    return {"response": "No data found between the given dates."}
