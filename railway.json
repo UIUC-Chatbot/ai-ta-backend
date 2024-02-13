@@ -11,15 +11,16 @@
             "pip install pip==23.3.1",
             "pip install -r requirements.txt"
           ],
-          "aptPkgs": [
-            "ffmpeg",
-            "tesseract-ocr",
-            "libglib2.0-0",
-            "libgl1-mesa-dev"
-          ]
+          "aptPkgs": ["ffmpeg", "tesseract-ocr"]
         },
         "setup": {
-          "aptPkgs": ["libcap-dev", "libgl1"],
+          "aptPkgs": [
+            "libcap-dev",
+            "libgl1",
+            "libglib2.0-0",
+            "libgl1-mesa-dev",
+            "libgl1-mesa-glx"
+          ],
           "nixPkgs": ["python310", "gcc"]
         }
       }
