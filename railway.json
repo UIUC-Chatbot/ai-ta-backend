@@ -15,6 +15,7 @@
         },
         "setup": {
           "aptPkgs": [
+            "python3-opencv",
             "libcap-dev",
             "libgl1",
             "libsm6",
