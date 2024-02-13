@@ -6,7 +6,6 @@ from io import BytesIO
 class Flows():
 
   def __init__(self):
-    admin_api = "n8n_api_fb0b8cc89fc69c1dfe7e8ff16d8ca277ad0ce9b41a02911dee6587b36ca5c28c2a2b0ae5ead29b8d"
     self.flows = []
 
   def get_users(self, limit: int = 50, pagination: bool = True, api_key: str = None):
@@ -22,12 +21,12 @@ class Flows():
     c.close()
     body = buffer.getvalue()
     data = json.loads(body.decode('utf-8'))
-    if pagination == False:
+    if not pagination:
       return data['data']
     else:
       all_users.append(data['data'])
       cursor = data.get('nextCursor')
-      while cursor != None:
+      while cursor is not None:
         buffer = BytesIO()
         cursor = data.get('nextCursor')
         c = pycurl.Curl()
@@ -72,13 +71,13 @@ class Flows():
 
     body = buffer.getvalue()
     executions = json.loads(body.decode('utf-8'))
-    if pagination == False:
+    if not pagination:
       all_executions = executions['data']
     else:
       all_executions = []
       all_executions.append(executions['data'])
       cursor = executions.get('nextCursor')
-      while cursor != None:
+      while cursor is not None:
         buffer = BytesIO()
         cursor = executions.get('nextCursor')
         c = pycurl.Curl()
@@ -95,8 +94,8 @@ class Flows():
         all_executions.append(executions['data'])
         cursor = executions.get('nextCursor')
         if id:
-          for execution[0] in all_executions:
-            if execution['workflowId'] == id:
+          for execution in all_executions:
+            if execution[0]['workflowId'] == id:
               return execution
 
     if id:
@@ -120,13 +119,13 @@ class Flows():
     body = buffer.getvalue()
     workflows = json.loads(body.decode('utf-8'))
 
-    if pagination == False:
+    if not pagination:
       return workflows['data']
     else:
       all_workflows = []
       all_workflows.append(workflows['data'])
       cursor = workflows.get('nextCursor')
-      while cursor != None:
+      while cursor is not None:
         buffer = BytesIO()
         cursor = workflows.get('nextCursor')
         c = pycurl.Curl()
