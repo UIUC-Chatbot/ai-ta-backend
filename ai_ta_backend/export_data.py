@@ -53,7 +53,7 @@ def export_documents_json(course_name: str, from_date='', to_date=''):
                                                                                               desc=False).execute()
 
   # add a condition to route to direct download or s3 download
-  if response.count > 10:
+  if response.count > 1000:
     # call background task to upload to s3
     
     filename = course_name + '_' + str(uuid.uuid4()) + '_documents.zip'
