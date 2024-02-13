@@ -25,6 +25,7 @@ from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+from ai_ta_backend.flows import Flows
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -585,7 +586,6 @@ def export_convo_history():
   os.remove(export_status[0])
   return response
 
-
 @app.route('/getTopContextsWithMQR', methods=['GET'])
 def getTopContextsWithMQR() -> Response:
   """
@@ -697,6 +697,31 @@ def resource_report() -> Response:
   response = jsonify({"outcome": "success"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+@app.route('/getworkflows', methods=['GET'])
+def get_all_workflows() -> Response:
+  """
+  Get all workflows from user.
+  """
+
+  api_key = request.args.get('api_key', default='', type=str)
+  limit = request.args.get('limit', default=100, type=int)
+  pagination = request.args.get('pagination', default=True, type=bool)  
+  
+  if api_key == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`"
+    )
+
+  flows = Flows()
+  response = flows.get_workflows(limit, pagination, api_key)
+  response = jsonify(response)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 
 if __name__ == '__main__':
