@@ -49,7 +49,7 @@ from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 from ai_ta_backend.context_parent_doc_padding import context_parent_doc_padding
 from ai_ta_backend.filtering_contexts import filter_top_contexts
-from ai_ta_backend.pest_detection import PestDetection
+# from ai_ta_backend.pest_detection import PestDetection
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
