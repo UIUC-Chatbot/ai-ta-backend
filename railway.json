@@ -9,7 +9,10 @@
           "cmds": [
             "python -m venv --copies /opt/venv && . /opt/venv/bin/activate",
             "pip install pip==23.3.1",
-            "pip install -r requirements.txt"
+            "pip install -r requirements.txt",
+            "echo 'ABOUT TO ECHO LD_LIBRARY_PATH'",
+            "echo $LD_LIBRARY_PATH",
+            "find / -name libGL.so.1"
           ],
           "aptPkgs": ["ffmpeg", "tesseract-ocr"]
         },
