@@ -1147,50 +1147,48 @@ class Ingest():
                          })
     # print("found_docs", found_docs)
     return found_docs
-  
+
   def run_pest_detection(self, image_urls: List[str]) -> List[str] | str:
     """
     Run the pest detection plugin on an image.
     """
     try:
-        # Run the plugin
-        annotated_images = self.pest_detection_client.detect_pests(image_urls)
-        print(f"annotated_images found: {len(annotated_images)}")
-        results = []
-        # Generate a unique ID for the request
-        unique_id = uuid.uuid4()
-        self.posthog.capture('distinct_id_of_the_user',
-                             event='run_pest_detection_invoked',
-                             properties={
-                                 'image_urls': image_urls,
-                                 'unique_id': unique_id,
-                             })
-        for index, image in enumerate(annotated_images):
-            # Infer the file extension from the image URL or set a default
-            file_extension = '.png'
+      # Run the plugin
+      annotated_images = self.pest_detection_client.detect_pests(image_urls)
+      print(f"annotated_images found: {len(annotated_images)}")
+      results = []
+      # Generate a unique ID for the request
+      unique_id = uuid.uuid4()
+      self.posthog.capture('distinct_id_of_the_user',
+                           event='run_pest_detection_invoked',
+                           properties={
+                               'image_urls': image_urls,
+                               'unique_id': unique_id,
+                           })
+      for index, image in enumerate(annotated_images):
+        # Infer the file extension from the image URL or set a default
+        file_extension = '.png'
 
-            image_format = file_extension[1:].upper()
+        image_format = file_extension[1:].upper()
 
-            with NamedTemporaryFile(mode='wb', suffix=file_extension) as tmpfile:
-                # Save the image with the specified format
-                image.save(tmpfile, format=image_format)
-                tmpfile.flush()  # Ensure all data is written to the file
-                tmpfile.seek(0)  # Move the file pointer to the start of the file
-                # Include UUID and index in the s3_path
-                s3_path = f'pest_detection/annotated-{unique_id}-{index}{file_extension}'
-                # Upload the file to S3
-                with open(tmpfile.name, 'rb') as file_data:
-                  self.s3_client.upload_fileobj(
-                      Fileobj=file_data, Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
-                results.append(s3_path)
+        with NamedTemporaryFile(mode='wb', suffix=file_extension) as tmpfile:
+          # Save the image with the specified format
+          image.save(tmpfile, format=image_format)
+          tmpfile.flush()  # Ensure all data is written to the file
+          tmpfile.seek(0)  # Move the file pointer to the start of the file
+          # Include UUID and index in the s3_path
+          s3_path = f'pest_detection/annotated-{unique_id}-{index}{file_extension}'
+          # Upload the file to S3
+          with open(tmpfile.name, 'rb') as file_data:
+            self.s3_client.upload_fileobj(Fileobj=file_data, Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
+          results.append(s3_path)
 
-        return results
+      return results
     except Exception as e:
       err = f"❌❌ Error in (pest_detection): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n{traceback.format_exc()}"
       print(err)
       sentry_sdk.capture_exception(e)
       return err
-
 
   def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
     """Here's a summary of the work.
