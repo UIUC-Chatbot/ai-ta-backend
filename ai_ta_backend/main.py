@@ -655,7 +655,7 @@ def pest_detection():
   except Exception as e:
     abort(500, description=str(e))
 
-    
+
 @app.route('/resource-report', methods=['GET'])
 def resource_report() -> Response:
   """
@@ -732,7 +732,6 @@ def resource_report() -> Response:
   response = jsonify({"outcome": "success"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
-
 
 
 if __name__ == '__main__':
