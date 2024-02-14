@@ -35,7 +35,7 @@ class E2B_class():
       exit()
 
     self.sandboxID = self.sandbox.id
-    self.sandbox.keep_alive(2 * 60)  # 2 minutes for now.
+    # self.sandbox.keep_alive(2 * 60)  # 2 minutes for now.
     # self.sandbox.keep_alive(60 * 60 * 1)  # 1 hour max
     self.command_timeout = 3 * 60  # 3 minutes
     self.existing_files = []

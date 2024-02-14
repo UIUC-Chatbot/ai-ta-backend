@@ -54,8 +54,11 @@ class WorkflowAgent:
     self.langsmith_run_id = langsmith_run_id
     if os.environ['OPENAI_API_TYPE'] == 'azure':
       self.llm = AzureChatOpenAI(
-          azure_deployment="gpt-4-32k",
-          openai_api_version="2023-05-15",
+          azure_deployment="gpt-4-128k",
+          openai_api_version=os.getenv("AZURE_0125_MODEL_VERSION"),
+          temperature=0,
+          azure_endpoint=os.getenv("AZURE_0125_MODEL_ENDPOINT"),
+          openai_api_key=os.getenv("AZURE_0125_MODEL_API_KEY"),
       )
     else:
       self.llm: ChatOpenAI = ChatOpenAI(
@@ -64,6 +67,7 @@ class WorkflowAgent:
           max_retries=500,
           # request_timeout=60 * 3,
           streaming=True)
+    print("LLM for LangGraph agent:", self.llm)
     self.tools = get_tools(langsmith_run_id=self.langsmith_run_id)
     self.agent = self.make_agent()
 
