@@ -150,7 +150,7 @@ def filter_top_contexts(contexts,
   timeout = timeout or float(os.environ["FILTER_TOP_CONTEXTS_TIMEOUT_SECONDS"])
   # langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr") # TOO UNSTABLE, service offline
   langsmith_prompt_obj = filter_unrelated_contexts_zephyr
-  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
 
   print("NUM ACTIVE THREADS (top of filtering_contexts):", threading.active_count())
 
