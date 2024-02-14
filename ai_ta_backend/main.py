@@ -427,7 +427,7 @@ def scrape() -> Response:
   print(f"Stay on BaseURL: {stay_on_baseurl}")
   print(f"Timeout in Seconds ⏰: {timeout}")
 
-  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   posthog.capture('distinct_id_of_the_user',
                   event='web_scrape_invoked',
                   properties={
@@ -616,7 +616,7 @@ def getTopContextsWithMQR() -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   posthog.capture('distinct_id_of_the_user',
                   event='filter_top_contexts_invoked',
                   properties={
@@ -635,59 +635,81 @@ def getTopContextsWithMQR() -> Response:
   return response
 
 
-@app.route('/exportDocuments', methods=['GET'])
-def exportDocuments() -> Response:
+@app.route('/resource-report', methods=['GET'])
+def resource_report() -> Response:
   """
-  Downloads all documents from the project into a zip file.
+  Print server resources.
+  # https://manpages.debian.org/bookworm/manpages-dev/getrlimit.2.en.html
   """
-  course_name: str = request.args.get('course_name', default='', type=str)
-  from_date: str = request.args.get('from_date', default='', type=str)
-  to_date: str = request.args.get('to_date', default='', type=str)
+  import resource
+  from resource import getrusage, RUSAGE_SELF, RUSAGE_CHILDREN
+  import subprocess
 
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400,
-          description=
-          f"Missing one or more required parameters: 'course_name' must be provided. Course name: `{course_name}`")
+  print("👇👇👇👇👇👇👇👇👇 <RESOURCE REPORT> 👇👇👇👇👇👇👇👇👇")
 
-  export_status = export_documents_json(course_name, from_date, to_date)
-  print("EXPORT FILE LINKS: ", export_status)
+  print("NUM ACTIVE THREADS (top of /resource-report):", threading.active_count())
+  try:
+    # result = subprocess.run(['ps', '-u', '$(whoami)', '|', 'wc', '-l'], stdout=subprocess.PIPE)
+    result = subprocess.run('ps -u $(whoami) | wc -l', shell=True, stdout=subprocess.PIPE)
+    print("Current active threads: ", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error executing ulimit -a: ", e)
 
-  if export_status['response'] == "No data found between the given dates.":
-    response = Response(status=204)
-    response.headers.add('Access-Control-Allow-Origin', '*')
+  try:
+    with open('/etc/security/limits.conf', 'r') as file:
+      print("/etc/security/limits.conf:\n", file.read())
+  except Exception as e:
+    print("Error reading /etc/security/limits.conf: ", e)
 
-  elif export_status['response'] == "Download from S3":
-    response = jsonify({"response": "Download from S3", "s3_path": export_status['s3_path']})
-    response.headers.add('Access-Control-Allow-Origin', '*')
+  try:
+    with open('/proc/sys/kernel/threads-max', 'r') as file:
+      print("/proc/sys/kernel/threads-max: ", file.read())
+  except Exception as e:
+    print("Error reading /proc/sys/kernel/threads-max: ", e)
 
-  else:
-    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
-    os.remove(export_status['response'][0])
-  
-  return response
+  # Check container or virtualization platform limits if applicable
+  # This is highly dependent on the specific platform and setup
+  # Here is an example for Docker, adjust as needed for your environment
+  try:
+    result = subprocess.run('docker stats --no-stream', shell=True, stdout=subprocess.PIPE)
+    print("Docker stats:\n", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error getting Docker stats: ", e)
 
-@app.route('/getExportFromS3', methods=['GET'])
-def getExportFromS3() -> Response:
-  """
-  Downloads all documents from the project into a zip file.
-  """
-  s3_path: str = request.args.get('s3_path', default='', type=str)
+  print("RLIMIT_NPROC: ", resource.getrlimit(resource.RLIMIT_NPROC))
+  print("RLIMIT_AS (GB): ", [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_AS)])
+  print("RLIMIT_DATA (GB): ", [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_DATA)])
+  print("RLIMIT_MEMLOCK (GB): ",
+        [limit / (1024 * 1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_MEMLOCK)
+        ])  # The maximum address space which may be locked in memory.
+  print("RLIMIT_STACK (MB): ", [limit / (1024 * 1024) for limit in resource.getrlimit(resource.RLIMIT_STACK)])
+  print("getpagesize (MB): ", resource.getpagesize() / (1024 * 1024))
 
-  if s3_path == '':
-    # proper web error "400 Bad request"
-    abort(400,
-          description=
-          f"Missing one or more required parameters: 's3_path' must be provided. S3 path: `{s3_path}`")
+  print("RUSAGE_SELF", getrusage(RUSAGE_SELF), end="\n")
+  print("RUSAGE_CHILDREN", getrusage(RUSAGE_CHILDREN), end="\n")
 
-  # call a function which checks if given s3_path exists and then downloads it
-  status = check_s3_path_and_download(s3_path)
+  try:
+    result = subprocess.run('ulimit -u', shell=True, stdout=subprocess.PIPE)
+    print("ulimit -u: ", result.stdout.decode('utf-8'))
+  except Exception as e:
+    print("Error executing ulimit -u: ", e)
 
-  response = jsonify(status)
+  try:
+    result = subprocess.run('ulimit -a', shell=True, stdout=subprocess.PIPE)
+    print(f"ulimit -a:\n{result.stdout.decode('utf-8')}")
+  except Exception as e:
+    print("Error executing ulimit -a: ", e)
+
+  try:
+    print("RUSAGE_THREAD: ", resource.getrlimit(resource.RUSAGE_THREAD))
+  except Exception as e:
+    pass
+    # print("Error in RUSAGE_THREAD: ", e)
+
+  print("👆👆👆👆👆👆👆👆👆 </RESOURCE REPORT> 👆👆👆👆👆👆👆👆👆")
+
+  response = jsonify({"outcome": "success"})
   response.headers.add('Access-Control-Allow-Origin', '*')
-
   return response
 
 

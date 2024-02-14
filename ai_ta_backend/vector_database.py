@@ -94,7 +94,9 @@ class Ingest():
         openai_api_version=os.getenv('OPENAI_API_VERSION'),  #type:ignore
         openai_api_type=OPENAI_API_TYPE)
 
-    self.posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+    self.posthog = Posthog(sync_mode=True,
+                           project_api_key=os.environ['POSTHOG_API_KEY'],
+                           host='https://app.posthog.com')
 
     return None
 
