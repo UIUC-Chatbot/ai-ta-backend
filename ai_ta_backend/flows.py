@@ -6,7 +6,9 @@ class Flows():
   def __init__(self):
     self.flows = []
 
-  def get_users(self, limit: int = 50, pagination: bool = True, api_key: str = None):
+  def get_users(self, limit: int = 50, pagination: bool = True, api_key: str = ""):
+    if not api_key:
+      raise ValueError('api_key is required')
     all_users = []
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = 'https://primary-production-60d0.up.railway.app/api/v1/users?limit=%s&includeRole=true' % str(limit)
@@ -27,14 +29,18 @@ class Flows():
 
     return all_users
 
-  def execute_flow(self, hook: str, api_key: str = None):
+  def execute_flow(self, hook: str, api_key: str = ""):
+    if not api_key:
+      raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = hook
     response = requests.get(url, headers=headers, timeout=8)
     body = response.content
     return body.decode('utf-8')
 
-  def get_executions(self, limit, id=None, pagination: bool = True, api_key: str = None):
+  def get_executions(self, limit, id=None, pagination: bool = True, api_key: str = ""):
+    if not api_key:
+      raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = f"https://primary-production-60d0.up.railway.app/api/v1/executions?includeData=true&status=success&limit={limit}"
     response = requests.get(url, headers=headers, timeout=8)
@@ -63,7 +69,9 @@ class Flows():
     else:
       return all_executions
 
-  def get_workflows(self, limit, pagination: bool = True, api_key: str = None):
+  def get_workflows(self, limit, pagination: bool = True, api_key: str = ""):
+    if not api_key:
+      raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = f"https://primary-production-60d0.up.railway.app/api/v1/workflows?limit={limit}"
     response = requests.get(url, headers=headers, timeout=8)
@@ -88,7 +96,9 @@ class Flows():
   def get_data(self, id):
     self.get_executions(20, id)
 
-  def main_flow(self, hook: str, api_key: str = None):
+  def main_flow(self, hook: str, api_key: str = ""):
+    if not api_key:
+      raise ValueError('api_key is required')
     workflows = self.get_workflows(limit=20)
     id = workflows[0]['id'] + 1
     self.flows.append(id)
