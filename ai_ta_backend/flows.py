@@ -10,7 +10,7 @@ class Flows():
     all_users = []
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = 'https://primary-production-60d0.up.railway.app/api/v1/users?limit=%s&includeRole=true' % str(limit)
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=8)
     data = response.json()
     if not pagination:
       return data['data']
@@ -20,7 +20,7 @@ class Flows():
       while cursor is not None:
         url = 'https://primary-production-60d0.up.railway.app/api/v1/users?limit=%s&cursor=%s&includeRole=true' % (
             str(limit), cursor)
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=8)
         data = response.json()
         all_users.append(data['data'])
         cursor = data.get('nextCursor')
@@ -30,14 +30,14 @@ class Flows():
   def execute_flow(self, hook: str, api_key: str = None):
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = hook
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=8)
     body = response.content
     return body.decode('utf-8')
 
   def get_executions(self, limit, id=None, pagination: bool = True, api_key: str = None):
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = f"https://primary-production-60d0.up.railway.app/api/v1/executions?includeData=true&status=success&limit={limit}"
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=8)
     executions = response.json()
     if not pagination:
       all_executions = executions['data']
@@ -47,7 +47,7 @@ class Flows():
       cursor = executions.get('nextCursor')
       while cursor is not None:
         url = f'https://primary-production-60d0.up.railway.app/api/v1/executions?includeData=true&status=success&limit={str(limit)}&cursor={cursor}'
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=8)
         executions = response.json()
         all_executions.append(executions['data'])
         cursor = executions.get('nextCursor')
@@ -66,7 +66,7 @@ class Flows():
   def get_workflows(self, limit, pagination: bool = True, api_key: str = None):
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = f"https://primary-production-60d0.up.railway.app/api/v1/workflows?limit={limit}"
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=8)
 
     workflows = response.json()
 
@@ -78,7 +78,7 @@ class Flows():
       cursor = workflows.get('nextCursor')
       while cursor is not None:
         url = f"https://primary-production-60d0.up.railway.app/api/v1/workflows?limit={limit}&cursor={cursor}"
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=8)
         workflows = response.json()
         all_workflows.append(workflows['data'])
         cursor = workflows.get('nextCursor')
