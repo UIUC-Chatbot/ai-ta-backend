@@ -286,13 +286,19 @@ def ingest_web_text() -> Response:
 
   print(f"In top of /ingest-web-text. course: {course_name}, base_url: {base_url}, url: {url}")
 
-  if course_name == '' or url == '' or content == '' or title == '':
+  if course_name == '' or url == '' or title == '':
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing one or more required parameters: course_name, url, content or title. Course name: `{course_name}`, url: `{url}`, content: `{content}`, title: `{title}`"
+        f"Missing one or more required parameters: course_name, url or title. Course name: `{course_name}`, url: `{url}`, content: `{content}`, title: `{title}`"
     )
+
+  if content == '':
+    print(f"Content is empty. Skipping ingestion of {url}")
+    response = jsonify({"outcome": "success"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
   print("NUM ACTIVE THREADS (top of /ingest-web-text):", threading.active_count())
 
