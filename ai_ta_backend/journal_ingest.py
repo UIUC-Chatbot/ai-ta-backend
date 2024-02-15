@@ -268,9 +268,10 @@ def extract_record_data(xml_string):
 
     return extracted_data
 
-def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None, course_name=None):
+def downloadPubmedArticles(id, from_date, until_date, format, course_name):
     """
     This function downloads articles from PubMed using the OA Web Service API.
+    Search is based on PubMed ID, date range, and file format.
     Args:
         id: PubMed ID
         from_date: start date
@@ -334,6 +335,48 @@ def downloadPubmedArticles(id=None, from_date=None, until_date=None, format=None
     # journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
 
     return "success"
+
+def downloadPubmedArticlesWithEutils(course: str, search: str, title: str, journal: str):
+    """
+    This function is used for a text-based search in PubMed using the E-Utilities API.
+    Args:
+        course: course name
+        query: search query
+        title: article title
+        journal: journal title
+    """
+    directory = os.path.join(os.getcwd(), 'pubmed_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
+    database = "db=pmc"
+    final_query = "term="
+    
+    title_query = journal_query = search_query = ""
+    if title:
+        title_query = title.replace(" ", "+") + "[Title]"
+        final_query += title_query + "+AND+"
+    else:
+        final_query += title_query
+    if journal:
+        journal_query = journal.replace(" ", "+") + "[Journal]"
+        final_query += journal_query + "+AND+"
+    else:
+        final_query += journal_query
+    if search:
+        search_query = search.replace(" ", "+")
+        final_query += search_query
+    
+    final_url = base_url + database + "&" + final_query + "&retmode=json"
+
+    print("Final URL: ", final_url)
+    response = requests.get(final_url)
+    data = response.json()
+    print("DATA: ", data)
+    id_list = data['esearchresult']['idlist']
+    print ("ID List: ", id_list)
+    exit()
 
 def pubmed_id_converter(id: str):
     """
