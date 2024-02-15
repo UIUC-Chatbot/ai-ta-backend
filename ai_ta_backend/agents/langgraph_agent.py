@@ -43,8 +43,9 @@ class AgentState(TypedDict):
   # Needs `None` as a valid type, since this is what this will start as
   agent_outcome: Union[AgentAction, AgentFinish, None]
   # intermediate steps are present in agent input arg as well
-  intermediate_steps: Annotated[list[tuple[AgentAction, str]], operator.add]
+  # intermediate_steps: Annotated[list[tuple[AgentAction, str]], operator.add]
   plan: Union[list[str], None]
+  kas_scratchpad: Annotated[list[str], operator.add]
   # agent_scratchpad: Annotated[list[tuple[AgentAction, str]], operator.add]
 
 
@@ -55,10 +56,10 @@ class WorkflowAgent:
     if os.environ['OPENAI_API_TYPE'] == 'azure':
       self.llm = AzureChatOpenAI(
           azure_deployment="gpt-4-128k",
-          openai_api_version=os.getenv("AZURE_0125_MODEL_VERSION"),
+          openai_api_version=os.getenv("AZURE_0125_MODEL_VERSION"),  # type: ignore
           temperature=0,
           azure_endpoint=os.getenv("AZURE_0125_MODEL_ENDPOINT"),
-          openai_api_key=os.getenv("AZURE_0125_MODEL_API_KEY"),
+          openai_api_key=os.getenv("AZURE_0125_MODEL_API_KEY"),  # type: ignore
       )
     else:
       self.llm: ChatOpenAI = ChatOpenAI(
@@ -66,8 +67,7 @@ class WorkflowAgent:
           model="gpt-4-0613",
           max_retries=500,
           # request_timeout=60 * 3,
-          streaming=True)
-    print("LLM for LangGraph agent:", self.llm)
+          streaming=False)
     self.tools = get_tools(langsmith_run_id=self.langsmith_run_id)
     self.agent = self.make_agent()
 
@@ -87,15 +87,22 @@ class WorkflowAgent:
   # Invoke the agent
   def execute_agent(self, data):
     agent_outcome = self.agent.invoke(data, {"metadata": {"langsmith_run_id": str(self.langsmith_run_id)}})
-    return {"agent_outcome": agent_outcome}
+    print(f"{agent_outcome = }")
+    return {"agent_outcome": agent_outcome, "kas_scratchpad": ['hi from execute_agent']}
 
   # Define the function to execute tools
   def execute_tools(self, data):
     # Get the most recent agent_outcome - this is the key added in the `agent` above
+    print("In execute tools", data)
     agent_action = data.pop('agent_outcome')
+    print(f"{agent_action = }")
     tool_executor = ToolExecutor(self.tools)
     output = tool_executor.invoke(agent_action.tool_input)
-    return {"intermediate_steps": [(agent_action, str(output))]}
+    print(f"{output = }")
+    return {
+        "intermediate_steps": [(agent_action, str(output))],
+        "kas_scratchpad": ['hi from execute_tools', 'we have to entries from tools']
+    }
 
   # Define logic that will be used to determine which conditional edge to go down
   def should_continue(self, data):
@@ -138,7 +145,7 @@ class WorkflowAgent:
     app = workflow.compile()
 
     key, value = '', ''
-    inputs = {"input": input_prompt, "chat_history": [], "intermediate_steps": []}
+    inputs = {"input": input_prompt}
     # result = app.invoke(inputs)
     # print("RESULT", result)
     # output = result['agent_outcome'].return_values["output"]
