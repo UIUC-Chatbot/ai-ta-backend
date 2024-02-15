@@ -1,4 +1,3 @@
-# Inspired by https://modal.com/docs/examples/webcam#prediction-function
 """
 Run with: $ modal serve ai_ta_backend/modal/hello_world.py
 Deploy with with: $ modal deploy ai_ta_backend/modal/hello_world.py
@@ -11,27 +10,20 @@ with body:
         "https://www.arborday.org/trees/health/pests/images/figure-japanese-beetle-3.jpg"
     ]
 }
+
+Inspired by https://modal.com/docs/examples/webcam#prediction-function
 """
 import os
 from fastapi import Request
 from modal import Stub, enter, web_endpoint
 
-from fastapi.responses import JSONResponse
-from fastapi import HTTPException, WebSocketException
 import inspect
-import os
-from pathlib import Path
 from tempfile import NamedTemporaryFile
 import traceback
-from typing import Dict, List
+from typing import List
 import uuid
-# from PIL import Image
-# from ultralytics import YOLO
-# import boto3
 
-# from fastapi import FastAPI, Request, Response
-# from fastapi.staticfiles import StaticFiles
-from modal import Mount, Secret, Stub, asgi_app, build, method, web_endpoint
+from modal import Secret, Stub, build, web_endpoint
 import modal
 
 image = (
@@ -48,6 +40,7 @@ image = (
     ))
 stub = Stub("v2_pest_detection_yolo", image=image)
 
+# Imports needed inside the image
 with image.imports():
   import inspect
   import requests
@@ -57,11 +50,8 @@ with image.imports():
   from typing import List
   import uuid
   from PIL import Image
-  # import PIL
   from ultralytics import YOLO
   import boto3
-  from fastapi.responses import JSONResponse
-  from fastapi import HTTPException
 
 
 @stub.cls(cpu=1, image=image, secrets=[Secret.from_name("uiuc-chat-aws")])
