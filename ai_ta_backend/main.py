@@ -27,7 +27,7 @@ from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 from ai_ta_backend.journal_ingest import (get_arxiv_fulltext, downloadSpringerFulltext, 
                                           downloadElsevierFulltextFromDoi, getFromDoi, 
-                                          downloadPubmedArticles, downloadPubmedArticlesWithEutils)
+                                          downloadPubmedArticles, searchPubmedArticlesWithEutils)
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -752,7 +752,7 @@ def getPubmedArticleWithEutils():
         f"Missing required parameters: 'title', 'journal', or 'search_query' and 'course_name' must be provided."
     )
 
-  fulltext = downloadPubmedArticlesWithEutils(course_name, search_query, title, journal)
+  fulltext = searchPubmedArticlesWithEutils(course_name, search_query, title, journal)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')

@@ -268,7 +268,7 @@ def extract_record_data(xml_string):
 
     return extracted_data
 
-def downloadPubmedArticles(id, from_date, until_date, format, course_name):
+def downloadPubmedArticles(id, course_name, **kwargs):
     """
     This function downloads articles from PubMed using the OA Web Service API.
     Search is based on PubMed ID, date range, and file format.
@@ -278,6 +278,10 @@ def downloadPubmedArticles(id, from_date, until_date, format, course_name):
         until_date: end date
         format: file format - pdf or tgz
     """
+    from_date = kwargs.get('from_date', None)
+    until_date = kwargs.get('until_date', None)
+    format = kwargs.get('format', None)
+
     directory = os.path.join(os.getcwd(), 'pubmed_papers')
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -336,7 +340,7 @@ def downloadPubmedArticles(id, from_date, until_date, format, course_name):
 
     return "success"
 
-def downloadPubmedArticlesWithEutils(course: str, search: str, title: str, journal: str):
+def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal: str):
     """
     This function is used for a text-based search in PubMed using the E-Utilities API.
     Args:
@@ -368,36 +372,56 @@ def downloadPubmedArticlesWithEutils(course: str, search: str, title: str, journ
         search_query = search.replace(" ", "+")
         final_query += search_query
     
-    final_url = base_url + database + "&" + final_query + "&retmode=json"
-
+    final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100"
     print("Final URL: ", final_url)
     response = requests.get(final_url)
     data = response.json()
-    print("DATA: ", data)
+    
+    total_records = int(data['esearchresult']['count'])
+    total_records = 500
+    current_records = len(data['esearchresult']['idlist'])
     id_list = data['esearchresult']['idlist']
-    print ("ID List: ", id_list)
-    exit()
+    
+    while current_records < total_records:
+        retstart = current_records
+        final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100&retstart=" + str(retstart)
+        print("Final URL: ", final_url)
+        response = requests.get(final_url)
+        data = response.json()
+
+        current_ids = data['esearchresult']['idlist']
+        id_list += current_ids
+        current_records += len(current_ids)
+        print("Current Records: ", current_records)
+
+        id_str = ",".join(id_list)
+        current_pmc_ids = pubmed_id_converter(id_str)
+        
+        # call pubmed download here 
+        for pmc_id in current_pmc_ids:
+            downloadPubmedArticles(id=pmc_id, course_name=course)
+    return "success"
+
 
 def pubmed_id_converter(id: str):
     """
     This function is used to convert DOI to PubMed ID.
     Can also be used to convert PubMed ID to DOI.
     """
-    pmcid = None
+    pmcid_list = []
     base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
     app_details = "?tool=ncsa_uiuc&email=caiincsa@gmail.com"
     url = base_url + app_details + "&ids=" + id
-    print("URL: ", url)
-
-    response = requests.get(url)
-    print("Status: ", response.status_code)
-    print("Response: ", response.text)
-    root = ET.fromstring(response.text)
-    record = root.find("record")
-    pmcid = record.get("pmcid")
     
-    print("PMCID: ", pmcid)
-    return pmcid
+    response = requests.get(url)
+    root = ET.fromstring(response.text)
+    records = root.findall(".//record")
+    for record in records:
+        pmcid = record.get("pmcid")
+        if pmcid:
+            pmcid_list.append(pmcid)
+    
+    return pmcid_list
     
 def downloadFromFTP(paths, local_dir, ftp_address):
     """
