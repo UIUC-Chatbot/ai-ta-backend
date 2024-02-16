@@ -49,6 +49,7 @@ from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 from ai_ta_backend.context_parent_doc_padding import context_parent_doc_padding
 from ai_ta_backend.filtering_contexts import filter_top_contexts
+from ai_ta_backend.types.document import Document
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
@@ -1664,13 +1665,13 @@ Now please respond to my question: {user_question}"""
     Set the enabled status of a document group.
     """
     pass
-    # try:
-    #   self.supabase_client.table('doc_groups').update({
-    #       'enabled': enabled,
-    #   }).eq('course_name', course_name).eq('doc_group_name', doc_group_name).execute()
-    # except Exception as e:
-    #   print("Error in setting enabled status of doc group:", e)
-    #   sentry_sdk.capture_exception(e)
+    try:
+      self.supabase_client.table('projects').update({
+          'enabled': enabled,
+      }).eq('course_name', course_name).eq('doc_group_name', doc_group_name).execute()
+    except Exception as e:
+      print("Error in setting enabled status of doc group:", e)
+      sentry_sdk.capture_exception(e)
 
   def disable_doc_group(self, course_name: str, doc_group_name: str):
     """
@@ -1678,24 +1679,35 @@ Now please respond to my question: {user_question}"""
     """
     self.set_enabled_doc_group(course_name, doc_group_name, False)
 
-  def add_documents_to_doc_group(self, docs: list[dict], course_name: str, doc_group_name: str):
+  def add_documents_to_doc_group(self, course_name: str, docs: Document | list[Document]):
     """
-    Add documents to a document group in both supabase and qdrant.
-
-    1. get all the documents from supabase, grab their embeddings.
-    2. Update the points in qdrant using the embeddings as the key
+    Add document group name to documents (in both supabase and qdrant).
     """
-    # doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE', '')
+    if not isinstance(docs, list):
+      docs = [docs]
 
-    # doc has url or s3_path
-
-    # Add to Qdrant
     for doc in docs:
+      # 1. Update field in Supabase
+      doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE', '')
+      try:
+        if doc.s3_path:
+          self.supabase_client.table(doc_table).update({
+              'doc_group': doc.tag,
+          }).eq('course_name', course_name).eq('s3_path', doc.s3_path).execute()
+        elif doc.url:
+          self.supabase_client.table(doc_table).update({
+              'doc_group': doc.tag,
+          }).eq('course_name', course_name).eq('url', doc.url).execute()
+      except Exception as e:
+        print("Error in updating tag in Supabase:", e)
+        sentry_sdk.capture_exception(e)
+
+      # 2. Update Qdrant
       try:
         self.qdrant_client.set_payload(
             collection_name=os.environ['QDRANT_COLLECTION_NAME'],
             payload={
-                "doc_group": doc_group_name,
+                "doc_group": doc.tag,
             },
             points=models.Filter(must=[
                 models.FieldCondition(
@@ -1715,8 +1727,6 @@ Now please respond to my question: {user_question}"""
       except Exception as e:
         print("Error in adding file to Qdrant:", e)
         sentry_sdk.capture_exception(e)
-
-    pass
 
 
 if __name__ == '__main__':

@@ -19,12 +19,14 @@ from flask_executor import Executor
 from posthog import Posthog
 import ray
 import sentry_sdk
+from pydantic import ValidationError
 
 from ai_ta_backend.canvas import CanvasAPI
 from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+from ai_ta_backend.types.document import Document
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -571,31 +573,6 @@ def logToNomic():
   return response
 
 
-@app.route('/addDocumentToGroup', methods=['POST'])
-def addDocumentToGroup():
-  data = request.get_json()
-  print("In /addDocumentToGroup", data)
-  course_name = data['course_name']
-  document = data['document']
-  # doc_group = data['doc_group']
-
-  if course_name == '' or document == '':
-    # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'course_name' and 'document' must be provided. Course name: `{course_name}`, document: `{document}`"
-    )
-  # print(f"In /onResponseCompletion for course: {course_name}")
-
-  # background execution of tasks!!
-  # response = executor.submit(log_convo_to_nomic, course_name, data)
-  #response = executor.submit(log_convo_to_nomic, course_name, conversation)
-  response = jsonify({'outcome': 'Not implemented yet'})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
 @app.route('/export-convo-history-csv', methods=['GET'])
 def export_convo_history():
   course_name: str = request.args.get('course_name', default='', type=str)
@@ -726,6 +703,32 @@ def resource_report() -> Response:
   print("👆👆👆👆👆👆👆👆👆 </RESOURCE REPORT> 👆👆👆👆👆👆👆👆👆")
 
   response = jsonify({"outcome": "success"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/addDocumentToGroup', methods=['POST'])
+def addDocumentToGroup():
+  data = request.get_json()
+  print("In /addDocumentToGroup", data)
+  course_name = data['course_name']
+  document = Document(**data['document'])
+
+  try:
+    document = Document(**data.get('document', {}))
+  except ValidationError as e:
+    abort(400, description=f"Invalid document data: {e}")
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name' must be provided. Course name: `{course_name}`, document: `{document}`"
+    )
+  ingester = Ingest()
+  res = ingester.add_documents_to_doc_group(course_name=course_name, docs=document)
+  response = jsonify({'outcome': 'Not implemented yet'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 

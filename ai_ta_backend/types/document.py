@@ -7,4 +7,4 @@ class Document(BaseModel):
   s3_path: str
   base_url: str = Field(default='')
   url: str = Field(default='')
-  doc_group: str = Field(default='')
+  tag: str = Field(default='')
