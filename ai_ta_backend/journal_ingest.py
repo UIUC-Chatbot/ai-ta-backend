@@ -16,6 +16,8 @@ from ai_ta_backend.vector_database import Ingest
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
 
+##------------------------ DOI FUNCTIONS ------------------------##
+
 def getFromDoi(doi: str, course_name: str):
     """
     This function takes DOI string as input and downloads the article from the publisher's website.
@@ -48,6 +50,28 @@ def getFromDoi(doi: str, course_name: str):
 
     return "success"
 
+def get_article_link_from_doi(doi: str) -> str:
+    """
+    This function calls the doi.org API to retrieve the link to the journal article.
+    """    
+    prefix = "https://doi.org/api/handles/"
+
+    url = prefix + doi
+    response = requests.get(url)
+    data = response.json()
+    article_link = data['values'][0]['data']['value']
+
+    return article_link
+
+def get_article_metadata_from_crossref(doi: str):
+    """
+    This function calls the crossref.org API to retrieve the metadata of a journal article.
+    """    
+    metadata = crossref_commons.retrieval.get_publication_as_json(doi)
+    return metadata
+
+##------------------------ ARXIV API FUNCTIONS ------------------------##
+
 def get_arxiv_fulltext(query = "", ids = None, course_name = None):
     """
     This function retrieves journal articles from arXiv
@@ -73,25 +97,8 @@ def get_arxiv_fulltext(query = "", ids = None, course_name = None):
 
     return "success"
 
-def get_article_link_from_doi(doi: str) -> str:
-    """
-    This function calls the doi.org API to retrieve the link to the journal article.
-    """    
-    prefix = "https://doi.org/api/handles/"
 
-    url = prefix + doi
-    response = requests.get(url)
-    data = response.json()
-    article_link = data['values'][0]['data']['value']
-
-    return article_link
-
-def get_article_metadata_from_crossref(doi: str):
-    """
-    This function calls the crossref.org API to retrieve the metadata of a journal article.
-    """    
-    metadata = crossref_commons.retrieval.get_publication_as_json(doi)
-    return metadata
+##------------------------ SPRINGER NATURE API FUNCTIONS ------------------------##
 
 def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, doi=None, course_name=None):
     """
@@ -211,6 +218,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
                                 
     return "success"
 
+##------------------------ ELSEVIER API FUNCTIONS ------------------------##
 
 def downloadElsevierFulltextFromDoi(doi: str, course_name: str):
     """
@@ -243,30 +251,87 @@ def downloadElsevierFulltextFromDoi(doi: str, course_name: str):
 
     return "success"
 
-def extract_record_data(xml_string):
+def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
     """
-    It is used to parse the response from the OA Web Service API - downloadPubmedArticles().
-    Extracts record ID, license, and href elements from an XML string.
+    This function is used for a text-based search in ScienceDirect.
     Args:
-        xml_string: XML string --> Response from the OA Web Service API
-    Returns:
-        extracted_data: list of dictionaries
+        course: course name
+        query: search query
+        title: article title
+        journal: journal title
     """
-    root = ET.fromstring(xml_string)
-    records = root.findall(".//record")
-    extracted_data = []
+    directory = os.path.join(os.getcwd(), 'elsevier_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-    for record in records:
-        record_id = record.get("id")
-        license = record.get("license")
-        href = record.find(".//link").get("href")
-        extracted_data.append({
-            "record_id": record_id,
-            "license": license,
-            "href": href
-        })
+    data = {
+        "filter": {
+            "openAccess": True
+        },
+        "display": {
+            "offset": 0,
+            "show": 50
+        }
+    }
 
-    return extracted_data
+    # read parameters from request
+    if query:
+        data["qs"] = query
+    if title:
+        data["title"] = title
+    if pub:
+        data["pub"] = pub
+
+    url = "https://api.elsevier.com/content/search/sciencedirect?"
+    headers = {'X-ELS-APIKey': ELSEVIER_API_KEY, 'Accept':'application/json'}
+
+    response = requests.put(url, headers=headers, json=data)
+    print("Status: ", response.status_code)
+    data = response.json()
+    results = data['results']
+    total_results = data['resultsFound']
+    print("Total results: ", total_results)
+    current_results = len(results)  
+
+    # iterate through results and extract doi and pii
+    for result in results:
+        doi = result['doi']
+        #pii = result['pii']
+        if doi:
+            downloadElsevierFulltextFromDoi(doi=doi, course_name=course)
+        # elif pii:
+        #     # download with pii
+        #     pass
+
+    # paginate through results if total > current 
+    while current_results < total_results:
+        
+        data["display"]["offset"] += current_results
+        response = requests.put(url, headers=headers, json=data)
+        print("Status: ", response.status_code)
+        data = response.json()
+        results = data['results']
+        current_results += len(results)
+        print("Current results: ", current_results)
+
+        # iterate through results and extract doi and pii
+        for result in results:
+            doi = result['doi']
+            #pii = result['pii']
+            if doi:
+                downloadElsevierFulltextFromDoi(doi=doi, course_name=course)
+            # elif pii:
+            #     # download with pii
+            #     pass
+
+    return "success"
+
+def searchScopusArticles(course: str, query: str, title: str, pub: str):
+    
+    return "success"
+    
+
+##------------------------ PUBMED API FUNCTIONS ------------------------##
 
 def downloadPubmedArticles(id, course_name, **kwargs):
     """
@@ -422,7 +487,34 @@ def pubmed_id_converter(id: str):
             pmcid_list.append(pmcid)
     
     return pmcid_list
+
+
+def extract_record_data(xml_string):
+    """
+    It is used to parse the response from the OA Web Service API - downloadPubmedArticles().
+    Extracts record ID, license, and href elements from an XML string.
+    Args:
+        xml_string: XML string --> Response from the OA Web Service API
+    Returns:
+        extracted_data: list of dictionaries
+    """
+    root = ET.fromstring(xml_string)
+    records = root.findall(".//record")
+    extracted_data = []
+
+    for record in records:
+        record_id = record.get("id")
+        license = record.get("license")
+        href = record.find(".//link").get("href")
+        extracted_data.append({
+            "record_id": record_id,
+            "license": license,
+            "href": href
+        })
+
+    return extracted_data
     
+
 def downloadFromFTP(paths, local_dir, ftp_address):
     """
     This function downloads files from an FTP server. 
