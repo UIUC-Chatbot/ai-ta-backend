@@ -1685,7 +1685,7 @@ Now please respond to my question: {user_question}"""
     1. get all the documents from supabase, grab their embeddings.
     2. Update the points in qdrant using the embeddings as the key
     """
-    doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE', '')
+    # doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE', '')
 
     # doc has url or s3_path
 

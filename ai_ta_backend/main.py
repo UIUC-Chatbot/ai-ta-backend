@@ -571,6 +571,31 @@ def logToNomic():
   return response
 
 
+@app.route('/addDocumentToGroup', methods=['POST'])
+def addDocumentToGroup():
+  data = request.get_json()
+  print("In /addDocumentToGroup", data)
+  course_name = data['course_name']
+  document = data['document']
+  # doc_group = data['doc_group']
+
+  if course_name == '' or document == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name' and 'document' must be provided. Course name: `{course_name}`, document: `{document}`"
+    )
+  # print(f"In /onResponseCompletion for course: {course_name}")
+
+  # background execution of tasks!!
+  # response = executor.submit(log_convo_to_nomic, course_name, data)
+  #response = executor.submit(log_convo_to_nomic, course_name, conversation)
+  response = jsonify({'outcome': 'Not implemented yet'})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/export-convo-history-csv', methods=['GET'])
 def export_convo_history():
   course_name: str = request.args.get('course_name', default='', type=str)
