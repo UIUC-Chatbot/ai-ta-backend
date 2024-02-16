@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
 
-class Document(BaseModel):
+class MaterialDocument(BaseModel):
   course_name: str
   readable_filename: str
   s3_path: str

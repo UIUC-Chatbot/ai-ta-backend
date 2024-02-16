@@ -49,7 +49,7 @@ from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 from ai_ta_backend.context_parent_doc_padding import context_parent_doc_padding
 from ai_ta_backend.filtering_contexts import filter_top_contexts
-from ai_ta_backend.types.document import Document
+from ai_ta_backend.types.document import MaterialDocument
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
@@ -1679,12 +1679,14 @@ Now please respond to my question: {user_question}"""
     """
     self.set_enabled_doc_group(course_name, doc_group_name, False)
 
-  def add_documents_to_doc_group(self, course_name: str, docs: Document | list[Document]):
+  def add_documents_to_doc_group(self, course_name: str, docs: MaterialDocument | list[MaterialDocument]):
     """
     Add document group name to documents (in both supabase and qdrant).
     """
     if not isinstance(docs, list):
       docs = [docs]
+
+    ret = ''
 
     for doc in docs:
       # 1. Update field in Supabase
@@ -1699,7 +1701,9 @@ Now please respond to my question: {user_question}"""
               'doc_group': doc.tag,
           }).eq('course_name', course_name).eq('url', doc.url).execute()
       except Exception as e:
-        print("Error in updating tag in Supabase:", e)
+        error = f"Error in updating tag in Supabase: {e}"
+        print(error)
+        ret += error
         sentry_sdk.capture_exception(e)
 
       # 2. Update Qdrant
@@ -1725,8 +1729,14 @@ Now please respond to my question: {user_question}"""
             ],),
         )
       except Exception as e:
-        print("Error in adding file to Qdrant:", e)
+        error = f"Error in updating tag in Qdrant: {e}"
+        print(error)
+        ret += error
         sentry_sdk.capture_exception(e)
+
+    if ret == '':
+      return "Success"
+    return ret
 
 
 if __name__ == '__main__':

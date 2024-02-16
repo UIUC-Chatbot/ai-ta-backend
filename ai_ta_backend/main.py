@@ -26,7 +26,7 @@ from ai_ta_backend.export_data import export_convo_history_csv
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
-from ai_ta_backend.types.document import Document
+from ai_ta_backend.types.document import MaterialDocument
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -712,10 +712,9 @@ def addDocumentToGroup():
   data = request.get_json()
   print("In /addDocumentToGroup", data)
   course_name = data['course_name']
-  document = Document(**data['document'])
 
   try:
-    document = Document(**data.get('document', {}))
+    document = MaterialDocument(**data.get('document', {}))
   except ValidationError as e:
     abort(400, description=f"Invalid document data: {e}")
 
@@ -728,7 +727,7 @@ def addDocumentToGroup():
     )
   ingester = Ingest()
   res = ingester.add_documents_to_doc_group(course_name=course_name, docs=document)
-  response = jsonify({'outcome': 'Not implemented yet'})
+  response = jsonify({'outcome': res})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
