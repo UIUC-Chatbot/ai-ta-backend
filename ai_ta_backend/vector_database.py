@@ -1659,6 +1659,65 @@ Now please respond to my question: {user_question}"""
       print(f"NOT a duplicate! 📄s3_path: {filename}")
       return False
 
+  def set_enabled_doc_group(self, course_name: str, doc_group_name: str, enabled: bool):
+    """
+    Set the enabled status of a document group.
+    """
+    pass
+    # try:
+    #   self.supabase_client.table('doc_groups').update({
+    #       'enabled': enabled,
+    #   }).eq('course_name', course_name).eq('doc_group_name', doc_group_name).execute()
+    # except Exception as e:
+    #   print("Error in setting enabled status of doc group:", e)
+    #   sentry_sdk.capture_exception(e)
+
+  def disable_doc_group(self, course_name: str, doc_group_name: str):
+    """
+    Disable a document group.
+    """
+    self.set_enabled_doc_group(course_name, doc_group_name, False)
+
+  def add_documents_to_doc_group(self, docs: list[dict], course_name: str, doc_group_name: str):
+    """
+    Add documents to a document group in both supabase and qdrant.
+
+    1. get all the documents from supabase, grab their embeddings.
+    2. Update the points in qdrant using the embeddings as the key
+    """
+    doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE', '')
+
+    # doc has url or s3_path
+
+    # Add to Qdrant
+    for doc in docs:
+      try:
+        self.qdrant_client.set_payload(
+            collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+            payload={
+                "doc_group": doc_group_name,
+            },
+            points=models.Filter(must=[
+                models.FieldCondition(
+                    key="course_name",
+                    match=models.MatchValue(value=course_name),
+                ),
+                models.FieldCondition(
+                    key="s3_path",
+                    match=models.MatchValue(value=doc.s3_path if doc.s3_path else ''),
+                ),
+                models.FieldCondition(
+                    key="url",
+                    match=models.MatchValue(value=doc.url if doc.url else ''),
+                ),
+            ],),
+        )
+      except Exception as e:
+        print("Error in adding file to Qdrant:", e)
+        sentry_sdk.capture_exception(e)
+
+    pass
+
 
 if __name__ == '__main__':
   pass
