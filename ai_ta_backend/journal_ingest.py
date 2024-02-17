@@ -7,6 +7,7 @@ import crossref_commons.retrieval
 import xml.etree.ElementTree as ET
 import ftplib
 from urllib.parse import urlparse
+import urllib.parse
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
@@ -260,10 +261,7 @@ def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
         title: article title
         journal: journal title
     """
-    directory = os.path.join(os.getcwd(), 'elsevier_papers')
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
+    
     data = {
         "filter": {
             "openAccess": True
@@ -326,10 +324,72 @@ def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
 
     return "success"
 
-def searchScopusArticles(course: str, query: str, title: str, pub: str):
+def searchScopusArticles(course: str, query: str, title: str, pub: str, subject: str, issn: str):
+    """
+    This function uses the Scopus Search API to retrieve metadata for journal articles
+    and then downloads the fulltext using downloadElsevierFulltextFromDoi().
+    """
+    # uses GET request
+    base_url = "https://api.elsevier.com/content/search/scopus?"
+    query = "query="
+    # read parameters from request
+    if issn:
+        query += "ISSN(" + issn + ")"
+
+    if pub:
+        query += "SRCTITLE(" + pub + ")"
+    if title:
+        query += "TITLE(" + title + ")"
+    if subject:
+        query += "SUBJAREA(" + subject + ")"
+
+    final_url = base_url + query + "OPENACCESS(1)" + "&apiKey=" + str(ELSEVIER_API_KEY)
+    
+    print("Final URL: ", final_url)
+
+    encoded_url = urllib.parse.quote(final_url, safe=':/?&=')
+    print("Encoded URL: ", encoded_url)
+
+    response = requests.get(encoded_url)
+    print("Status: ", response.status_code)
+    data = response.json()
+
+    # iterate through results and extract full-text links
+    results = data['search-results']['entry']
+    for result in results:
+        for link in result['link']:
+            if link['@ref'] == 'full-text':
+                print("Full-text link: ", link['@href'])
+                
+                # download full-text with link
+                headers = {'X-ELS-APIKey': ELSEVIER_API_KEY, 'Accept':'application/pdf'}
+                full_text_response = requests.get(link['@href'], headers=headers)
+                print("Status: ", full_text_response.status_code)
+                #print("Full-text response: ", full_text_response.text)
+
+                with open("scopus_paper.pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+                    for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+                        f.write(chunk)
+                
+                exit()
+
+
+    # response is JSON and has next page link
+    links = data['search-results']['link']
+    next_page_url = None
+    for link in links:
+        if link['@ref'] == 'next':
+            next_page_url = link['@href']
+            break
+    print("Next page: ", next_page_url)
+
+    
+
+
     
     return "success"
-    
+
+
 
 ##------------------------ PUBMED API FUNCTIONS ------------------------##
 

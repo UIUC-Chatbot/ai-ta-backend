@@ -27,7 +27,8 @@ from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 from ai_ta_backend.journal_ingest import (get_arxiv_fulltext, downloadSpringerFulltext, 
                                           downloadElsevierFulltextFromDoi, getFromDoi, 
-                                          downloadPubmedArticles, searchPubmedArticlesWithEutils)
+                                          downloadPubmedArticles, searchPubmedArticlesWithEutils,
+                                          searchScopusArticles)
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -757,6 +758,35 @@ def getPubmedArticleWithEutils():
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+@app.route('/getScopusArticles', methods=['GET'])
+def getScopusArticle() -> Response:
+  """
+  Download full-text article from Scopus
+  """
+  course_name = request.args.get('course_name', default='', type=str)
+  title = request.args.get('title', default='', type=str)
+  journal = request.args.get('journal', default='', type=str)
+  search_query = request.args.get('search_query', default='', type=str)
+  subject = request.args.get('subject', default='', type=str)
+  issn = request.args.get('issn', default='', type=str)
+
+  print("In /getScopusArticles")
+
+  if (title == '' and journal  == '' and search_query == '') or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameters: 'title', 'journal', or 'search_query' and 'course_name' must be provided."
+    )
+
+  fulltext = searchScopusArticles(course_name, search_query, title, journal, subject, issn)
+
+  response = jsonify(fulltext)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/resource-report', methods=['GET'])
 def resource_report() -> Response:
