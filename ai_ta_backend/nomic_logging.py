@@ -14,9 +14,12 @@ import json
 
 OPENAI_API_TYPE = "azure"
 
-LOCK_EXCEPTIONS = ['Project is locked for state access! Please wait until the project is unlocked to access embeddings.', 
-                   'Project is locked for state access! Please wait until the project is unlocked to access data.', 
-                   'Project is currently indexing and cannot ingest new datums. Try again later.']
+LOCK_EXCEPTIONS = [
+    'Project is locked for state access! Please wait until the project is unlocked to access embeddings.',
+    'Project is locked for state access! Please wait until the project is unlocked to access data.',
+    'Project is currently indexing and cannot ingest new datums. Try again later.'
+]
+
 
 def giveup_hdlr(e):
   """
@@ -36,12 +39,16 @@ def giveup_hdlr(e):
     sentry_sdk.capture_exception(e)
     return True
 
+
 def backoff_hdlr(details):
   """
   Function to handle backup conditions in backoff decorator.
   Currently just prints the details of the backoff.
   """
-  print("\nBacking off {wait:0.1f} seconds after {tries} tries, calling function {target} with args {args} and kwargs {kwargs}".format(**details))
+  print(
+      "\nBacking off {wait:0.1f} seconds after {tries} tries, calling function {target} with args {args} and kwargs {kwargs}"
+      .format(**details))
+
 
 def backoff_strategy():
   """
@@ -50,7 +57,13 @@ def backoff_strategy():
   """
   return backoff.expo(base=10, factor=1.5)
 
-@backoff.on_exception(backoff_strategy, Exception, max_tries=5, raise_on_giveup=False, giveup=giveup_hdlr, on_backoff=backoff_hdlr)
+
+@backoff.on_exception(backoff_strategy,
+                      Exception,
+                      max_tries=5,
+                      raise_on_giveup=False,
+                      giveup=giveup_hdlr,
+                      on_backoff=backoff_hdlr)
 def log_convo_to_nomic(course_name: str, conversation) -> str:
   nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
   NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
@@ -193,8 +206,8 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     else:
       # raising exception again to trigger backoff and passing parameters to use in create_nomic_map()
       raise Exception({"exception": str(e)})
-      
-    
+
+
 def get_nomic_map(course_name: str):
   """
   Returns the variables necessary to construct an iframe of the Nomic map given a course name.
@@ -377,7 +390,7 @@ def create_nomic_map(course_name: str, log_data: list):
     else:
       print("ERROR in create_nomic_map():", e)
       sentry_sdk.capture_exception(e)
-        
+
     return "failed"
 
 

