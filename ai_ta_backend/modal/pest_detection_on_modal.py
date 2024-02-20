@@ -26,6 +26,7 @@ import uuid
 from modal import Secret, Stub, build, web_endpoint
 import modal
 
+# Simpler image, but slower cold starts: modal.Image.from_registry('ultralytics/ultralytics:latest-cpu')
 image = (
     modal.Image.debian_slim(python_version="3.10").apt_install("libgl1-mesa-glx", "libglib2.0-0")
     # .run_commands(["apt-get install -y libgl1-mesa-glx libglib2.0-0 wget"])
@@ -132,7 +133,7 @@ class Model:
       return err
 
   def _detect_pests(self, image_paths: List[str]) -> List[Image.Image]:
-    """I couldn't get the stupid types to work:  -> List[Image.Image]"""
+    """ Run pest detection on the given images. """
     # Run inference
     results = self.model(image_paths)  # results object with inference results
 
