@@ -14,6 +14,7 @@ import json
 
 OPENAI_API_TYPE = "azure"
 
+
 SUPABASE_CLIENT = supabase.create_client(  # type: ignore
       supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
       supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
@@ -40,12 +41,16 @@ def giveup_hdlr(e):
     sentry_sdk.capture_exception(e)
     return True
 
+
 def backoff_hdlr(details):
   """
   Function to handle backup conditions in backoff decorator.
   Currently just prints the details of the backoff.
   """
-  print("\nBacking off {wait:0.1f} seconds after {tries} tries, calling function {target} with args {args} and kwargs {kwargs}".format(**details))
+  print(
+      "\nBacking off {wait:0.1f} seconds after {tries} tries, calling function {target} with args {args} and kwargs {kwargs}"
+      .format(**details))
+
 
 def backoff_strategy():
   """
@@ -54,7 +59,13 @@ def backoff_strategy():
   """
   return backoff.expo(base=10, factor=1.5)
 
-@backoff.on_exception(backoff_strategy, Exception, max_tries=5, raise_on_giveup=False, giveup=giveup_hdlr, on_backoff=backoff_hdlr)
+
+@backoff.on_exception(backoff_strategy,
+                      Exception,
+                      max_tries=5,
+                      raise_on_giveup=False,
+                      giveup=giveup_hdlr,
+                      on_backoff=backoff_hdlr)
 def log_convo_to_nomic(course_name: str, conversation) -> str:
   nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
   NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
@@ -197,9 +208,10 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
     else:
       # raising exception again to trigger backoff and passing parameters to use in create_nomic_map()
       raise Exception({"exception": str(e)})
-      
+
     
 def get_nomic_map(course_name: str, type: str):
+
   """
   Returns the variables necessary to construct an iframe of the Nomic map given a course name.
   We just need the ID and URL.
@@ -384,7 +396,7 @@ def create_nomic_map(course_name: str, log_data: list):
     else:
       print("ERROR in create_nomic_map():", e)
       sentry_sdk.capture_exception(e)
-        
+
     return "failed"
 
 ## -------------------------------- DOCUMENT MAP FUNCTIONS --------------------------------- ##

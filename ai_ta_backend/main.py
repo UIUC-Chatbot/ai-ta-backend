@@ -3,6 +3,9 @@ import os
 import threading
 import time
 from typing import List
+import requests
+from threading import Thread
+
 
 from dotenv import load_dotenv
 from flask import (
@@ -13,6 +16,7 @@ from flask import (
     make_response,
     request,
     send_from_directory,
+    stream_with_context,
 )
 from flask_cors import CORS
 from flask_executor import Executor
@@ -21,7 +25,8 @@ import ray
 import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
-from ai_ta_backend.export_data import export_convo_history_csv
+
+from ai_ta_backend.export_data import export_convo_history_json, export_documents_json, check_s3_path_and_download
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, create_document_map
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
@@ -40,6 +45,7 @@ app = Flask(__name__)
 CORS(app)
 executor = Executor(app)
 # app.config['EXECUTOR_MAX_WORKERS'] = 5 nothing == picks defaults for me
+#app.config['SERVER_TIMEOUT'] = 1000  # seconds
 
 # load API keys from globally-availabe .env file
 load_dotenv()
@@ -592,14 +598,23 @@ def export_convo_history():
     # proper web error "400 Bad request"
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  export_status = export_convo_history_csv(course_name, from_date, to_date)
+  export_status = export_convo_history_json(course_name, from_date, to_date)
   print("EXPORT FILE LINKS: ", export_status)
 
-  response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
+  if export_status['response'] == "No data found between the given dates.":
+    response = Response(status=204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
 
-  os.remove(export_status[0])
+  elif export_status['response'] == "Download from S3":
+    response = jsonify({"response": "Download from S3", "s3_path": export_status['s3_path']})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  else:
+    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
+    os.remove(export_status['response'][0])
+    
   return response
 
 
