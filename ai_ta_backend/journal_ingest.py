@@ -12,10 +12,16 @@ import urllib.parse
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
 
+import supabase
+import tarfile
 
 # Below functions hit API endpoints from sites like arXiv, Elsevier, and Sringer Nature to retrieve journal articles
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
+
+SUPABASE_CLIENT = supabase.create_client(  # type: ignore
+      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
 ##------------------------ DOI FUNCTIONS ------------------------##
 
@@ -453,11 +459,24 @@ def downloadPubmedArticles(id, course_name, **kwargs):
         # download articles
         download_status = downloadFromFTP(records, directory, ftp_address="ftp.ncbi.nlm.nih.gov")
 
+    # upload to supabase bucket
+    try:
+        for root, directories, files in os.walk(directory):
+            for file in files:
+                filepath = os.path.join(root, file)
+                print("Uploading: ", file)
+                uppload_path = "pubmed_articles/" + file
+                with open(filepath, "rb") as f:
+                    res = SUPABASE_CLIENT.storage.from_("publications").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
+                    print("Upload response: ", res)
+            
+    except Exception as e:
+        print("Error: ", e)
     # # upload to s3
     # s3_paths = upload_data_files_to_s3(course_name, directory)
 
     # # Delete files from local directory
-    # shutil.rmtree(directory)
+    shutil.rmtree(directory)
 
     # # ingest into QDRANT
     # ingest = Ingest()
@@ -599,7 +618,32 @@ def downloadFromFTP(paths, local_dir, ftp_address):
         with open(local_file, 'wb') as f:
             ftp.retrbinary("RETR " + ftp_path, f.write)
         print("Downloaded: ", filename)
+
+        # if filename ends in tar.gz, extract the pdf and delete the tar.gz
+        if filename.endswith(".tar.gz"):
+            extracted_pdf = extract_pdf(local_file)
+            os.remove(local_file)
     ftp.quit()
         
     
     return "success"
+
+
+def extract_pdf(tar_gz_file):
+  """
+  Extracts a PDF file from a tar.gz archive and stores it in the same folder.
+
+  Args:
+    tar_gz_file: The path to the tar.gz file.
+  """
+
+  with tarfile.open(tar_gz_file, "r:gz") as tar:
+    for member in tar:
+      # Check if it's a regular file and ends with .pdf extension
+      if member.isreg() and member.name.endswith(".pdf"):
+        # get the file name
+        
+        # Extract the file to the same directory
+        tar.extract(member, path="pubmed_papers")
+
+        return member.name

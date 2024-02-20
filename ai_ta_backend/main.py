@@ -730,7 +730,7 @@ def getArticleFromPubmed():
         f"Missing required parameters: 'id', 'from_date', or 'until_date' and 'course_name' must be provided."
     )
 
-  fulltext = downloadPubmedArticles(id, from_date, until_date, format, course_name)
+  fulltext = downloadPubmedArticles(id, course_name, from_date=from_date, until_date=until_date, format=format)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
