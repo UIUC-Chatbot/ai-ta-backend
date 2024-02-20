@@ -875,7 +875,7 @@ class Ingest():
       oai = OpenAIAPIProcessor(
           input_prompts_list=input_texts,
           request_url='https://api.openai.com/v1/embeddings',
-          api_key=os.getenv('MY_OPENAI_API_KEY'),
+          api_key=os.getenv('VLADS_OPENAI_KEY'),
           # request_url='https://uiuc-chat-canada-east.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-05-15',
           # api_key=os.getenv('AZURE_OPENAI_KEY'),
           max_requests_per_minute=5_000,
