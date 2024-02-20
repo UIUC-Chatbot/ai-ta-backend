@@ -238,7 +238,12 @@ def ingest() -> Response:
   s3_paths: List[str] | str = request.args.get('s3_paths', default='')
   readable_filename: List[str] | str = request.args.get('readable_filename', default='')
   course_name: List[str] | str = request.args.get('course_name', default='')
-  print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}")
+  base_url: List[str] | str | None = request.args.get('base_url', default=None)
+  url: List[str] | str | None = request.args.get('url', default=None)
+
+  print(
+      f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}"
+  )
 
   if course_name == '' or s3_paths == '':
     # proper web error "400 Bad request"
@@ -252,9 +257,13 @@ def ingest() -> Response:
 
   ingester = Ingest()
   if readable_filename == '':
-    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name, base_url=base_url, url=url)
   else:
-    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name, readable_filename=readable_filename)
+    success_fail_dict = ingester.bulk_ingest(s3_paths,
+                                             course_name,
+                                             readable_filename=readable_filename,
+                                             base_url=base_url,
+                                             url=url)
   print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
   del ingester
 
