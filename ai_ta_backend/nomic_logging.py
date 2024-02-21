@@ -438,7 +438,6 @@ def create_document_map(course_name: str):
       # iteratively query in batches of 25
       while curr_total_doc_count < total_doc_count:
 
-        print("Fetching data from id: ", first_id)
         response = supabase_client.table("documents").select("id, created_at, s3_path, url, readable_filename, contexts").eq("course_name", course_name).gte(
           'id', first_id).order('id', desc=False).limit(25).execute()
         df = pd.DataFrame(response.data)
@@ -446,27 +445,23 @@ def create_document_map(course_name: str):
 
         curr_total_doc_count += len(response.data)
         doc_count += len(response.data)
-        print("No. of docs downloaded: ", curr_total_doc_count)
 
         if doc_count >= 1000: # upload to Nomic every 1000 docs
           
           # concat all dfs from the combined_dfs list
           final_df = pd.concat(combined_dfs, ignore_index=True)
-          print("Number of docs uploaded in current batch: ", final_df.shape)
 
           # prep data for nomic upload
           embeddings, metadata = data_prep_for_doc_map(final_df)
 
           if first_batch:
             # create a new map
-            print("First batch - creating new map...")
-            # create Atlas project
+            print("Creating new map...")
             project_name = NOMIC_MAP_NAME_PREFIX + course_name
             index_name = course_name + "_doc_index"
             topic_label_field = "text"
             colorable_fields = ["readable_filename", "text"]
             result = create_map(embeddings, metadata, project_name, index_name, topic_label_field, colorable_fields)
-            print("First batch map creation status: ", result)
             # update flag
             first_batch = False
 
@@ -476,8 +471,7 @@ def create_document_map(course_name: str):
             project_name = NOMIC_MAP_NAME_PREFIX + course_name
             # add project lock logic here
             result = append_to_map(embeddings, metadata, project_name)
-            print("Data append status: ", result)
-          
+                     
           # reset variables
           combined_dfs = []
           doc_count = 0
@@ -487,7 +481,6 @@ def create_document_map(course_name: str):
       
       # upload last set of docs
       final_df = pd.concat(combined_dfs, ignore_index=True)
-      print("Number of docs uploaded in last batch: ", final_df.shape)
       embeddings, metadata = data_prep_for_doc_map(final_df)
       project_name = NOMIC_MAP_NAME_PREFIX + course_name
       if first_batch:
@@ -497,7 +490,7 @@ def create_document_map(course_name: str):
         result = create_map(embeddings, metadata, project_name, index_name, topic_label_field, colorable_fields)
       else:
         result = append_to_map(embeddings, metadata, project_name)
-      print("Data upload status: ", result)
+      print("Atlas upload status: ", result)
 
       # log info to supabase
       project = AtlasProject(name=project_name, add_datums_if_exists=True)
@@ -524,9 +517,7 @@ def delete_from_document_map(course_name: str, ids: list):
     ids: list of str
   """
   print("in delete_from_document_map()")
-  print("course_name: ", course_name)
-  print("ids: ", ids)
-  
+    
   try:
     # check if project exists
     response = SUPABASE_CLIENT.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
@@ -627,7 +618,8 @@ def create_map(embeddings, metadata, map_name, index_name, topic_label_field, co
     topic_label_field: str
     colorable_fields: list of str
   """
-  nomic.login(os.getenv('NOMIC_API_KEY'))  
+  nomic.login(os.getenv('NOMIC_API_KEY'))
+  
   try:
     project = atlas.map_embeddings(
       embeddings=embeddings,
@@ -636,13 +628,15 @@ def create_map(embeddings, metadata, map_name, index_name, topic_label_field, co
       build_topic_model=True,
       name=map_name,
       topic_label_field=topic_label_field,
-      colorable_fields=colorable_fields
+      colorable_fields=colorable_fields,
+      add_datums_if_exists=True
     )
     project.create_index(index_name, build_topic_model=True)
     return "success"
   except Exception as e:
     print(e)
     return "Error in creating map: {e}"
+  
   
 def append_to_map(embeddings, metadata, map_name):
   """
@@ -681,14 +675,13 @@ def data_prep_for_doc_map(df: pd.DataFrame):
   for index, row in df.iterrows():
     
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
+    if row['url'] == None:
+      row['url'] = ""
     # iterate through all contexts and create separate entries for each
     context_count = 0
     for context in row['contexts']:
       context_count += 1
       text_row = context['text']
-      # print("elements in context:", context.keys())
-      # print("Length of single embedding: ", context['embedding'])
-      # exit()
       embeddings_row = context['embedding']
       
       meta_row = {
@@ -700,16 +693,13 @@ def data_prep_for_doc_map(df: pd.DataFrame):
         "created_at": current_time,
         "text": text_row
       }
+      
       embeddings.append(embeddings_row)
       metadata.append(meta_row)
       texts.append(text_row)
 
-  print("Total number of metadata rows: ", len(metadata))
-  print("Total number of embeddings rows: ", len(embeddings))
-  print("Total number of texts rows: ", len(texts))
-      
   embeddings_np = np.array(embeddings, dtype=object)
-  print("Shape of embeddings_np: ", embeddings_np.shape)
+  print("Shape of embeddings: ", embeddings_np.shape)
 
   # check dimension if embeddings_np is (n, 1536)
   if len(embeddings_np.shape) < 2:
