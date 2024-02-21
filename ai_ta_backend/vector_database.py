@@ -49,6 +49,7 @@ from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
 from ai_ta_backend.utils_tokenization import count_tokens_and_cost
 from ai_ta_backend.context_parent_doc_padding import context_parent_doc_padding
 from ai_ta_backend.filtering_contexts import filter_top_contexts
+from ai_ta_backend.nomic_logging import log_to_document_map, delete_from_document_map
 
 MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 OPENAI_API_TYPE = "openai"  # "openai" or "azure"
@@ -103,10 +104,11 @@ class Ingest():
 
   def __del__(self):
     # Gracefully shutdown the Posthog client -- this was a main cause of dangling threads.
-    try:
-      self.posthog.shutdown()
-    except Exception as e:
-      print("Failed to shutdown PostHog. Probably fine. Error: ", e)
+    # Since I changed Posthog to be sync, no need to shutdown.
+    # try:
+    #   self.posthog.shutdown()
+    # except Exception as e:
+    #   print("Failed to shutdown PostHog. Probably fine. Error: ", e)
     try:
       self.qdrant_client.close()
     except Exception as e:
@@ -824,6 +826,16 @@ class Ingest():
       # check for duplicates
       is_duplicate = self.check_for_duplicates(input_texts, metadatas)
       if is_duplicate:
+        self.posthog.capture('distinct_id_of_the_user',
+                             event='split_and_upload_succeeded',
+                             properties={
+                                 'course_name': metadatas[0].get('course_name', None),
+                                 's3_path': metadatas[0].get('s3_path', None),
+                                 'readable_filename': metadatas[0].get('readable_filename', None),
+                                 'url': metadatas[0].get('url', None),
+                                 'base_url': metadatas[0].get('base_url', None),
+                                 'is_duplicate': True,
+                             })
         return "Success"
 
       # adding chunk index to metadata for parent doc retrieval
@@ -833,9 +845,8 @@ class Ingest():
       oai = OpenAIAPIProcessor(
           input_prompts_list=input_texts,
           request_url='https://api.openai.com/v1/embeddings',
-          api_key=os.getenv('OPENAI_API_KEY'),
-          # request_url=
-          # 'https://uiuc-chat-canada-east.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-05-15',
+          api_key=os.getenv('VLADS_OPENAI_KEY'),
+          # request_url='https://uiuc-chat-canada-east.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-05-15',
           # api_key=os.getenv('AZURE_OPENAI_KEY'),
           max_requests_per_minute=5_000,
           max_tokens_per_minute=300_000,
@@ -878,8 +889,13 @@ class Ingest():
           "contexts": contexts_for_supa,
       }
 
-      self.supabase_client.table(
+      response = self.supabase_client.table(
           os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
+
+      # add to Nomic document map
+      if len(response.data) > 0:
+        inserted_data = response.data[0]
+        res = log_to_document_map(inserted_data)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
@@ -902,7 +918,6 @@ class Ingest():
     """Delete entire course.
 
     Delete materials from S3, Supabase SQL, Vercel KV, and QDrant vector DB
-
     Args:
         course_name (str): _description_
     """
@@ -956,6 +971,7 @@ class Ingest():
   def delete_data(self, course_name: str, s3_path: str, source_url: str):
     """Delete file from S3, Qdrant, and Supabase."""
     print(f"Deleting {s3_path} from S3, Qdrant, and Supabase for course {course_name}")
+    # add delete from doc map logic here
     try:
       # Delete file from S3
       bucket_name = os.getenv('S3_BUCKET_NAME')
@@ -981,8 +997,30 @@ class Ingest():
               ]),
           )
         except Exception as e:
-          print("Error in deleting file from Qdrant:", e)
+          if "timed out" in str(e):
+            # Timed out is fine. Still deletes.
+            # https://github.com/qdrant/qdrant/issues/3654#issuecomment-1955074525
+            pass
+          else:
+            print("Error in deleting file from Qdrant:", e)
+            sentry_sdk.capture_exception(e)
+        try:
+          # delete from Nomic
+          response = self.supabase_client.from_(
+              os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select("id, s3_path, contexts").eq(
+                  's3_path', s3_path).eq('course_name', course_name).execute()
+          data = response.data[0]  #single record fetched
+          nomic_ids_to_delete = []
+          context_count = len(data['contexts'])
+          for i in range(1, context_count + 1):
+            nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
+
+          # delete from Nomic
+          res = delete_from_document_map(course_name, nomic_ids_to_delete)
+        except Exception as e:
+          print("Error in deleting file from Nomic:", e)
           sentry_sdk.capture_exception(e)
+
         try:
           self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
               's3_path', s3_path).eq('course_name', course_name).execute()
@@ -1004,9 +1042,32 @@ class Ingest():
               ]),
           )
         except Exception as e:
-          print("Error in deleting file from Qdrant:", e)
-          sentry_sdk.capture_exception(e)
+          if "timed out" in str(e):
+            # Timed out is fine. Still deletes.
+            # https://github.com/qdrant/qdrant/issues/3654#issuecomment-1955074525
+            pass
+          else:
+            print("Error in deleting file from Qdrant:", e)
+            sentry_sdk.capture_exception(e)
         try:
+          # delete from Nomic
+          response = self.supabase_client.from_(
+              os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select("id, url, contexts").eq(
+                  'url', source_url).eq('course_name', course_name).execute()
+          data = response.data[0]  #single record fetched
+          nomic_ids_to_delete = []
+          context_count = len(data['contexts'])
+          for i in range(1, context_count + 1):
+            nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
+
+          # delete from Nomic
+          res = delete_from_document_map(course_name, nomic_ids_to_delete)
+        except Exception as e:
+          print("Error in deleting file from Nomic:", e)
+          sentry_sdk.capture_exception(e)
+
+        try:
+          # delete from Supabase
           self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
               'url', source_url).eq('course_name', course_name).execute()
         except Exception as e:

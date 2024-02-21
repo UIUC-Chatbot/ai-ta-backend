@@ -3,6 +3,9 @@ import os
 import threading
 import time
 from typing import List
+import requests
+from threading import Thread
+
 
 from dotenv import load_dotenv
 from flask import (
@@ -13,6 +16,7 @@ from flask import (
     make_response,
     request,
     send_from_directory,
+    stream_with_context,
 )
 from flask_cors import CORS
 from flask_executor import Executor
@@ -21,8 +25,9 @@ import ray
 import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
-from ai_ta_backend.export_data import export_convo_history_csv
-from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic
+
+from ai_ta_backend.export_data import export_convo_history_json, export_documents_json, check_s3_path_and_download
+from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, create_document_map
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 from ai_ta_backend.journal_ingest import (get_arxiv_fulltext, downloadSpringerFulltext, 
@@ -44,6 +49,7 @@ app = Flask(__name__)
 CORS(app)
 executor = Executor(app)
 # app.config['EXECUTOR_MAX_WORKERS'] = 5 nothing == picks defaults for me
+#app.config['SERVER_TIMEOUT'] = 1000  # seconds
 
 # load API keys from globally-availabe .env file
 load_dotenv()
@@ -242,7 +248,12 @@ def ingest() -> Response:
   s3_paths: List[str] | str = request.args.get('s3_paths', default='')
   readable_filename: List[str] | str = request.args.get('readable_filename', default='')
   course_name: List[str] | str = request.args.get('course_name', default='')
-  print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}")
+  base_url: List[str] | str | None = request.args.get('base_url', default=None)
+  url: List[str] | str | None = request.args.get('url', default=None)
+
+  print(
+      f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}"
+  )
 
   if course_name == '' or s3_paths == '':
     # proper web error "400 Bad request"
@@ -256,9 +267,13 @@ def ingest() -> Response:
 
   ingester = Ingest()
   if readable_filename == '':
-    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name)
+    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name, base_url=base_url, url=url)
   else:
-    success_fail_dict = ingester.bulk_ingest(s3_paths, course_name, readable_filename=readable_filename)
+    success_fail_dict = ingester.bulk_ingest(s3_paths,
+                                             course_name,
+                                             readable_filename=readable_filename,
+                                             base_url=base_url,
+                                             url=url)
   print(f"Bottom of /ingest route. success or fail dict: {success_fail_dict}")
   del ingester
 
@@ -290,13 +305,19 @@ def ingest_web_text() -> Response:
 
   print(f"In top of /ingest-web-text. course: {course_name}, base_url: {base_url}, url: {url}")
 
-  if course_name == '' or url == '' or content == '' or title == '':
+  if course_name == '' or url == '' or title == '':
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing one or more required parameters: course_name, url, content or title. Course name: `{course_name}`, url: `{url}`, content: `{content}`, title: `{title}`"
+        f"Missing one or more required parameters: course_name, url or title. Course name: `{course_name}`, url: `{url}`, content: `{content}`, title: `{title}`"
     )
+
+  if content == '':
+    print(f"Content is empty. Skipping ingestion of {url}")
+    response = jsonify({"outcome": "success"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
   print("NUM ACTIVE THREADS (top of /ingest-web-text):", threading.active_count())
 
@@ -531,12 +552,28 @@ def ingest_canvas():
 @app.route('/getNomicMap', methods=['GET'])
 def nomic_map():
   course_name: str = request.args.get('course_name', default='', type=str)
+  map_type: str = request.args.get('map_type', default='conversation', type=str)
+
   if course_name == '':
     # proper web error "400 Bad request"
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  map_id = get_nomic_map(course_name)
+  map_id = get_nomic_map(course_name, map_type)
   print("nomic map\n", map_id)
+
+  response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/createDocumentMap', methods=['GET'])
+def createDocumentMap():
+  course_name: str = request.args.get('course_name', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  map_id = create_document_map(course_name)
 
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -545,12 +582,12 @@ def nomic_map():
 
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic():
-  data = request.get_json()
-  course_name = data['course_name']
-  conversation = data['conversation']
+  # data = request.get_json()
+  # course_name = data['course_name']
+  # conversation = data['conversation']
 
-  #course_name: str = request.args.get('course_name', default='', type=str)
-  #conversation: str = request.args.get('conversation', default='', type=str)
+  course_name: str = request.args.get('course_name', default='', type=str)
+  conversation: str = request.args.get('conversation', default='', type=str)
 
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
@@ -562,8 +599,8 @@ def logToNomic():
   print(f"In /onResponseCompletion for course: {course_name}")
 
   # background execution of tasks!!
-  response = executor.submit(log_convo_to_nomic, course_name, data)
-  #response = executor.submit(log_convo_to_nomic, course_name, conversation)
+  #response = executor.submit(log_convo_to_nomic, course_name, data)
+  response = executor.submit(log_convo_to_nomic, course_name, conversation)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -579,14 +616,23 @@ def export_convo_history():
     # proper web error "400 Bad request"
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  export_status = export_convo_history_csv(course_name, from_date, to_date)
+  export_status = export_convo_history_json(course_name, from_date, to_date)
   print("EXPORT FILE LINKS: ", export_status)
 
-  response = make_response(send_from_directory(export_status[2], export_status[1], as_attachment=True))
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  response.headers["Content-Disposition"] = f"attachment; filename={export_status[1]}"
+  if export_status['response'] == "No data found between the given dates.":
+    response = Response(status=204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
 
-  os.remove(export_status[0])
+  elif export_status['response'] == "Download from S3":
+    response = jsonify({"response": "Download from S3", "s3_path": export_status['s3_path']})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  else:
+    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
+    os.remove(export_status['response'][0])
+    
   return response
 
 
