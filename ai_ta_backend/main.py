@@ -555,6 +555,20 @@ def nomic_map():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/createDocumentMap', methods=['GET'])
+def createDocumentMap():
+  course_name: str = request.args.get('course_name', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  map_id = create_document_map(course_name)
+
+  response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic():

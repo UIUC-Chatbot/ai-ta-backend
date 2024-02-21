@@ -487,6 +487,7 @@ def create_document_map(course_name: str):
       
       # upload last set of docs
       final_df = pd.concat(combined_dfs, ignore_index=True)
+      print("Number of docs uploaded in last batch: ", final_df.shape)
       embeddings, metadata = data_prep_for_doc_map(final_df)
       project_name = NOMIC_MAP_NAME_PREFIX + course_name
       if first_batch:
@@ -678,13 +679,16 @@ def data_prep_for_doc_map(df: pd.DataFrame):
   texts = [] 
 
   for index, row in df.iterrows():
+    
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
     # iterate through all contexts and create separate entries for each
     context_count = 0
     for context in row['contexts']:
       context_count += 1
       text_row = context['text']
-      print("Length of single embedding: ", len(context['embedding']))
+      # print("elements in context:", context.keys())
+      # print("Length of single embedding: ", context['embedding'])
+      # exit()
       embeddings_row = context['embedding']
       
       meta_row = {
@@ -710,9 +714,12 @@ def data_prep_for_doc_map(df: pd.DataFrame):
   # check dimension if embeddings_np is (n, 1536)
   if len(embeddings_np.shape) < 2:
     print("Creating new embeddings...")
-    embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE, 
-                                        openai_api_base=os.getenv('AZURE_OPENAI_BASE'),
-                                        openai_api_key=os.getenv('AZURE_OPENAI_KEY')) # type: ignore
+    # embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE, 
+    #                                     openai_api_base=os.getenv('AZURE_OPENAI_BASE'),
+    #                                     openai_api_key=os.getenv('AZURE_OPENAI_KEY')) # type: ignore
+    embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
+                                        openai_api_base="https://api.openai.com/v1/",
+                                        openai_api_key=os.getenv('VLADS_OPENAI_KEY'))  # type: ignore
     embeddings = embeddings_model.embed_documents(texts)
 
   metadata = pd.DataFrame(metadata)
