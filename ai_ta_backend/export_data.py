@@ -103,7 +103,7 @@ def export_documents_json(course_name: str, from_date='', to_date=''):
         with zipfile.ZipFile(zip_file_path, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
           zipf.write(file_path, filename)
 
-        #os.remove(file_path)
+        os.remove(file_path)
         return {"response": (zip_file_path, zip_filename, os.getcwd())}
       except Exception as e:
         print(e)
