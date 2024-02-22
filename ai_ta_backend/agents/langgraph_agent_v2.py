@@ -20,16 +20,16 @@ load_dotenv(override=True)
 
 
 class Plan(BaseModel):
-  """Plan to follow in future"""
-  steps: List[str] = Field(description="different steps to follow, should be in sorted order")
+  """Plan to follow in future to complete the objective"""
+  steps: List[str] = Field(description="Steps to follow in sorted order of execution.")
 
 
 class Response(BaseModel):
-  """Response to user."""
+  """Objective complete (or impossible), final response to user."""
   response: str
 
 
-class PlanExecute(TypedDict):
+class State(TypedDict):
   input: str
   chat_history: list[BaseMessage]
   plan: List[str]
@@ -97,19 +97,19 @@ Update your plan accordingly. If no more steps are needed and you can return to 
     self.workflow = self.create_workflow()
 
   def create_workflow(self):
-    workflow = StateGraph(PlanExecute)
+    workflow = StateGraph(State)
 
-    async def execute_step(state: PlanExecute):
+    async def execute_step(state: State):
       task = state["plan"][0]
       agent_response = await self.agent_executor.ainvoke({"input": task, "chat_history": []})
       return {"past_steps": (task, agent_response["agent_outcome"].return_values["output"])}
 
-    async def plan_step(state: PlanExecute):
+    async def plan_step(state: State):
       planner = create_structured_output_runnable(Plan, self.llm, self.planner_prompt)
       plan = await planner.ainvoke({"objective": state["input"]})
       return {"plan": plan.steps}
 
-    async def replan_step(state: PlanExecute):
+    async def replan_step(state: State):
       replanner = create_openai_fn_runnable([Plan, Response], self.llm, self.replanner_prompt)
       output = await replanner.ainvoke(state)
       if isinstance(output, Response):
@@ -117,7 +117,7 @@ Update your plan accordingly. If no more steps are needed and you can return to 
       else:
         return {"plan": output.steps}
 
-    def should_end(state: PlanExecute):
+    def should_end(state: State):
       if state["response"]:
         return True
       else:
