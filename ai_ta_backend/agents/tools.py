@@ -13,7 +13,7 @@ from langchain.tools import (BaseTool, StructuredTool)
 #     create_async_playwright_browser,
 #     create_sync_playwright_browser,
 # )
-from langchain.utilities.github import GitHubAPIWrapper
+from langchain_community.utilities.github import GitHubAPIWrapper
 
 from ai_ta_backend.agents.code_intrepreter_sanbox import E2B_class
 from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
