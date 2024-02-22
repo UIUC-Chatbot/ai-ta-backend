@@ -35,8 +35,6 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
-
-# Local imports
 from OpenaiEmbeddings import OpenAIAPIProcessor
 from PIL import Image
 from posthog import Posthog
@@ -72,6 +70,7 @@ requirements = [
     "sentry-sdk==1.39.1",
 ]
 
+# TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
 app = App("ingest",
           runtime=Runtime(
               cpu=1,
@@ -138,7 +137,7 @@ autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
 
 
 # Triggers determine how your app is deployed
-@app.rest_api(max_pending_tasks=10_000, loader=loader, autoscaler=autoscaler)
+@app.rest_api(max_pending_tasks=10_000, max_retries=3, loader=loader, autoscaler=autoscaler)
 def ingest(**inputs: Dict[str, Any]):
   qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
 
