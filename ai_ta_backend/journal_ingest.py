@@ -460,23 +460,23 @@ def downloadPubmedArticles(id, course_name, **kwargs):
         download_status = downloadFromFTP(records, directory, ftp_address="ftp.ncbi.nlm.nih.gov")
 
     # upload to supabase bucket
-    try:
-        for root, directories, files in os.walk(directory):
-            for file in files:
-                filepath = os.path.join(root, file)
-                print("Uploading: ", file)
-                uppload_path = "pubmed_articles/" + file
-                with open(filepath, "rb") as f:
-                    res = SUPABASE_CLIENT.storage.from_("publications").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
-                    print("Upload response: ", res)
+    # try:
+    #     for root, directories, files in os.walk(directory):
+    #         for file in files:
+    #             filepath = os.path.join(root, file)
+    #             print("Uploading: ", file)
+    #             uppload_path = "pubmed_articles/" + file
+    #             with open(filepath, "rb") as f:
+    #                 res = SUPABASE_CLIENT.storage.from_("publications").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
+    #                 print("Upload response: ", res)
             
-    except Exception as e:
-        print("Error: ", e)
+    # except Exception as e:
+    #     print("Error: ", e)
     # # upload to s3
     # s3_paths = upload_data_files_to_s3(course_name, directory)
 
     # # Delete files from local directory
-    shutil.rmtree(directory)
+    #shutil.rmtree(directory)
 
     # # ingest into QDRANT
     # ingest = Ingest()
@@ -508,7 +508,7 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
     else:
         final_query += title_query
     if journal:
-        journal_query = journal.replace(" ", "+") + "[Journal]"
+        journal_query = journal.replace(" ", "+") + "[ta]"
         final_query += journal_query + "+AND+"
     else:
         final_query += journal_query
@@ -520,12 +520,17 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
     print("Final URL: ", final_url)
     response = requests.get(final_url)
     data = response.json()
+
+    print(data)
     
     total_records = int(data['esearchresult']['count'])
-    total_records = 500
     current_records = len(data['esearchresult']['idlist'])
     id_list = data['esearchresult']['idlist']
-    
+
+    print("Total Records: ", total_records)
+    print("Current Records: ", current_records)
+    print("ID List: ", id_list)
+
     while current_records < total_records:
         retstart = current_records
         final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100&retstart=" + str(retstart)
@@ -544,6 +549,15 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
         # call pubmed download here 
         for pmc_id in current_pmc_ids:
             downloadPubmedArticles(id=pmc_id, course_name=course)
+    
+    id_str = ",".join(id_list)
+    current_pmc_ids = pubmed_id_converter(id_str)
+    print("Current PMC IDs: ", current_pmc_ids)
+        
+    # call pubmed download here 
+    for pmc_id in current_pmc_ids:
+        downloadPubmedArticles(id=pmc_id, course_name=course)
+
     return "success"
 
 
@@ -558,6 +572,7 @@ def pubmed_id_converter(id: str):
     url = base_url + app_details + "&ids=" + id
     
     response = requests.get(url)
+    print("Response: ", response.text)
     root = ET.fromstring(response.text)
     records = root.findall(".//record")
     for record in records:

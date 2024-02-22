@@ -643,7 +643,7 @@ def create_map(embeddings, metadata, map_name, index_name, topic_label_field, co
       colorable_fields=colorable_fields,
       add_datums_if_exists=True
     )
-    project.create_index(index_name, build_topic_model=True)
+    #project.create_index(index_name, build_topic_model=True)
     return "success"
   except Exception as e:
     print(e)
