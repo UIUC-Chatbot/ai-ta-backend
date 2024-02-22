@@ -138,11 +138,11 @@ def loader():
 
 
 # autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
-autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=30, max_replicas=3)
+autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=30, max_replicas=10)
 
 
 # Triggers determine how your app is deployed
-@app.rest_api(max_pending_tasks=10_000, max_retries=3, loader=loader, autoscaler=autoscaler)
+@app.rest_api(max_pending_tasks=10_000, max_retries=3, loader=loader, autoscaler=autoscaler, timeout=-1)
 def ingest(**inputs: Dict[str, Any]):
   qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
 
