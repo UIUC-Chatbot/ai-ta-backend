@@ -131,7 +131,7 @@ Update your plan accordingly. If no more steps are needed and you can return to 
     workflow.add_edge("agent", "replan")
     workflow.add_conditional_edges("replan", should_end, {True: END, False: "agent"})  #type: ignore
 
-    return workflow.compile()
+    return workflow.compile().with_config({"recursion_limit": 100})
 
   async def run(self, input_prompt):
     inputs = {"input": input_prompt}

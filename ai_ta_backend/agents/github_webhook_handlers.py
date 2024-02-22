@@ -46,7 +46,7 @@ If I think I'm successful I'll 'request your review' on the resulting PR. Just w
 """
 
 
-def handle_github_event(payload: Dict[str, Any]):
+async def handle_github_event(payload: Dict[str, Any]):
   """Main entry point for all actions that take place on Github website.
 
   , langsmith_run_id: uuid.UUID
@@ -66,14 +66,14 @@ def handle_github_event(payload: Dict[str, Any]):
 
   # API reference for webhook endpoints https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads#issue_comment
   if payload.get('action') == 'opened' and payload.get('pull_request'):
-    handle_pull_request_opened(payload, langsmith_run_id)
+    await handle_pull_request_opened(payload, langsmith_run_id)
   elif payload.get('action') in ['opened', 'edited'] and payload.get('issue'):
-    handle_issue_opened(payload, langsmith_run_id)
+    await handle_issue_opened(payload, langsmith_run_id)
   elif payload.get('action') in ['created', 'edited'] and payload.get('comment'):
-    handle_comment_opened(payload, langsmith_run_id)
+    await handle_comment_opened(payload, langsmith_run_id)
 
 
-def handle_issue_opened(payload, langsmith_run_id):
+async def handle_issue_opened(payload, langsmith_run_id):
   """ This is the primary entry point to the app; Just open an issue!
 
   Args:
@@ -98,8 +98,9 @@ def handle_issue_opened(payload, langsmith_run_id):
   repo.get_branch(payload["repository"]["default_branch"])
   number = payload.get('issue').get('number')
   issue: Issue = repo.get_issue(number=number)
+  print("JUST BEFORE TRY CATCH")
 
-  {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
+  # {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
   # logging.info(f"New issue created: #{number}", metadata)
   # logging.info(f"New issue created: #{number}. Metadata: {metadata}")
 
@@ -122,8 +123,9 @@ def handle_issue_opened(payload, langsmith_run_id):
     # bot = github_agent.GH_Agent.remote()
     prompt = hub.pull("kastanday/new-github-issue").format(issue_description=format_issue(issue))
     # result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, langsmith_run_id=langsmith_run_id))
+    print("ABOUT TO CALL WORKFLOWAGENT on COMMENT OPENED")
     bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
-    result = bot.run(prompt)
+    result = await bot.run(prompt)
 
     # COLLECT PARALLEL RESULTS
     for _i in range(0, len(result_futures)):
@@ -146,7 +148,7 @@ def handle_issue_opened(payload, langsmith_run_id):
       issue.create_comment(err_str)
 
 
-def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
+async def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
@@ -191,7 +193,7 @@ def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
     # pr_description = bot.github_api_wrapper.get_pull_request(number)
     # instruction = f"Please implement these changes by creating or editing the necessary files. First read all existing comments to better understand your task. Then read the existing files to see the progress. Finally implement any and all remaining code to make the project work as the commenter intended (but no need to open a new PR, your edits are automatically committed every time you use a tool to edit files). Feel free to ask for help, or leave a comment on the PR if you're stuck. Here's the latest PR: {str(pr_description)}"
     # result = bot.launch_gh_agent(instruction, active_branch=branch_name)
-    result = bot.run(comment)
+    result = await bot.run(comment)
     # COLLECT PARALLEL RESULTS
     for _i in range(0, len(result_futures)):
       ready, not_ready = ray.wait(result_futures)
@@ -214,7 +216,7 @@ def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: str):
           f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{err_str}")
 
 
-def handle_comment_opened(payload, langsmith_run_id):
+async def handle_comment_opened(payload, langsmith_run_id):
   """Note: In Github API, PRs are just issues with an extra PR object. Issue numbers and PR numbers live in the same space.
   Args:
       payload (_type_): _description_
@@ -264,7 +266,7 @@ def handle_comment_opened(payload, langsmith_run_id):
       # 3. RUN BOT
       bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)
       instruction = f"Please complete this work-in-progress pull request (PR number {number}) by implementing the changes discussed in the comments. You can update and create files to make all necessary changes. First use read_file to read any files in the repo that seem relevant. Then, when you're ready, start implementing changes by creating and updating files. Implement any and all remaining code to make the project work as the commenter intended. You don't have to commit your changes, they are saved automaticaly on every file change. The last step is to complete the PR and leave a comment tagging the relevant humans for review, or list any concerns or final changes necessary in your comment. Feel free to ask for help, or leave a comment on the PR if you're stuck.  Here's your latest PR assignment: {format_issue(issue)}"
-      result = bot.run(instruction)
+      result = await bot.run(instruction)
 
       # COLLECT PARALLEL RESULTS
       for _i in range(0, len(result_futures)):

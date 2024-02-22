@@ -324,7 +324,7 @@ def mit_download_course():
 
 @app.route('/', methods=['POST'])  # RUN: $ smee -u https://smee.io/nRnJDGnCbWYUaSGg --port 8000
 # @app.route('/api/webhook', methods=['POST']) # https://flask-ai-ta-backend-pr-34.up.railway.app/api/webhook
-def webhook():
+async def webhook():
   """
   IN PROGRESS: Github App Webhooks (for lil-jr-dev)
   Wehbook URL to use on my github app (if this route is `/api/webhook`): https://flask-ai-ta-backend-pr-34.up.railway.app/api/webhook
@@ -339,7 +339,7 @@ def webhook():
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
 
-  handle_github_event(payload)
+  await handle_github_event(payload)
 
   return '', 200
 
