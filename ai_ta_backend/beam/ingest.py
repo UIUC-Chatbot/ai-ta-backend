@@ -1,3 +1,7 @@
+"""
+To deploy: beam deploy ingest.py --profile caii-ncsa
+Use CAII gmail to auth.
+"""
 import asyncio
 import inspect
 import logging
