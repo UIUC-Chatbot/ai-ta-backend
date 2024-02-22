@@ -30,6 +30,7 @@ from ai_ta_backend.export_data import export_convo_history_json, export_document
 from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, create_document_map
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+from ai_ta_backend.crawlee_ext_scrape import crawlee_scrape
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -692,6 +693,23 @@ def getTopContextsWithMQR() -> Response:
   posthog.shutdown()
 
   response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/extension-scrape', methods=['GET'])
+def extension_scrape() -> Response:
+  """
+  Scrapes extension websites
+  """
+  course_name: str = request.args.get('course_name', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+  
+  result = crawlee_scrape(course_name)
+  response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
