@@ -18,7 +18,7 @@ import openai
 import pytesseract
 import sentry_sdk
 import supabase
-from beam import App, RequestLatencyAutoscaler, Runtime
+from beam import App, QueueDepthAutoscaler, RequestLatencyAutoscaler, Runtime
 from bs4 import BeautifulSoup
 from git.repo import Repo
 from langchain.document_loaders import (
@@ -133,7 +133,8 @@ def loader():
   return qdrant_client, vectorstore, s3_client, supabase_client, posthog
 
 
-autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
+# autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
+autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=30, max_replicas=3)
 
 
 # Triggers determine how your app is deployed
