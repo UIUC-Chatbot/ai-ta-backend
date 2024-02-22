@@ -22,7 +22,7 @@ from github.TimelineEvent import TimelineEvent
 from langchain import hub
 
 # from github_agent import GH_Agent
-from ai_ta_backend.agents.langgraph_agent import WorkflowAgent
+from ai_ta_backend.agents.langgraph_agent_v2 import WorkflowAgent
 from ai_ta_backend.agents.utils import get_langsmith_trace_sharable_url
 
 # from langchain.tools.github.utils import generate_branch_name
