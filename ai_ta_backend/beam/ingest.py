@@ -15,6 +15,7 @@ import beam
 import boto3
 import fitz
 import openai
+import pytesseract
 import sentry_sdk
 import supabase
 from beam import App, RequestLatencyAutoscaler, Runtime
@@ -31,9 +32,7 @@ from langchain.document_loaders import (
 )
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.load import dumps, loads
 from langchain.schema import Document
-from langchain.schema.output_parser import StrOutputParser
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 
@@ -45,6 +44,7 @@ from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
 
+# from langchain.schema.output_parser import StrOutputParser
 # from langchain.chat_models import AzureChatOpenAI
 
 requirements = [
@@ -954,8 +954,9 @@ class Ingest():
 
       # add to Nomic document map
       if len(response.data) > 0:
-        inserted_data = response.data[0]
+        pass
         # TODO: reimplement nomic
+        # inserted_data = response.data[0]
         # res = log_to_document_map(inserted_data)
 
       self.posthog.capture('distinct_id_of_the_user',
