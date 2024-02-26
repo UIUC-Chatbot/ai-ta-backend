@@ -1694,14 +1694,14 @@ Now please respond to my question: {user_question}"""
       try:
         if doc.s3_path:
           self.supabase_client.table(doc_table).update({
-              'doc_group': doc.document_groups,
+              'doc_groups': doc.doc_groups,
           }).eq('course_name', course_name).eq('s3_path', doc.s3_path).execute()
         elif doc.url:
           self.supabase_client.table(doc_table).update({
-              'doc_group': doc.document_groups,
+              'doc_groups': doc.doc_groups,
           }).eq('course_name', course_name).eq('url', doc.url).execute()
       except Exception as e:
-        error = f"Error in updating document_groups in Supabase: {e}"
+        error = f"Error in updating doc_groups in Supabase: {e}"
         print(error)
         ret += error
         sentry_sdk.capture_exception(e)
@@ -1711,7 +1711,7 @@ Now please respond to my question: {user_question}"""
         self.qdrant_client.set_payload(
             collection_name=os.environ['QDRANT_COLLECTION_NAME'],
             payload={
-                "doc_group": doc.document_groups,
+                "doc_group": doc.doc_groups,
             },
             points=models.Filter(must=[
                 models.FieldCondition(
@@ -1729,7 +1729,7 @@ Now please respond to my question: {user_question}"""
             ],),
         )
       except Exception as e:
-        error = f"Error in updating document_groups in Qdrant: {e}"
+        error = f"Error in updating doc_groups in Qdrant: {e}"
         print(error)
         ret += error
         sentry_sdk.capture_exception(e)

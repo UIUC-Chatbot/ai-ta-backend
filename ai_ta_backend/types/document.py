@@ -7,4 +7,4 @@ class MaterialDocument(BaseModel):
   s3_path: str
   base_url: str = Field(default='')
   url: str = Field(default='')
-  document_groups: List[str] = Field(default=[])
+  doc_groups: List[str] = Field(default=[])
