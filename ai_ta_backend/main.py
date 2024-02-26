@@ -731,6 +731,54 @@ def addDocumentToGroup():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/appendDocumentToGroup', methods=['POST'])
+def appendDocumentToGroup():
+  data = request.get_json()
+  print("In /appendDocumentToGroup", data)
+  course_name = data['course_name']
+  doc_group = data['doc_group']
+
+  try:
+    document = MaterialDocument(**data.get('document', {}))
+  except ValidationError as e:
+    abort(400, description=f"Invalid document data: {e}")
+
+  if course_name == '' or doc_group == '':
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name' and 'doc_group' must be provided. Course name: `{course_name}`, doc_group: `{doc_group}`, document: `{document}`"
+    )
+  ingester = Ingest()
+  res = ingester.append_doc_group(course_name=course_name, doc=document, doc_group=doc_group)
+  response = jsonify({'outcome': res})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/removeDocumentFromGroup', methods=['POST'])
+def removeDocumentFromGroup():
+  data = request.get_json()
+  print("In /removeDocumentFromGroup", data)
+  course_name = data['course_name']
+  doc_group = data['doc_group']
+
+  try:
+    document = MaterialDocument(**data.get('document', {}))
+  except ValidationError as e:
+    abort(400, description=f"Invalid document data: {e}")
+
+  if course_name == '' or doc_group == '':
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name' and 'doc_group' must be provided. Course name: `{course_name}`, doc_group: `{doc_group}`, document: `{document}`"
+    )
+  ingester = Ingest()
+  res = ingester.remove_doc_group(course_name=course_name, doc=document, doc_group=doc_group)
+  response = jsonify({'outcome': res})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 if __name__ == '__main__':
   app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression
