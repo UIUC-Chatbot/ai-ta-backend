@@ -635,6 +635,35 @@ def export_convo_history():
     
   return response
 
+@app.route('/exportDocuments', methods=['GET'])
+def exportDocuments():
+  course_name: str = request.args.get('course_name', default='', type=str)
+  from_date: str = request.args.get('from_date', default='', type=str)
+  to_date: str = request.args.get('to_date', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  export_status = export_documents_json(course_name, from_date, to_date)
+  print("EXPORT FILE LINKS: ", export_status)
+
+  if export_status['response'] == "No data found between the given dates.":
+    response = Response(status=204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  elif export_status['response'] == "Download from S3":
+    response = jsonify({"response": "Download from S3", "s3_path": export_status['s3_path']})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  else:
+    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
+    os.remove(export_status['response'][0])
+    
+  return response
+
 
 @app.route('/getTopContextsWithMQR', methods=['GET'])
 def getTopContextsWithMQR() -> Response:

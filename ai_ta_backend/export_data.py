@@ -19,7 +19,9 @@ SUPABASE_CLIENT = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'),
 
 def export_documents_json(course_name: str, from_date='', to_date=''):
   """
-  This function exports the documents to a csv file.
+  This function exports the documents to a json file.
+  1. If the number of documents is greater than 1000, it calls a background task to upload the documents to S3.
+  2. If the number of documents is less than 1000, it fetches the documents and zips them.
   Args:
       course_name (str): The name of the course.
       from_date (str, optional): The start date for the data export. Defaults to ''.
@@ -198,14 +200,27 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     course_metadata = response.json()
     course_metadata = json.loads(course_metadata['result'])
     admin_emails = course_metadata['course_admins']
+    bcc_emails = []
+
+    # check for Kastan's email and move to bcc
+    if 'kvday2@illinois.edu' in admin_emails:
+      admin_emails.remove('kvday2@illinois.edu')
+      bcc_emails.append('kvday2@illinois.edu')
+
+    # add course owner email to admin_emails
     admin_emails.append(course_metadata['course_owner'])
     admin_emails = list(set(admin_emails))
     print("admin_emails: ", admin_emails)
+    print("bcc_emails: ", bcc_emails)
+
+    # add a check for emails, don't send email if no admin emails
+    if len(admin_emails) == 0:
+      return "No admin emails found. Email not sent."
 
     # send email to admins
     subject = "UIUC.chat Data Export Complete for " + course_name
     body_text = "The data export for " + course_name + " is complete.\n\nYou can download the file from the following link: \n\n" + s3_url + "\n\nThis link will expire in 48 hours."
-    email_status = send_email(subject, body_text, os.getenv('EMAIL_SENDER'), admin_emails)
+    email_status = send_email(subject, body_text, os.getenv('EMAIL_SENDER'), admin_emails, bcc_emails)
     print("email_status: ", email_status)
 
     return "File uploaded to S3. Email sent to admins."
