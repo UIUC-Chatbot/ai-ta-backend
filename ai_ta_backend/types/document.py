@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-
+from typing import List
 
 class MaterialDocument(BaseModel):
   course_name: str
@@ -7,4 +7,4 @@ class MaterialDocument(BaseModel):
   s3_path: str
   base_url: str = Field(default='')
   url: str = Field(default='')
-  tag: str = Field(default='')
+  document_groups: List[str] = Field(default=[])
