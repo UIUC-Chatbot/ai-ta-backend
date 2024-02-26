@@ -1075,7 +1075,7 @@ class Ingest():
     """
 
     response = self.supabase_client.table(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select(
-        'course_name, s3_path, readable_filename, url, base_url').eq('course_name', course_name).execute()
+        'course_name, s3_path, readable_filename, url, base_url, doc_groups').eq('course_name', course_name).execute()
 
     data = response.data
     unique_combinations = set()
