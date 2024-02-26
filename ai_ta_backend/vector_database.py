@@ -1712,6 +1712,9 @@ Now please respond to my question: {user_question}"""
             collection_name=os.environ['QDRANT_COLLECTION_NAME'],
             payload={
                 "doc_group": doc.doc_groups,
+                "course_name": course_name,
+                "s3_path": doc.s3_path,
+                "url": doc.url,
             },
             points=models.Filter(must=[
                 models.FieldCondition(
