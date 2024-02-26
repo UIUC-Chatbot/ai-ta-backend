@@ -1737,7 +1737,22 @@ Now please respond to my question: {user_question}"""
     if ret == '':
       return "Success"
     return ret
+  
+  def append_doc_group(self, course_name: str, doc: MaterialDocument, doc_group: str):
+    """
+    Append a document group to a document's doc_groups array.
+    """
+    if doc_group not in doc.doc_groups:
+      doc.doc_groups.append(doc_group)
+    self.add_documents_to_doc_group(course_name, doc)
 
+  def remove_doc_group(self, course_name: str, doc: MaterialDocument, doc_group: str):
+    """
+    Remove a document group from a document's doc_groups array.
+    """
+    if doc_group in doc.doc_groups:
+      doc.doc_groups.remove(doc_group)
+    self.add_documents_to_doc_group(course_name, doc)
 
 if __name__ == '__main__':
   pass
