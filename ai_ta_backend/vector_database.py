@@ -1745,6 +1745,8 @@ Now please respond to my question: {user_question}"""
     """
     Append a document group to a document's doc_groups array.
     """
+    if doc.doc_groups is None:
+      doc.doc_groups = []
     if doc_group not in doc.doc_groups:
       doc.doc_groups.append(doc_group)
     self.add_documents_to_doc_group(course_name, doc)
@@ -1753,6 +1755,8 @@ Now please respond to my question: {user_question}"""
     """
     Remove a document group from a document's doc_groups array.
     """
+    if doc.doc_groups is None:
+      doc.doc_groups = []
     if doc_group in doc.doc_groups:
       doc.doc_groups.remove(doc_group)
     self.add_documents_to_doc_group(course_name, doc)
