@@ -9,9 +9,8 @@ def crawlee_scrape(course_name: str):
     This function takes in a pre-defined set of URLs and scrapes the content from each URL.
     """
     urls = [
-        'https://farmdocdaily.illinois.edu',
-        'https://farmpolicynews.illinois.edu',
-        'https://extension.illinois.edu'
+        'https://extension.purdue.edu',
+        'https://www.uog.edu/extension'
     ]
 
     payload = {
