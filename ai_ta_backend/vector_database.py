@@ -1692,6 +1692,12 @@ Now please respond to my question: {user_question}"""
       """
       self.set_enabled_doc_group(course_name, doc_group_name, False)
 
+  def enable_doc_group(self, course_name: str, doc_group_name: str):
+    """
+    Enable a document group.
+    """
+    self.set_enabled_doc_group(course_name, doc_group_name, True)
+
   def add_documents_to_doc_group(self, course_name: str, docs: MaterialDocument | list[MaterialDocument]):
     """
     Add document group name to documents (in both supabase and qdrant).
