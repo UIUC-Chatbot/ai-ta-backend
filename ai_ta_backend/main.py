@@ -823,5 +823,22 @@ def enableDocumentGroup():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+@app.route('/getEnabledDocGroups', methods=['GET'])
+def getEnabledDocGroups():
+    course_name = request.args.get('course_name')
+
+    if course_name is None:
+        abort(
+            400,
+            description=
+            f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`"
+        )
+
+    ingester = Ingest()
+    enabled_doc_groups = ingester.get_enabled_doc_groups(course_name=course_name)
+    response = jsonify({'enabled_doc_groups': enabled_doc_groups})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
 if __name__ == '__main__':
   app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression

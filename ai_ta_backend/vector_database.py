@@ -1698,6 +1698,20 @@ Now please respond to my question: {user_question}"""
     """
     self.set_enabled_doc_group(course_name, doc_group_name, True)
 
+  def get_enabled_doc_groups(self, course_name: str) -> List[str]:
+    """
+    Get the enabled document groups for a given course.
+    """
+    try:
+        # Fetch the current list of enabled doc groups
+        response = self.supabase_client.table('projects').select('enabled_doc_groups').eq('course_name', course_name).execute()
+        enabled_doc_groups = response.data[0]['enabled_doc_groups'] if response.data else []
+        return enabled_doc_groups
+    except Exception as e:
+        print("Error in getting enabled document groups:", e)
+        sentry_sdk.capture_exception(e)
+        return []
+
   def add_documents_to_doc_group(self, course_name: str, docs: MaterialDocument | list[MaterialDocument]):
     """
     Add document group name to documents (in both supabase and qdrant).
