@@ -1661,23 +1661,36 @@ Now please respond to my question: {user_question}"""
       return False
 
   def set_enabled_doc_group(self, course_name: str, doc_group_name: str, enabled: bool):
-    """
-    Set the enabled status of a document group.
-    """
-    pass
-    try:
-      self.supabase_client.table('projects').update({
-          'enabled': enabled,
-      }).eq('course_name', course_name).eq('doc_group_name', doc_group_name).execute()
-    except Exception as e:
-      print("Error in setting enabled status of doc group:", e)
-      sentry_sdk.capture_exception(e)
+      """
+      Set the enabled status of a document group.
+      """
+      try:
+          # Fetch the current list of enabled doc groups
+          response = self.supabase_client.table('projects').select('enabled_doc_groups').eq('course_name', course_name).execute()
+          enabled_doc_groups = response.data[0]['enabled_doc_groups'] if response.data else []
+
+          if enabled:
+              # If enabling, add the doc_group_name to the list if it's not already there
+              if doc_group_name not in enabled_doc_groups:
+                  enabled_doc_groups.append(doc_group_name)
+          else:
+              # If disabling, remove the doc_group_name from the list if it's there
+              if doc_group_name in enabled_doc_groups:
+                  enabled_doc_groups.remove(doc_group_name)
+
+          # Update the enabled_doc_groups in the database
+          self.supabase_client.table('projects').update({
+              'enabled_doc_groups': enabled_doc_groups,
+          }).eq('course_name', course_name).execute()
+      except Exception as e:
+          print("Error in setting enabled status of doc group:", e)
+          sentry_sdk.capture_exception(e)
 
   def disable_doc_group(self, course_name: str, doc_group_name: str):
-    """
-    Disable a document group.
-    """
-    self.set_enabled_doc_group(course_name, doc_group_name, False)
+      """
+      Disable a document group.
+      """
+      self.set_enabled_doc_group(course_name, doc_group_name, False)
 
   def add_documents_to_doc_group(self, course_name: str, docs: MaterialDocument | list[MaterialDocument]):
     """
