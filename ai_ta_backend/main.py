@@ -739,7 +739,7 @@ def appendDocumentToGroup():
     doc_group = data['doc_group']
 
     document_data = data.get('document', {})
-    document_data['doc_groups'] = document_data.get('doc_groups', [])
+    document_data['doc_groups'] = [group for group in document_data.get('doc_groups', []) if group is not None]
 
     try:
         document = MaterialDocument(**document_data)
@@ -766,7 +766,7 @@ def removeDocumentFromGroup():
     doc_group = data['doc_group']
 
     document_data = data.get('document', {})
-    document_data['doc_groups'] = document_data.get('doc_groups', [])
+    document_data['doc_groups'] = [group for group in document_data.get('doc_groups', []) if group is not None]
 
     try:
         document = MaterialDocument(**document_data)
