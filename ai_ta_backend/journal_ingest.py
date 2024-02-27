@@ -175,27 +175,30 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
                         break
                 
                 if pdf_link:
-                    response = requests.get(pdf_link)
-                    with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
-                        for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
-                            f.write(chunk)
-                    print("Downloaded: ", filename)
+                    try:
+                        response = requests.get(pdf_link)
+                        with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+                            for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+                                f.write(chunk)
+                        print("Downloaded: ", filename)
+                    except Exception as e:
+                        print("Error: ", e)
 
         # query for next page
         next_page_url = "http://api.springernature.com" + data['nextPage']
         response = requests.get(next_page_url)
-        print("Status: ", response.status_code)
+        print("Next page URL: ", next_page_url)
         data = response.json()
-        print("Total records: ", len(data['records']))
+        # print("Total records: ", len(data['records']))
 
     for record in data['records']: 
         urls = record['url']
         filename = record['doi'].replace("/", "_")
-        print("Filename: ", filename)
+        # print("Filename: ", filename)
 
         if len(urls) > 0:
             url = urls[0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
-            print("DX URL: ", url)
+            # print("DX URL: ", url)
             url_response = requests.get(url, headers=headers)
             dx_doi_data = url_response.json()
             links = dx_doi_data['link']
@@ -207,12 +210,32 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
                     break
             
             if pdf_link:
-                response = requests.get(pdf_link)
-                with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
-                    for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
-                        f.write(chunk)
-                print("Downloaded: ", filename)
+                try:
+                    response = requests.get(pdf_link)
+                    with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+                        for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+                            f.write(chunk)
+                    print("Downloaded: ", filename)
+                except Exception as e:
+                    print("Error: ", e)
     
+    # upload to supabase bucket
+    try:
+        for root, directories, files in os.walk(directory):
+            for file in files:
+                filepath = os.path.join(root, file)
+                print("Uploading: ", file)
+                uppload_path = "springer_papers/" + file
+                try:
+                    with open(filepath, "rb") as f:
+                        res = SUPABASE_CLIENT.storage.from_("publications/springer_journals/nature_reviews_immunology").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
+                        print("Upload response: ", res)
+                except Exception as e:
+                    print("Error: ", e)
+            
+    except Exception as e:
+        print("Error: ", e)
+                
     # # upload to s3
     # s3_paths = upload_data_files_to_s3(course_name, directory)
 
