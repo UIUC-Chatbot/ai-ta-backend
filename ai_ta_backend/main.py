@@ -785,6 +785,43 @@ def removeDocumentFromGroup():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+@app.route('/disableDocumentGroup', methods=['POST'])
+def disableDocumentGroup():
+    data = request.args
+    course_name = data.get('course_name')
+    doc_group = data.get('doc_group')
+
+    if course_name is None or doc_group is None:
+        abort(
+            400,
+            description=
+            f"Missing one or more required parameters: 'course_name' and 'doc_group' must be provided. Course name: `{course_name}`, doc_group: `{doc_group}`"
+        )
+
+    ingester = Ingest()
+    res = ingester.disable_doc_group(course_name=course_name, doc_group_name=doc_group)
+    response = jsonify({'outcome': res})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+@app.route('/enableDocumentGroup', methods=['POST'])
+def enableDocumentGroup():
+    data = request.args
+    course_name = data.get('course_name')
+    doc_group = data.get('doc_group')
+
+    if course_name is None or doc_group is None:
+        abort(
+            400,
+            description=
+            f"Missing one or more required parameters: 'course_name' and 'doc_group' must be provided. Course name: `{course_name}`, doc_group: `{doc_group}`"
+        )
+
+    ingester = Ingest()
+    res = ingester.enable_doc_group(course_name=course_name, doc_group_name=doc_group)
+    response = jsonify({'outcome': res})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 if __name__ == '__main__':
   app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression
