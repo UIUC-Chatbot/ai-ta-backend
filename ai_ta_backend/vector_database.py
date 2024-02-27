@@ -51,7 +51,7 @@ from ai_ta_backend.context_parent_doc_padding import context_parent_doc_padding
 from ai_ta_backend.filtering_contexts import filter_top_contexts
 from ai_ta_backend.nomic_logging import log_to_document_map, delete_from_document_map
 
-MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
+#MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 OPENAI_API_TYPE = "openai"  # "openai" or "azure"
 
 

@@ -746,20 +746,21 @@ def get_springer_data():
 
 @app.route('/get-elsevier-fulltext', methods=['GET'])
 def get_elsevier_data():
-  doi = request.args.get('doi', default='', type=str)
+  id = request.args.get('id', default='', type=str)
+  id_type = request.args.get('id_type', default='doi', type=str)
   course_name = request.args.get('course_name', default='', type=str)
 
   print("In /get-elsevier-fulltext")
 
-  if doi == '' or course_name == '':
+  if id == '' or id_type == '' or course_name == '':
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing required parameters: 'doi' and 'course_name' must be provided."
+        f"Missing required parameters: 'id', 'id_type' [doi, eid, pii, pubmed_id] and 'course_name' must be provided."
     )
 
-  fulltext = downloadElsevierFulltextFromDoi(doi, course_name)
+  fulltext = downloadElsevierFulltextFromDoi(id, id_type, course_name)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -848,7 +849,7 @@ def getScopusArticle() -> Response:
 
   print("In /getScopusArticles")
 
-  if (title == '' and journal  == '' and search_query == '') or course_name == '':
+  if (title == '' and journal  == '' and search_query == '' and issn == '') or course_name == '':
     # proper web error "400 Bad request"
     abort(
         400,

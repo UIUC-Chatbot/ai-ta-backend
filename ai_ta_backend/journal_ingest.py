@@ -15,6 +15,8 @@ from ai_ta_backend.vector_database import Ingest
 import supabase
 import tarfile
 
+import time
+
 # Below functions hit API endpoints from sites like arXiv, Elsevier, and Sringer Nature to retrieve journal articles
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
@@ -145,7 +147,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
     else:
         return "No query parameters provided"
     
-    main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY)
+    main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY) + "&s=301"
     print("Full URL: ", main_url)
     
 
@@ -165,6 +167,10 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
                 url = urls[0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
                 print("DX URL: ", url)
                 url_response = requests.get(url, headers=headers)
+                # check for headers here!
+
+                print("Headers: ", url_response.headers['content-type'])
+                
                 dx_doi_data = url_response.json()
                 links = dx_doi_data['link']
                 pdf_link = None
@@ -191,6 +197,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
         data = response.json()
         # print("Total records: ", len(data['records']))
 
+    # last set of records after exiting while loop
     for record in data['records']: 
         urls = record['url']
         filename = record['doi'].replace("/", "_")
@@ -228,7 +235,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
                 uppload_path = "springer_papers/" + file
                 try:
                     with open(filepath, "rb") as f:
-                        res = SUPABASE_CLIENT.storage.from_("publications/springer_journals/nature_reviews_immunology").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
+                        res = SUPABASE_CLIENT.storage.from_("publications/springer_journals/nature_immunology").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
                         print("Upload response: ", res)
                 except Exception as e:
                     print("Error: ", e)
@@ -250,25 +257,39 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
 
 ##------------------------ ELSEVIER API FUNCTIONS ------------------------##
 
-def downloadElsevierFulltextFromDoi(doi: str, course_name: str):
+def downloadElsevierFulltextFromDoi(id: str, id_type: str, course_name: str):
     """
     This function downloads articles from Elsevier for a given DOI.
+    Modify the function to accept all sorts of IDs - pii, pubmed_id, eid
     """
+    
+
     directory = os.path.join(os.getcwd(), 'elsevier_papers')
     if not os.path.exists(directory):
         os.makedirs(directory)
 
     headers = {'X-ELS-APIKey': ELSEVIER_API_KEY, 'Accept':'application/pdf'}
+    url = 'https://api.elsevier.com/content/article/'
 
-    url = 'https://api.elsevier.com/content/article/doi/' + doi
+    if id_type == "doi":
+        url += "doi/" + id
+    elif id_type == "eid":
+        url += "eid/" + id
+    elif id_type == "pii":
+        url += "pii/" + id
+    elif id_type == "pubmed_id":
+        url += "pubmed_id/" + id
+    else:
+        return "No query parameters provided"
+
     response = requests.get(url, headers=headers)
     print("Status: ", response.status_code)
     data = response.text
-    filename = doi.replace("/", "_")
+    filename = id.replace("/", "_")
     with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
         for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
             f.write(chunk)
-
+    print("Downloaded: ", filename)
     # # upload to s3
     # s3_paths = upload_data_files_to_s3(course_name, directory)
 
@@ -314,9 +335,9 @@ def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
 
     response = requests.put(url, headers=headers, json=data)
     print("Status: ", response.status_code)
-    data = response.json()
-    results = data['results']
-    total_results = data['resultsFound']
+    response_data = response.json()
+    results = response_data['results']
+    total_results = response_data['resultsFound']
     print("Total results: ", total_results)
     current_results = len(results)  
 
@@ -325,7 +346,7 @@ def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
         doi = result['doi']
         #pii = result['pii']
         if doi:
-            downloadElsevierFulltextFromDoi(doi=doi, course_name=course)
+            downloadElsevierFulltextFromDoi(id=doi, id_type='doi', course_name=course)
         # elif pii:
         #     # download with pii
         #     pass
@@ -336,8 +357,8 @@ def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
         data["display"]["offset"] += current_results
         response = requests.put(url, headers=headers, json=data)
         print("Status: ", response.status_code)
-        data = response.json()
-        results = data['results']
+        response_data = response.json()
+        results = response_data['results']
         current_results += len(results)
         print("Current results: ", current_results)
 
@@ -346,7 +367,7 @@ def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
             doi = result['doi']
             #pii = result['pii']
             if doi:
-                downloadElsevierFulltextFromDoi(doi=doi, course_name=course)
+                downloadElsevierFulltextFromDoi(id=doi, id_type='doi', course_name=course)
             # elif pii:
             #     # download with pii
             #     pass
@@ -358,6 +379,9 @@ def searchScopusArticles(course: str, query: str, title: str, pub: str, subject:
     This function uses the Scopus Search API to retrieve metadata for journal articles
     and then downloads the fulltext using downloadElsevierFulltextFromDoi().
     """
+    # log start time
+    start_time = time.monotonic()
+
     # uses GET request
     base_url = "https://api.elsevier.com/content/search/scopus?"
     query = "query="
@@ -373,12 +397,9 @@ def searchScopusArticles(course: str, query: str, title: str, pub: str, subject:
         query += "SUBJAREA(" + subject + ")"
 
     final_url = base_url + query + "OPENACCESS(1)" + "&apiKey=" + str(ELSEVIER_API_KEY)
-    
     print("Final URL: ", final_url)
 
     encoded_url = urllib.parse.quote(final_url, safe=':/?&=')
-    print("Encoded URL: ", encoded_url)
-
     response = requests.get(encoded_url)
     print("Status: ", response.status_code)
     data = response.json()
@@ -386,21 +407,11 @@ def searchScopusArticles(course: str, query: str, title: str, pub: str, subject:
     # iterate through results and extract full-text links
     results = data['search-results']['entry']
     for result in results:
-        for link in result['link']:
-            if link['@ref'] == 'full-text':
-                print("Full-text link: ", link['@href'])
-                
-                # download full-text with link
-                headers = {'X-ELS-APIKey': ELSEVIER_API_KEY, 'Accept':'application/pdf'}
-                full_text_response = requests.get(link['@href'], headers=headers)
-                print("Status: ", full_text_response.status_code)
-                #print("Full-text response: ", full_text_response.text)
-
-                with open("scopus_paper.pdf", "wb") as f:  # Open a file in binary write mode ("wb")
-                    for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
-                        f.write(chunk)
-                
-                exit()
+        # results contain pii - so we can call downloadElsevierFulltextFromDoi() here 
+        print("PII: ", result['pii'])
+        pii = result['pii']
+        download_status = downloadElsevierFulltextFromDoi(id=pii, id_type='pii', course_name=course)
+        print("Download status: ", download_status)
 
 
     # response is JSON and has next page link
@@ -411,11 +422,28 @@ def searchScopusArticles(course: str, query: str, title: str, pub: str, subject:
             next_page_url = link['@href']
             break
     print("Next page: ", next_page_url)
+    while next_page_url:
+        response = requests.get(next_page_url)
+        data = response.json()
+        results = data['search-results']['entry']
+        for result in results:
+            # results contain pii - so we can call downloadElsevierFulltextFromDoi() here 
+            pii = result['pii']
+            download_status = downloadElsevierFulltextFromDoi(id=pii, id_type='pii', course_name=course)
+            print("Download status: ", download_status)
 
-    
+        # response is JSON and has next page link
+        links = data['search-results']['link']
+        next_page_url = None
+        for link in links:
+            if link['@ref'] == 'next':
+                next_page_url = link['@href']
+                break
+        print("Next page: ", next_page_url)
 
+    # log end time
+    print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
 
-    
     return "success"
 
 
