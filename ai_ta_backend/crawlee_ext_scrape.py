@@ -4,14 +4,13 @@ import time
 
 SCRAPE_LOG = {}
 
-def crawlee_scrape(course_name: str):
+def crawlee_scrape(course_name: str, urls: list):
     """
     This function takes in a pre-defined set of URLs and scrapes the content from each URL.
     """
-    urls = [
-        'https://extension.purdue.edu',
-        'https://www.uog.edu/extension'
-    ]
+    print("Scraping URLs:", urls)
+    print("Course Name:", course_name)
+    exit()
 
     payload = {
             "params": {

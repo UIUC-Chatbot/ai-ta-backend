@@ -693,18 +693,20 @@ def getTopContextsWithMQR() -> Response:
   return response
 
 
-@app.route('/extension-scrape', methods=['GET'])
+@app.route('/extension-scrape', methods=['POST'])
 def extension_scrape() -> Response:
   """
   Scrapes extension websites
   """
-  course_name: str = request.args.get('course_name', default='', type=str)
+  data = request.get_json()
+  urls: List[str] = data.get('urls', [])
+  course_name: str = data.get('course_name', '')
 
-  if course_name == '':
+  if course_name == '' or urls == []:
     # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+    abort(400, description=f"Missing required parameter: 'course_name' and 'urls' must be provided.")
   
-  result = crawlee_scrape(course_name)
+  result = crawlee_scrape(course_name, urls)
   response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
