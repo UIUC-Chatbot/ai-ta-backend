@@ -382,6 +382,10 @@ def searchScopusArticles(course: str, query: str, title: str, pub: str, subject:
     # log start time
     start_time = time.monotonic()
 
+    directory = os.path.join(os.getcwd(), 'elsevier_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     # uses GET request
     base_url = "https://api.elsevier.com/content/search/scopus?"
     query = "query="
@@ -434,12 +438,28 @@ def searchScopusArticles(course: str, query: str, title: str, pub: str, subject:
 
         # response is JSON and has next page link
         links = data['search-results']['link']
-        next_page_url = None
         for link in links:
             if link['@ref'] == 'next':
                 next_page_url = link['@href']
                 break
         print("Next page: ", next_page_url)
+
+    # upload to supabase bucket
+    try:
+        for root, directories, files in os.walk(directory):
+            for file in files:
+                filepath = os.path.join(root, file)
+                print("Uploading: ", file)
+                uppload_path = "springer_papers/" + file
+                try:
+                    with open(filepath, "rb") as f:
+                        res = SUPABASE_CLIENT.storage.from_("publications/elsevier_journals/cell_host_and_mircobe").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
+                        print("Upload response: ", res)
+                except Exception as e:
+                    print("Error: ", e)
+            
+    except Exception as e:
+        print("Error: ", e)
 
     # log end time
     print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
