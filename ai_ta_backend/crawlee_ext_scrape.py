@@ -19,7 +19,8 @@ def crawlee_scrape(course_name: str, urls: list):
                 "maxTokens": 2000000,
                 "maxConcurrency": 20,
                 "maxRequestsPerMinute": 120,
-                "courseName": course_name
+                "courseName": course_name,
+                "exclude": ""
             }
     }
 
