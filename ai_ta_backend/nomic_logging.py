@@ -83,7 +83,10 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
   print("conversation:", conversation)
   #conversation = json.loads(conversation)
   messages = conversation['conversation']['messages']
-  user_email = conversation['conversation']['user_email']
+  if 'user_email' not in conversation['conversation']:
+    user_email = "NULL"
+  else:
+    user_email = conversation['conversation']['user_email']
   conversation_id = conversation['conversation']['id']
 
   # we have to upload whole conversations
