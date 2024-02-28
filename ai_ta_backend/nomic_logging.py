@@ -80,7 +80,6 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
 
   print(f"in log_convo_to_nomic() for course: {course_name}")
   print("type of conversation:", type(conversation))
-  print("conversation:", conversation)
   #conversation = json.loads(conversation)
   messages = conversation['conversation']['messages']
   if 'user_email' not in conversation['conversation']:
