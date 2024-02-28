@@ -9,15 +9,13 @@ def crawlee_scrape(course_name: str, urls: list):
     This function takes in a pre-defined set of URLs and scrapes the content from each URL.
     """
     print("Scraping URLs:", urls)
-    print("Course Name:", course_name)
-    exit()
-
+    
     payload = {
             "params": {
                 "url": "",
                 "scrapeStrategy": "equal-and-below",
                 "match": "",
-                "maxPagesToCrawl": 20000,
+                "maxPagesToCrawl": 10000,
                 "maxTokens": 2000000,
                 "courseName": course_name
             }
