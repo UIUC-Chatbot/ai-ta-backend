@@ -4,7 +4,7 @@ import time
 
 SCRAPE_LOG = {}
 
-def crawlee_scrape(course_name: str, urls: list):
+def crawlee_scrape(course_name: str, urls: list, exclude_urls: list):
     """
     This function takes in a pre-defined set of URLs and scrapes the content from each URL.
     """
@@ -15,12 +15,12 @@ def crawlee_scrape(course_name: str, urls: list):
                 "url": "",
                 "scrapeStrategy": "equal-and-below",
                 "match": "",
-                "maxPagesToCrawl": 10000,
+                "maxPagesToCrawl": 15000,
                 "maxTokens": 2000000,
                 "maxConcurrency": 20,
                 "maxRequestsPerMinute": 120,
                 "courseName": course_name,
-                "exclude": ""
+                "exclude": exclude_urls
             }
     }
 
@@ -31,8 +31,7 @@ def crawlee_scrape(course_name: str, urls: list):
     for url in urls:
         payload["params"]["url"] = url
         payload["params"]["match"] = "http?(s)://" + url.split("//")[1] + "/**"
-        
-        
+
         print("Scraping URL:", url)
         start_time = time.monotonic()
         response = requests.post(api_endpoint, json=payload)

@@ -32,6 +32,7 @@ from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 from ai_ta_backend.crawlee_ext_scrape import crawlee_scrape
 
+
 # Sentry.io error logging
 sentry_sdk.init(
     dsn=os.getenv("SENTRY_DSN"),
@@ -692,7 +693,6 @@ def getTopContextsWithMQR() -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-
 @app.route('/extension-scrape', methods=['POST'])
 def extension_scrape() -> Response:
   """
@@ -701,12 +701,12 @@ def extension_scrape() -> Response:
   data = request.get_json()
   urls: List[str] = data.get('urls', [])
   course_name: str = data.get('course_name', '')
-
+  exclude_urls: List[str] = data.get('exclude_urls', [])
   if course_name == '' or urls == []:
     # proper web error "400 Bad request"
     abort(400, description=f"Missing required parameter: 'course_name' and 'urls' must be provided.")
   
-  result = crawlee_scrape(course_name, urls)
+  result = crawlee_scrape(course_name, urls, exclude_urls)
   response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
