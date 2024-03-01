@@ -170,4 +170,8 @@ pip-selfcheck.json
 .aider*
 
 # Input/Output files
-payload.json
+*payload*.json
+*sample*.json
+
+#DS Store
+.DS_Store
