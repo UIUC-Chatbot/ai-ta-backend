@@ -702,11 +702,13 @@ def extension_scrape() -> Response:
   urls: List[str] = data.get('urls', [])
   course_name: str = data.get('course_name', '')
   exclude_urls: List[str] = data.get('exclude_urls', [])
+  match_url: str = data.get('match_url', '')
+
   if course_name == '' or urls == []:
     # proper web error "400 Bad request"
     abort(400, description=f"Missing required parameter: 'course_name' and 'urls' must be provided.")
   
-  result = crawlee_scrape(course_name, urls, exclude_urls)
+  result = crawlee_scrape(course_name, urls, exclude_urls, match_url)
   response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
