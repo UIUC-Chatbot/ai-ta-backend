@@ -47,6 +47,14 @@ pytesseract==0.3.10 # image OCR
 openpyxl==3.1.2 # excel
 networkx==3.2.1 # unused part of excel partitioning :(
 python-pptx==0.6.23
+torch==1.8.0
+torchvision==0.9.0
+Pillow==8.0.0
+numpy==1.19.2
+pandas==1.1.3
+matplotlib==3.3.2
+seaborn==0.11.0
+scikit-learn==0.23.2
 unstructured==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
 # unstructured[xlsx,image,pptx]==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
 
