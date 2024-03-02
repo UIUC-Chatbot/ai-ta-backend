@@ -14,7 +14,7 @@ from ai_ta_backend.vector_database import Ingest
 
 import supabase
 import tarfile
-
+import concurrent.futures
 import time
 
 # Below functions hit API endpoints from sites like arXiv, Elsevier, and Sringer Nature to retrieve journal articles
@@ -257,13 +257,13 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
 
 ##------------------------ ELSEVIER API FUNCTIONS ------------------------##
 
-def downloadElsevierFulltextFromDoi(id: str, id_type: str, course_name: str):
+def downloadElsevierFulltextFromId(id: str, id_type: str, course_name: str):
     """
     This function downloads articles from Elsevier for a given DOI.
     Modify the function to accept all sorts of IDs - pii, pubmed_id, eid
     """
-    
 
+    # create directory to store files
     directory = os.path.join(os.getcwd(), 'elsevier_papers')
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -283,13 +283,16 @@ def downloadElsevierFulltextFromDoi(id: str, id_type: str, course_name: str):
         return "No query parameters provided"
 
     response = requests.get(url, headers=headers)
-    print("Status: ", response.status_code)
-    data = response.text
-    filename = id.replace("/", "_")
-    with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+    print("Response content type: ", response.headers)
+    if response.status_code != 200:
+        return "Error in download function: " + str(response.status_code) + " - " + response.text
+    
+    filename = id.replace("/", "_") + ".pdf"
+    with open(directory + "/" + filename, "wb") as f:  # Open a file in binary write mode ("wb")
         for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
             f.write(chunk)
-    print("Downloaded: ", filename)
+    
+
     # # upload to s3
     # s3_paths = upload_data_files_to_s3(course_name, directory)
 
@@ -301,6 +304,120 @@ def downloadElsevierFulltextFromDoi(id: str, id_type: str, course_name: str):
     # journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
 
     return "success"
+
+def searchScopusArticles(course: str, search_str: str, title: str, pub: str, subject: str, issn: str):
+    """
+    This function is used for a text-based search in Scopus (Elsevier service).
+    1. Use Scopus API to search for articles based on ISSN, publication title, article title, or subject area.
+    2. Extract PII from the results and call downloadElsevierFulltextFromDoi() to download the full-text to a local directory.
+    3. Upload the files to a supabase bucket.
+
+    Args:
+        course: course name
+        query: search query
+        title: article title
+        journal: journal title
+        subject: subject area
+        issn: ISSN number ---> if targeting a journal, its better to search by ISSN.
+    """
+    # log start time
+    start_time = time.monotonic()
+
+    # create directory to store files
+    directory = os.path.join(os.getcwd(), 'elsevier_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    # set headers
+    headers = {'X-ELS-APIKey': ELSEVIER_API_KEY, 'Accept':'application/json'}
+    count = 10 # rate limit of 10 requests per second
+
+    # form the query URL based on the input parameters received
+    base_url = "https://api.elsevier.com/content/search/scopus?"
+    query = "query="
+    if issn:
+        query += "ISSN(" + issn + ")"
+    if pub:
+        query += "SRCTITLE(" + pub + ")"
+    if title:
+        query += "TITLE(" + title + ")"
+    if subject:
+        query += "SUBJAREA(" + subject + ")"
+    if search_str:
+        query += search_str
+
+    final_url = base_url + query + "OPENACCESS(1)" + "&count=" + str(count)
+    print("Final original URL: ", final_url)
+
+    encoded_url = urllib.parse.quote(final_url, safe=':/?&=')
+    print("Encoded URL: ", encoded_url)
+
+    response = requests.get(encoded_url, headers=headers)
+    if response.status_code != 200:
+        return "Error: " + str(response.status_code) + " - " + response.text
+    
+    search_response = response.json()
+    total_records = int(search_response['search-results']['opensearch:totalResults'])
+    print("Total records: ", total_records)
+    current_records = 0
+        
+    # iterate through results and extract pii
+    while current_records < total_records:
+        # extract next page link if present
+        links = search_response['search-results']['link']
+        next_page_url = None
+        for link in links:
+            if link['@ref'] == 'next':
+                next_page_url = link['@href']
+                break
+
+        # multi-process all records in this page
+        records = search_response['search-results']['entry']
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            results = [executor.submit(downloadElsevierFulltextFromId, record['pii'], 'pii', course) for record in records]
+            for f in concurrent.futures.as_completed(results):
+                try:
+                    print(f.result())
+                except Exception as e:
+                    print(f"Error occurred during download: {e}")
+
+        # update current records count
+        current_records += len(records)
+        print("Current records: ", current_records)
+
+        # if next page exists, update next page url and call the API again
+        if next_page_url:            
+            response = requests.get(next_page_url, headers=headers)
+            if response.status_code != 200:
+                return "Error in next page: " + str(response.status_code) + " - " + response.text
+            else:
+                search_response = response.json()
+
+    exit()           
+    # after all records are downloaded, upload to supabase bucket           
+    try:
+        for root, directories, files in os.walk(directory):
+            for file in files:
+                filepath = os.path.join(root, file)
+                print("Uploading: ", file)
+                upload_path = "elsevier_papers/" + file
+                try:
+                    with open(filepath, "rb") as f:
+                        res = SUPABASE_CLIENT.storage.from_("publications/elsevier_journals/cell_host_and_mircobe").upload(file=f, path=upload_path, file_options={"content-type": "application/pdf"})
+                        print("Upload response: ", res)
+                except Exception as e:
+                    print("Error: ", e)
+
+        # remove local files
+        shutil.rmtree(directory)  
+    except Exception as e:
+        print("Error: ", e)
+    
+    # log end time
+    print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
+
+    return "success"
+
 
 def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
     """
@@ -346,7 +463,7 @@ def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
         doi = result['doi']
         #pii = result['pii']
         if doi:
-            downloadElsevierFulltextFromDoi(id=doi, id_type='doi', course_name=course)
+            downloadElsevierFulltextFromId(id=doi, id_type='doi', course_name=course)
         # elif pii:
         #     # download with pii
         #     pass
@@ -367,105 +484,12 @@ def searchScienceDirectArticles(course: str, query: str, title: str, pub: str):
             doi = result['doi']
             #pii = result['pii']
             if doi:
-                downloadElsevierFulltextFromDoi(id=doi, id_type='doi', course_name=course)
+                downloadElsevierFulltextFromId(id=doi, id_type='doi', course_name=course)
             # elif pii:
             #     # download with pii
             #     pass
 
     return "success"
-
-def searchScopusArticles(course: str, query: str, title: str, pub: str, subject: str, issn: str):
-    """
-    This function uses the Scopus Search API to retrieve metadata for journal articles
-    and then downloads the fulltext using downloadElsevierFulltextFromDoi().
-    """
-    # log start time
-    start_time = time.monotonic()
-
-    directory = os.path.join(os.getcwd(), 'elsevier_papers')
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    # uses GET request
-    base_url = "https://api.elsevier.com/content/search/scopus?"
-    query = "query="
-    # read parameters from request
-    if issn:
-        query += "ISSN(" + issn + ")"
-
-    if pub:
-        query += "SRCTITLE(" + pub + ")"
-    if title:
-        query += "TITLE(" + title + ")"
-    if subject:
-        query += "SUBJAREA(" + subject + ")"
-
-    final_url = base_url + query + "OPENACCESS(1)" + "&apiKey=" + str(ELSEVIER_API_KEY)
-    print("Final URL: ", final_url)
-
-    encoded_url = urllib.parse.quote(final_url, safe=':/?&=')
-    response = requests.get(encoded_url)
-    print("Status: ", response.status_code)
-    data = response.json()
-
-    # iterate through results and extract full-text links
-    results = data['search-results']['entry']
-    for result in results:
-        # results contain pii - so we can call downloadElsevierFulltextFromDoi() here 
-        print("PII: ", result['pii'])
-        pii = result['pii']
-        download_status = downloadElsevierFulltextFromDoi(id=pii, id_type='pii', course_name=course)
-        print("Download status: ", download_status)
-
-
-    # response is JSON and has next page link
-    links = data['search-results']['link']
-    next_page_url = None
-    for link in links:
-        if link['@ref'] == 'next':
-            next_page_url = link['@href']
-            break
-    print("Next page: ", next_page_url)
-    while next_page_url:
-        response = requests.get(next_page_url)
-        data = response.json()
-        results = data['search-results']['entry']
-        for result in results:
-            # results contain pii - so we can call downloadElsevierFulltextFromDoi() here 
-            pii = result['pii']
-            download_status = downloadElsevierFulltextFromDoi(id=pii, id_type='pii', course_name=course)
-            print("Download status: ", download_status)
-
-        # response is JSON and has next page link
-        links = data['search-results']['link']
-        for link in links:
-            if link['@ref'] == 'next':
-                next_page_url = link['@href']
-                break
-        print("Next page: ", next_page_url)
-
-    # upload to supabase bucket
-    try:
-        for root, directories, files in os.walk(directory):
-            for file in files:
-                filepath = os.path.join(root, file)
-                print("Uploading: ", file)
-                uppload_path = "springer_papers/" + file
-                try:
-                    with open(filepath, "rb") as f:
-                        res = SUPABASE_CLIENT.storage.from_("publications/elsevier_journals/cell_host_and_mircobe").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
-                        print("Upload response: ", res)
-                except Exception as e:
-                    print("Error: ", e)
-            
-    except Exception as e:
-        print("Error: ", e)
-
-    # log end time
-    print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
-
-    return "success"
-
 
 
 ##------------------------ PUBMED API FUNCTIONS ------------------------##

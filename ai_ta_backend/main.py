@@ -31,7 +31,7 @@ from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, creat
 from ai_ta_backend.vector_database import Ingest
 from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 from ai_ta_backend.journal_ingest import (get_arxiv_fulltext, downloadSpringerFulltext, 
-                                          downloadElsevierFulltextFromDoi, getFromDoi, 
+                                          downloadElsevierFulltextFromId, getFromDoi, 
                                           downloadPubmedArticles, searchPubmedArticlesWithEutils,
                                           searchScopusArticles)
 
@@ -756,7 +756,7 @@ def get_elsevier_data():
         f"Missing required parameters: 'id', 'id_type' [doi, eid, pii, pubmed_id] and 'course_name' must be provided."
     )
 
-  fulltext = downloadElsevierFulltextFromDoi(id, id_type, course_name)
+  fulltext = downloadElsevierFulltextFromId(id, id_type, course_name)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -837,23 +837,23 @@ def getScopusArticle() -> Response:
   Download full-text article from Scopus
   """
   course_name = request.args.get('course_name', default='', type=str)
-  title = request.args.get('title', default='', type=str)
-  journal = request.args.get('journal', default='', type=str)
-  search_query = request.args.get('search_query', default='', type=str)
+  article_title = request.args.get('article_title', default='', type=str)
+  journal_title = request.args.get('journal_title', default='', type=str)
+  search_str = request.args.get('search_str', default='', type=str)
   subject = request.args.get('subject', default='', type=str)
   issn = request.args.get('issn', default='', type=str)
 
   print("In /getScopusArticles")
 
-  if (title == '' and journal  == '' and search_query == '' and issn == '') or course_name == '':
+  if (article_title == '' and journal_title  == '' and search_str == '' and issn == '' and subject == '') or course_name == '':
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing required parameters: 'title', 'journal', or 'search_query' and 'course_name' must be provided."
+        f"Missing required parameters: 'article_title', 'journal_title', 'issn', 'subject' or 'search_str' and 'course_name' must be provided."
     )
 
-  fulltext = searchScopusArticles(course_name, search_query, title, journal, subject, issn)
+  fulltext = searchScopusArticles(course_name, search_str, article_title, journal_title, subject, issn)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
