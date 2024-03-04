@@ -33,7 +33,7 @@ from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 from ai_ta_backend.journal_ingest import (get_arxiv_fulltext, downloadSpringerFulltext, 
                                           downloadElsevierFulltextFromId, getFromDoi, 
                                           downloadPubmedArticles, searchPubmedArticlesWithEutils,
-                                          searchScopusArticles)
+                                          searchScopusArticles, searchScienceDirectArticles)
 
 # Sentry.io error logging
 sentry_sdk.init(
@@ -832,7 +832,7 @@ def getPubmedArticleWithEutils():
   return response
 
 @app.route('/getScopusArticles', methods=['GET'])
-def getScopusArticle() -> Response:
+def getScopusArticles() -> Response:
   """
   Download full-text article from Scopus
   """
@@ -854,6 +854,33 @@ def getScopusArticle() -> Response:
     )
 
   fulltext = searchScopusArticles(course_name, search_str, article_title, journal_title, subject, issn)
+
+  response = jsonify(fulltext)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/getScienceDirectArticles', methods=['GET'])
+def getScienceDirectArticles() -> Response:
+  """
+  Download full-text article from Scopus
+  """
+  course_name = request.args.get('course_name', default='', type=str)
+  article_title = request.args.get('article_title', default='', type=str)
+  journal_title = request.args.get('journal_title', default='', type=str)
+  search_str = request.args.get('search_str', default='', type=str)
+  
+
+  print("In /getScienceDirectArticles")
+
+  if (article_title == '' and journal_title  == '' and search_str == '') or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameters: 'article_title', 'journal_title' or 'search_str' and 'course_name' must be provided."
+    )
+
+  fulltext = searchScienceDirectArticles(course_name, search_str, article_title, journal_title)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
