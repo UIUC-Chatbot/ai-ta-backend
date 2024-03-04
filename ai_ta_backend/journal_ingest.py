@@ -156,107 +156,51 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
 
     data = response.json()
     # check for total number of records 
-    total_records = data['result'][0]['total']
+    total_records = int(data['result'][0]['total'])
     print("Total records: ", total_records)
-    current_records = data['result'][0]['recordsDisplayed']
+    current_records = 0
 
     while current_records < total_records:
         # check if nextPage exists
         if 'nextPage' in data:
-            next_page_url = data['nextPage']
+            next_page_url = "http://api.springernature.com" + data['nextPage']
         else:
             next_page_url = None
 
         # multi-process all records in current page
-        # write a separate function to download articles
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            results = [executor.submit(downloadPDFSpringer, record, directory) for record in data['records']]
+            for f in concurrent.futures.as_completed(results):
+                print(f.result())
 
-    
-    while 'nextPage' in data:
-        # extract current page data
-        for record in data['records']: 
-            urls = record['url']
-            filename = record['doi'].replace("/", "_")
-            print("Filename: ", filename)
+        # update current records count
+        current_records += int(len(data['records']))
 
-            if len(urls) > 0:
-                url = urls[0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
-                print("DX URL: ", url)
-                url_response = requests.get(url, headers=headers)
-                # check for headers here!
-
-                print("Headers: ", url_response.headers['content-type'])
-                
-                dx_doi_data = url_response.json()
-                links = dx_doi_data['link']
-                pdf_link = None
-                for link in links:
-                    if link['content-type'] == 'application/pdf' and link['intended-application'] == 'text-mining':
-                        pdf_link = link['URL']
-                        print("PDF Link: ", pdf_link)
-                        break
-                
-                if pdf_link:
-                    try:
-                        response = requests.get(pdf_link)
-                        with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
-                            for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
-                                f.write(chunk)
-                        print("Downloaded: ", filename)
-                    except Exception as e:
-                        print("Error: ", e)
-
-        # query for next page
-        next_page_url = "http://api.springernature.com" + data['nextPage']
-        response = requests.get(next_page_url)
-        print("Next page URL: ", next_page_url)
-        data = response.json()
-        # print("Total records: ", len(data['records']))
-
-    # last set of records after exiting while loop
-    for record in data['records']: 
-        urls = record['url']
-        filename = record['doi'].replace("/", "_")
-        # print("Filename: ", filename)
-
-        if len(urls) > 0:
-            url = urls[0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
-            # print("DX URL: ", url)
-            url_response = requests.get(url, headers=headers)
-            dx_doi_data = url_response.json()
-            links = dx_doi_data['link']
-            pdf_link = None
-            for link in links:
-                if link['content-type'] == 'application/pdf' and link['intended-application'] == 'text-mining':
-                    pdf_link = link['URL']
-                    print("PDF Link: ", pdf_link)
-                    break
+        # if next page exists, update next page url and call the API again
+        if next_page_url:
+            # API key is already present in the URL
+            response = requests.get(next_page_url, headers=headers)
+            if response.status_code != 200:
+                return "Error in next page: " + str(response.status_code) + " - " + response.text
             
-            if pdf_link:
-                try:
-                    response = requests.get(pdf_link)
-                    with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
-                        for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
-                            f.write(chunk)
-                    print("Downloaded: ", filename)
-                except Exception as e:
-                    print("Error: ", e)
+            data = response.json()
     
-    # upload to supabase bucket
-    try:
-        for root, directories, files in os.walk(directory):
-            for file in files:
-                filepath = os.path.join(root, file)
-                print("Uploading: ", file)
-                uppload_path = "springer_papers/" + file
-                try:
-                    with open(filepath, "rb") as f:
-                        res = SUPABASE_CLIENT.storage.from_("publications/springer_journals/nature_immunology").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
-                        print("Upload response: ", res)
-                except Exception as e:
-                    print("Error: ", e)
+    # after all records are downloaded, upload to supabase bucket
+    # try:
+    #     for root, directories, files in os.walk(directory):
+    #         for file in files:
+    #             filepath = os.path.join(root, file)
+    #             print("Uploading: ", file)
+    #             uppload_path = "springer_papers/" + file
+    #             try:
+    #                 with open(filepath, "rb") as f:
+    #                     res = SUPABASE_CLIENT.storage.from_("publications/springer_journals/nature_immunology").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
+    #                     print("Upload response: ", res)
+    #             except Exception as e:
+    #                 print("Error: ", e)
             
-    except Exception as e:
-        print("Error: ", e)
+    # except Exception as e:
+    #     print("Error: ", e)
                 
     # # upload to s3
     # s3_paths = upload_data_files_to_s3(course_name, directory)
@@ -269,6 +213,55 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
     # journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
                                 
     return "success"
+
+def downloadPDFSpringer(record: dict, directory: str):
+    """
+    This function takes a record from the Springer API response and downloads the PDF file.
+    It is called in a multi-process loop in downloadSpringerFulltext().
+    Args:
+        record: dictionary containing DOI and other metadata
+        directory: local directory to save the files
+    """
+    headers = {'Accept': 'application/json'}
+
+    if len(record['url']) < 1:
+        return "No download link found for DOI: " + record['doi']
+
+    # extract URL
+    url = record['url'][0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
+    url_response = requests.get(url, headers=headers)
+    if url_response.status_code != 200:
+        return "Error in accessing article link: " + str(url_response.status_code) + " - " + url_response.text
+    url_data = url_response.json()
+
+    # extract PDF link
+    pdf_link = None
+    links = url_data['link']
+    for link in links:
+        if link['content-type'] == 'application/pdf' and link['intended-application'] == 'text-mining':
+            pdf_link = link['URL']
+            #print("PDF Link: ", pdf_link)
+            break
+    if not pdf_link:
+        return "No PDF link found for DOI: " + record['doi']
+    
+    # download PDF
+    filename = record['doi'].replace("/", "_")
+    try:
+        response = requests.get(pdf_link)
+        if response.status_code != 200:
+            return "Error in downloading PDF: " + str(response.status_code) + " - " + response.text
+        
+        with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+            for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+                f.write(chunk)
+        print("Downloaded: ", filename)
+        return "success"
+    except Exception as e:
+        return "Error in downloading PDF: " + str(e)
+
+    
+    
 
 ##------------------------ ELSEVIER API FUNCTIONS ------------------------##
 
