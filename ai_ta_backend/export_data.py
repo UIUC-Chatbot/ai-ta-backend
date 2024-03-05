@@ -1,20 +1,22 @@
+import json
 import os
 import uuid
 import zipfile
-import io
-import pandas as pd
-import supabase
-import sentry_sdk
+from concurrent.futures import ProcessPoolExecutor
+
 import boto3
 import botocore
-from concurrent.futures import ProcessPoolExecutor
+import pandas as pd
 import requests
-import json
+import sentry_sdk
+import supabase
+
 from ai_ta_backend.emails import send_email
 
 # Initialize Supabase client
-SUPABASE_CLIENT = supabase.create_client(supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-                                        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+SUPABASE_CLIENT = supabase.create_client(
+    supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+    supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
 
 def export_documents_json(course_name: str, from_date='', to_date=''):
@@ -24,7 +26,7 @@ def export_documents_json(course_name: str, from_date='', to_date=''):
       course_name (str): The name of the course.
       from_date (str, optional): The start date for the data export. Defaults to ''.
       to_date (str, optional): The end date for the data export. Defaults to ''.
-  """ 
+  """
 
   if from_date != '' and to_date != '':
     # query between the dates
@@ -55,7 +57,7 @@ def export_documents_json(course_name: str, from_date='', to_date=''):
   # add a condition to route to direct download or s3 download
   if response.count > 1000:
     # call background task to upload to s3
-    
+
     filename = course_name + '_' + str(uuid.uuid4()) + '_documents.zip'
     s3_filepath = s3_file = f"courses/{course_name}/{filename}"
     # background task of downloading data - map it with above ID
@@ -74,17 +76,18 @@ def export_documents_json(course_name: str, from_date='', to_date=''):
       print("total_doc_count: ", total_doc_count)
       print("first_id: ", first_id)
       print("last_id: ", last_id)
-      
+
       curr_doc_count = 0
       filename = course_name + '_' + str(uuid.uuid4()) + '_documents.json'
       file_path = os.path.join(os.getcwd(), filename)
-          
+
       while curr_doc_count < total_doc_count:
         print("Fetching data from id: ", first_id)
-        response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).gte('id', first_id).order('id', desc=False).limit(100).execute()
+        response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).gte(
+            'id', first_id).order('id', desc=False).limit(100).execute()
         df = pd.DataFrame(response.data)
         curr_doc_count += len(response.data)
-              
+
         # writing to file
         if not os.path.isfile(file_path):
           df.to_json(file_path, orient='records')
@@ -93,7 +96,7 @@ def export_documents_json(course_name: str, from_date='', to_date=''):
 
         if len(response.data) > 0:
           first_id = response.data[-1]['id'] + 1
-          
+
       # Download file
       try:
         # zip file
@@ -111,7 +114,7 @@ def export_documents_json(course_name: str, from_date='', to_date=''):
         return {"response": "Error downloading file."}
     else:
       return {"response": "No data found between the given dates."}
-  
+
 
 def export_data_in_bg(response, download_type, course_name, s3_path):
   """
@@ -139,12 +142,14 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
   while curr_doc_count < total_doc_count:
     print("Fetching data from id: ", first_id)
     if download_type == 'documents':
-      response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).gte('id', first_id).order('id', desc=False).limit(100).execute()
+      response = SUPABASE_CLIENT.table("documents").select("*").eq("course_name", course_name).gte(
+          'id', first_id).order('id', desc=False).limit(100).execute()
     else:
-      response = SUPABASE_CLIENT.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte('id', first_id).order('id', desc=False).limit(100).execute()
+      response = SUPABASE_CLIENT.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
+          'id', first_id).order('id', desc=False).limit(100).execute()
     df = pd.DataFrame(response.data)
     curr_doc_count += len(response.data)
-            
+
     # writing to file
     if not os.path.isfile(file_path):
       df.to_json(file_path, orient='records')
@@ -153,7 +158,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 
     if len(response.data) > 0:
       first_id = response.data[-1]['id'] + 1
-  
+
   # zip file
   zip_filename = filename.split('.')[0] + '.zip'
   zip_file_path = os.path.join(os.getcwd(), zip_filename)
@@ -174,7 +179,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     #s3_file = f"courses/{course_name}/exports/{os.path.basename(zip_file_path)}"
     s3_file = f"courses/{course_name}/{os.path.basename(zip_file_path)}"
     s3.upload_file(zip_file_path, os.getenv('S3_BUCKET_NAME'), s3_file)
-    
+
     # remove local files
     os.remove(file_path)
     os.remove(zip_file_path)
@@ -183,16 +188,18 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 
     # pre-signed URL
     s3_object = s3.head_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
-    
+
     # generate presigned URL
-    s3_url = s3.generate_presigned_url('get_object', Params={'Bucket': os.getenv('S3_BUCKET_NAME'), 'Key': s3_path}, ExpiresIn=3600)
-      
+    s3_url = s3.generate_presigned_url('get_object',
+                                       Params={
+                                           'Bucket': os.getenv('S3_BUCKET_NAME'),
+                                           'Key': s3_path
+                                       },
+                                       ExpiresIn=3600)
+
     # get admin email IDs
-    headers = {
-              "Authorization": f"Bearer {os.getenv('VERCEL_READ_ONLY_API_KEY')}",
-              "Content-Type": "application/json"
-          }
-    
+    headers = {"Authorization": f"Bearer {os.getenv('VERCEL_READ_ONLY_API_KEY')}", "Content-Type": "application/json"}
+
     hget_url = str(os.getenv('VERCEL_BASE_URL')) + "course_metadatas/" + course_name
     response = requests.get(hget_url, headers=headers)
     course_metadata = response.json()
@@ -214,6 +221,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     print(e)
     return "Error: " + str(e)
 
+
 def check_s3_path_and_download(s3_path):
   """
   This function checks if the file exists in S3 and downloads it.
@@ -229,12 +237,17 @@ def check_s3_path_and_download(s3_path):
   try:
     print("Checking if file exists in S3...", s3_path)
     s3_object = s3.head_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
-  
+
     # generate presigned URL
-    s3_url = s3.generate_presigned_url('get_object', Params={'Bucket': os.getenv('S3_BUCKET_NAME'), 'Key': s3_path}, ExpiresIn=172800)
+    s3_url = s3.generate_presigned_url('get_object',
+                                       Params={
+                                           'Bucket': os.getenv('S3_BUCKET_NAME'),
+                                           'Key': s3_path
+                                       },
+                                       ExpiresIn=172800)
     print("Presigned URL: ", s3_url)
-    return {"response": s3_url}  
-                           
+    return {"response": s3_url}
+
   except botocore.exceptions.ClientError as e:
     if e.response['Error']['Code'] == "404":
       # The object does not exist.
@@ -243,7 +256,7 @@ def check_s3_path_and_download(s3_path):
       # Something else has gone wrong.
       sentry_sdk.capture_exception(e)
       return {"response": "Error downloading file."}
-      
+
 
 def export_convo_history_json(course_name: str, from_date='', to_date=''):
   """
@@ -254,7 +267,7 @@ def export_convo_history_json(course_name: str, from_date='', to_date=''):
       to_date (str, optional): The end date for the data export. Defaults to ''.
   """
   print("Exporting conversation history to csv file...")
-  
+
   if from_date == '' and to_date == '':
     # Get all data
     print("No dates")
@@ -276,7 +289,7 @@ def export_convo_history_json(course_name: str, from_date='', to_date=''):
     response = SUPABASE_CLIENT.table("llm-convo-monitor").select("id", count='exact').eq(
         "course_name", course_name).gte('created_at', from_date).lte('created_at', to_date).order('id',
                                                                                                   desc=False).execute()
-  
+
   if response.count > 1000:
     # call background task to upload to s3
     filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.zip'

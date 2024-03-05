@@ -7,10 +7,11 @@ from typing import Optional
 import openai
 import ray
 import requests
+import sentry_sdk
+
 # from langchain import hub
 # import replicate
 from posthog import Posthog
-import sentry_sdk
 
 # from dotenv import load_dotenv
 # load_dotenv(override=True)
