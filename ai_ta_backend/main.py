@@ -6,7 +6,6 @@ from typing import List
 import requests
 from threading import Thread
 
-
 from dotenv import load_dotenv
 from flask import (
     Flask,
@@ -21,7 +20,7 @@ from flask import (
 from flask_cors import CORS
 from flask_executor import Executor
 from posthog import Posthog
-import ray
+# import ray
 import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
@@ -50,7 +49,7 @@ executor = Executor(app)
 # load API keys from globally-availabe .env file
 load_dotenv()
 
-ray.init()
+# ray.init()
 
 print("NUM ACTIVE THREADS (top of main):", threading.active_count())
 
@@ -561,6 +560,7 @@ def nomic_map():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/createDocumentMap', methods=['GET'])
 def createDocumentMap():
   course_name: str = request.args.get('course_name', default='', type=str)
@@ -578,12 +578,9 @@ def createDocumentMap():
 
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic():
-  # data = request.get_json()
-  # course_name = data['course_name']
-  # conversation = data['conversation']
-
-  course_name: str = request.args.get('course_name', default='', type=str)
-  conversation: str = request.args.get('conversation', default='', type=str)
+  data = request.get_json()
+  course_name = data['course_name']
+  conversation = data['conversation']
 
   if course_name == '' or conversation == '':
     # proper web error "400 Bad request"
@@ -595,8 +592,7 @@ def logToNomic():
   print(f"In /onResponseCompletion for course: {course_name}")
 
   # background execution of tasks!!
-  #response = executor.submit(log_convo_to_nomic, course_name, data)
-  response = executor.submit(log_convo_to_nomic, course_name, conversation)
+  response = executor.submit(log_convo_to_nomic, course_name, data)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -624,11 +620,43 @@ def export_convo_history():
     response.headers.add('Access-Control-Allow-Origin', '*')
 
   else:
-    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response = make_response(
+        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
     os.remove(export_status['response'][0])
-    
+
+  return response
+
+
+@app.route('/exportDocuments', methods=['GET'])
+def exportDocuments():
+  course_name: str = request.args.get('course_name', default='', type=str)
+  from_date: str = request.args.get('from_date', default='', type=str)
+  to_date: str = request.args.get('to_date', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  export_status = export_documents_json(course_name, from_date, to_date)
+  print("EXPORT FILE LINKS: ", export_status)
+
+  if export_status['response'] == "No data found between the given dates.":
+    response = Response(status=204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  elif export_status['response'] == "Download from S3":
+    response = jsonify({"response": "Download from S3", "s3_path": export_status['s3_path']})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  else:
+    response = make_response(
+        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
+    os.remove(export_status['response'][0])
+
   return response
 
 
