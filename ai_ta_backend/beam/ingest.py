@@ -782,31 +782,6 @@ class Ingest():
       sentry_sdk.capture_exception(e)
       return str(err)
 
-  def list_files_recursively(self, bucket, prefix):
-    all_files = []
-    continuation_token = None
-
-    while True:
-      list_objects_kwargs = {
-          'Bucket': bucket,
-          'Prefix': prefix,
-      }
-      if continuation_token:
-        list_objects_kwargs['ContinuationToken'] = continuation_token
-
-      response = self.s3_client.list_objects_v2(**list_objects_kwargs)
-
-      if 'Contents' in response:
-        for obj in response['Contents']:
-          all_files.append(obj['Key'])
-
-      if response['IsTruncated']:
-        continuation_token = response['NextContinuationToken']
-      else:
-        break
-
-    return all_files
-
   def ingest_github(self, github_url: str, course_name: str) -> str:
     """
     Clones the given GitHub URL and uses Langchain to load data.
@@ -1204,6 +1179,31 @@ class Ingest():
   #     err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
   #     print(err)
   #     return err
+
+  # def list_files_recursively(self, bucket, prefix):
+  #   all_files = []
+  #   continuation_token = None
+
+  #   while True:
+  #     list_objects_kwargs = {
+  #         'Bucket': bucket,
+  #         'Prefix': prefix,
+  #     }
+  #     if continuation_token:
+  #       list_objects_kwargs['ContinuationToken'] = continuation_token
+
+  #     response = self.s3_client.list_objects_v2(**list_objects_kwargs)
+
+  #     if 'Contents' in response:
+  #       for obj in response['Contents']:
+  #         all_files.append(obj['Key'])
+
+  #     if response['IsTruncated']:
+  #       continuation_token = response['NextContinuationToken']
+  #     else:
+  #       break
+
+  #   return all_files
 
 
 if __name__ == "__main__":
