@@ -6,7 +6,6 @@ from typing import List
 import requests
 from threading import Thread
 
-
 from dotenv import load_dotenv
 from flask import (
     Flask,
@@ -21,7 +20,7 @@ from flask import (
 from flask_cors import CORS
 from flask_executor import Executor
 from posthog import Posthog
-import ray
+# import ray
 import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
@@ -50,7 +49,7 @@ executor = Executor(app)
 # load API keys from globally-availabe .env file
 load_dotenv()
 
-ray.init()
+# ray.init()
 
 print("NUM ACTIVE THREADS (top of main):", threading.active_count())
 
@@ -561,6 +560,7 @@ def nomic_map():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/createDocumentMap', methods=['GET'])
 def createDocumentMap():
   course_name: str = request.args.get('course_name', default='', type=str)
@@ -620,12 +620,14 @@ def export_convo_history():
     response.headers.add('Access-Control-Allow-Origin', '*')
 
   else:
-    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response = make_response(
+        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
     os.remove(export_status['response'][0])
-    
+
   return response
+
 
 @app.route('/exportDocuments', methods=['GET'])
 def exportDocuments():
@@ -649,11 +651,12 @@ def exportDocuments():
     response.headers.add('Access-Control-Allow-Origin', '*')
 
   else:
-    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response = make_response(
+        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
     os.remove(export_status['response'][0])
-    
+
   return response
 
 
