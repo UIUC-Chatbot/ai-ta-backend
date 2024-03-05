@@ -2,8 +2,8 @@ import os
 import shutil
 
 import requests
-import sentry_sdk
 from canvasapi import Canvas
+import sentry_sdk
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest

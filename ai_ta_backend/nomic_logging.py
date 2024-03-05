@@ -2,27 +2,26 @@ import datetime
 import os
 import time
 
-import backoff
 import nomic
 import numpy as np
 import pandas as pd
-import sentry_sdk
 import supabase
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
+import sentry_sdk
+import backoff
+import json
 
 OPENAI_API_TYPE = "azure"
 
+
 SUPABASE_CLIENT = supabase.create_client(  # type: ignore
-    supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-    supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
-LOCK_EXCEPTIONS = [
-    'Project is locked for state access! Please wait until the project is unlocked to access embeddings.',
-    'Project is locked for state access! Please wait until the project is unlocked to access data.',
-    'Project is currently indexing and cannot ingest new datums. Try again later.'
-]
-
+LOCK_EXCEPTIONS = ['Project is locked for state access! Please wait until the project is unlocked to access embeddings.', 
+                   'Project is locked for state access! Please wait until the project is unlocked to access data.', 
+                   'Project is currently indexing and cannot ingest new datums. Try again later.']
 
 def giveup_hdlr(e):
   """
@@ -210,8 +209,9 @@ def log_convo_to_nomic(course_name: str, conversation) -> str:
       # raising exception again to trigger backoff and passing parameters to use in create_nomic_map()
       raise Exception({"exception": str(e)})
 
-
+    
 def get_nomic_map(course_name: str, type: str):
+
   """
   Returns the variables necessary to construct an iframe of the Nomic map given a course name.
   We just need the ID and URL.
@@ -237,8 +237,7 @@ def get_nomic_map(course_name: str, type: str):
   except Exception as e:
     # Error: ValueError: You must specify a unique_id_field when creating a new project.
     if str(e) == 'You must specify a unique_id_field when creating a new project.':  # type: ignore
-      print("Nomic map does not exist yet, probably because you have less than 20 queries/documents on your project: ",
-            e)
+      print("Nomic map does not exist yet, probably because you have less than 20 queries/documents on your project: ", e)
     else:
       print("ERROR in get_nomic_map():", e)
       sentry_sdk.capture_exception(e)
@@ -400,9 +399,7 @@ def create_nomic_map(course_name: str, log_data: list):
 
     return "failed"
 
-
 ## -------------------------------- DOCUMENT MAP FUNCTIONS --------------------------------- ##
-
 
 def create_document_map(course_name: str):
   """
@@ -426,47 +423,43 @@ def create_document_map(course_name: str):
   supabase_client = supabase.create_client(  # type: ignore
       supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
       supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
-
+  
   try:
     # check if map exists
     response = supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
     if response.data:
       return "Map already exists for this course."
-
+    
     # fetch relevant document data from Supabase
-    response = supabase_client.table("documents").select("id",
-                                                         count="exact").eq("course_name",
-                                                                           course_name).order('id',
-                                                                                              desc=False).execute()
+    response = supabase_client.table("documents").select("id", count="exact").eq("course_name", course_name).order('id', desc=False).execute()
     if not response.count:
       return "No documents found for this course."
-
+    
     total_doc_count = response.count
     print("Total number of documents in Supabase: ", total_doc_count)
 
     # minimum 20 docs needed to create map
-    if total_doc_count > 19:
-
+    if total_doc_count > 19:  
+      
       first_id = response.data[0]['id']
       combined_dfs = []
       curr_total_doc_count = 0
       doc_count = 0
       first_batch = True
-
+      
       # iteratively query in batches of 25
       while curr_total_doc_count < total_doc_count:
 
-        response = supabase_client.table("documents").select(
-            "id, created_at, s3_path, url, readable_filename, contexts").eq("course_name", course_name).gte(
-                'id', first_id).order('id', desc=False).limit(25).execute()
+        response = supabase_client.table("documents").select("id, created_at, s3_path, url, readable_filename, contexts").eq("course_name", course_name).gte(
+          'id', first_id).order('id', desc=False).limit(25).execute()
         df = pd.DataFrame(response.data)
-        combined_dfs.append(df)  # list of dfs
+        combined_dfs.append(df) # list of dfs
 
         curr_total_doc_count += len(response.data)
         doc_count += len(response.data)
 
-        if doc_count >= 1000:  # upload to Nomic every 1000 docs
-
+        if doc_count >= 1000: # upload to Nomic every 1000 docs
+          
           # concat all dfs from the combined_dfs list
           final_df = pd.concat(combined_dfs, ignore_index=True)
 
@@ -490,14 +483,14 @@ def create_document_map(course_name: str):
             project_name = NOMIC_MAP_NAME_PREFIX + course_name
             # add project lock logic here
             result = append_to_map(embeddings, metadata, project_name)
-
+                     
           # reset variables
           combined_dfs = []
           doc_count = 0
 
         # set first_id for next iteration
         first_id = response.data[-1]['id'] + 1
-
+      
       # upload last set of docs
       final_df = pd.concat(combined_dfs, ignore_index=True)
       embeddings, metadata = data_prep_for_doc_map(final_df)
@@ -524,8 +517,8 @@ def create_document_map(course_name: str):
   except Exception as e:
     print(e)
     sentry_sdk.capture_exception(e)
-    return "failed"
-
+    return "failed" 
+  
 
 def delete_from_document_map(course_name: str, ids: list):
   """
@@ -536,7 +529,7 @@ def delete_from_document_map(course_name: str, ids: list):
     ids: list of str
   """
   print("in delete_from_document_map()")
-
+    
   try:
     # check if project exists
     response = SUPABASE_CLIENT.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
@@ -544,7 +537,7 @@ def delete_from_document_map(course_name: str, ids: list):
       project_id = response.data[0]['doc_map_id']
     else:
       return "No document map found for this course"
-
+    
     # fetch project from Nomic
     project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
 
@@ -558,7 +551,6 @@ def delete_from_document_map(course_name: str, ids: list):
     sentry_sdk.capture_exception(e)
     return "Error in deleting from document map: {e}"
 
-
 def log_to_document_map(data: dict):
   """
   This is a function which appends new documents to an existing document map. It's called 
@@ -567,7 +559,7 @@ def log_to_document_map(data: dict):
     data: dict - the response data from Supabase insertion
   """
   print("in add_to_document_map()")
-
+  
   try:
     # check if map exists
     course_name = data['course_name']
@@ -584,9 +576,10 @@ def log_to_document_map(data: dict):
         response = SUPABASE_CLIENT.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
         project_id = response.data[0]['doc_map_id']
 
+    
     project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
-    #print("Inserted data: ", data)
-
+    #print("Inserted data: ", data)  
+    
     embeddings = []
     metadata = []
     context_count = 0
@@ -595,13 +588,13 @@ def log_to_document_map(data: dict):
       context_count += 1
       embeddings.append(row['embedding'])
       metadata.append({
-          "id": str(data['id']) + "_" + str(context_count),
-          "doc_ingested_at": data['created_at'],
-          "s3_path": data['s3_path'],
-          "url": data['url'],
-          "readable_filename": data['readable_filename'],
-          "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-          "text": row['text']
+        "id": str(data['id']) + "_" + str(context_count),
+        "doc_ingested_at": data['created_at'],
+        "s3_path": data['s3_path'],
+        "url": data['url'], 
+        "readable_filename": data['readable_filename'],
+        "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "text": row['text']
       })
     embeddings = np.array(embeddings)
     metadata = pd.DataFrame(metadata)
@@ -624,7 +617,7 @@ def log_to_document_map(data: dict):
     print(e)
     sentry_sdk.capture_exception(e)
     return "Error in appending to map: {e}"
-
+    
 
 def create_map(embeddings, metadata, map_name, index_name, topic_label_field, colorable_fields):
   """
@@ -638,23 +631,25 @@ def create_map(embeddings, metadata, map_name, index_name, topic_label_field, co
     colorable_fields: list of str
   """
   nomic.login(os.getenv('NOMIC_API_KEY'))
-
+  
   try:
-    project = atlas.map_embeddings(embeddings=embeddings,
-                                   data=metadata,
-                                   id_field="id",
-                                   build_topic_model=True,
-                                   name=map_name,
-                                   topic_label_field=topic_label_field,
-                                   colorable_fields=colorable_fields,
-                                   add_datums_if_exists=True)
+    project = atlas.map_embeddings(
+      embeddings=embeddings,
+      data=metadata,
+      id_field="id",
+      build_topic_model=True,
+      name=map_name,
+      topic_label_field=topic_label_field,
+      colorable_fields=colorable_fields,
+      add_datums_if_exists=True
+    )
     project.create_index(index_name, build_topic_model=True)
     return "success"
   except Exception as e:
     print(e)
     return "Error in creating map: {e}"
-
-
+  
+  
 def append_to_map(embeddings, metadata, map_name):
   """
   Generic function to append new data to an existing Nomic map.
@@ -663,7 +658,7 @@ def append_to_map(embeddings, metadata, map_name):
     metadata: pd.DataFrame of Nomic upload metadata
     map_name: str
   """
-  nomic.login(os.getenv('NOMIC_API_KEY'))
+  nomic.login(os.getenv('NOMIC_API_KEY'))  
   try:
     project = atlas.AtlasProject(name=map_name, add_datums_if_exists=True)
     with project.wait_for_project_lock():
@@ -672,7 +667,7 @@ def append_to_map(embeddings, metadata, map_name):
   except Exception as e:
     print(e)
     return "Error in appending to map: {e}"
-
+  
 
 def data_prep_for_doc_map(df: pd.DataFrame):
   """
@@ -687,11 +682,11 @@ def data_prep_for_doc_map(df: pd.DataFrame):
 
   metadata = []
   embeddings = []
-  texts = []
+  texts = [] 
 
   for index, row in df.iterrows():
-
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
     if row['url'] == None:
       row['url'] = ""
     # iterate through all contexts and create separate entries for each
@@ -700,17 +695,17 @@ def data_prep_for_doc_map(df: pd.DataFrame):
       context_count += 1
       text_row = context['text']
       embeddings_row = context['embedding']
-
+      
       meta_row = {
-          "id": str(row['id']) + "_" + str(context_count),
-          "doc_ingested_at": row['created_at'],
-          "s3_path": row['s3_path'],
-          "url": row['url'],
-          "readable_filename": row['readable_filename'],
-          "created_at": current_time,
-          "text": text_row
+        "id": str(row['id']) + "_" + str(context_count),
+        "doc_ingested_at": row['created_at'],
+        "s3_path": row['s3_path'],
+        "url": row['url'],
+        "readable_filename": row['readable_filename'],
+        "created_at": current_time,
+        "text": text_row
       }
-
+      
       embeddings.append(embeddings_row)
       metadata.append(meta_row)
       texts.append(text_row)
@@ -721,7 +716,7 @@ def data_prep_for_doc_map(df: pd.DataFrame):
   # check dimension if embeddings_np is (n, 1536)
   if len(embeddings_np.shape) < 2:
     print("Creating new embeddings...")
-    # embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE,
+    # embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE, 
     #                                     openai_api_base=os.getenv('AZURE_OPENAI_BASE'),
     #                                     openai_api_key=os.getenv('AZURE_OPENAI_KEY')) # type: ignore
     embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
@@ -733,6 +728,7 @@ def data_prep_for_doc_map(df: pd.DataFrame):
   embeddings = np.array(embeddings)
 
   return embeddings, metadata
+
 
 
 if __name__ == '__main__':
