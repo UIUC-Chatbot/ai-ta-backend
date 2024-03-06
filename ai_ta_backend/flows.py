@@ -76,10 +76,9 @@ class Flows():
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = self.url + f"/api/v1/workflows?limit={limit}"
     if active:
-      url = url + f"&active=true"
+      url = url + "&active=true"
     response = requests.get(url, headers=headers, timeout=8)
     workflows = response.json()
-    response.ok
     if workflows.get('message') == 'unauthorized' and not response.ok:
       raise Exception('Unauthorized')
 
