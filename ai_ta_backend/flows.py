@@ -12,7 +12,7 @@ class Flows():
       raise ValueError('api_key is required')
     all_users = []
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
-    url = self.url+'/api/v1/users?limit=%s&includeRole=true' % str(limit)
+    url = self.url + '/api/v1/users?limit=%s&includeRole=true' % str(limit)
     response = requests.get(url, headers=headers, timeout=8)
     data = response.json()
     if not pagination:
@@ -21,8 +21,7 @@ class Flows():
       all_users.append(data['data'])
       cursor = data.get('nextCursor')
       while cursor is not None:
-        url = self.url+'/api/v1/users?limit=%s&cursor=%s&includeRole=true' % (
-            str(limit), cursor)
+        url = self.url + '/api/v1/users?limit=%s&cursor=%s&includeRole=true' % (str(limit), cursor)
         response = requests.get(url, headers=headers, timeout=8)
         data = response.json()
         all_users.append(data['data'])
@@ -43,7 +42,7 @@ class Flows():
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
-    url = self.url+f"/api/v1/executions?includeData=true&status=success&limit={limit}"
+    url = self.url + f"/api/v1/executions?includeData=true&status=success&limit={limit}"
     response = requests.get(url, headers=headers, timeout=8)
     executions = response.json()
     if not pagination:
@@ -70,14 +69,19 @@ class Flows():
     else:
       return all_executions
 
-  def get_workflows(self, limit, pagination: bool = True, api_key: str = ""):
+  # TODO: Active or Inactive
+  def get_workflows(self, limit, pagination: bool = True, api_key: str = "", active: bool = False):
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
-    url = self.url+f"/api/v1/workflows?limit={limit}"
+    url = self.url + f"/api/v1/workflows?limit={limit}"
+    if active:
+      url = url + f"&active=true"
     response = requests.get(url, headers=headers, timeout=8)
-
     workflows = response.json()
+    response.ok
+    if workflows.get('message') == 'unauthorized' and not response.ok:
+      raise Exception('Unauthorized')
 
     if not pagination:
       return workflows['data']
@@ -86,12 +90,19 @@ class Flows():
       all_workflows.append(workflows['data'])
       cursor = workflows.get('nextCursor')
       while cursor is not None:
-        url = self.url+f"/api/v1/workflows?limit={limit}&cursor={cursor}"
+        url = self.url + f"/api/v1/workflows?limit={limit}&cursor={cursor}"
         response = requests.get(url, headers=headers, timeout=8)
         workflows = response.json()
         all_workflows.append(workflows['data'])
         cursor = workflows.get('nextCursor')
     return all_workflows
+
+  # TODO: activate and disactivate workflows
+
+  # Making this so it can be synchronous so that OpenAi API can call it.
+  # TODO: Status update on ID, running/done/error
+  # Todo: Before running, check if it is active by fetching the latest execution, increment if necessary and then run the flow.
+  # TODO: Create a dummy endpoint to pass to openai function call expecting n8n webhook and necessary parameters in the request.
 
   # TODO: Take the last one/ ALWAYS end in JSON
   def get_data(self, id):

@@ -709,16 +709,22 @@ def get_all_workflows() -> Response:
   api_key = request.args.get('api_key', default='', type=str)
   limit = request.args.get('limit', default=100, type=int)
   pagination = request.args.get('pagination', default=True, type=bool)
+  active = request.args.get('active', default=False, type=bool)
+  print(request.args)
 
   if api_key == '':
     # proper web error "400 Bad request"
     abort(400, description=f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`")
 
   flows = Flows()
-  response = flows.get_workflows(limit, pagination, api_key)
-  response = jsonify(response)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+  try:
+    response = flows.get_workflows(limit, pagination, api_key, active)
+    response = jsonify(response)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+  except Exception as e:
+    if e == "Unauthorized":
+      abort(401, description=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
 
 
 if __name__ == '__main__':
