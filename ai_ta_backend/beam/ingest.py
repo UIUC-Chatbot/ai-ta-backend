@@ -260,10 +260,34 @@ class Ingest():
             success_status['failure_ingest'].append(
                 f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}"
             )
+            self.posthog.capture(
+                'distinct_id_of_the_user',
+                event='Ingest Failure',
+                properties={
+                    'course_name':
+                        course_name,
+                    's3_path':
+                        s3_paths,
+                    'kwargs':
+                        kwargs,
+                    'error':
+                        f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}"
+                })
 
       return success_status
     except Exception as e:
-      success_status['failure_ingest'].append(f"MAJOR ERROR IN /bulk_ingest: Error: {str(e)}")
+      err = f"❌❌ Error in /ingest: `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+
+      success_status['failure_ingest'].append(f"MAJOR ERROR IN /bulk_ingest: Error: {err}")
+      self.posthog.capture('distinct_id_of_the_user',
+                           event='Ingest Failure',
+                           properties={
+                               'course_name': course_name,
+                               's3_path': s3_paths,
+                               'kwargs': kwargs,
+                               'error': err
+                           })
+
       sentry_sdk.capture_exception(e)
       print(f"MAJOR ERROR IN /bulk_ingest: Error: {str(e)}")
       return success_status
