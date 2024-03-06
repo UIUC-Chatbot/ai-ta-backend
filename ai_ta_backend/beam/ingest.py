@@ -46,6 +46,11 @@ from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
 
+from ai_ta_backend.beam.nomic_logging import (
+    delete_from_document_map,
+    log_to_document_map,
+)
+
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain.chat_models import AzureChatOpenAI
 
@@ -957,10 +962,8 @@ class Ingest():
 
       # add to Nomic document map
       if len(response.data) > 0:
-        pass
-        # TODO: reimplement nomic
-        # inserted_data = response.data[0]
-        # res = log_to_document_map(inserted_data)
+        inserted_data = response.data[0]
+        log_to_document_map(inserted_data)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
@@ -1092,7 +1095,7 @@ class Ingest():
             nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
 
           # delete from Nomic
-          # res = delete_from_document_map(course_name, nomic_ids_to_delete)
+          delete_from_document_map(course_name, nomic_ids_to_delete)
         except Exception as e:
           print("Error in deleting file from Nomic:", e)
           sentry_sdk.capture_exception(e)
@@ -1137,8 +1140,7 @@ class Ingest():
             nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
 
           # delete from Nomic
-          # TODO: reimplement...
-          # res = delete_from_document_map(course_name, nomic_ids_to_delete)
+          delete_from_document_map(course_name, nomic_ids_to_delete)
         except Exception as e:
           print("Error in deleting file from Nomic:", e)
           sentry_sdk.capture_exception(e)
