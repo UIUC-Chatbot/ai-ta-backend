@@ -77,6 +77,7 @@ requirements = [
     "GitPython==3.1.40",
     "beautifulsoup4==4.12.2",
     "sentry-sdk==1.39.1",
+    "nomic==2.0.14",
 ]
 
 # TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
