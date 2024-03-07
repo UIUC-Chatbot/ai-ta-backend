@@ -10,6 +10,7 @@ from injector import inject
 from langchain.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 
+from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.sentry_service import SentryService
 
 LOCK_EXCEPTIONS = [
@@ -59,9 +60,10 @@ def backoff_strategy():
 class NomicService():
 
   @inject
-  def __init__(self, sentry: SentryService):
+  def __init__(self, sentry: SentryService, sql: SQLDatabase):
     nomic.login(os.getenv('NOMIC_API_KEY'))
     self.sentry = sentry
+    self.sql = sql
 
   @backoff.on_exception(backoff_strategy,
                         Exception,
@@ -424,22 +426,16 @@ class NomicService():
     # nomic.login(os.getenv('NOMIC_API_KEY'))
     NOMIC_MAP_NAME_PREFIX = 'Document Map for '
 
-    # initialize supabase
-    supabase_client = supabase.create_client(  # type: ignore
-        supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
-
     try:
       # check if map exists
-      response = supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
+
+      response = self.sql.getProjectsMapForCourse(course_name)
       if response.data:
         return "Map already exists for this course."
 
       # fetch relevant document data from Supabase
-      response = supabase_client.table("documents").select("id",
-                                                           count="exact").eq("course_name",
-                                                                             course_name).order('id',
-                                                                                                desc=False).execute()
+      response = self.sql.getDocumentsBetweenDates(course_name, '', '', "documents")
+
       if not response.count:
         return "No documents found for this course."
 
@@ -458,9 +454,9 @@ class NomicService():
         # iteratively query in batches of 25
         while curr_total_doc_count < total_doc_count:
 
-          response = supabase_client.table("documents").select(
-              "id, created_at, s3_path, url, readable_filename, contexts").eq("course_name", course_name).gte(
-                  'id', first_id).order('id', desc=False).limit(25).execute()
+          response = self.sql.getDocsForIdsGte(course_name, first_id,
+                                               "id, created_at, s3_path, url, readable_filename, contexts", 25)
+
           df = pd.DataFrame(response.data)
           combined_dfs.append(df)  # list of dfs
 
@@ -519,7 +515,7 @@ class NomicService():
         project_id = project.id
         project.rebuild_maps()
         project_info = {'course_name': course_name, 'doc_map_id': project_id}
-        response = supabase_client.table("projects").insert(project_info).execute()
+        response = self.sql.insertProjectInfo(project_info)
         print("Response from supabase: ", response)
         return "success"
       else:

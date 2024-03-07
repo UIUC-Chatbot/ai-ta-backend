@@ -78,6 +78,9 @@ class SQLDatabase:
     return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
         'id', first_id).lte('id', last_id).order('id', desc=False).limit(25).execute()
 
-  def getDocsForIdsGte(self, course_name: str, first_id: int):
-    return self.supabase_client.table("documents").select("*").eq("course_name", course_name).gte('id', first_id).order(
-        'id', desc=False).limit(100).execute()
+  def getDocsForIdsGte(self, course_name: str, first_id: int, fields: str = "*", limit: int = 100):
+    return self.supabase_client.table("documents").select(fields).eq("course_name", course_name).gte(
+        'id', first_id).order('id', desc=False).limit(limit).execute()
+
+  def insertProjectInfo(self, project_info):
+    return self.supabase_client.table("projects").insert(project_info).execute()

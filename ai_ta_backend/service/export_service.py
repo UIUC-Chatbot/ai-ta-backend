@@ -7,6 +7,7 @@ from concurrent.futures import ProcessPoolExecutor
 
 import pandas as pd
 import requests
+from injector import inject
 
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
@@ -16,6 +17,7 @@ from ai_ta_backend.utils.emails import send_email
 
 class ExportService:
 
+  @inject
   def __init__(self, sql: SQLDatabase, s3: AWSStorage, sentry=SentryService):
     self.sql = sql
     self.s3 = s3
@@ -257,7 +259,7 @@ class ExportService:
         return {"response": (zip_file_path, zip_filename, os.getcwd())}
       except Exception as e:
         print(e)
-        sentry_sdk.capture_exception(e)
+        self.sentry.capture_exception(e)
         return {"response": "Error downloading file!"}
     else:
       return {"response": "No data found between the given dates."}
