@@ -21,6 +21,18 @@ from injector import Binder, SingletonScope
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
+from ai_ta_backend.executors.flask_executor import (
+    ExecutorInterface,
+    FlaskExecutorAdapter,
+)
+from ai_ta_backend.executors.process_pool_executor import (
+    ProcessPoolExecutorAdapter,
+    ProcessPoolExecutorInterface,
+)
+from ai_ta_backend.executors.thread_pool_executor import (
+    ThreadPoolExecutorAdapter,
+    ThreadPoolExecutorInterface,
+)
 from ai_ta_backend.service.export_service import ExportService
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
@@ -130,7 +142,7 @@ def getAll(service: RetrievalService) -> Response:
 
 
 @app.route('/delete', methods=['DELETE'])
-def delete(service: RetrievalService):
+def delete(service: RetrievalService, flaskExecutor: ExecutorInterface):
   """
   Delete a single file from all our database: S3, Qdrant, and Supabase (for now).
   Note, of course, we still have parts of that file in our logs.
@@ -149,7 +161,7 @@ def delete(service: RetrievalService):
 
   start_time = time.monotonic()
   # background execution of tasks!!
-  executor.submit(service.delete_data, course_name, s3_path, source_url)
+  flaskExecutor.submit(service.delete_data, course_name, s3_path, source_url)
   print(f"From {course_name}, deleted file: {s3_path}")
   print(f"⏰ Runtime of FULL delete func: {(time.monotonic() - start_time):.2f} seconds")
   # we need instant return. Delets are "best effort" assume always successful... sigh :(
@@ -191,7 +203,7 @@ def createDocumentMap(service: NomicService):
 
 
 @app.route('/onResponseCompletion', methods=['POST'])
-def logToNomic(service: NomicService):
+def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
   data = request.get_json()
   course_name = data['course_name']
   conversation = data['conversation']
@@ -206,7 +218,7 @@ def logToNomic(service: NomicService):
   print(f"In /onResponseCompletion for course: {course_name}")
 
   # background execution of tasks!!
-  response = executor.submit(service.log_convo_to_nomic, course_name, data)
+  response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -313,6 +325,9 @@ def configure(binder: Binder) -> None:
   binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
   binder.bind(SQLDatabase, to=SQLDatabase, scope=SingletonScope)
   binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
+  binder.bind(ExecutorInterface, to=FlaskExecutorAdapter(executor), scope=SingletonScope)
+  binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter, scope=SingletonScope)
+  binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
 
 
 FlaskInjector(app=app, modules=[configure])
