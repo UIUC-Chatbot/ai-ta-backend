@@ -4,6 +4,7 @@ Use CAII gmail to auth.
 """
 import asyncio
 import inspect
+import json
 import logging
 import mimetypes
 import os
@@ -39,17 +40,13 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+from nomic_logging import delete_from_document_map, log_to_document_map
 from OpenaiEmbeddings import OpenAIAPIProcessor
 from PIL import Image
 from posthog import Posthog
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
-
-from ai_ta_backend.beam.nomic_logging import (
-    delete_from_document_map,
-    log_to_document_map,
-)
 
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain.chat_models import AzureChatOpenAI
@@ -148,7 +145,14 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
 
 
 # Triggers determine how your app is deployed
-@app.rest_api(workers=2, max_pending_tasks=15_000, max_retries=3, timeout=-1, loader=loader, autoscaler=autoscaler)
+@app.rest_api(
+    workers=2,
+    callback_url='https://uiuc-chat-git-refactoringesttobeamserverless-kastanday.vercel.app/api/UIUC-api/ingestCallback',
+    max_pending_tasks=15_000,
+    max_retries=3,
+    timeout=-1,
+    loader=loader,
+    autoscaler=autoscaler)
 def ingest(**inputs: Dict[str, Any]):
   qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
 
@@ -157,8 +161,7 @@ def ingest(**inputs: Dict[str, Any]):
   url: List[str] | str | None = inputs.get('url', None)
   base_url: List[str] | str | None = inputs.get('base_url', None)
   readable_filename: List[str] | str = inputs.get('readable_filename', '')
-  content: str | None = inputs.get('content', None)  # is webtext
-  # is_webtext: bool |  None = inputs.get('url', False)
+  content: str | None = inputs.get('content', None)  # is webtext if content exists
 
   print(
       f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}"
@@ -177,7 +180,7 @@ def ingest(**inputs: Dict[str, Any]):
                                              base_url=base_url,
                                              url=url)
   print("Final success_fail_dict: ", success_fail_dict)
-  return success_fail_dict
+  return json.dumps(success_fail_dict)
 
 
 class Ingest():
@@ -268,7 +271,7 @@ class Ingest():
             )
             self.posthog.capture(
                 'distinct_id_of_the_user',
-                event='Ingest Failure',
+                event='ingest_failure',
                 properties={
                     'course_name':
                         course_name,
@@ -286,7 +289,7 @@ class Ingest():
 
       success_status['failure_ingest'].append(f"MAJOR ERROR IN /bulk_ingest: Error: {err}")
       self.posthog.capture('distinct_id_of_the_user',
-                           event='Ingest Failure',
+                           event='ingest_failure',
                            properties={
                                'course_name': course_name,
                                's3_path': s3_paths,
