@@ -1,5 +1,6 @@
 import os
 
+import supabase
 from injector import inject
 
 

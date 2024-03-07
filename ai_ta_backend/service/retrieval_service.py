@@ -18,7 +18,7 @@ from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
-from ai_ta_backend.utils_tokenization import count_tokens_and_cost
+from ai_ta_backend.utils.utils_tokenization import count_tokens_and_cost
 
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
 
