@@ -18,7 +18,7 @@ from ai_ta_backend.utils.emails import send_email
 class ExportService:
 
   @inject
-  def __init__(self, sql: SQLDatabase, s3: AWSStorage, sentry=SentryService):
+  def __init__(self, sql: SQLDatabase, s3: AWSStorage, sentry: SentryService):
     self.sql = sql
     self.s3 = s3
     self.sentry = sentry
