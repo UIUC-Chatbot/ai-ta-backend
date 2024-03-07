@@ -7,8 +7,8 @@ from multiprocessing import Manager
 import supabase
 
 DOCUMENTS_TABLE = os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']
-SUPABASE_CLIENT = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'],
-                                         supabase_key=os.environ['SUPABASE_API_KEY'])  # type: ignore
+# SUPABASE_CLIENT = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'],
+#  supabase_key=os.environ['SUPABASE_API_KEY'])  # type: ignore
 
 
 def context_parent_doc_padding(found_docs, search_query, course_name):
