@@ -146,8 +146,8 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
 
 # Triggers determine how your app is deployed
 @app.rest_api(
-    workers=2,
-    callback_url='https://uiuc-chat-git-refactoringesttobeamserverless-kastanday.vercel.app/api/UIUC-api/ingestCallback',
+    workers=3,
+    # callback_url='https://uiuc-chat-git-refactoringesttobeamserverless-kastanday.vercel.app/api/UIUC-api/ingestCallback',
     max_pending_tasks=15_000,
     max_retries=3,
     timeout=-1,
