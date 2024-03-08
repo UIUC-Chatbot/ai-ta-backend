@@ -75,8 +75,8 @@ class RetrievalService:
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
-      token_counter, _ = count_tokens_and_cost(pre_prompt + "\n\nNow please respond to my query: " +
-                                               search_query)  # type: ignore
+      token_counter, _ = count_tokens_and_cost(pre_prompt + "\n\nNow please respond to my query: " +  # type: ignore
+                                               search_query)
 
       valid_docs = []
       num_tokens = 0
@@ -357,8 +357,8 @@ class RetrievalService:
     for d in search_results:
       try:
         metadata = d.payload
-        page_content = metadata["page_content"]
-        del metadata["page_content"]
+        page_content = metadata["page_content"]  # type: ignore
+        del metadata["page_content"]  # type: ignore
         if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys():  # type: ignore
           # aiding in the database migration...
           metadata["pagenumber"] = metadata["pagenumber_or_timestamp"]  # type: ignore

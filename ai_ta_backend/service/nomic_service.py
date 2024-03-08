@@ -71,7 +71,7 @@ class NomicService():
                         raise_on_giveup=False,
                         giveup=giveup_hdlr,
                         on_backoff=backoff_hdlr)
-  def log_convo_to_nomic(self, course_name: str, conversation) -> str:
+  def log_convo_to_nomic(self, course_name: str, conversation) -> str | None:
     # nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
     NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
     """

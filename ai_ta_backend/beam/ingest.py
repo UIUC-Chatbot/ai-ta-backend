@@ -959,7 +959,7 @@ class Ingest():
       }
 
       response = self.supabase_client.table(
-          os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
+          os.getenv('SUPABASE_DOCUMENTS_TABLE')).insert(document).execute()  # type: ignore
 
       # add to Nomic document map
       if len(response.data) > 0:
@@ -988,7 +988,7 @@ class Ingest():
     For given metadata, fetch docs from Supabase based on S3 path or URL.
     If docs exists, concatenate the texts and compare with current texts, if same, return True.
     """
-    doc_table = os.getenv('NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE', '')
+    doc_table = os.getenv('SUPABASE_DOCUMENTS_TABLE', '')
     course_name = metadatas[0]['course_name']
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
@@ -1087,8 +1087,8 @@ class Ingest():
         try:
           # delete from Nomic
           response = self.supabase_client.from_(
-              os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select("id, s3_path, contexts").eq(
-                  's3_path', s3_path).eq('course_name', course_name).execute()
+              os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq('s3_path', s3_path).eq(
+                  'course_name', course_name).execute()
           data = response.data[0]  #single record fetched
           nomic_ids_to_delete = []
           context_count = len(data['contexts'])
@@ -1102,8 +1102,8 @@ class Ingest():
           sentry_sdk.capture_exception(e)
 
         try:
-          self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
-              's3_path', s3_path).eq('course_name', course_name).execute()
+          self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq('s3_path', s3_path).eq(
+              'course_name', course_name).execute()
         except Exception as e:
           print("Error in deleting file from supabase:", e)
           sentry_sdk.capture_exception(e)
@@ -1131,9 +1131,8 @@ class Ingest():
             sentry_sdk.capture_exception(e)
         try:
           # delete from Nomic
-          response = self.supabase_client.from_(
-              os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select("id, url, contexts").eq(
-                  'url', source_url).eq('course_name', course_name).execute()
+          response = self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, url, contexts").eq(
+              'url', source_url).eq('course_name', course_name).execute()
           data = response.data[0]  #single record fetched
           nomic_ids_to_delete = []
           context_count = len(data['contexts'])
@@ -1148,8 +1147,8 @@ class Ingest():
 
         try:
           # delete from Supabase
-          self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
-              'url', source_url).eq('course_name', course_name).execute()
+          self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq('url', source_url).eq(
+              'course_name', course_name).execute()
         except Exception as e:
           print("Error in deleting file from supabase:", e)
           sentry_sdk.capture_exception(e)

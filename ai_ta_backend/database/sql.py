@@ -13,26 +13,25 @@ class SQLDatabase:
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
 
   def getAllMaterialsForCourse(self, course_name: str):
-    return self.supabase_client.table(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select(
-        'course_name, s3_path, readable_filename, url, base_url').eq('course_name', course_name).execute()
-
-  def getMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
-    return self.supabase_client.from_(
-        os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select("id, s3_path, contexts").eq(
-            's3_path', s3_path).eq('course_name', course_name).execute()
-
-  def getMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
-    return self.supabase_client.from_(
-        os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).select("id, s3_path, contexts").eq(key, value).eq(
+    return self.supabase_client.table(
+        os.environ['SUPABASE_DOCUMENTS_TABLE']).select('course_name, s3_path, readable_filename, url, base_url').eq(
             'course_name', course_name).execute()
 
+  def getMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
+    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq(
+        's3_path', s3_path).eq('course_name', course_name).execute()
+
+  def getMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
+    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq(
+        key, value).eq('course_name', course_name).execute()
+
   def deleteMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
-    return self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(key, value).eq(
+    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq(key, value).eq(
         'course_name', course_name).execute()
 
   def deleteMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
-    return self.supabase_client.from_(os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']).delete().eq(
-        's3_path', s3_path).eq('course_name', course_name).execute()
+    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq('s3_path', s3_path).eq(
+        'course_name', course_name).execute()
 
   def getProjectsMapForCourse(self, course_name: str):
     return self.supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()

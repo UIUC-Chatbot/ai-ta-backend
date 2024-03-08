@@ -6,7 +6,7 @@ from multiprocessing import Manager
 
 import supabase
 
-DOCUMENTS_TABLE = os.environ['NEW_NEW_NEWNEW_MATERIALS_SUPABASE_TABLE']
+DOCUMENTS_TABLE = os.environ['SUPABASE_DOCUMENTS_TABLE']
 # SUPABASE_CLIENT = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'],
 #  supabase_key=os.environ['SUPABASE_API_KEY'])  # type: ignore
 

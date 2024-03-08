@@ -148,7 +148,7 @@ class ExportService:
 
       #s3_file = f"courses/{course_name}/exports/{os.path.basename(zip_file_path)}"
       s3_file = f"courses/{course_name}/{os.path.basename(zip_file_path)}"
-      self.s3.upload_file(zip_file_path, os.getenv('S3_BUCKET_NAME'), s3_file)
+      self.s3.upload_file(zip_file_path, os.environ['S3_BUCKET_NAME'], s3_file)
 
       # remove local files
       os.remove(file_path)
@@ -157,12 +157,15 @@ class ExportService:
       print("file uploaded to s3: ", s3_file)
 
       # generate presigned URL
-      s3_url = self.s3.generatePresignedUrl('get_object', os.getenv('S3_BUCKET_NAME'), s3_path, 3600)
+      s3_url = self.s3.generatePresignedUrl('get_object', os.environ['S3_BUCKET_NAME'], s3_path, 3600)
 
       # get admin email IDs
-      headers = {"Authorization": f"Bearer {os.getenv('VERCEL_READ_ONLY_API_KEY')}", "Content-Type": "application/json"}
+      headers = {
+          "Authorization": f"Bearer {os.environ['VERCEL_READ_ONLY_API_KEY']}",
+          "Content-Type": "application/json"
+      }
 
-      hget_url = str(os.getenv('VERCEL_BASE_URL')) + "course_metadatas/" + course_name
+      hget_url = str(os.environ['VERCEL_BASE_URL']) + "course_metadatas/" + course_name
       response = requests.get(hget_url, headers=headers)
       course_metadata = response.json()
       course_metadata = json.loads(course_metadata['result'])
@@ -187,7 +190,7 @@ class ExportService:
       # send email to admins
       subject = "UIUC.chat Data Export Complete for " + course_name
       body_text = "The data export for " + course_name + " is complete.\n\nYou can download the file from the following link: \n\n" + s3_url + "\n\nThis link will expire in 48 hours."
-      email_status = send_email(subject, body_text, os.getenv('EMAIL_SENDER'), admin_emails, bcc_emails)
+      email_status = send_email(subject, body_text, os.environ['EMAIL_SENDER'], admin_emails, bcc_emails)
       print("email_status: ", email_status)
 
       return "File uploaded to S3. Email sent to admins."
