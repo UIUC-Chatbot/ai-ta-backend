@@ -18,8 +18,6 @@ from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.utils_tokenization import count_tokens_and_cost
 
-OPENAI_API_TYPE = "azure"  # "openai" or "azure"
-
 
 class RetrievalService:
   """
@@ -41,7 +39,7 @@ class RetrievalService:
     self.embeddings = OpenAIEmbeddings(
         model='text-embedding-ada-002',
         openai_api_base=os.getenv("AZURE_OPENAI_ENDPOINT"),  # type:ignore
-        openai_api_type=OPENAI_API_TYPE,
+        openai_api_type=os.environ['OPENAI_API_TYPE'],
         openai_api_key=os.getenv("AZURE_OPENAI_KEY"),  # type:ignore
         openai_api_version=os.getenv("OPENAI_API_VERSION"),  # type:ignore
     )
@@ -52,7 +50,7 @@ class RetrievalService:
         openai_api_base=os.getenv("AZURE_OPENAI_ENDPOINT"),  # type:ignore
         openai_api_key=os.getenv("AZURE_OPENAI_KEY"),  # type:ignore
         openai_api_version=os.getenv("OPENAI_API_VERSION"),  # type:ignore
-        openai_api_type=OPENAI_API_TYPE,
+        openai_api_type=os.environ['OPENAI_API_TYPE'],
     )
 
   def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
@@ -336,7 +334,7 @@ class RetrievalService:
     top_n = 80
     # EMBED
     openai_start_time = time.monotonic()
-    print("OPENAI_API_TYPE", OPENAI_API_TYPE)
+    print("OPENAI_API_TYPE", os.environ['OPENAI_API_TYPE'])
     user_query_embedding = self.embeddings.embed_query(search_query)
     openai_embedding_latency = time.monotonic() - openai_start_time
 

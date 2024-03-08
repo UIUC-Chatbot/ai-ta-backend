@@ -196,7 +196,7 @@ class NomicService():
         }]
 
         # create embeddings
-        embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
+        embeddings_model = OpenAIEmbeddings(openai_api_type=os.environ['OPENAI_API_TYPE'])
         embeddings = embeddings_model.embed_documents(user_queries)
 
       # add embeddings to the project - create a new function for this
@@ -380,7 +380,7 @@ class NomicService():
           metadata.append(metadata_row)
 
         metadata = pd.DataFrame(metadata)
-        embeddings_model = OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE)  # type: ignore
+        embeddings_model = OpenAIEmbeddings(openai_api_type=os.environ['OPENAI_API_TYPE'])
         embeddings = embeddings_model.embed_documents(user_queries)
 
         # create Atlas project
