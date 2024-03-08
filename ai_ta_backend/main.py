@@ -101,7 +101,6 @@ def getTopContexts(service: RetrievalService) -> Response:
   Exception
       Testing how exceptions are handled.
   """
-  print("In getRopContexts in Main()")
   search_query: str = request.args.get('search_query', default='', type=str)
   course_name: str = request.args.get('course_name', default='', type=str)
   token_limit: int = request.args.get('token_limit', default=3000, type=int)

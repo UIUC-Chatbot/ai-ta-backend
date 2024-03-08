@@ -97,7 +97,7 @@ class RetrievalService:
         return []
 
       self.posthog.capture(
-          event_name="success_get_top_contexts_OG",
+          event_name="getTopContexts_success_DI",
           properties={
               "user_query": search_query,
               "course_name": course_name,
@@ -204,7 +204,7 @@ class RetrievalService:
     4. [CANCELED BEC POINTLESS] Rank the docs based on the relevance score.
     5. Parent-doc-retrieval: Pad just the top 5 docs with expanded context from the original document.
     """
-    return 'fail'
+    raise NotImplementedError("Method deprecated for performance reasons. Hope to bring back soon.")
 
     # try:
     #   top_n_per_query = 40  # HARD CODE TO ENSURE WE HIT THE MAX TOKENS
@@ -334,7 +334,6 @@ class RetrievalService:
     top_n = 80
     # EMBED
     openai_start_time = time.monotonic()
-    print("OPENAI_API_TYPE", os.environ['OPENAI_API_TYPE'])
     user_query_embedding = self.embeddings.embed_query(search_query)
     openai_embedding_latency = time.monotonic() - openai_start_time
 
