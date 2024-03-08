@@ -83,3 +83,6 @@ class SQLDatabase:
 
   def insertProjectInfo(self, project_info):
     return self.supabase_client.table("projects").insert(project_info).execute()
+
+  def getAllFromLLMConvoMonitor(self, course_name: str):
+    return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()

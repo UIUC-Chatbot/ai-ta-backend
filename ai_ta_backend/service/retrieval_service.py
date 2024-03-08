@@ -34,22 +34,22 @@ class RetrievalService:
     self.posthog = posthog
     self.nomicService = nomicService
 
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    openai.api_key = os.environ["OPENAI_API_KEY"]
 
     self.embeddings = OpenAIEmbeddings(
         model='text-embedding-ada-002',
-        openai_api_base=os.getenv("AZURE_OPENAI_ENDPOINT"),  # type:ignore
+        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
         openai_api_type=os.environ['OPENAI_API_TYPE'],
-        openai_api_key=os.getenv("AZURE_OPENAI_KEY"),  # type:ignore
-        openai_api_version=os.getenv("OPENAI_API_VERSION"),  # type:ignore
+        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+        openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
 
     self.llm = AzureChatOpenAI(
         temperature=0,
-        deployment_name=os.getenv("AZURE_OPENAI_ENGINE"),  # type:ignore
-        openai_api_base=os.getenv("AZURE_OPENAI_ENDPOINT"),  # type:ignore
-        openai_api_key=os.getenv("AZURE_OPENAI_KEY"),  # type:ignore
-        openai_api_version=os.getenv("OPENAI_API_VERSION"),  # type:ignore
+        deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
+        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+        openai_api_version=os.environ["OPENAI_API_VERSION"],
         openai_api_type=os.environ['OPENAI_API_TYPE'],
     )
 
@@ -150,7 +150,7 @@ class RetrievalService:
     # add delete from doc map logic here
     try:
       # Delete file from S3
-      bucket_name = os.getenv('S3_BUCKET_NAME')
+      bucket_name = os.environ['S3_BUCKET_NAME']
       if bucket_name is None:
         raise ValueError("S3_BUCKET_NAME environment variable is not set")
 
@@ -176,14 +176,18 @@ class RetrievalService:
 
   def delete_from_s3(self, bucket_name: str, s3_path: str):
     try:
-      self.aws.delete_file(bucket_name, s3_path)
+      print("Deleting from S3")
+      response = self.aws.delete_file(bucket_name, s3_path)
+      print(f"AWS response: {response}")
     except Exception as e:
       print("Error in deleting file from s3:", e)
       self.sentry.capture_exception(e)
 
   def delete_from_qdrant(self, identifier_key: str, identifier_value: str):
     try:
-      self.vdb.delete_data(os.environ['QDRANT_COLLECTION_NAME'], identifier_key, identifier_value)
+      print("Deleting from Qdrant")
+      response = self.vdb.delete_data(os.environ['QDRANT_COLLECTION_NAME'], identifier_key, identifier_value)
+      print(f"Qdrant response: {response}")
     except Exception as e:
       if "timed out" in str(e):
         # Timed out is fine. Still deletes.
@@ -311,7 +315,9 @@ class RetrievalService:
 
   def delete_from_nomic_and_supabase(self, course_name: str, identifier_key: str, identifier_value: str):
     try:
+      print(f"Deleting from Nomic and Supabase for {course_name} using {identifier_key}: {identifier_value}")
       response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
+      print(f"Trying to delete materials: {response}")
       data = response.data[0]  # single record fetched
       nomic_ids_to_delete = [str(data['id']) + "_" + str(i) for i in range(1, len(data['contexts']) + 1)]
 
@@ -325,7 +331,9 @@ class RetrievalService:
       self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
 
       # delete from Supabase
-      self.sqlDb.deleteMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
+      print(f"Deleting from Supabase for {course_name} using {identifier_key}: {identifier_value}")
+      response = self.sqlDb.deleteMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
+      print(f"Deleted from sql: {response}")
     except Exception as e:
       print(f"Error in deleting file from Nomic or Supabase using {identifier_key}: {identifier_value}", e)
       self.sentry.capture_exception(e)

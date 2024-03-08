@@ -11,8 +11,8 @@ class AWSStorage:
     # S3
     self.s3_client = boto3.client(
         's3',
-        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+        aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+        aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'],
     )
 
   def upload_file(self, file_path: str, bucket_name: str, object_name: str):
@@ -22,7 +22,7 @@ class AWSStorage:
     self.s3_client.download_file(bucket_name, object_name, file_path)
 
   def delete_file(self, bucket_name: str, s3_path: str):
-    self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
+    return self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
 
   def generatePresignedUrl(self, object: str, bucket_name: str, s3_path: str, expiration: int = 3600):
     # generate presigned URL

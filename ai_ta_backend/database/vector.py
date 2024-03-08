@@ -20,8 +20,8 @@ class VectorDatabase():
     """
     # vector DB
     self.qdrant_client = QdrantClient(
-        url=os.getenv('QDRANT_URL'),
-        api_key=os.getenv('QDRANT_API_KEY'),
+        url=os.environ['QDRANT_URL'],
+        api_key=os.environ['QDRANT_API_KEY'],
     )
 
     self.vectorstore = Qdrant(client=self.qdrant_client,
@@ -50,7 +50,7 @@ class VectorDatabase():
     """
     Delete data from the vector database.
     """
-    self.qdrant_client.delete(
+    return self.qdrant_client.delete(
         collection_name=collection_name,
         points_selector=models.Filter(must=[
             models.FieldCondition(

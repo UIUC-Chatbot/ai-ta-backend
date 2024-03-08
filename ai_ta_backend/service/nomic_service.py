@@ -61,7 +61,7 @@ class NomicService():
 
   @inject
   def __init__(self, sentry: SentryService, sql: SQLDatabase):
-    nomic.login(os.getenv('NOMIC_API_KEY'))
+    nomic.login(os.environ['NOMIC_API_KEY'])
     self.sentry = sentry
     self.sql = sql
 
@@ -258,18 +258,15 @@ class NomicService():
 		2. appends current embeddings and metadata to it
 		2. creates map if there are at least 20 queries
 		"""
-    nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
+    nomic.login(os.environ['NOMIC_API_KEY'])  # login during start of flask app
     NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
 
     print(f"in create_nomic_map() for {course_name}")
-    # initialize supabase
-    supabase_client = supabase.create_client(  # type: ignore
-        supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-        supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
     try:
       # fetch all conversations with this new course (we expect <=20 conversations, because otherwise the map should be made already)
-      response = supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
+
+      response = self.sql.getAllFromLLMConvoMonitor(course_name)
       data = response.data
       df = pd.DataFrame(data)
 
@@ -627,7 +624,7 @@ class NomicService():
 			topic_label_field: str
 			colorable_fields: list of str
 		"""
-    nomic.login(os.getenv('NOMIC_API_KEY'))
+    nomic.login(os.environ['NOMIC_API_KEY'])
 
     try:
       project = atlas.map_embeddings(embeddings=embeddings,
@@ -652,7 +649,7 @@ class NomicService():
 			metadata: pd.DataFrame of Nomic upload metadata
 			map_name: str
 		"""
-    nomic.login(os.getenv('NOMIC_API_KEY'))
+    nomic.login(os.environ['NOMIC_API_KEY'])
     try:
       project = atlas.AtlasProject(name=map_name, add_datums_if_exists=True)
       with project.wait_for_project_lock():
@@ -714,7 +711,7 @@ class NomicService():
       #                                     openai_api_key=os.getenv('AZURE_OPENAI_KEY')) # type: ignore
       embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
                                           openai_api_base="https://api.openai.com/v1/",
-                                          openai_api_key=os.getenv('VLADS_OPENAI_KEY'))  # type: ignore
+                                          openai_api_key=os.environ['VLADS_OPENAI_KEY'])
       embeddings = embeddings_model.embed_documents(texts)
 
     metadata = pd.DataFrame(metadata)
