@@ -22,7 +22,7 @@ import openai
 import pytesseract
 import sentry_sdk
 import supabase
-from beam import App, QueueDepthAutoscaler, RequestLatencyAutoscaler, Runtime
+from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
 from bs4 import BeautifulSoup
 from git.repo import Repo
 from langchain.document_loaders import (

@@ -677,10 +677,10 @@ class NomicService():
     embeddings = []
     texts = []
 
-    for index, row in df.iterrows():
+    for _index, row in df.iterrows():
 
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-      if row['url'] == None:
+      if row['url'] is None:
         row['url'] = ""
       # iterate through all contexts and create separate entries for each
       context_count = 0

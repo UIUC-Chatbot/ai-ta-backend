@@ -1,7 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from injector import inject
-
 
 class ThreadPoolExecutorInterface:
 

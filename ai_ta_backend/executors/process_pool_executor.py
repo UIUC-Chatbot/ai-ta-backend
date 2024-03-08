@@ -1,7 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
 
-from injector import inject
-
 
 class ProcessPoolExecutorInterface:
 

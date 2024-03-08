@@ -6,10 +6,8 @@ from typing import Dict, List, Union
 
 import openai
 from injector import inject
-from langchain import hub
 from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.load import dumps, loads
 from langchain.schema import Document
 
 from ai_ta_backend.database.aws import AWSStorage
@@ -326,7 +324,7 @@ class RetrievalService:
         project_id = response.data[0]['doc_map_id']
       else:
         return "No document map found for this course"
-      res = self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
+      self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
 
       # delete from Supabase
       self.sqlDb.deleteMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)

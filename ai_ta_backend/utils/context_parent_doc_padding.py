@@ -4,8 +4,6 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from multiprocessing import Manager
 
-import supabase
-
 DOCUMENTS_TABLE = os.environ['SUPABASE_DOCUMENTS_TABLE']
 # SUPABASE_CLIENT = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'],
 #  supabase_key=os.environ['SUPABASE_API_KEY'])  # type: ignore

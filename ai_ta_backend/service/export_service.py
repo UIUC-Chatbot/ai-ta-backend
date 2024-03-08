@@ -1,4 +1,3 @@
-import io
 import json
 import os
 import uuid
@@ -40,7 +39,7 @@ class ExportService:
       # call background task to upload to s3
 
       filename = course_name + '_' + str(uuid.uuid4()) + '_documents.zip'
-      s3_filepath = s3_file = f"courses/{course_name}/{filename}"
+      s3_filepath = f"courses/{course_name}/{filename}"
       # background task of downloading data - map it with above ID
       executor = ProcessPoolExecutor()
       executor.submit(self.export_data_in_bg, response, "documents", course_name, s3_filepath)
@@ -214,7 +213,7 @@ class ExportService:
     if response.count > 1000:
       # call background task to upload to s3
       filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.zip'
-      s3_filepath = s3_file = f"courses/{course_name}/{filename}"
+      s3_filepath = f"courses/{course_name}/{filename}"
       # background task of downloading data - map it with above ID
       executor = ProcessPoolExecutor()
       executor.submit(self.export_data_in_bg, response, "conversations", course_name, s3_filepath)
