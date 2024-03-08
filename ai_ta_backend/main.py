@@ -59,7 +59,8 @@ def index() -> Response:
   Returns:
       JSON: _description_
   """
-  response = jsonify({"Choo Choo": "Welcome to your Flask app 🚅"})
+  response = jsonify(
+      {"hi there, this is a 404": "Welcome to UIUC.chat backend 🚅 Read the docs here: https://docs.uiuc.chat/ "})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
