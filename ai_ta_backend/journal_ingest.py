@@ -631,7 +631,7 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
     This function is used for a text-based search in PubMed using the E-Utilities API.
     Args:
         course: course name
-        query: search query
+        search: search query
         title: article title
         journal: journal title
     """
@@ -640,7 +640,7 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
         os.makedirs(directory)
 
     base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
-    database = "db=pmc"
+    database = "db=pubmed"
     final_query = "term="
     
     title_query = journal_query = search_query = ""
@@ -661,45 +661,43 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
     final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100"
     print("Final URL: ", final_url)
     response = requests.get(final_url)
-    data = response.json()
 
-    print(data)
+    if response.status_code != 200:
+        return "Error: " + str(response.status_code) + " - " + response.text
+
+    data = response.json()
     
     total_records = int(data['esearchresult']['count'])
-    current_records = len(data['esearchresult']['idlist'])
-    id_list = data['esearchresult']['idlist']
+    current_records = 0
 
     print("Total Records: ", total_records)
-    print("Current Records: ", current_records)
-    print("ID List: ", id_list)
 
     while current_records < total_records:
-        retstart = current_records
-        final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100&retstart=" + str(retstart)
-        print("Final URL: ", final_url)
-        response = requests.get(final_url)
-        data = response.json()
-
-        current_ids = data['esearchresult']['idlist']
-        id_list += current_ids
-        current_records += len(current_ids)
-        print("Current Records: ", current_records)
-
+        # extract ID and convert them to PMC ID
+        id_list = data['esearchresult']['idlist']
+        print("Number of records in current page: ", len(id_list))
         id_str = ",".join(id_list)
         current_pmc_ids = pubmed_id_converter(id_str)
-        
-        # call pubmed download here 
-        for pmc_id in current_pmc_ids:
-            downloadPubmedArticles(id=pmc_id, course_name=course)
-    
-    id_str = ",".join(id_list)
-    current_pmc_ids = pubmed_id_converter(id_str)
-    print("Current PMC IDs: ", current_pmc_ids)
-        
-    # call pubmed download here 
-    for pmc_id in current_pmc_ids:
-        downloadPubmedArticles(id=pmc_id, course_name=course)
+        print("Number of PMC IDs: ", len(current_pmc_ids))
 
+        # call pubmed download here - parallel processing
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            results = [executor.submit(downloadPubmedArticles, id, course) for id in current_pmc_ids]
+            
+        # update current records count
+        current_records += len(id_list)
+
+        # if next page exists, update next page url and call the API again
+        retstart = current_records
+        next_page_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100&retstart=" + str(retstart)
+        print("Next page URL: ", next_page_url)
+        response = requests.get(next_page_url)
+        if response.status_code != 200:
+            return "Error in next page: " + str(response.status_code) + " - " + response.text
+        data = response.json()
+
+    # upload to supabase bucket
+        
     return "success"
 
 
@@ -714,7 +712,7 @@ def pubmed_id_converter(id: str):
     url = base_url + app_details + "&ids=" + id
     
     response = requests.get(url)
-    print("Response: ", response.text)
+    #print("Response: ", response.text)
     root = ET.fromstring(response.text)
     records = root.findall(".//record")
     for record in records:
