@@ -1172,6 +1172,7 @@ class Ingest():
         query_filter=myfilter,
         with_vectors=False,
         query_vector=user_query_embedding,
+        score_threshold=0.7,
         limit=top_n,  # Return n closest points
 
         # In a system with high disk latency, the re-scoring step may become a bottleneck: https://qdrant.tech/documentation/guides/quantization/
