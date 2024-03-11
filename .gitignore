@@ -2,7 +2,6 @@
 coursera-dl/
 *parsed.json
 *wandb*
-*.ipynb
 *.pem
 
 # don't expose env files
