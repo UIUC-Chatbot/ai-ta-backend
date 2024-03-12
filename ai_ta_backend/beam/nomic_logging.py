@@ -606,14 +606,6 @@ def log_to_document_map(data: dict):
     # append to existing map
     project_name = "Document Map for " + course_name
     result = append_to_map(embeddings, metadata, project_name)
-
-    # check if project is accepting new datums
-    if project.is_accepting_data:
-      with project.wait_for_project_lock():
-        project.rebuild_maps()
-
-    # with project.wait_for_project_lock():
-    #   project.rebuild_maps()
     return result
 
   except Exception as e:
@@ -729,7 +721,7 @@ def data_prep_for_doc_map(df: pd.DataFrame):
 
   return embeddings, metadata
 
-def rebuild_map(course_name:str, map_type:str, supabase_client):
+def rebuild_map(course_name:str, map_type:str):
   """
   This function rebuilds a given map in Nomic.
   """
@@ -741,15 +733,10 @@ def rebuild_map(course_name:str, map_type:str, supabase_client):
     NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
 
   try:
-    # check if map exists
-    response = supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
-    if response.data:
-      project_id = response.data[0]['doc_map_id']
-    else:
-      return "No map found for this course"
-    
     # fetch project from Nomic
-    project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
+    project_name = NOMIC_MAP_NAME_PREFIX + course_name
+    project = AtlasProject(name=project_name, add_datums_if_exists=True)
+
     with project.wait_for_project_lock():
       project.rebuild_maps()
     return "Successfully rebuilt map"

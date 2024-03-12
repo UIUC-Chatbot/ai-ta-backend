@@ -180,7 +180,7 @@ def ingest(**inputs: Dict[str, Any]):
   print("Final success_fail_dict: ", success_fail_dict)
 
   # rebuild nomic document map after all ingests are done
-  rebuild_status = rebuild_map(course_name, map_type='document', supabase_client)
+  rebuild_status = rebuild_map(course_name, map_type='document')
   return success_fail_dict
 
 
