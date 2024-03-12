@@ -213,7 +213,7 @@ class ExportService:
 
     if response.count > 500:
       # call background task to upload to s3
-      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.json'
+      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.zip'
       s3_filepath = f"courses/{course_name}/{filename}"
       # background task of downloading data - map it with above ID
       executor = ProcessPoolExecutor()
@@ -227,7 +227,7 @@ class ExportService:
       last_id = response.data[-1]['id']
       total_count = response.count
 
-      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.csv'
+      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.json'
       file_path = os.path.join(os.getcwd(), filename)
       curr_count = 0
       # Fetch data in batches of 25 from first_id to last_id
