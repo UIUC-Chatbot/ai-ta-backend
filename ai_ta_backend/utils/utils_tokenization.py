@@ -9,6 +9,7 @@ def count_tokens_and_cost(
     completion: str = '',
     openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
   """
+  # TODO: improve w/ extra tokens used by model: https://github.com/openai/openai-cookbook/blob/d00e9a48a63739f5b038797594c81c8bb494fc09/examples/How_to_count_tokens_with_tiktoken.ipynb
   Returns the number of tokens in a text string.
 
   Only the first parameter is required, a string of text to measure. The completion and model name are optional.
