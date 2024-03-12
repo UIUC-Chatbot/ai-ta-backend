@@ -407,7 +407,7 @@ def searchScopusArticles(course: str, search_str: str, title: str, pub: str, sub
 
              
     # after all records are downloaded, upload to supabase bucket     
-    supabase_bucket_path = "publications/elsevier_journals/cell_host_and_mircobe"      
+    supabase_bucket_path = "publications/elsevier_journals/journal_of_allergy_and_clinical_immunology"      
     try:
         for root, directories, files in os.walk(directory):
             for file in files:
@@ -416,7 +416,7 @@ def searchScopusArticles(course: str, search_str: str, title: str, pub: str, sub
                 upload_path = "elsevier_papers/" + file
                 try:
                     with open(filepath, "rb") as f:
-                        res = SUPABASE_CLIENT.storage.from_(supabase_bucket_path).upload(file=f, path=upload_path, file_options={"content-type": "application/pdf"})
+                        res = SUPABASE_CLIENT.storage.from_(supabase_bucket_path).upload(file=f, path=file, file_options={"content-type": "application/pdf"})
                 except Exception as e:
                     print("Error: ", e)
 
@@ -456,7 +456,7 @@ def searchScienceDirectArticles(course_name: str, search_str: str, article_title
             "openAccess": True
         },
         "display": {
-            "offset": 430,
+            "offset": 810,
             "show": 10
         }
     }
@@ -487,7 +487,7 @@ def searchScienceDirectArticles(course_name: str, search_str: str, article_title
     response_data = response.json()
     total_records = response_data['resultsFound']
     print("Total records: ", total_records)
-    current_records = 430
+    current_records = 810
 
     while current_records < total_records:
         # iterate through results and extract pii
@@ -511,6 +511,8 @@ def searchScienceDirectArticles(course_name: str, search_str: str, article_title
             return "Error: " + str(response.status_code) + " - " + response.text
         
         response_data = response.json()
+        
+            
     
     print(f"⏰ Total Download Time: {(time.monotonic() - start_time):.2f} seconds")
     
@@ -669,6 +671,7 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
     
     total_records = int(data['esearchresult']['count'])
     current_records = 0
+    current_records = 0
 
     print("Total Records: ", total_records)
 
@@ -679,6 +682,10 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
         id_str = ",".join(id_list)
         current_pmc_ids = pubmed_id_converter(id_str)
         print("Number of PMC IDs: ", len(current_pmc_ids))
+
+        # extract the PMIDs which do not have a PMCID
+        pmid_list = list(set(id_list) - set(current_pmc_ids))
+        print("PMIDs without PMC IDs: ", pmid_list)
 
         # call pubmed download here - parallel processing
         with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -695,6 +702,9 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
         if response.status_code != 200:
             return "Error in next page: " + str(response.status_code) + " - " + response.text
         data = response.json()
+    
+    # check if IDs from pmid_list are present in elsevier
+    
 
     # upload to supabase bucket
         
