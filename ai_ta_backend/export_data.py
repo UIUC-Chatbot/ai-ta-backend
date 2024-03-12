@@ -213,6 +213,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     print("admin_emails: ", admin_emails)
     print("bcc_emails: ", bcc_emails)
 
+
     # add a check for emails, don't send email if no admin emails
     if len(admin_emails) == 0:
       return "No admin emails found. Email not sent."
@@ -291,8 +292,8 @@ def export_convo_history_json(course_name: str, from_date='', to_date=''):
     response = SUPABASE_CLIENT.table("llm-convo-monitor").select("id", count='exact').eq(
         "course_name", course_name).gte('created_at', from_date).lte('created_at', to_date).order('id',
                                                                                                   desc=False).execute()
-  
-  if response.count > 1000:
+  print("response count: ", response.count)
+  if response.count > 500:
     # call background task to upload to s3
     filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.zip'
     s3_filepath = s3_file = f"courses/{course_name}/{filename}"
@@ -308,7 +309,7 @@ def export_convo_history_json(course_name: str, from_date='', to_date=''):
     last_id = response.data[-1]['id']
     total_count = response.count
 
-    filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.csv'
+    filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.json'
     file_path = os.path.join(os.getcwd(), filename)
     curr_count = 0
     # Fetch data in batches of 25 from first_id to last_id
@@ -330,17 +331,19 @@ def export_convo_history_json(course_name: str, from_date='', to_date=''):
       if len(response.data) > 0:
         first_id = response.data[-1]['id'] + 1
         print("updated first_id: ", first_id)
-
+    print("DOWNLOAD DONE.")
     # Download file
     try:
       # zip file
       zip_filename = filename.split('.')[0] + '.zip'
       zip_file_path = os.path.join(os.getcwd(), zip_filename)
 
+      print("ZIP FILE PATH: ", zip_file_path)
+
       with zipfile.ZipFile(zip_file_path, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
         zipf.write(file_path, filename)
       os.remove(file_path)
-
+      print("IN TRY BLOCK.")
       return {"response": (zip_file_path, zip_filename, os.getcwd())}
     except Exception as e:
       print(e)
