@@ -39,7 +39,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
-from OpenaiEmbeddings import OpenAIAPIProcessor
+from ai_ta_backend.beam.OpenaiEmbeddings import OpenAIAPIProcessor
 from PIL import Image
 from posthog import Posthog
 from pydub import AudioSegment
@@ -49,6 +49,7 @@ from qdrant_client.models import PointStruct
 from ai_ta_backend.beam.nomic_logging import (
     delete_from_document_map,
     log_to_document_map,
+    rebuild_map
 )
 
 # from langchain.schema.output_parser import StrOutputParser
@@ -177,6 +178,9 @@ def ingest(**inputs: Dict[str, Any]):
                                              base_url=base_url,
                                              url=url)
   print("Final success_fail_dict: ", success_fail_dict)
+
+  # rebuild nomic document map after all ingests are done
+  rebuild_status = rebuild_map(course_name, map_type='document', supabase_client)
   return success_fail_dict
 
 
