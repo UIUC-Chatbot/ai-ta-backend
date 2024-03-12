@@ -14,7 +14,7 @@ import traceback
 import uuid
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import beam
 import boto3
@@ -245,7 +245,7 @@ class Ingest():
         with NamedTemporaryFile(suffix=file_extension) as tmpfile:
           self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
           mime_type = str(mimetypes.guess_type(tmpfile.name, strict=False)[0])
-          mime_category, mime_subcategory = mime_type.split('/')
+          mime_category = mime_type.split('/')[0] if '/' in mime_type else mime_type
 
         if file_extension in file_ingest_methods:
           # Use specialized functions when possible, fallback to mimetype. Else raise error.
