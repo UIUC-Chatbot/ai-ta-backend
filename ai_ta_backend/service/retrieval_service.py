@@ -315,7 +315,7 @@ class RetrievalService:
 
   def delete_from_nomic_and_supabase(self, course_name: str, identifier_key: str, identifier_value: str):
     try:
-      print(f"Deleting from Nomic and Supabase for {course_name} using {identifier_key}: {identifier_value}")
+      print(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
       response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
       if not response.data:
         raise Exception(f"No materials found for {course_name} using {identifier_key}: {identifier_value}")
@@ -323,18 +323,20 @@ class RetrievalService:
       nomic_ids_to_delete = [str(data['id']) + "_" + str(i) for i in range(1, len(data['contexts']) + 1)]
 
       # delete from Nomic
-      # check if project exists
       response = self.sqlDb.getProjectsMapForCourse(course_name)
       if not response.data:
         raise Exception(f"No document map found for this course: {course_name}")
       project_id = response.data[0]['doc_map_id']
       self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
+    except Exception as e:
+      print(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
+      self.sentry.capture_exception(e)
 
-      # delete from Supabase
-      print(f"Deleting from Supabase for {course_name} using {identifier_key}: {identifier_value}")
+    try:
+      print(f"Supabase Delete. course: {course_name} using {identifier_key}: {identifier_value}")
       response = self.sqlDb.deleteMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
     except Exception as e:
-      print(f"Error in deleting file from Nomic or Supabase using {identifier_key}: {identifier_value}", e)
+      print(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
       self.sentry.capture_exception(e)
 
   def vector_search(self, search_query, course_name):
