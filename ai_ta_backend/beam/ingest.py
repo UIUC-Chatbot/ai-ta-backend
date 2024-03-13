@@ -261,7 +261,7 @@ class Ingest():
           try:
             self._ingest_single_txt(s3_path, course_name)
             success_status['success_ingest'].append(s3_path)
-            print("✅ FALLBACK TO UTF-8 INGEST WAS SUCCESSFUL :) ")
+            print(f"No ingest methods -- Falling back to UTF-8 INGEST... s3_path = {s3_path}")
           except Exception as e:
             print(
                 f"We don't have a ingest method for this filetype: {file_extension}. As a last-ditch effort, we tried to ingest the file as utf-8 text, but that failed too. File is unsupported: {s3_path}. UTF-8 ingest error: {e}"
