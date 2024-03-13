@@ -329,14 +329,14 @@ class RetrievalService:
       project_id = response.data[0]['doc_map_id']
       self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
     except Exception as e:
-      print(f"Error in deleting file from Nomic or Supabase using {identifier_key}: {identifier_value}", e)
+      print(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
       self.sentry.capture_exception(e)
 
     try:
       print(f"Supabase Delete. course: {course_name} using {identifier_key}: {identifier_value}")
       response = self.sqlDb.deleteMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
     except Exception as e:
-      print(f"Error in deleting file from Nomic or Supabase using {identifier_key}: {identifier_value}", e)
+      print(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
       self.sentry.capture_exception(e)
 
   def vector_search(self, search_query, course_name):
