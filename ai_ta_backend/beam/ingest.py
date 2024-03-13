@@ -751,13 +751,12 @@ class Ingest():
     Returns:
         str: "Success" or an error message
     """
-    print("In text ingest")
+    print("In text ingest, UTF-8")
     try:
       # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
-      print("s3 Resonse:", response)
       text = response['Body'].read().decode('utf-8')
-      print("Text from s3:", text)
+      print("UTF-8 text to ignest (from s3)", text)
       text = [text]
 
       metadatas: List[Dict[str, Any]] = [{
