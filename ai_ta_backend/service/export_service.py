@@ -43,7 +43,7 @@ class ExportService:
       # background task of downloading data - map it with above ID
       executor = ProcessPoolExecutor()
       executor.submit(self.export_data_in_bg, response, "documents", course_name, s3_filepath)
-      return {"response": 'There are 500+ documents in the export. You will receive an email with the download link shortly!', 
+      return {"response": 'Download from S3', 
               "s3_path": s3_filepath}
 
     else:
