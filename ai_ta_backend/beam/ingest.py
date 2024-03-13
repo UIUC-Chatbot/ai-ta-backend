@@ -151,6 +151,7 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
 # Triggers determine how your app is deployed
 @app.rest_api(workers=2, max_pending_tasks=15_000, max_retries=3, timeout=-1, loader=loader, autoscaler=autoscaler)
 def ingest(**inputs: Dict[str, Any]):
+    
   qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
 
   course_name: List[str] | str = inputs.get('course_name', '')
