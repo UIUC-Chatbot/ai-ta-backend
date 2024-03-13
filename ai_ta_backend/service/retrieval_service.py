@@ -71,6 +71,7 @@ class RetrievalService:
       found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
 
       # add parent doc retrieval here
+      print(f"Number of docs retrieved: {len(found_docs)}")
       parent_docs = context_parent_doc_padding(found_docs, search_query, course_name)
       print(f"Number of final docs after context padding: {len(parent_docs)}")
 
@@ -82,11 +83,11 @@ class RetrievalService:
       valid_docs = []
       num_tokens = 0
       for doc in parent_docs:
-        doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
+        doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)  # type: ignore
 
         print(
-            f"tokens used/limit: {token_counter}/{token_limit}, tokens in chunk: {num_tokens}, total prompt cost (of these contexts): {prompt_cost}. 📄 File: {doc.metadata['readable_filename']}"
+            f"tokens used/limit: {token_counter}/{token_limit}, tokens in chunk: {num_tokens}, total prompt cost (of these contexts): {prompt_cost}. 📄 File: {doc['readable_filename']}"
         )
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
@@ -114,7 +115,7 @@ class RetrievalService:
           },
       )
 
-      return self.format_for_json(valid_docs)
+      return self.format_for_json_mqr(valid_docs)
     except Exception as e:
       # return full traceback to front end
       # err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore

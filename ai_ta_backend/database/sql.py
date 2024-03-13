@@ -7,7 +7,7 @@ from injector import inject
 class SQLDatabase:
 
   @inject
-  def __init__(self, db_url: str):
+  def __init__(self):
     # Create a Supabase client
     self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
@@ -18,11 +18,11 @@ class SQLDatabase:
             'course_name', course_name).execute()
 
   def getMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
-    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq(
+    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, readable_filename, base_url, url, contexts").eq(
         's3_path', s3_path).eq('course_name', course_name).execute()
 
   def getMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
-    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq(
+    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, readable_filename, base_url, url, contexts").eq(
         key, value).eq('course_name', course_name).execute()
 
   def deleteMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
