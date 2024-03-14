@@ -20,6 +20,7 @@ import time
 # Below functions hit API endpoints from sites like arXiv, Elsevier, and Sringer Nature to retrieve journal articles
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
+ELSEVIER_TEST_API_KEY = os.environ.get('ELSEVIER_TEST_API_KEY')
 
 SUPABASE_CLIENT = supabase.create_client(  # type: ignore
       supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
@@ -478,7 +479,7 @@ def searchScienceDirectArticles(course_name: str, search_str: str, article_title
     url = "https://api.elsevier.com/content/search/sciencedirect"
     
     #headers = {'X-ELS-APIKey': ELSEVIER_API_KEY, 'Accept':'application/json'}
-    headers = {'X-ELS-APIKey': "7f59af901d2d86f78a1fd60c1bf9426a", 'Accept':'application/json'}
+    headers = {'X-ELS-APIKey': ELSEVIER_TEST_API_KEY, 'Accept':'application/json'}
     response = requests.put(url, headers=headers, json=data)
     
     if response.status_code != 200:
