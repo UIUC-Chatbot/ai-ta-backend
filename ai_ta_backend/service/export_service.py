@@ -35,7 +35,7 @@ class ExportService:
 
     response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date, 'documents')
     # add a condition to route to direct download or s3 download
-    if response.count > 1000:
+    if response.count > 500:
       # call background task to upload to s3
 
       filename = course_name + '_' + str(uuid.uuid4()) + '_documents.zip'
@@ -43,7 +43,8 @@ class ExportService:
       # background task of downloading data - map it with above ID
       executor = ProcessPoolExecutor()
       executor.submit(self.export_data_in_bg, response, "documents", course_name, s3_filepath)
-      return {"response": 'Download from S3', "s3_path": s3_filepath}
+      return {"response": 'Download from S3', 
+              "s3_path": s3_filepath}
 
     else:
       # Fetch data
@@ -206,11 +207,11 @@ class ExportService:
 				from_date (str, optional): The start date for the data export. Defaults to ''.
 				to_date (str, optional): The end date for the data export. Defaults to ''.
 		"""
-    print("Exporting conversation history to csv file...")
+    print("Exporting conversation history to json file...")
 
     response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date, 'llm-convo-monitor')
 
-    if response.count > 1000:
+    if response.count > 500:
       # call background task to upload to s3
       filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.zip'
       s3_filepath = f"courses/{course_name}/{filename}"
@@ -226,7 +227,7 @@ class ExportService:
       last_id = response.data[-1]['id']
       total_count = response.count
 
-      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.csv'
+      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.json'
       file_path = os.path.join(os.getcwd(), filename)
       curr_count = 0
       # Fetch data in batches of 25 from first_id to last_id
