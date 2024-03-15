@@ -41,7 +41,8 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
-from nomic_logging import delete_from_document_map, log_to_document_map
+
+from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
 from OpenaiEmbeddings import OpenAIAPIProcessor
 from PIL import Image
 from posthog import Posthog
@@ -156,6 +157,7 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
     loader=loader,
     autoscaler=autoscaler)
 def ingest(**inputs: Dict[str, Any]):
+    
   qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
 
   course_name: List[str] | str = inputs.get('course_name', '')
@@ -170,6 +172,8 @@ def ingest(**inputs: Dict[str, Any]):
   )
 
   ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
+
+
 
   def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content):
     if content:
@@ -194,7 +198,10 @@ def ingest(**inputs: Dict[str, Any]):
       # s3_paths = success_fail_dict['failure_ingest'] # retry only failed paths.... what if this is a URL instead?
       success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
       time.sleep(13 * retry_num)  # max is 65
-
+  
+  # rebuild nomic document map after all ingests are done
+  rebuild_status = rebuild_map(course_name, map_type='document')
+  
   print(f"Final success_fail_dict: {success_fail_dict}")
   return json.dumps(success_fail_dict)
 
