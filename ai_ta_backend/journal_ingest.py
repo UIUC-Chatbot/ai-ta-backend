@@ -9,8 +9,8 @@ import ftplib
 from urllib.parse import urlparse
 import urllib.parse
 
-from ai_ta_backend.aws import upload_data_files_to_s3
-from ai_ta_backend.vector_database import Ingest
+# from ai_ta_backend.aws import upload_data_files_to_s3
+# from ai_ta_backend.vector_database import Ingest
 
 import supabase
 import tarfile
@@ -408,7 +408,7 @@ def searchScopusArticles(course: str, search_str: str, title: str, pub: str, sub
 
              
     # after all records are downloaded, upload to supabase bucket     
-    supabase_bucket_path = "publications/elsevier_journals/journal_of_allergy_and_clinical_immunology"      
+    supabase_bucket_path = "publications/elsevier_journals/mbio"      
     try:
         for root, directories, files in os.walk(directory):
             for file in files:
@@ -575,7 +575,7 @@ def downloadPubmedArticles(id, course_name, **kwargs):
     if format != None and format in ['tgz', 'pdf']:
         main_url += "&format=" + format
 
-    print("Full URL: ", main_url)
+    #print("Full URL: ", main_url)
 
     xml_response = requests.get(main_url)
     root = ET.fromstring(xml_response.text)
@@ -584,14 +584,14 @@ def downloadPubmedArticles(id, course_name, **kwargs):
     while resumption is not None: # download current articles and query 
         # parse xml response and extract pdf links and other metadata
         records = extract_record_data(xml_response.text)
-        print("Total records: ", len(records))
+        #print("Total records: ", len(records))
         if len(records) > 0:
             # download articles
             download_status = downloadFromFTP(records, directory, ftp_address="ftp.ncbi.nlm.nih.gov")
 
         # query for next set of articles    
         resumption_url = resumption.find(".//link").get("href")
-        print("Resumption URL: ", resumption_url)
+        #print("Resumption URL: ", resumption_url)
 
         xml_response = requests.get(resumption_url)
         root = ET.fromstring(xml_response.text)
@@ -599,7 +599,7 @@ def downloadPubmedArticles(id, course_name, **kwargs):
 
     # download current articles if resumption is None
     records = extract_record_data(xml_response.text)
-    print("Current total records: ", len(records))
+    #print("Current total records: ", len(records))
     if len(records) > 0:
         # download articles
         download_status = downloadFromFTP(records, directory, ftp_address="ftp.ncbi.nlm.nih.gov")
@@ -638,6 +638,8 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
         title: article title
         journal: journal title
     """
+    start_time = time.monotonic()
+
     directory = os.path.join(os.getcwd(), 'pubmed_papers')
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -661,7 +663,7 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
         search_query = search.replace(" ", "+")
         final_query += search_query
     
-    final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100"
+    final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100&retstart=3000"
     print("Final URL: ", final_url)
     response = requests.get(final_url)
 
@@ -675,6 +677,7 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
     current_records = 0
 
     print("Total Records: ", total_records)
+    pmid_list = []
 
     while current_records < total_records:
         # extract ID and convert them to PMC ID
@@ -685,8 +688,11 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
         print("Number of PMC IDs: ", len(current_pmc_ids))
 
         # extract the PMIDs which do not have a PMCID
-        pmid_list = list(set(id_list) - set(current_pmc_ids))
-        print("PMIDs without PMC IDs: ", pmid_list)
+        diff_ids = list(set(id_list) - set(current_pmc_ids))
+        print("Current PM IDs not present as PMC Ids: ", len(diff_ids))
+        print("Diff IDs: ", diff_ids)
+        pmid_list += diff_ids
+        
 
         # call pubmed download here - parallel processing
         with concurrent.futures.ProcessPoolExecutor() as executor:
@@ -705,9 +711,39 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
         data = response.json()
     
     # check if IDs from pmid_list are present in elsevier
+    print("PMIDs without PMC IDs: ", len(pmid_list))
+    if len(pmid_list) > 0:
+        print("Downloading from Elsevier...")
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            batch_size = 10
+            batches = [pmid_list[i:i+batch_size] for i in range(0, len(pmid_list), batch_size)]
+            results = []
+            for batch in batches:
+                batch_results = [executor.submit(downloadElsevierFulltextFromId, pmid, 'pubmed_id', course) for pmid in batch]
+                results.extend(batch_results)
     
-
+    print(f"⏰ Total Download Runtime: {(time.monotonic() - start_time):.2f} seconds")
+    
     # upload to supabase bucket
+    count = 0
+    try:
+        for root, directories, files in os.walk(directory):
+            for file in files:
+                filepath = os.path.join(root, file)
+                upload_path = file
+                try:
+                    with open(filepath, "rb") as f:
+                        res = SUPABASE_CLIENT.storage.from_("publications/pubmed_journals/virus_evolution").upload(file=f, path=upload_path, file_options={"content-type": "application/pdf"})
+                    count += 1
+                except Exception as e:
+                    print("Error: ", e)
+                print("Uploaded: ", count)    
+            
+    except Exception as e:
+        print("Error: ", e)
+    
+    # log end time
+    print(f"⏰ Total Runtime with Supabase upload: {(time.monotonic() - start_time):.2f} seconds")
         
     return "success"
 
@@ -746,11 +782,21 @@ def extract_record_data(xml_string):
     root = ET.fromstring(xml_string)
     records = root.findall(".//record")
     extracted_data = []
+    href = None
 
     for record in records:
         record_id = record.get("id")
         license = record.get("license")
-        href = record.find(".//link").get("href")
+        links = record.findall(".//link")
+        for link in links:
+            # check for PDF links first
+            if link.get("format") == "pdf":
+                href = link.get("href")
+                break
+        # if PDF link not found, use the available tgz link
+        if not href:
+            href = links[0].get("href")
+
         extracted_data.append({
             "record_id": record_id,
             "license": license,
@@ -777,21 +823,31 @@ def downloadFromFTP(paths, local_dir, ftp_address):
     for path in paths:
         ftp_url = urlparse(path['href'])
         ftp_path = ftp_url.path[1:]
-        print("Downloading from FTP path: ", ftp_path)
+        #print("Downloading from FTP path: ", ftp_path)
 
         filename = ftp_path.split('/')[-1]
         local_file = os.path.join(local_dir, filename)
         with open(local_file, 'wb') as f:
             ftp.retrbinary("RETR " + ftp_path, f.write)
-        print("Downloaded: ", filename)
+        #print("Downloaded: ", filename)
 
         # if filename ends in tar.gz, extract the pdf and delete the tar.gz
         if filename.endswith(".tar.gz"):
             extracted_pdf = extract_pdf(local_file)
+            #print("Extracted PDF: ", extracted_pdf)
+
+            filename = os.path.basename(filename)
+            new_pdf_name = filename.replace('.tar.gz', '.pdf')
+            
+            new_pdf_path = os.path.join(local_dir, new_pdf_name)
+            old_pdf_path = os.path.join(local_dir, extracted_pdf)
+            os.rename(old_pdf_path, new_pdf_path)
+
+            # delete the tar.gz file
             os.remove(local_file)
+            os.remove(old_pdf_path)
+
     ftp.quit()
-        
-    
     return "success"
 
 

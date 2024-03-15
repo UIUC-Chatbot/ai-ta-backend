@@ -42,12 +42,12 @@ from posthog import Posthog
 import ray
 import sentry_sdk
 
-from ai_ta_backend.canvas import CanvasAPI
+# from ai_ta_backend.canvas import CanvasAPI
 
-from ai_ta_backend.export_data import export_convo_history_json, export_documents_json, check_s3_path_and_download
-from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, create_document_map
-from ai_ta_backend.vector_database import Ingest
-from ai_ta_backend.web_scrape import WebScrape, mit_course_download
+# from ai_ta_backend.export_data import export_convo_history_json, export_documents_json, check_s3_path_and_download
+# from ai_ta_backend.nomic_logging import get_nomic_map, log_convo_to_nomic, create_document_map
+# from ai_ta_backend.vector_database import Ingest
+# from ai_ta_backend.web_scrape import WebScrape, mit_course_download
 from ai_ta_backend.journal_ingest import (get_arxiv_fulltext, downloadSpringerFulltext, 
                                           downloadElsevierFulltextFromId, getFromDoi, 
                                           downloadPubmedArticles, searchPubmedArticlesWithEutils,
