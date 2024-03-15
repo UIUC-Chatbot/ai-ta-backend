@@ -121,7 +121,47 @@ async def handle_issue_opened(payload, langsmith_run_id):
 
     # 3. RUN BOT
     # bot = github_agent.GH_Agent.remote()
-    prompt = hub.pull("kastanday/new-github-issue").format(issue_description=format_issue(issue))
+    #prompt = hub.pull("kastanday/new-github-issue").format(issue_description=format_issue(issue))
+
+    new_github_issue_prompt_template = f"""
+    Solve the following github issue by following these steps: 
+Step 1: Access and Preparation
+Task: First use read_file to read any files in the repo {repo_name} https://github.com/KastanDay/ML4Bio-v2 that seem relevant. Read all data files.
+Action: Use the GitHub API to clone the necessary files into your workspace.
+Step 2: Environment Setup
+Task: Set up the R environment for DESeq2 analysis.
+Action: Install and load the DESeq2 package along with other necessary libraries like tidyverse. Use the command BiocManager::install("DESeq2") in R.
+Step 3: Data Loading and Preprocessing
+Task: Load the count data and the sample information (D.xlsx).
+Action: Ensure that the column names in the count data correspond to the sample names in D.xlsx.
+Step 4: DESeq2 Dataset Creation
+Task: Create a DESeq2 dataset.
+Action: Use DESeqDataSetFromMatrix, inputting the count data, sample information, and an appropriate design formula (e.g., ~ gender + infection + Time).
+Step 5: Pre-filtering
+Task: Filter out low-count genes.
+Action: Apply a threshold to keep genes with a minimum count across a minimum number of samples.
+Step 6: Differential Expression Analysis
+Task: Run the DESeq2 analysis.
+Action: Perform the analysis using DESeq, which includes size factor estimation, dispersion estimation, model fitting, and the Wald test.
+Step 7: Results Extraction and Visualization
+Task: Extract and visualize the results.
+Action:
+Extract the results using results.
+Generate an MA plot, heatmaps, and a PCA plot for visual representation. Feel free to generate any others that might be relevant.
+Step 8: Interpretation and Reporting
+Task: Interpret the results and prepare a report.
+Action: Analyze the statistically significant genes and their potential biological relevance. Prepare a comprehensive report detailing the findings.
+Step 9: Export and Further Analysis
+Task: Export the results and suggest further analyses.
+Action: Save the result table and suggest additional analyses like gene ontology or pathway analysis.
+Goal and Execution
+Goal: To perform a complete differential gene expression analysis using DESeq2, from data retrieval to result interpretation, and provide a detailed report of the findings.
+Execution: Execute each step sequentially in the provided sandbox environment, ensuring accuracy and thoroughness in analysis and reporting.
+
+Feel free to ask for help or leave a comment on the Issue or PR if you're stuck.
+
+Here's your latest assignment: {issue_description}"""
+    prompt = new_github_issue_prompt_template.format(issue_description=format_issue(issue), repo_name=repo_name, repo=repo)
     # result_futures.append(bot.launch_gh_agent.remote(prompt, active_branch=base_branch, langsmith_run_id=langsmith_run_id))
     print("ABOUT TO CALL WORKFLOWAGENT on COMMENT OPENED")
     bot = WorkflowAgent(langsmith_run_id=langsmith_run_id)

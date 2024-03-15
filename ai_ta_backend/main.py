@@ -1,3 +1,5 @@
+import json
+import asyncio
 import os
 import time
 from typing import List
@@ -336,6 +338,9 @@ async def webhook():
 
   payload = request.json
   # print(f"{payload}\n","-"*50, "\n")
+  # Writing to sample.json
+  with open("sample.json", "w") as outfile:
+    outfile.write(json.dumps(payload))
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
 
@@ -344,5 +349,14 @@ async def webhook():
   return '', 200
 
 
+async def main():
+  # await handle_github_event()
+  f = open('UIUC-Chatbot/ai-ta-backend/sample.json')
+  payload = json.load(f)
+  await handle_github_event(payload)
+  pass
+
 if __name__ == '__main__':
-  app.run(debug=True, port=os.getenv("PORT", default=8000))
+  #app.run(debug=True, port=os.getenv("PORT", default=8000))
+  asyncio.run(main())
+

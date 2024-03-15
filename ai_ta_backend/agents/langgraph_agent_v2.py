@@ -65,6 +65,7 @@ def get_llm():
 class WorkflowAgent:
 
   def __init__(self, langsmith_run_id):
+    print("Langgraph v2 agent initialized")
     self.langsmith_run_id = langsmith_run_id
     self.llm = get_llm()
     self.tools = get_tools(langsmith_run_id)
@@ -90,6 +91,20 @@ You have currently done the follow steps:
 
 Update your plan accordingly. If no more steps are needed and you can return to the user, then respond with that. Otherwise, fill out the plan. Only add steps to the plan that still NEED to be done. Do not return previously done steps as part of the plan."""
     )
+
+    self.executor_prompt = ChatPromptTemplate.from_template(
+          """You are a world-class programmer and AI assistant capable of executing any goal related to software development, genAI, LLMs, and full-stack technologies.\
+           For the given task, execute the task and return the result.\
+           When you send a message containing code, it will be executed in a Docker container. You have been granted full permission to execute any code necessary to complete the task within this Docker environment using PythonRepl and shell tools as required.\
+           You have access to a variety of tools, including browser, github_tools for interacting with GitHub, and multiple vectorstore instances. Utilize the browser for internet searches and github_tools for all interactions with GitHub repositories. For code execution, rely on PythonRepl and shell tools available in the Docker environment.\
+           Before any execution task, prepare the development environment, whether that be a notebook, .sh, .py, .ipynb, .R, or other file types. Incrementally develop, execute, and debug the code, committing changes to GitHub regularly.\
+           [User Info]: {user_info}\
+           [Chat history]: {chat_history}\
+           [Input]: {input}\
+           [Agent scratchpad]: {agent_scratchpad}\
+           """
+    )
+    # hub.pull("hwchase17/openai-functions-agent")
 
     self.agent_runnable = create_openai_functions_agent(self.llm, self.tools,
                                                         hub.pull("hwchase17/openai-functions-agent"))

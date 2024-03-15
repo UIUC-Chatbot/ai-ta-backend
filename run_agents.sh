@@ -29,7 +29,9 @@ if [[ ${installed_commit} != "${latest_commit}" ]]; then
 	echo "Re-Installing Langchain fork to ensure it's updated..."
 	pip uninstall langchain langchain-experimental -y
 	pip install "git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain&subdirectory=libs/langchain"
-	pip install "git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain-experimental&subdirectory=libs/experimental"
+  pip install "git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain-experimental&subdirectory=libs/experimental"
+  pip install "git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain-openai&subdirectory=libs/partners/openai"
+  pip install "git+https://github.com/KastanDay/langchain-improved-agents.git@uiuc-dot-chat#egg=langchain-community&subdirectory=libs/community"
 else
 	echo "Langchain is up to date."
 fi
