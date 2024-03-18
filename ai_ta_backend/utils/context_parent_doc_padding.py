@@ -4,6 +4,7 @@ from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from multiprocessing import Manager
 from ai_ta_backend.database.sql import SQLDatabase
+from ai_ta_backend.executors.process_pool_executor import ProcessPoolExecutorAdapter
 
 
 # DOCUMENTS_TABLE = os.environ['SUPABASE_DOCUMENTS_TABLE']
@@ -12,12 +13,14 @@ from ai_ta_backend.database.sql import SQLDatabase
 
 SQL_DB = SQLDatabase()
 
+
 def context_parent_doc_padding(found_docs, search_query, course_name):
   """
     Takes top N contexts acquired from QRANT similarity search and pads them
     """
   print("inside main context padding")
   start_time = time.monotonic()
+  #executor = ProcessPoolExecutorAdapter(max_workers=10)
  
   with Manager() as manager:
     qdrant_contexts = manager.list()
@@ -25,7 +28,11 @@ def context_parent_doc_padding(found_docs, search_query, course_name):
     partial_func1 = partial(qdrant_context_processing, course_name=course_name, result_contexts=qdrant_contexts)
     partial_func2 = partial(supabase_context_padding, course_name=course_name, result_docs=supabase_contexts)
 
-    with ProcessPoolExecutor() as executor:
+    # with ProcessPoolExecutor() as executor:
+    #   executor.map(partial_func1, found_docs[5:])
+    #   executor.map(partial_func2, found_docs[:5])
+
+    with ProcessPoolExecutorAdapter() as executor:
       executor.map(partial_func1, found_docs[5:])
       executor.map(partial_func2, found_docs[:5])
 
