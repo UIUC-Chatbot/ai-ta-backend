@@ -17,6 +17,7 @@ from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.utils_tokenization import count_tokens_and_cost
+from ai_ta_backend.utils.context_parent_doc_padding import context_parent_doc_padding
 
 
 class RetrievalService:
@@ -69,6 +70,11 @@ class RetrievalService:
 
       found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
 
+      # add parent doc retrieval here
+      print(f"Number of docs retrieved: {len(found_docs)}")
+      parent_docs = context_parent_doc_padding(found_docs, search_query, course_name)
+      print(f"Number of final docs after context padding: {len(parent_docs)}")
+
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
       token_counter, _ = count_tokens_and_cost(pre_prompt + "\n\nNow please respond to my query: " +  # type: ignore
@@ -76,12 +82,12 @@ class RetrievalService:
 
       valid_docs = []
       num_tokens = 0
-      for doc in found_docs:
-        doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
+      for doc in parent_docs:
+        doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)  # type: ignore
 
         print(
-            f"tokens used/limit: {token_counter}/{token_limit}, tokens in chunk: {num_tokens}, total prompt cost (of these contexts): {prompt_cost}. 📄 File: {doc.metadata['readable_filename']}"
+            f"tokens used/limit: {token_counter}/{token_limit}, tokens in chunk: {num_tokens}, total prompt cost (of these contexts): {prompt_cost}. 📄 File: {doc['readable_filename']}"
         )
         if token_counter + num_tokens <= token_limit:
           token_counter += num_tokens
@@ -109,7 +115,7 @@ class RetrievalService:
           },
       )
 
-      return self.format_for_json(valid_docs)
+      return self.format_for_json_mqr(valid_docs)
     except Exception as e:
       # return full traceback to front end
       # err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
