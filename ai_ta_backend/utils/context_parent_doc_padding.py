@@ -1,6 +1,6 @@
-import os
+#import os
 import time
-from concurrent.futures import ProcessPoolExecutor
+#from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from multiprocessing import Manager
 from ai_ta_backend.database.sql import SQLDatabase
@@ -10,8 +10,6 @@ from ai_ta_backend.executors.process_pool_executor import ProcessPoolExecutorAda
 # DOCUMENTS_TABLE = os.environ['SUPABASE_DOCUMENTS_TABLE']
 # SUPABASE_CLIENT = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'],
 #  supabase_key=os.environ['SUPABASE_API_KEY'])  # type: ignore
-
-SQL_DB = SQLDatabase()
 
 
 def context_parent_doc_padding(found_docs, search_query, course_name):
@@ -77,8 +75,9 @@ def qdrant_context_processing(doc, course_name, result_contexts):
 def supabase_context_padding(doc, course_name, result_docs):
   """
     Does context padding for given doc.
-    """
-  
+  """
+  SQL_DB = SQLDatabase()
+
   # query by url or s3_path
   if 'url' in doc.metadata.keys() and doc.metadata['url']:
     parent_doc_id = doc.metadata['url']
