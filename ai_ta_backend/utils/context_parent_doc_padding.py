@@ -69,7 +69,6 @@ def qdrant_context_processing(doc, course_name, result_contexts):
     context_dict['base_url'] = ''
 
   result_contexts.append(context_dict)
-  #return result_contexts
 
 
 def supabase_context_padding(doc, course_name, result_docs):
