@@ -267,8 +267,8 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     # send email to admins
     subject = "UIUC.chat Data Export Complete for " + course_name
     body_text = "The data export for " + course_name + " is complete.\n\nYou can download the file from the following link: \n\n" + s3_url + "\n\nThis link will expire in 48 hours."
-    # email_status = send_email(subject, body_text, os.environ['EMAIL_SENDER'], admin_emails, bcc_emails)
-    # print("email_status: ", email_status)
+    email_status = send_email(subject, body_text, os.environ['EMAIL_SENDER'], admin_emails, bcc_emails)
+    print("email_status: ", email_status)
 
     return "File uploaded to S3. Email sent to admins."
 
