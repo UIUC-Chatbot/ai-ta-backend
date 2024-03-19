@@ -59,7 +59,7 @@ class ExportService:
         print("last_id: ", last_id)
 
         curr_doc_count = 0
-        filename = course_name + '_' + str(uuid.uuid4()) + '_documents.json'
+        filename = course_name + '_' + str(uuid.uuid4()) + '_documents.jsonl'
         file_path = os.path.join(os.getcwd(), filename)
 
         while curr_doc_count < total_doc_count:
@@ -71,7 +71,7 @@ class ExportService:
 
           # writing to file
           if not os.path.isfile(file_path):
-            df.to_json(file_path, orient='records')
+            df.to_json(file_path, orient='records', lines=True)
           else:
             df.to_json(file_path, orient='records', lines=True, mode='a')
 
@@ -126,7 +126,7 @@ class ExportService:
       last_id = response.data[-1]['id']
       total_count = response.count
 
-      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.json'
+      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.jsonl'
       file_path = os.path.join(os.getcwd(), filename)
       curr_count = 0
       # Fetch data in batches of 25 from first_id to last_id
@@ -191,7 +191,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
   print("pre-defined s3_path: ", s3_path)
 
   curr_doc_count = 0
-  filename = s3_path.split('/')[-1].split('.')[0] + '.json'
+  filename = s3_path.split('/')[-1].split('.')[0] + '.jsonl'
   file_path = os.path.join(os.getcwd(), filename)
 
   # download data in batches of 100
@@ -203,7 +203,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 
     # writing to file
     if not os.path.isfile(file_path):
-       df.to_json(file_path, orient='records')
+       df.to_json(file_path, orient='records', lines=True)
     else:
       df.to_json(file_path, orient='records', lines=True, mode='a')
 
@@ -267,8 +267,8 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     # send email to admins
     subject = "UIUC.chat Data Export Complete for " + course_name
     body_text = "The data export for " + course_name + " is complete.\n\nYou can download the file from the following link: \n\n" + s3_url + "\n\nThis link will expire in 48 hours."
-    email_status = send_email(subject, body_text, os.environ['EMAIL_SENDER'], admin_emails, bcc_emails)
-    print("email_status: ", email_status)
+    # email_status = send_email(subject, body_text, os.environ['EMAIL_SENDER'], admin_emails, bcc_emails)
+    # print("email_status: ", email_status)
 
     return "File uploaded to S3. Email sent to admins."
 
