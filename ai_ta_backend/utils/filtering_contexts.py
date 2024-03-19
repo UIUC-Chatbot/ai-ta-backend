@@ -137,8 +137,6 @@
 #   langsmith_prompt_obj = filter_unrelated_contexts_zephyr
 #   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
 
-#   print("NUM ACTIVE THREADS (top of filtering_contexts):", threading.active_count())
-
 #   max_concurrency = min(100, len(contexts))
 #   print("max_concurrency is max of 100, or len(contexts), whichever is less ---- Max concurrency:", max_concurrency)
 #   print("Num contexts to filter:", len(contexts))
@@ -153,14 +151,11 @@
 #                                      timeout=timeout,
 #                                      fetch_local=False)
 
-#   print("NUM ACTIVE THREADS (before cleanup filtering_contexts):", threading.active_count())
 #   # Cleanup
 #   for task in in_progress:
 #     ray.cancel(task)
 #   results = ray.get(done_tasks)
-#   print("NUM ACTIVE THREADS (before kill filtering_contexts):", threading.active_count())
 #   ray.kill(actor)
-#   print("NUM ACTIVE THREADS (after kill filtering_contexts):", threading.active_count())
 
 #   best_contexts_to_keep = [
 #       r['context'] for r in results if r and 'context' in r and 'completion' in r and parse_result(r['completion'])

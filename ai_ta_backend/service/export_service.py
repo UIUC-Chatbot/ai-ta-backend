@@ -43,8 +43,7 @@ class ExportService:
       # background task of downloading data - map it with above ID
       executor = ProcessPoolExecutor()
       executor.submit(export_data_in_bg, response, "documents", course_name, s3_filepath)
-      return {"response": 'Download from S3', 
-              "s3_path": s3_filepath}
+      return {"response": 'Download from S3', "s3_path": s3_filepath}
 
     else:
       # Fetch data
@@ -95,8 +94,6 @@ class ExportService:
           return {"response": "Error downloading file."}
       else:
         return {"response": "No data found between the given dates."}
-
-  
 
   def export_convo_history_json(self, course_name: str, from_date='', to_date=''):
     """
@@ -169,6 +166,7 @@ class ExportService:
 
 # Encountered pickling error while running the background task. So, moved the function outside the class.
 
+
 def export_data_in_bg(response, download_type, course_name, s3_path):
   """
 	This function is called in export_documents_csv() to upload the documents to S3.
@@ -184,7 +182,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 	"""
   s3 = AWSStorage()
   sql = SQLDatabase()
-  
+
   total_doc_count = response.count
   first_id = response.data[0]['id']
   print("total_doc_count: ", total_doc_count)
@@ -203,7 +201,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 
     # writing to file
     if not os.path.isfile(file_path):
-       df.to_json(file_path, orient='records', lines=True)
+      df.to_json(file_path, orient='records', lines=True)
     else:
       df.to_json(file_path, orient='records', lines=True, mode='a')
 
@@ -237,10 +235,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     #print("s3_url: ", s3_url)
 
     # get admin email IDs
-    headers = {
-      "Authorization": f"Bearer {os.environ['VERCEL_READ_ONLY_API_KEY']}",
-      "Content-Type": "application/json"
-    }
+    headers = {"Authorization": f"Bearer {os.environ['VERCEL_READ_ONLY_API_KEY']}", "Content-Type": "application/json"}
 
     hget_url = str(os.environ['VERCEL_BASE_URL']) + "course_metadatas/" + course_name
     response = requests.get(hget_url, headers=headers)
@@ -265,7 +260,12 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
       return "No admin emails found. Email not sent."
 
     # send email to admins
-    subject = "UIUC.chat Data Export Complete for " + course_name
+    if download_type == "documents":
+      subject = "UIUC.chat Documents Export Complete for " + course_name
+    elif download_type == "conversations":
+      subject = "UIUC.chat Conversation History Export Complete for " + course_name
+    else:
+      subject = "UIUC.chat Export Complete for " + course_name
     body_text = "The data export for " + course_name + " is complete.\n\nYou can download the file from the following link: \n\n" + s3_url + "\n\nThis link will expire in 48 hours."
     email_status = send_email(subject, body_text, os.environ['EMAIL_SENDER'], admin_emails, bcc_emails)
     print("email_status: ", email_status)
