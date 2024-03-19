@@ -223,7 +223,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     # upload to S3
 
     #s3_file = f"courses/{course_name}/exports/{os.path.basename(zip_file_path)}"
-    s3_file = f"courses/{course_name}/{os.path.basename(zip_file_path)}"
+    s3_file = f"courses/{course_name}/{os.path.basename(s3_path)}"
     s3.upload_file(zip_file_path, os.environ['S3_BUCKET_NAME'], s3_file)
 
     # remove local files
@@ -234,6 +234,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 
     # generate presigned URL
     s3_url = s3.generatePresignedUrl('get_object', os.environ['S3_BUCKET_NAME'], s3_path, 3600)
+    #print("s3_url: ", s3_url)
 
     # get admin email IDs
     headers = {
