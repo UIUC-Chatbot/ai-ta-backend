@@ -7,7 +7,7 @@ from injector import inject
 class SQLDatabase:
 
   @inject
-  def __init__(self, db_url: str):
+  def __init__(self):
     # Create a Supabase client
     self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
