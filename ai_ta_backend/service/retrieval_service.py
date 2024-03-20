@@ -5,6 +5,8 @@ import traceback
 from typing import Dict, List, Union
 from functools import partial
 from multiprocessing import Manager
+from multiprocessing import Lock
+
 
 import openai
 from injector import inject
@@ -431,7 +433,7 @@ class RetrievalService:
   def context_parent_doc_padding(self, found_docs, course_name):
     """
       Takes top N contexts acquired from QRANT similarity search and pads them
-      """
+    """
     print("inside main context padding")
     start_time = time.monotonic()
     
@@ -447,8 +449,9 @@ class RetrievalService:
       #   executor.map(partial_func2, found_docs[:5])
       try:
         with self.process_executor as executor:
-          futures1 = executor.map(partial_func1, found_docs[5:])
-          futures2 = executor.map(partial_func2, found_docs[:5])
+          lock = Lock()
+          futures1 = executor.map(partial_func1, found_docs[5:], [lock] * len(found_docs[5:]))
+          futures2 = executor.map(partial_func2, found_docs[:5], [lock] * len(found_docs[:5]))
           for future in futures2:
             try:
               print(f"future1: {future.result()}")
@@ -456,7 +459,7 @@ class RetrievalService:
               print(f"Error in future1: {e}")
       except Exception as e:
         print("Error in process_pool_executor", e)
-
+        
       supabase_contexts_no_duplicates = []
       for context in supabase_contexts:
         if context not in supabase_contexts_no_duplicates:
@@ -468,91 +471,93 @@ class RetrievalService:
 
       return result_contexts
   
-  def qdrant_context_processing(self, doc, course_name, result_contexts):
+  def qdrant_context_processing(self, doc, course_name, result_contexts, lock):
     """
       Re-factor QDRANT objects into Supabase objects and append to result_docs
     """
-    print("inside qdrant_context_processing")
-    context_dict = {
-        'text': doc.page_content,
-        'embedding': '',
-        'pagenumber': doc.metadata['pagenumber'],
-        'readable_filename': doc.metadata['readable_filename'],
-        'course_name': course_name,
-        's3_path': doc.metadata['s3_path']
-    }
-    if 'url' in doc.metadata.keys():
-      context_dict['url'] = doc.metadata['url']
-    else:
-      context_dict['url'] = ''
+    with lock:
+      print("inside qdrant_context_processing")
+      context_dict = {
+          'text': doc.page_content,
+          'embedding': '',
+          'pagenumber': doc.metadata['pagenumber'],
+          'readable_filename': doc.metadata['readable_filename'],
+          'course_name': course_name,
+          's3_path': doc.metadata['s3_path']
+      }
+      if 'url' in doc.metadata.keys():
+        context_dict['url'] = doc.metadata['url']
+      else:
+        context_dict['url'] = ''
 
-    if 'base_url' in doc.metadata.keys():
-      context_dict['base_url'] = doc.metadata['url']
-    else:
-      context_dict['base_url'] = ''
+      if 'base_url' in doc.metadata.keys():
+        context_dict['base_url'] = doc.metadata['url']
+      else:
+        context_dict['base_url'] = ''
 
-    result_contexts.append(context_dict)
+      result_contexts.append(context_dict)
   
-  def supabase_context_padding(self, doc, course_name, result_docs):
+  def supabase_context_padding(self, doc, course_name, result_docs, lock):
     """
       Fetches surrounding contexts from supabase and appends them to retrieved contexts.
     """
-    print("inside supabase_context_padding")
-    # query by url or s3_path
-    if 'url' in doc.metadata.keys() and doc.metadata['url']:
-      parent_doc_id = doc.metadata['url']
-      response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name=course_name, key='url', value=parent_doc_id)
-    else:
-      parent_doc_id = doc.metadata['s3_path']
-      response = self.sqlDb.getMaterialsForCourseAndS3Path(course_name=course_name, s3_path=parent_doc_id)
-    data = response.data
-    
-    if len(data) > 0:
-      # do the padding
-      filename = data[0]['readable_filename']
-      contexts = data[0]['contexts']
-      
-      if 'chunk_index' in doc.metadata and 'chunk_index' in contexts[0].keys():
-        # pad contexts by chunk index + 3 and - 3
-        target_chunk_index = doc.metadata['chunk_index']
-        for context in contexts:
-          curr_chunk_index = context['chunk_index']
-          if (target_chunk_index - 3 <= curr_chunk_index <= target_chunk_index + 3):
-            context['readable_filename'] = filename
-            context['course_name'] = course_name
-            context['s3_path'] = data[0]['s3_path']
-            context['url'] = data[0]['url']
-            context['base_url'] = data[0]['base_url']
-            result_docs.append(context)
-
-      elif doc.metadata['pagenumber'] != '':
-        # pad contexts belonging to same page number
-        pagenumber = doc.metadata['pagenumber']
-
-        for context in contexts:
-          if int(context['pagenumber']) == pagenumber:
-            context['readable_filename'] = filename
-            context['course_name'] = course_name
-            context['s3_path'] = data[0]['s3_path']
-            context['url'] = data[0]['url']
-            context['base_url'] = data[0]['base_url']
-            result_docs.append(context)
-
+    with lock:
+      print("inside supabase_context_padding")
+      # query by url or s3_path
+      if 'url' in doc.metadata.keys() and doc.metadata['url']:
+        parent_doc_id = doc.metadata['url']
+        response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name=course_name, key='url', value=parent_doc_id)
       else:
-        # refactor as a Supabase object and append
-        context_dict = {
-            'text': doc.page_content,
-            'embedding': '',
-            'pagenumber': doc.metadata['pagenumber'],
-            'readable_filename': doc.metadata['readable_filename'],
-            'course_name': course_name,
-            's3_path': doc.metadata['s3_path'],
-            'base_url': doc.metadata['base_url']
-        }
-        if 'url' in doc.metadata.keys():
-          context_dict['url'] = doc.metadata['url']
-        else:
-          context_dict['url'] = ''
+        parent_doc_id = doc.metadata['s3_path']
+        response = self.sqlDb.getMaterialsForCourseAndS3Path(course_name=course_name, s3_path=parent_doc_id)
+      data = response.data
+      
+      if len(data) > 0:
+        # do the padding
+        filename = data[0]['readable_filename']
+        contexts = data[0]['contexts']
+        
+        if 'chunk_index' in doc.metadata and 'chunk_index' in contexts[0].keys():
+          # pad contexts by chunk index + 3 and - 3
+          target_chunk_index = doc.metadata['chunk_index']
+          for context in contexts:
+            curr_chunk_index = context['chunk_index']
+            if (target_chunk_index - 3 <= curr_chunk_index <= target_chunk_index + 3):
+              context['readable_filename'] = filename
+              context['course_name'] = course_name
+              context['s3_path'] = data[0]['s3_path']
+              context['url'] = data[0]['url']
+              context['base_url'] = data[0]['base_url']
+              result_docs.append(context)
 
-        result_docs.append(context_dict)
+        elif doc.metadata['pagenumber'] != '':
+          # pad contexts belonging to same page number
+          pagenumber = doc.metadata['pagenumber']
+
+          for context in contexts:
+            if int(context['pagenumber']) == pagenumber:
+              context['readable_filename'] = filename
+              context['course_name'] = course_name
+              context['s3_path'] = data[0]['s3_path']
+              context['url'] = data[0]['url']
+              context['base_url'] = data[0]['base_url']
+              result_docs.append(context)
+
+        else:
+          # refactor as a Supabase object and append
+          context_dict = {
+              'text': doc.page_content,
+              'embedding': '',
+              'pagenumber': doc.metadata['pagenumber'],
+              'readable_filename': doc.metadata['readable_filename'],
+              'course_name': course_name,
+              's3_path': doc.metadata['s3_path'],
+              'base_url': doc.metadata['base_url']
+          }
+          if 'url' in doc.metadata.keys():
+            context_dict['url'] = doc.metadata['url']
+          else:
+            context_dict['url'] = ''
+
+          result_docs.append(context_dict)
 
