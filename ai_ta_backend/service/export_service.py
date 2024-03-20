@@ -231,8 +231,8 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     print("file uploaded to s3: ", s3_file)
 
     # generate presigned URL
-    s3_url = s3.generatePresignedUrl('get_object', os.environ['S3_BUCKET_NAME'], s3_path, 3600)
-    #print("s3_url: ", s3_url)
+    s3_url = s3.generatePresignedUrl('get_object', os.environ['S3_BUCKET_NAME'], s3_path, 172800)
+
 
     # get admin email IDs
     headers = {"Authorization": f"Bearer {os.environ['VERCEL_READ_ONLY_API_KEY']}", "Content-Type": "application/json"}
