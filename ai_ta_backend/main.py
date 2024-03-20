@@ -1,5 +1,4 @@
 import os
-import threading
 import time
 from typing import List
 
@@ -136,10 +135,7 @@ def getTopContexts(service: RetrievalService) -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  print("NUM ACTIVE THREADS (top of getTopContexts):", threading.active_count())
-
   found_documents = service.getTopContexts(search_query, course_name, token_limit)
-  print("NUM ACTIVE THREADS (after instantiating Ingest() class in getTopContexts):", threading.active_count())
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
