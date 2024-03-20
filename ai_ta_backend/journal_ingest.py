@@ -663,7 +663,7 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
         search_query = search.replace(" ", "+")
         final_query += search_query
     
-    final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100&retstart=3000"
+    final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100"
     print("Final URL: ", final_url)
     response = requests.get(final_url)
 
@@ -678,6 +678,7 @@ def searchPubmedArticlesWithEutils(course: str, search: str, title: str, journal
 
     print("Total Records: ", total_records)
     pmid_list = []
+    
 
     while current_records < total_records:
         # extract ID and convert them to PMC ID
