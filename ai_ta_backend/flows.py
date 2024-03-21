@@ -1,4 +1,5 @@
 import requests
+import time
 
 
 class Flows():
@@ -69,7 +70,6 @@ class Flows():
     else:
       return all_executions
 
-  # TODO: Active or Inactive
   def get_workflows(self, limit, pagination: bool = True, api_key: str = "", active: bool = False):
     if not api_key:
       raise ValueError('api_key is required')
@@ -98,6 +98,20 @@ class Flows():
 
   # TODO: activate and disactivate workflows
 
+  def switch_workflow(self, id, api_key: str = "", activate: 'str' = 'True'):
+    if not api_key:
+      raise ValueError('api_key is required')
+    headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
+    if activate == "True" or activate == "true":
+      url = self.url + f"/api/v1/workflows/{id}/activate"
+    else:
+      url = self.url + f"/api/v1/workflows/{id}/deactivate"
+    response = requests.post(url, headers=headers, timeout=8)
+    result = response.json()
+    # if result.get('message'):
+    #   raise Exception(result.get('message'))
+    return result
+
   # Making this so it can be synchronous so that OpenAi API can call it.
   # TODO: Status update on ID, running/done/error
   # Todo: Before running, check if it is active by fetching the latest execution, increment if necessary and then run the flow.
@@ -110,12 +124,17 @@ class Flows():
   def main_flow(self, hook: str, api_key: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
-    workflows = self.get_workflows(limit=20)
-    id = workflows[0]['id'] + 1
+    workflows = self.get_workflows(limit=1)
+    if len(self.flows) > 0:
+      id = self.flows[-1] + 1
+    else:
+      id = workflows[0]['id'] + 1
     self.flows.append(id)
     self.execute_flow(hook)
     executions = self.get_executions(20, id, True, api_key)
     while id not in executions:
-      executions = self.get_executions(20, id, True, api_key)
+      executions = self.get_executions(10, id, True, api_key)
+      time.sleep(1)
+    self.flows.remove(id)
 
-    return self.get_data(id)
+    return self.get_executions(1, id, False, api_key)

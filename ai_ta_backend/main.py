@@ -727,5 +727,35 @@ def get_all_workflows() -> Response:
       abort(401, description=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
 
 
+@app.route('/switch_workflow', methods=['GET'])
+def switch_workflow() -> Response:
+  """
+  Get all workflows from user.
+  """
+
+  api_key = request.args.get('api_key', default='', type=str)
+  activate = request.args.get('activate', default='', type=str)
+  id = request.args.get('id', default='', type=str)
+
+  print(request.args)
+
+  if api_key == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`")
+
+  flows = Flows()
+  try:
+    print("activation!!!!!!!!!!!", activate)
+    response = flows.switch_workflow(id, api_key, activate)
+    response = jsonify(response)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+  except Exception as e:
+    if e == "Unauthorized":
+      abort(401, description=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
+    else:
+      abort(400, description=f"Bad request: {e}")
+
+
 if __name__ == '__main__':
   app.run(debug=True, port=int(os.getenv("PORT", default=8000)))  # nosec -- reasonable bandit error suppression
