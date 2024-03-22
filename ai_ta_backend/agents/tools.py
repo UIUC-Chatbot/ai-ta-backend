@@ -30,10 +30,15 @@ def get_tools(langsmith_run_id: str, sync=True):
 
   # CODE EXECUTION - langsmith_run_id as unique identifier for the sandbox
   code_execution_class = E2B_class(langsmith_run_id=langsmith_run_id)
-  e2b_code_execution_tool = StructuredTool.from_function(
+  e2b_python_execution_tool = StructuredTool.from_function(
       func=code_execution_class.run_python_code,
       name="Python-Code-Execution",
       description="Executes Python3 code in an safe Docker container.",
+  )
+  e2b_r_execution_tool = StructuredTool.from_function(
+      func=code_execution_class.run_r_code,
+      name="R-Code-Execution",
+      description="Executes R code in an safe Docker container.",
   )
   e2b_shell_tool = StructuredTool.from_function(
       func=code_execution_class.run_shell,
@@ -120,8 +125,7 @@ def get_tools(langsmith_run_id: str, sync=True):
   # Probably unnecessary: WikipediaQueryRun, WolframAlphaQueryRun, PubmedQueryRun, ArxivQueryRun
   # arxiv_tool = ArxivQueryRun()
 
-  tools: list[BaseTool] = github_tools + search + docs_tools + [e2b_code_execution_tool, e2b_shell_tool
-                                                               ]  # browser_tools +
+  tools: list[BaseTool] = github_tools + search + docs_tools + [e2b_python_execution_tool, e2b_r_execution_tool, e2b_shell_tool]   # browser_tools +
   return tools
 
 

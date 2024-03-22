@@ -10,9 +10,10 @@ from e2b.api.v1.client.exceptions import ForbiddenException
 
 class E2B_class():
   """
-  Two main entrypoints: 
+  Main entrypoints:
   1. run_python_code(code)
-  2. run_shell(shell_command)
+  2. run_r_code(code)
+  3. run_shell(shell_command)
   """
 
   def __init__(self, langsmith_run_id: str, env_vars: Optional[EnvVars] = None):
@@ -50,7 +51,12 @@ class E2B_class():
       print("Failed to close e2b sandbox, probably fine.")
 
   def install_base_packages(self):
-    #self.run_shell("pip install -U numpy pandas matplotlib seaborn scikit-learn scipy")
+    self.install_r_packages()
+
+  def install_python_packages(self):
+    self.run_shell("pip install -U numpy pandas matplotlib seaborn scikit-learn scipy")
+
+  def install_r_packages(self):
     self.run_shell("sudo apt-get install r-base r-base-dev -y")
 
   def run_python_code(self, code: str):
