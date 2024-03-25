@@ -494,7 +494,6 @@ def create_document_map(course_name: str):
              # log project info to supabase
             project = AtlasProject(name=project_name, add_datums_if_exists=True)
             project_id = project.id
-            print("Last id: ", final_df['id'].iloc[-1])
             last_id = int(final_df['id'].iloc[-1])
             project_info = {'course_name': course_name, 'doc_map_id': project_id, 'last_uploaded_doc_id': last_id}
             update_response = supabase_client.table("projects").insert(project_info).execute()
@@ -510,7 +509,6 @@ def create_document_map(course_name: str):
             # update the last uploaded id in supabase
             last_id = int(final_df['id'].iloc[-1])
             info = {'last_uploaded_doc_id': last_id}
-            print("info:", info)
             update_response = supabase_client.table("projects").update(info).eq("course_name", course_name).execute()
             print("Response from supabase: ", update_response)
         
@@ -543,7 +541,7 @@ def create_document_map(course_name: str):
         print("project_info: ", project_info)
         update_response = supabase_client.table("projects").update(project_info).eq("course_name", course_name).execute()
         print("Response from supabase: ", update_response)
-      print("Atlas upload status: ", result)
+      
 
     # rebuild the map
     rebuild_map(course_name, "document")
@@ -625,10 +623,11 @@ def log_to_document_map(course_name: str):
     total_doc_count = response.count
     current_doc_count = 0
     combined_dfs = []
-
+    doc_count = 0
+    first_id = last_uploaded_doc_id
     while current_doc_count < total_doc_count:
       # fetch all records from supabase greater than last_uploaded_doc_id
-      response = SUPABASE_CLIENT.table("documents").select("id, created_at, s3_path, url, base_url, readable_filename, contexts").eq("course_name", course_name).gt("id", last_uploaded_doc_id).limit(25).execute()
+      response = SUPABASE_CLIENT.table("documents").select("id, created_at, s3_path, url, base_url, readable_filename, contexts").eq("course_name", course_name).gt("id", first_id).limit(25).execute()
       df = pd.DataFrame(response.data)
       combined_dfs.append(df)  # list of dfs
 
@@ -649,14 +648,13 @@ def log_to_document_map(course_name: str):
           # update the last uploaded id in supabase
           last_id = int(final_df['id'].iloc[-1])
           info = {'last_uploaded_doc_id': last_id}
-          print("info:", info)
           update_response = SUPABASE_CLIENT.table("projects").update(info).eq("course_name", course_name).execute()
           print("Response from supabase: ", update_response)
                 
         # reset variables
         combined_dfs = []
         doc_count = 0
-        print("Records uploaded: ", curr_total_doc_count)
+        print("Records uploaded: ", current_doc_count)
             
       # set first_id for next iteration
       first_id = response.data[-1]['id'] + 1
@@ -672,7 +670,6 @@ def log_to_document_map(course_name: str):
         # update the last uploaded id in supabase
         last_id = int(final_df['id'].iloc[-1])
         project_info = {'last_uploaded_doc_id': last_id}
-        print("project_info: ", project_info)
         update_response = SUPABASE_CLIENT.table("projects").update(project_info).eq("course_name", course_name).execute()
         print("Response from supabase: ", update_response)
             
