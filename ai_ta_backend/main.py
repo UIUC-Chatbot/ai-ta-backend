@@ -197,6 +197,20 @@ def createDocumentMap(service: NomicService):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/createConversationMap', methods=['GET'])
+def createConversationMap(service: NomicService):
+  course_name: str = request.args.get('course_name', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  map_id = service.create_conversation_map(course_name)
+
+  response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/onResponseCompletion', methods=['POST'])
 def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):

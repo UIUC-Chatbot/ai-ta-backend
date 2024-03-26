@@ -15,6 +15,8 @@ SUPABASE_CLIENT = supabase.create_client(  # type: ignore
     supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
     supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
 
+NOMIC_MAP_NAME_PREFIX = 'Document Map for '
+
 ## -------------------------------- DOCUMENT MAP FUNCTIONS --------------------------------- ##
 
 def create_document_map(course_name: str):
@@ -33,21 +35,15 @@ def create_document_map(course_name: str):
   """
   print("in create_document_map()")
   nomic.login(os.getenv('NOMIC_API_KEY'))
-  NOMIC_MAP_NAME_PREFIX = 'Document Map for '
-
-  # initialize supabase
-  supabase_client = supabase.create_client(  # type: ignore
-      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
-
+ 
   try:
     # check if map exists
-    response = supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
+    response = SUPABASE_CLIENT.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
     if response.data:
       return "Map already exists for this course."
 
     # fetch relevant document data from Supabase
-    response = supabase_client.table("documents").select("id",
+    response = SUPABASE_CLIENT.table("documents").select("id",
                                                          count="exact").eq("course_name",
                                                                            course_name).order('id',
                                                                                               desc=False).execute()
@@ -71,7 +67,7 @@ def create_document_map(course_name: str):
     # iteratively query in batches of 25
     while curr_total_doc_count < total_doc_count:
       
-      response = supabase_client.table("documents").select(
+      response = SUPABASE_CLIENT.table("documents").select(
             "id, created_at, s3_path, url, base_url, readable_filename, contexts").eq("course_name", course_name).gte(
                 'id', first_id).order('id', desc=False).limit(25).execute()
       df = pd.DataFrame(response.data)
@@ -105,7 +101,7 @@ def create_document_map(course_name: str):
             project_id = project.id
             last_id = int(final_df['id'].iloc[-1])
             project_info = {'course_name': course_name, 'doc_map_id': project_id, 'last_uploaded_doc_id': last_id}
-            update_response = supabase_client.table("projects").insert(project_info).execute()
+            update_response = SUPABASE_CLIENT.table("projects").insert(project_info).execute()
             print("Response from supabase: ", update_response)
 
         else:
@@ -118,7 +114,7 @@ def create_document_map(course_name: str):
             # update the last uploaded id in supabase
             last_id = int(final_df['id'].iloc[-1])
             info = {'last_uploaded_doc_id': last_id}
-            update_response = supabase_client.table("projects").update(info).eq("course_name", course_name).execute()
+            update_response = SUPABASE_CLIENT.table("projects").update(info).eq("course_name", course_name).execute()
             print("Response from supabase: ", update_response)
         
         # reset variables
@@ -148,7 +144,7 @@ def create_document_map(course_name: str):
         last_id = int(final_df['id'].iloc[-1])
         project_info = {'last_uploaded_doc_id': last_id}
         print("project_info: ", project_info)
-        update_response = supabase_client.table("projects").update(project_info).eq("course_name", course_name).execute()
+        update_response = SUPABASE_CLIENT.table("projects").update(project_info).eq("course_name", course_name).execute()
         print("Response from supabase: ", update_response)
       
 

@@ -73,9 +73,14 @@ class SQLDatabase:
 
     return response
 
-  def getAllConversationsBetweenIds(self, course_name: str, first_id: int, last_id: int):
-    return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
-        'id', first_id).lte('id', last_id).order('id', desc=False).limit(25).execute()
+  def getAllConversationsBetweenIds(self, course_name: str, first_id: int, last_id: int, limit: int = 50):
+    if last_id == 0:
+      return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
+          'id', first_id).order('id', desc=False).limit(limit).execute()
+    else:
+      return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
+          'id', first_id).lte('id', last_id).order('id', desc=False).limit(limit).execute()
+    
 
   def getDocsForIdsGte(self, course_name: str, first_id: int, fields: str = "*", limit: int = 100):
     return self.supabase_client.table("documents").select(fields).eq("course_name", course_name).gte(
@@ -86,3 +91,12 @@ class SQLDatabase:
 
   def getAllFromLLMConvoMonitor(self, course_name: str):
     return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
+  
+  def getCountFromLLMConvoMonitor(self, course_name: str):
+    return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).execute()
+  
+  def getDocMapFromProjects(self, course_name: str):
+    return self.supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
+  
+  def getConvoMapFromProjects(self, course_name: str):
+    return self.supabase_client.table("projects").select("convo_map_id").eq("course_name", course_name).execute()
