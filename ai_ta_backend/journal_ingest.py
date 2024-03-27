@@ -148,6 +148,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
     
     main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY)
     print("Full URL: ", main_url)
+    exit()
     
     response = requests.get(main_url, headers=headers)
     print("Status: ", response.status_code)
@@ -457,7 +458,7 @@ def searchScienceDirectArticles(course_name: str, search_str: str, article_title
             "openAccess": True
         },
         "display": {
-            "offset": 810,
+            "offset": 0,
             "show": 10
         }
     }
@@ -584,6 +585,8 @@ def downloadPubmedArticles(id, course_name, **kwargs):
     while resumption is not None: # download current articles and query 
         # parse xml response and extract pdf links and other metadata
         records = extract_record_data(xml_response.text)
+        # add a check here for license and download only CC articles
+
         #print("Total records: ", len(records))
         if len(records) > 0:
             # download articles
@@ -599,6 +602,8 @@ def downloadPubmedArticles(id, course_name, **kwargs):
 
     # download current articles if resumption is None
     records = extract_record_data(xml_response.text)
+    # add a check here for license and download only CC articles
+
     #print("Current total records: ", len(records))
     if len(records) > 0:
         # download articles
@@ -803,7 +808,7 @@ def extract_record_data(xml_string):
             "license": license,
             "href": href
         })
-
+    print("Extracted data: ", extracted_data)
     return extracted_data
     
 
@@ -830,23 +835,34 @@ def downloadFromFTP(paths, local_dir, ftp_address):
         local_file = os.path.join(local_dir, filename)
         with open(local_file, 'wb') as f:
             ftp.retrbinary("RETR " + ftp_path, f.write)
-        #print("Downloaded: ", filename)
+        print("Downloaded: ", filename)
+    
+    # for path in paths:
+    #     ftp_url = urlparse(path['href'])
+    #     ftp_path = ftp_url.path[1:]
+    #     #print("Downloading from FTP path: ", ftp_path)
 
-        # if filename ends in tar.gz, extract the pdf and delete the tar.gz
-        if filename.endswith(".tar.gz"):
-            extracted_pdf = extract_pdf(local_file)
-            #print("Extracted PDF: ", extracted_pdf)
+    #     filename = ftp_path.split('/')[-1]
+    #     local_file = os.path.join(local_dir, filename)
+    #     with open(local_file, 'wb') as f:
+    #         ftp.retrbinary("RETR " + ftp_path, f.write)
+    #     #print("Downloaded: ", filename)
 
-            filename = os.path.basename(filename)
-            new_pdf_name = filename.replace('.tar.gz', '.pdf')
+    #     # if filename ends in tar.gz, extract the pdf and delete the tar.gz
+    #     if filename.endswith(".tar.gz"):
+    #         extracted_pdf = extract_pdf(local_file)
+    #         #print("Extracted PDF: ", extracted_pdf)
+
+    #         filename = os.path.basename(filename)
+    #         new_pdf_name = filename.replace('.tar.gz', '.pdf')
             
-            new_pdf_path = os.path.join(local_dir, new_pdf_name)
-            old_pdf_path = os.path.join(local_dir, extracted_pdf)
-            os.rename(old_pdf_path, new_pdf_path)
+    #         new_pdf_path = os.path.join(local_dir, new_pdf_name)
+    #         old_pdf_path = os.path.join(local_dir, extracted_pdf)
+    #         os.rename(old_pdf_path, new_pdf_path)
 
-            # delete the tar.gz file
-            os.remove(local_file)
-            os.remove(old_pdf_path)
+    #         # delete the tar.gz file
+    #         os.remove(local_file)
+    #         os.remove(old_pdf_path)
 
     ftp.quit()
     return "success"
