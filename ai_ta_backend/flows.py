@@ -2,6 +2,7 @@ import requests
 import time
 import os
 import supabase
+from urllib.parse import quote
 
 
 class Flows():
@@ -26,7 +27,7 @@ class Flows():
       all_users.append(data['data'])
       cursor = data.get('nextCursor')
       while cursor is not None:
-        url = self.url + '/api/v1/users?limit=%s&cursor=%s&includeRole=true' % (str(limit), cursor)
+        url = self.url + '/api/v1/users?limit=%s&cursor=%s&includeRole=true' % (str(limit), quote(cursor))
         response = requests.get(url, headers=headers, timeout=8)
         data = response.json()
         all_users.append(data['data'])
@@ -57,25 +58,25 @@ class Flows():
       all_executions.append(executions['data'])
       cursor = executions.get('nextCursor')
       while cursor is not None:
-        url = f'self.url+/api/v1/executions?includeData=true&status=success&limit={str(limit)}&cursor={cursor}'
+        url = self.url + f'/api/v1/executions?includeData=true&status=success&limit={str(limit)}&cursor={quote(cursor)}'
         response = requests.get(url, headers=headers, timeout=8)
         executions = response.json()
         all_executions.append(executions['data'])
         cursor = executions.get('nextCursor')
         if id:
           for execution in all_executions:
-            if execution[0]['workflowId'] == id:
+            if execution[0]['id'] == id:
               return execution
 
     if id:
       for execution in executions['data']:
-        if execution['workflowId'] == id:
+        if execution['id'] == id:
           return execution
     else:
       return all_executions
 
   def get_hook(self, name: str, api_key: str = ""):
-    work_flow = self.get_workflows(1, api_key=api_key, workflow_name=name)
+    work_flow = self.get_workflows(limit=100, api_key=api_key, workflow_name=name)
     for node in work_flow.get('nodes'):  # type: ignore
       if node['name'] == 'Webhook':
         return node['webhookId']
@@ -105,7 +106,7 @@ class Flows():
       all_workflows.append(workflows['data'])
       cursor = workflows.get('nextCursor')
       while cursor is not None:
-        url = self.url + f"/api/v1/workflows?limit={limit}&cursor={cursor}"
+        url = self.url + f"/api/v1/workflows?limit={limit}&cursor={quote(cursor)}"
         response = requests.get(url, headers=headers, timeout=8)
         workflows = response.json()
         all_workflows.append(workflows['data'])
@@ -148,9 +149,10 @@ class Flows():
   def main_flow(self, name: str, api_key: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
-    workflows = self.get_workflows(limit=1)
+    execution = self.get_executions(limit=1, api_key=api_key)
     hookId = self.get_hook(name, api_key)
-    hook = self.url + f"/webhook-test/{hookId}"
+    hook = self.url + f"/webhook/{hookId}"
+    print("Hook!!!: ", hook)
 
     response = self.supabase_client.table('n8n_api_keys').select("*").execute()
 
@@ -160,15 +162,31 @@ class Flows():
 
     if len(ids) > 0:
       id = max(ids) + 1
+      print("Execution found in supabase: ", id)
     else:
-      id = workflows[0]['id'] + 1
+      if execution:
+        id = int(execution[0][0]['id']) + 1
+        print("Execution found through n8n: ", id)
+      else:
+        raise Exception('No executions found')
+    id = str(id)
 
     self.supabase_client.table('n8n_api_keys').insert({"id": id}).execute()
-    self.execute_flow(hook)
-    executions = self.get_executions(20, id, True, api_key)
-    while id not in executions:
-      executions = self.get_executions(10, id, True, api_key)
-      time.sleep(1)
+    try:
+      self.execute_flow(hook, api_key)
+      print("Executed")
+      executions = self.get_executions(20, id, True, api_key)
+      print("Got executions", executions)
+      while executions is None:
+        executions = self.get_executions(1, id, True, api_key)
+        print("Executions: ", executions)
+        print("Can't find id in executions")
+        time.sleep(1)
+    except Exception as e:
+      self.supabase_client.table('n8n_api_keys').delete().eq('id', id).execute()
+      return {"error": str(e)}
+    print("Found id in executions ")
     self.supabase_client.table('n8n_api_keys').delete().eq('id', id).execute()
-
-    return self.get_executions(1, id, False, api_key)
+    print("Deleted id")
+    print("Returning")
+    return executions
