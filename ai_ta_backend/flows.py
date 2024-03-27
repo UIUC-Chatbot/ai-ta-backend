@@ -35,20 +35,25 @@ class Flows():
 
     return all_users
 
-  def execute_flow(self, hook: str, api_key: str = ""):
+  def execute_flow(self, hook: str, api_key: str = "", post: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = hook
-    response = requests.get(url, headers=headers, timeout=8)
-    body = response.content
-    return body.decode('utf-8')
+    if post:
+      response = requests.post(url, headers=headers, json=post, timeout=8)
+    else:
+      response = requests.get(url, headers=headers, timeout=8)
+    body = response.json()
+    if not response.ok:
+      raise Exception(f"Error: {response.status_code} \n Message: {body['message']} \n Hint: {body['hint']}")
+    pass
 
   def get_executions(self, limit, id=None, pagination: bool = True, api_key: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
-    url = self.url + f"/api/v1/executions?includeData=true&status=success&limit={limit}"
+    url = self.url + f"/api/v1/executions?includeData=true&limit={limit}"
     response = requests.get(url, headers=headers, timeout=8)
     executions = response.json()
     if not pagination:
@@ -58,13 +63,14 @@ class Flows():
       all_executions.append(executions['data'])
       cursor = executions.get('nextCursor')
       while cursor is not None:
-        url = self.url + f'/api/v1/executions?includeData=true&status=success&limit={str(limit)}&cursor={quote(cursor)}'
+        url = self.url + f'/api/v1/executions?includeData=true&limit={str(limit)}&cursor={quote(cursor)}'
         response = requests.get(url, headers=headers, timeout=8)
         executions = response.json()
         all_executions.append(executions['data'])
         cursor = executions.get('nextCursor')
         if id:
           for execution in all_executions:
+            print(execution[0]['id'], ":ID:")
             if execution[0]['id'] == id:
               return execution
 
@@ -149,12 +155,20 @@ class Flows():
   def main_flow(self, name: str, api_key: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
+    print("Starting")
     execution = self.get_executions(limit=1, api_key=api_key)
+    print("Got executions")
     hookId = self.get_hook(name, api_key)
     hook = self.url + f"/webhook/{hookId}"
     print("Hook!!!: ", hook)
 
     response = self.supabase_client.table('n8n_api_keys').select("*").execute()
+    print("Got response")
+    workflow = self.get_workflows(limit=100, api_key=api_key, workflow_name=name)
+    print("Got workflow")
+    print(workflow)
+    workflow_post = workflow['nodes'][0]['parameters'].get('httpMethod')  # type: ignore
+    print("Got workflow post")
 
     ids = []
     for row in dict(response)['data']:
@@ -171,9 +185,9 @@ class Flows():
         raise Exception('No executions found')
     id = str(id)
 
-    self.supabase_client.table('n8n_api_keys').insert({"id": id}).execute()
     try:
-      self.execute_flow(hook, api_key)
+      self.supabase_client.table('n8n_api_keys').insert({"id": id}).execute()
+      self.execute_flow(hook, api_key, workflow_post)
       print("Executed")
       executions = self.get_executions(20, id, True, api_key)
       print("Got executions", executions)
@@ -182,11 +196,11 @@ class Flows():
         print("Executions: ", executions)
         print("Can't find id in executions")
         time.sleep(1)
+      print("Found id in executions ")
+      self.supabase_client.table('n8n_api_keys').delete().eq('id', id).execute()
+      print("Deleted id")
+      print("Returning")
     except Exception as e:
       self.supabase_client.table('n8n_api_keys').delete().eq('id', id).execute()
       return {"error": str(e)}
-    print("Found id in executions ")
-    self.supabase_client.table('n8n_api_keys').delete().eq('id', id).execute()
-    print("Deleted id")
-    print("Returning")
     return executions
