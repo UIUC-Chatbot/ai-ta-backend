@@ -1,5 +1,7 @@
 import requests
 import time
+import os
+import supabase
 
 
 class Flows():
@@ -7,6 +9,8 @@ class Flows():
   def __init__(self):
     self.flows = []
     self.url = "https://primary-production-1817.up.railway.app"
+    self.supabase_client = supabase.create_client(  # type: ignore
+        supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
 
   def get_users(self, limit: int = 50, pagination: bool = True, api_key: str = ""):
     if not api_key:
@@ -70,7 +74,19 @@ class Flows():
     else:
       return all_executions
 
-  def get_workflows(self, limit, pagination: bool = True, api_key: str = "", active: bool = False):
+  def get_hook(self, name: str, api_key: str = ""):
+    work_flow = self.get_workflows(1, api_key=api_key, workflow_name=name)
+    for node in work_flow.get('nodes'):  # type: ignore
+      if node['name'] == 'Webhook':
+        return node['webhookId']
+    pass
+
+  def get_workflows(self,
+                    limit,
+                    pagination: bool = True,
+                    api_key: str = "",
+                    active: bool = False,
+                    workflow_name: str = ''):
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
@@ -94,6 +110,13 @@ class Flows():
         workflows = response.json()
         all_workflows.append(workflows['data'])
         cursor = workflows.get('nextCursor')
+
+    if workflow_name:
+      for workflow in all_workflows[0]:
+        if workflow['name'] == workflow_name:
+          return workflow
+      else:
+        raise Exception('Workflow not found')
     return all_workflows
 
   # TODO: activate and disactivate workflows
@@ -121,20 +144,31 @@ class Flows():
   def get_data(self, id):
     self.get_executions(20, id)
 
-  def main_flow(self, hook: str, api_key: str = ""):
+  # TODO: Make the list of flows through supabase
+  def main_flow(self, name: str, api_key: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
     workflows = self.get_workflows(limit=1)
-    if len(self.flows) > 0:
-      id = self.flows[-1] + 1
+    hookId = self.get_hook(name, api_key)
+    hook = self.url + f"/webhook-test/{hookId}"
+
+    response = self.supabase_client.table('n8n_api_keys').select("*").execute()
+
+    ids = []
+    for row in dict(response)['data']:
+      ids.append(row['id'])
+
+    if len(ids) > 0:
+      id = max(ids) + 1
     else:
       id = workflows[0]['id'] + 1
-    self.flows.append(id)
+
+    self.supabase_client.table('n8n_api_keys').insert({"id": id}).execute()
     self.execute_flow(hook)
     executions = self.get_executions(20, id, True, api_key)
     while id not in executions:
       executions = self.get_executions(10, id, True, api_key)
       time.sleep(1)
-    self.flows.remove(id)
+    self.supabase_client.table('n8n_api_keys').delete().eq('id', id).execute()
 
     return self.get_executions(1, id, False, api_key)

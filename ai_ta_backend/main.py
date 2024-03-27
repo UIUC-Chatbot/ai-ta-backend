@@ -710,6 +710,7 @@ def get_all_workflows() -> Response:
   limit = request.args.get('limit', default=100, type=int)
   pagination = request.args.get('pagination', default=True, type=bool)
   active = request.args.get('active', default=False, type=bool)
+  name = request.args.get('workflow_name', default='', type=str)
   print(request.args)
 
   if api_key == '':
@@ -718,7 +719,7 @@ def get_all_workflows() -> Response:
 
   flows = Flows()
   try:
-    response = flows.get_workflows(limit, pagination, api_key, active)
+    response = flows.get_workflows(limit, pagination, api_key, active, name)
     response = jsonify(response)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
