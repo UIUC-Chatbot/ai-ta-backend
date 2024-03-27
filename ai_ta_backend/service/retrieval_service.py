@@ -53,7 +53,11 @@ class RetrievalService:
         openai_api_type=os.environ['OPENAI_API_TYPE'],
     )
 
-  def getTopContexts(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
+  def getTopContexts(self,
+                     search_query: str,
+                     course_name: str,
+                     token_limit: int = 4_000,
+                     doc_groups: List[str] = []) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
         /GET arguments
@@ -67,7 +71,9 @@ class RetrievalService:
     try:
       start_time_overall = time.monotonic()
 
-      found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name)
+      found_docs: list[Document] = self.vector_search(search_query=search_query,
+                                                      course_name=course_name,
+                                                      doc_groups=doc_groups)
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
@@ -339,7 +345,7 @@ class RetrievalService:
       print(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
       self.sentry.capture_exception(e)
 
-  def vector_search(self, search_query, course_name):
+  def vector_search(self, search_query, course_name, doc_groups: List[str] = []):
     top_n = 80
     # EMBED
     openai_start_time = time.monotonic()
@@ -352,10 +358,11 @@ class RetrievalService:
         properties={
             "user_query": search_query,
             "course_name": course_name,
+            "doc_groups": doc_groups,
         },
     )
     qdrant_start_time = time.monotonic()
-    search_results = self.vdb.vector_search(search_query, course_name, user_query_embedding, top_n)
+    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n)
 
     found_docs: list[Document] = []
     for d in search_results:

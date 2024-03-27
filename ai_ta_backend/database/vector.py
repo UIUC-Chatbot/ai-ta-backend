@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -28,13 +29,16 @@ class VectorDatabase():
                               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
                               embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE))
 
-  def vector_search(self, search_query, course_name, user_query_embedding, top_n):
+  def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n):
     """
     Search the vector database for a given query.
     """
-    myfilter = models.Filter(must=[
-        models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name)),
-    ])
+    must_conditions: List[models.Condition] = [
+        models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name))
+    ]
+    if doc_groups:
+      must_conditions.append(models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups)))
+    myfilter = models.Filter(must=must_conditions)
     search_results = self.qdrant_client.search(
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
         query_filter=myfilter,
