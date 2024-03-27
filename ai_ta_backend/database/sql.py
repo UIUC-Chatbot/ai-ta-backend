@@ -75,7 +75,7 @@ class SQLDatabase:
 
   def getAllConversationsBetweenIds(self, course_name: str, first_id: int, last_id: int, limit: int = 50):
     if last_id == 0:
-      return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
+      return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gt(
           'id', first_id).order('id', desc=False).limit(limit).execute()
     else:
       return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
@@ -100,3 +100,7 @@ class SQLDatabase:
   
   def getConvoMapFromProjects(self, course_name: str):
     return self.supabase_client.table("projects").select("convo_map_id").eq("course_name", course_name).execute()
+  
+  def updateProjects(self, course_name: str, data: dict):
+    return self.supabase_client.table("projects").update(data).eq("course_name", course_name).execute()
+  
