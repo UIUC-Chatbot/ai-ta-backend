@@ -766,6 +766,7 @@ def run_flow() -> Response:
 
   api_key = request.args.get('api_key', default='', type=str)
   name = request.args.get('name', default='', type=str)
+  data = request.args.get('data', default='', type=str)
 
   print(request.args)
 
@@ -775,7 +776,7 @@ def run_flow() -> Response:
 
   flows = Flows()
   try:
-    response = flows.main_flow(name, api_key)
+    response = flows.main_flow(name, api_key, data)
     response = jsonify(response)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response

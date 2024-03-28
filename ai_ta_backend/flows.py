@@ -3,6 +3,7 @@ import time
 import os
 import supabase
 from urllib.parse import quote
+import json
 
 
 class Flows():
@@ -35,13 +36,16 @@ class Flows():
 
     return all_users
 
-  def execute_flow(self, hook: str, api_key: str = "", post: str = ""):
+  def execute_flow(self, hook: str, api_key: str = "", post: str = "", data={}):
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = hook
     if post:
-      response = requests.post(url, headers=headers, json=post, timeout=8)
+      if data:
+        response = requests.post(url, headers=headers, json=post, timeout=8, data=data)
+      else:
+        response = requests.post(url, headers=headers, json=post, timeout=8)
     else:
       response = requests.get(url, headers=headers, timeout=8)
     body = response.json()
@@ -151,8 +155,8 @@ class Flows():
   def get_data(self, id):
     self.get_executions(20, id)
 
-  # TODO: Make the list of flows through supabase
-  def main_flow(self, name: str, api_key: str = ""):
+  # TODO: NEED to have keyword args for workflows like Pest Detection.
+  def main_flow(self, name: str, api_key: str = "", data: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
     print("Starting")
@@ -161,6 +165,11 @@ class Flows():
     hookId = self.get_hook(name, api_key)
     hook = self.url + f"/webhook/{hookId}"
     print("Hook!!!: ", hook)
+    print(data)
+    json_data = json.loads(data)
+    print("Data to json")
+    new_data = dict(json_data)
+    print("Got data to dictionary")
 
     response = self.supabase_client.table('n8n_api_keys').select("*").execute()
     print("Got response")
@@ -187,7 +196,7 @@ class Flows():
 
     try:
       self.supabase_client.table('n8n_api_keys').insert({"id": id}).execute()
-      self.execute_flow(hook, api_key, workflow_post)
+      self.execute_flow(hook, api_key, workflow_post, new_data)
       print("Executed")
       executions = self.get_executions(20, id, True, api_key)
       print("Got executions", executions)
