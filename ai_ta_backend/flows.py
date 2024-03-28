@@ -36,7 +36,7 @@ class Flows():
 
     return all_users
 
-  def execute_flow(self, hook: str, api_key: str = "", post: str = "", data={}):
+  def execute_flow(self, hook: str, api_key: str = "", post: str = "", data=None) -> None:
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
