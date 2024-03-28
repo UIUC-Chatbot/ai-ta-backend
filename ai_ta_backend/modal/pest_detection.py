@@ -98,8 +98,8 @@ class Model:
     image_urls = input.get('image_urls', [])
     print(f"Image URLS (no parsing): {image_urls}")
 
-    # image_urls = json.loads(image_urls)
-    # print(f"json parsed Image URLS: {image_urls}")
+    image_urls = json.loads(image_urls)
+    print(f"json parsed Image URLS: {image_urls}")
 
     try:
       # Run the plugin
