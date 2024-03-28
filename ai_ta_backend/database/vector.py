@@ -33,12 +33,14 @@ class VectorDatabase():
     """
     Search the vector database for a given query.
     """
-    must_conditions: List[models.Condition] = [
+    # print(f"Searching for: {search_query} with doc_groups: {doc_groups}")
+    must_conditions: list[models.Condition] = [
         models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name))
     ]
-    if doc_groups:
+    if doc_groups and doc_groups != []:
       must_conditions.append(models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups)))
     myfilter = models.Filter(must=must_conditions)
+    print(f"Filter: {myfilter}")
     search_results = self.qdrant_client.search(
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
         query_filter=myfilter,
