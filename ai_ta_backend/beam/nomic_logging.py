@@ -40,7 +40,8 @@ def create_document_map(course_name: str):
     # check if map exists
     response = SUPABASE_CLIENT.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
     if response.data:
-      return "Map already exists for this course."
+      if response.data[0]['doc_map_id']:
+        return "Map already exists for this course."
 
     # fetch relevant document data from Supabase
     response = SUPABASE_CLIENT.table("documents").select("id",

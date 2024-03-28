@@ -90,16 +90,19 @@ class SQLDatabase:
     return self.supabase_client.table("projects").insert(project_info).execute()
 
   def getAllFromLLMConvoMonitor(self, course_name: str):
-    return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).execute()
+    return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).order('id', desc=False).execute()
   
-  def getCountFromLLMConvoMonitor(self, course_name: str):
-    return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).execute()
+  def getCountFromLLMConvoMonitor(self, course_name: str, last_id: int):
+    if last_id == 0:
+      return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).order('id', desc=False).execute()
+    else:
+      return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).gt("id", last_id).order('id', desc=False).execute()
   
   def getDocMapFromProjects(self, course_name: str):
     return self.supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
   
   def getConvoMapFromProjects(self, course_name: str):
-    return self.supabase_client.table("projects").select("convo_map_id").eq("course_name", course_name).execute()
+    return self.supabase_client.table("projects").select("*").eq("course_name", course_name).execute()
   
   def updateProjects(self, course_name: str, data: dict):
     return self.supabase_client.table("projects").update(data).eq("course_name", course_name).execute()
