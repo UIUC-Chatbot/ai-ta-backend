@@ -102,8 +102,14 @@ def create_document_map(course_name: str):
             project_id = project.id
             last_id = int(final_df['id'].iloc[-1])
             project_info = {'course_name': course_name, 'doc_map_id': project_id, 'last_uploaded_doc_id': last_id}
-            update_response = SUPABASE_CLIENT.table("projects").insert(project_info).execute()
-            print("Response from supabase: ", update_response)
+            project_response = SUPABASE_CLIENT.table("projects").select("*").eq("course_name", course_name).execute()
+            if project_response.data:
+              update_response = SUPABASE_CLIENT.table("projects").update(project_info).eq("course_name", course_name).execute()
+              print("Response from supabase: ", update_response)
+            else:
+              insert_response = SUPABASE_CLIENT.table("projects").insert(project_info).execute()
+              print("Insert Response from supabase: ", insert_response)
+            
 
         else:
           # append to existing map
@@ -143,12 +149,19 @@ def create_document_map(course_name: str):
       if result == "success":
         # update the last uploaded id in supabase
         last_id = int(final_df['id'].iloc[-1])
-        project_info = {'last_uploaded_doc_id': last_id}
+        project = AtlasProject(name=project_name, add_datums_if_exists=True)
+        project_id = project.id
+        project_info = {'course_name': course_name, 'doc_map_id': project_id, 'last_uploaded_doc_id': last_id}
         print("project_info: ", project_info)
-        update_response = SUPABASE_CLIENT.table("projects").update(project_info).eq("course_name", course_name).execute()
-        print("Response from supabase: ", update_response)
-      
-
+        project_response = SUPABASE_CLIENT.table("projects").select("*").eq("course_name", course_name).execute()
+        if project_response.data:
+          update_response = SUPABASE_CLIENT.table("projects").update(project_info).eq("course_name", course_name).execute()
+          print("Response from supabase: ", update_response)
+        else:
+          insert_response = SUPABASE_CLIENT.table("projects").insert(project_info).execute()
+          print("Insert Response from supabase: ", insert_response)
+        
+  
     # rebuild the map
     rebuild_map(course_name, "document")
     
@@ -352,6 +365,8 @@ def data_prep_for_doc_map(df: pd.DataFrame):
     created_at = datetime.datetime.strptime(row['created_at'], "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
     if row['url'] == None:
       row['url'] = ""
+    if row['base_url'] == None:
+      row['base_url'] = ""
     # iterate through all contexts and create separate entries for each
     context_count = 0
     for context in row['contexts']:
