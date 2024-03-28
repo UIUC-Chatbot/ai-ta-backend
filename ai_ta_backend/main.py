@@ -214,7 +214,7 @@ def createConversationMap(service: NomicService):
   return response
 
 @app.route('/logToConversationMap', methods=['GET'])
-def logToConversationMap(service: NomicService):
+def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
   course_name: str = request.args.get('course_name', default='', type=str)
 
   if course_name == '':
@@ -222,6 +222,7 @@ def logToConversationMap(service: NomicService):
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   map_id = service.log_to_conversation_map(course_name)
+  #map_id = flaskExecutor.submit(service.log_to_conversation_map, course_name)
 
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -244,7 +245,8 @@ def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
   print(f"In /onResponseCompletion for course: {course_name}")
 
   # background execution of tasks!!
-  response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
+  #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
+  response = flaskExecutor.submit(service.log_to_conversation_map, course_name)
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
