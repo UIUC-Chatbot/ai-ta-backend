@@ -21,43 +21,6 @@ LOCK_EXCEPTIONS = [
 ]
 
 
-def giveup_hdlr(e):
-  """
-	Function to handle giveup conditions in backoff decorator
-	Args: 
-			e: Exception raised by the decorated function
-	Returns:
-			True if we want to stop retrying, False otherwise
-	"""
-  (e_args,) = e.args
-  e_str = e_args['exception']
-
-  print("giveup_hdlr() called with exception:", e_str)
-  if e_str in LOCK_EXCEPTIONS:
-    return False
-  else:
-    # self.sentry.capture_exception(e)
-    return True
-
-
-def backoff_hdlr(details):
-  """
-	Function to handle backup conditions in backoff decorator.
-	Currently just prints the details of the backoff.
-	"""
-  print(
-      "\nBacking off {wait:0.1f} seconds after {tries} tries, calling function {target} with args {args} and kwargs {kwargs}"
-      .format(**details))
-
-
-def backoff_strategy():
-  """
-	Function to define retry strategy. Is usualy defined in the decorator, 
-	but passing parameters to it is giving errors.
-	"""
-  return backoff.expo(base=10, factor=1.5)
-
-
 class NomicService():
 
   @inject
@@ -65,8 +28,6 @@ class NomicService():
     nomic.login(os.environ['NOMIC_API_KEY'])
     self.sentry = sentry
     self.sql = sql
-
-
 
   def get_nomic_map(self, course_name: str, type: str):
     """
@@ -101,6 +62,7 @@ class NomicService():
         print("ERROR in get_nomic_map():", e)
         self.sentry.capture_exception(e)
       return {"map_id": None, "map_link": None}
+
 
   def log_to_conversation_map(self, course_name: str, conversation):
     """
@@ -203,70 +165,76 @@ class NomicService():
     """
     print(f"in log_to_existing_conversation() for course: {course_name}")
 
-    conversation_id = conversation['id']
+    try:
+      conversation_id = conversation['id']
 
-    # fetch id from supabase
-    id_response = self.sql.getConversation(course_name, conversation_id)
-    if not id_response.data:
-      print("Conversation not found in Supabase.")
-      return "Conversation not found in Supabase."
+      # fetch id from supabase
+      id_response = self.sql.getConversation(course_name, conversation_id)
+      if not id_response.data:
+        print("Conversation not found in Supabase.")
+        return "Conversation not found in Supabase."
 
-    print("Conversation found in Supabase.")
-    print("Conversation ID: ", id_response)
+      print("Conversation found in Supabase.")
+      print("Conversation ID: ", id_response)
+      
+      project_name = 'Conversation Map for ' + course_name
+      project = AtlasProject(name=project_name, add_datums_if_exists=True)
+
+      prev_id = id_response.data[0]['id']
+      uploaded_data = project.get_data(ids=[prev_id]) 
+      prev_convo = uploaded_data[0]['conversation']
+
+      # update conversation
+      messages = conversation['messages']
+      messages_to_be_logged = messages[-2:]
+      
+      for message in messages_to_be_logged:
+        if message['role'] == 'user':
+          emoji = "🙋 "
+        else:
+          emoji = "🤖 "
+
+        if isinstance(message['content'], list):
+          text = message['content'][0]['text']
+        else:
+          text = message['content']
+
+        prev_convo += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
+      
+      # create embeddings of first query
+      embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
+                                          openai_api_base="https://api.openai.com/v1/",
+                                          openai_api_key=os.environ['VLADS_OPENAI_KEY'],
+                                          openai_api_version="2020-11-07")
+      embeddings = embeddings_model.embed_documents([uploaded_data[0]['first_query']])
+
+      # modified timestamp
+      current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+      uploaded_data[0]['conversation'] = prev_convo
+      uploaded_data[0]['modified_at'] = current_time
+
+      metadata = pd.DataFrame(uploaded_data)
+      embeddings = np.array(embeddings)
+
+      print("Metadata shape:", metadata.shape)
+      print("Embeddings shape:", embeddings.shape)
+
+      # deleting existing map
+      print("Deleting point from nomic:", project.delete_data([prev_id]))
+
+      # re-build map to reflect deletion
+      project.rebuild_maps()
+
+      # re-insert updated conversation
+      result = self.append_to_map(embeddings, metadata, project_name)
+      print("Result of appending to existing map:", result)
     
-    project_name = 'Conversation Map for ' + course_name
-    project = AtlasProject(name=project_name, add_datums_if_exists=True)
+      return "success"
 
-    prev_id = id_response.data[0]['id']
-    uploaded_data = project.get_data(ids=[prev_id]) 
-    prev_convo = uploaded_data[0]['conversation']
-
-    # update conversation
-    messages = conversation['messages']
-    messages_to_be_logged = messages[-2:]
-    
-    for message in messages_to_be_logged:
-      if message['role'] == 'user':
-        emoji = "🙋 "
-      else:
-        emoji = "🤖 "
-
-      if isinstance(message['content'], list):
-        text = message['content'][0]['text']
-      else:
-        text = message['content']
-
-      prev_convo += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
-    
-    # create embeddings of first query
-    embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
-                                        openai_api_base="https://api.openai.com/v1/",
-                                        openai_api_key=os.environ['VLADS_OPENAI_KEY'],
-                                        openai_api_version="2020-11-07")
-    embeddings = embeddings_model.embed_documents([uploaded_data[0]['first_query']])
-
-    # modified timestamp
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    uploaded_data[0]['conversation'] = prev_convo
-    uploaded_data[0]['modified_at'] = current_time
-
-    metadata = pd.DataFrame(uploaded_data)
-    embeddings = np.array(embeddings)
-
-    print("Metadata shape:", metadata.shape)
-    print("Embeddings shape:", embeddings.shape)
-
-    # deleting existing map
-    print("Deleting point from nomic:", project.delete_data([prev_id]))
-
-    # re-build map to reflect deletion
-    project.rebuild_maps()
-
-    # re-insert updated conversation
-    result = self.append_to_map(embeddings, metadata, project_name)
-    print("Result of appending to existing map:", result)
-   
-    return "success"
+    except Exception as e:
+      print("Error in log_to_existing_conversation():", e)
+      self.sentry.capture_exception(e)
+      return "Error in logging to existing conversation: {e}"
 
 
   def create_conversation_map(self, course_name: str):
@@ -495,78 +463,79 @@ class NomicService():
 		"""
     print("in data_prep_for_convo_map()")
 
-    metadata = []
-    embeddings = []
-    user_queries = []
+    try:
+      metadata = []
+      embeddings = []
+      user_queries = []
 
-    for _index, row in df.iterrows():
-      current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-      created_at = datetime.datetime.strptime(row['created_at'], "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
-      conversation_exists = False
-      conversation = ""
-      emoji = ""
+      for _index, row in df.iterrows():
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        created_at = datetime.datetime.strptime(row['created_at'], "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
+        conversation_exists = False
+        conversation = ""
+        emoji = ""
 
-      if row['user_email'] is None:
-        user_email = ""
-      else:
-        user_email = row['user_email']
-
-      messages = row['convo']['messages']
-
-      # some conversations include images, so the data structure is different
-      if isinstance(messages[0]['content'], list):
-        if 'text' in messages[0]['content'][0]:
-          first_message = messages[0]['content'][0]['text']
-          #print("First message:", first_message)
-      else:
-        first_message = messages[0]['content']
-      user_queries.append(first_message)
-
-      # construct metadata for multi-turn conversation
-      for message in messages:
-        if message['role'] == 'user':
-          emoji = "🙋 "
+        if row['user_email'] is None:
+          user_email = ""
         else:
-          emoji = "🤖 "
+          user_email = row['user_email']
 
-        if isinstance(message['content'], list):
+        messages = row['convo']['messages']
 
-          if 'text' in message['content'][0]:
-            text = message['content'][0]['text']
+        # some conversations include images, so the data structure is different
+        if isinstance(messages[0]['content'], list):
+          if 'text' in messages[0]['content'][0]:
+            first_message = messages[0]['content'][0]['text']
+            #print("First message:", first_message)
         else:
-          text = message['content']
+          first_message = messages[0]['content']
+        user_queries.append(first_message)
 
-        conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
+        # construct metadata for multi-turn conversation
+        for message in messages:
+          if message['role'] == 'user':
+            emoji = "🙋 "
+          else:
+            emoji = "🤖 "
 
-      meta_row = {
-          "course": row['course_name'],
-          "conversation": conversation,
-          "conversation_id": row['convo']['id'],
-          "id": row['id'],
-          "user_email": user_email,
-          "first_query": first_message,
-          "created_at": created_at,
-          "modified_at": current_time
-      }
-      #print("Metadata row:", meta_row)
-      metadata.append(meta_row)
+          if isinstance(message['content'], list):
 
-    embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
-                                        openai_api_base="https://api.openai.com/v1/",
-                                        openai_api_key=os.environ['VLADS_OPENAI_KEY'],
-                                        openai_api_version="2020-11-07")
-    embeddings = embeddings_model.embed_documents(user_queries)
+            if 'text' in message['content'][0]:
+              text = message['content'][0]['text']
+          else:
+            text = message['content']
 
-    metadata = pd.DataFrame(metadata)
-    embeddings = np.array(embeddings)
-    print("Metadata shape:", metadata.shape)
-    print("Embeddings shape:", embeddings.shape)
-    return embeddings, metadata
+          conversation += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
 
-    # except Exception as e:
-    #   print("Error in data_prep_for_convo_map():", e)
-    #   self.sentry.capture_exception(e)
-    #   return None, None
+        meta_row = {
+            "course": row['course_name'],
+            "conversation": conversation,
+            "conversation_id": row['convo']['id'],
+            "id": row['id'],
+            "user_email": user_email,
+            "first_query": first_message,
+            "created_at": created_at,
+            "modified_at": current_time
+        }
+        #print("Metadata row:", meta_row)
+        metadata.append(meta_row)
+
+      embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
+                                          openai_api_base="https://api.openai.com/v1/",
+                                          openai_api_key=os.environ['VLADS_OPENAI_KEY'],
+                                          openai_api_version="2020-11-07")
+      embeddings = embeddings_model.embed_documents(user_queries)
+
+      metadata = pd.DataFrame(metadata)
+      embeddings = np.array(embeddings)
+      print("Metadata shape:", metadata.shape)
+      print("Embeddings shape:", embeddings.shape)
+      return embeddings, metadata
+
+    except Exception as e:
+      print("Error in data_prep_for_convo_map():", e)
+      self.sentry.capture_exception(e)
+      return None, None
 
   def delete_from_document_map(self, project_id: str, ids: list):
     """
