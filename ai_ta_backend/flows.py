@@ -166,10 +166,13 @@ class Flows():
     hook = self.url + f"/webhook/{hookId}"
     print("Hook!!!: ", hook)
     print(data)
-    json_data = json.loads(data)
-    print("Data to json")
-    new_data = dict(json_data)
-    print("Got data to dictionary")
+    if data:
+      json_data = json.loads(data)
+      print("Data to json")
+      new_data = dict(json_data)
+      print("Got data to dictionary")
+    else:
+      new_data = None
 
     response = self.supabase_client.table('n8n_api_keys').select("*").execute()
     print("Got response")
