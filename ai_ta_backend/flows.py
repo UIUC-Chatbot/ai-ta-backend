@@ -36,7 +36,7 @@ class Flows():
 
     return all_users
 
-  def execute_flow(self, hook: str, data={'field-0': ''}) -> None:
+  def execute_flow(self, hook: str, data=None) -> None:
     if not data:
       data = {'field-0': ''}
     url = hook
