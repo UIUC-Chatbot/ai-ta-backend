@@ -136,7 +136,6 @@ class NomicService():
     if total_convo_count == 0:
       # log to an existing conversation
       existing_convo = self.log_to_existing_conversation(course_name, conversation)
-      
       return existing_convo
 
     first_id = last_uploaded_convo_id
@@ -191,6 +190,10 @@ class NomicService():
     # check if existing conversation
     existing_convo = self.log_to_existing_conversation(course_name, conversation)
 
+    if existing_convo != "success": # log to existing conversation rebuilds the map
+      # rebuild the map
+      self.rebuild_map(course_name, "conversation")
+
     return "success"
   
   
@@ -201,34 +204,27 @@ class NomicService():
     print(f"in log_to_existing_conversation() for course: {course_name}")
 
     conversation_id = conversation['id']
-    messages = conversation['messages']
+
+    # fetch id from supabase
+    id_response = self.sql.getConversation(course_name, conversation_id)
+    if not id_response.data:
+      print("Conversation not found in Supabase.")
+      return "Conversation not found in Supabase."
+
+    print("Conversation found in Supabase.")
+    print("Conversation ID: ", id_response)
+    
     project_name = 'Conversation Map for ' + course_name
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
 
-    print("map: ", project.maps[1])
-    map_metadata_df = project.maps[1].data.df  # type: ignore
-    map_embeddings_df = project.maps[1].embeddings.latent
+    prev_id = id_response.data[0]['id']
+    uploaded_data = project.get_data(ids=[prev_id]) 
+    prev_convo = uploaded_data[0]['conversation']
 
-    if conversation_id not in map_metadata_df.values:
-      return "This is not a follow-up question."
-    
-    # if conversation exists, fetch metadata and embeddings
-    prev_data = map_metadata_df[map_metadata_df['conversation_id'] == conversation_id]
-    prev_index = prev_data.index.values[0]
-    embeddings = map_embeddings_df[prev_index - 1].reshape(1, 1536)
-    prev_convo = prev_data['conversation'].values[0]
-    prev_id = prev_data['id'].values[0]
-    print("previous id: ", prev_id)
-    created_at = pd.to_datetime(prev_data['created_at'].values[0]).strftime('%Y-%m-%d %H:%M:%S')
-
-    # delete that convo data point from Nomic, and print result
-    print("Deleting point from nomic:", project.delete_data([str(prev_id)]))
-
-    # re-insert updated conversation
-    first_message = prev_convo.split("\n")[1].split(": ")[1]
-
-    # select the last 2 messages from incoming conversation (user + model responses) and append them to existing conversation
+    # update conversation
+    messages = conversation['messages']
     messages_to_be_logged = messages[-2:]
+    
     for message in messages_to_be_logged:
       if message['role'] == 'user':
         emoji = "🙋 "
@@ -242,32 +238,34 @@ class NomicService():
 
       prev_convo += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
     
+    # create embeddings of first query
+    embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
+                                        openai_api_base="https://api.openai.com/v1/",
+                                        openai_api_key=os.environ['VLADS_OPENAI_KEY'],
+                                        openai_api_version="2020-11-07")
+    embeddings = embeddings_model.embed_documents([uploaded_data[0]['first_query']])
+
     # modified timestamp
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    uploaded_data[0]['conversation'] = prev_convo
+    uploaded_data[0]['modified_at'] = current_time
 
-    if 'user_email' not in conversation:
-      user_email = "NULL"
-    else:
-      user_email = conversation['user_email']
+    metadata = pd.DataFrame(uploaded_data)
+    embeddings = np.array(embeddings)
 
-    # update metadata
-    metadata = [{
-      "course": course_name,
-      "conversation": prev_convo,
-      "conversation_id": conversation_id,
-      "id": prev_id,
-      "user_email": user_email,
-      "first_query": first_message,
-      "created_at": created_at,
-      "modified_at": current_time
-    }]
-    print("Metadata for existing conversation: ", metadata)
-    
-    # append to existing map
-    metadata = pd.DataFrame(metadata)
+    print("Metadata shape:", metadata.shape)
+    print("Embeddings shape:", embeddings.shape)
+
+    # deleting existing map
+    print("Deleting point from nomic:", project.delete_data([prev_id]))
+
+    # re-build map to reflect deletion
+    project.rebuild_maps()
+
+    # re-insert updated conversation
     result = self.append_to_map(embeddings, metadata, project_name)
     print("Result of appending to existing map:", result)
-
+   
     return "success"
 
 
