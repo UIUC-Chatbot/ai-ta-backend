@@ -620,13 +620,10 @@ class NomicService():
       #print("Metadata row:", meta_row)
       metadata.append(meta_row)
 
-    embeddings_model = OpenAIEmbeddings(
-        model='text-embedding-ada-002',
-        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        openai_api_type=os.environ['OPENAI_API_TYPE'],
-        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        openai_api_version=os.environ["OPENAI_API_VERSION"],
-    )
+    embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
+                                        openai_api_base="https://api.openai.com/v1/",
+                                        openai_api_key=os.environ['VLADS_OPENAI_KEY'],
+                                        openai_api_version="2020-11-07")
     embeddings = embeddings_model.embed_documents(user_queries)
 
     metadata = pd.DataFrame(metadata)
