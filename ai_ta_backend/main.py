@@ -38,6 +38,8 @@ from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 
+from ai_ta_backend.beam.nomic_logging import create_document_map
+
 app = Flask(__name__)
 CORS(app)
 executor = Executor(app)
@@ -191,7 +193,36 @@ def createDocumentMap(service: NomicService):
     # proper web error "400 Bad request"
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  map_id = service.create_document_map(course_name)
+  map_id = create_document_map(course_name)
+
+  response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/createConversationMap', methods=['GET'])
+def createConversationMap(service: NomicService):
+  course_name: str = request.args.get('course_name', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  map_id = service.create_conversation_map(course_name)
+
+  response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/logToConversationMap', methods=['GET'])
+def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
+  course_name: str = request.args.get('course_name', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  #map_id = service.log_to_conversation_map(course_name)
+  map_id = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
 
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -214,7 +245,8 @@ def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
   print(f"In /onResponseCompletion for course: {course_name}")
 
   # background execution of tasks!!
-  response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
+  #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
+  result = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response

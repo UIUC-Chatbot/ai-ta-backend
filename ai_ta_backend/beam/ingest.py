@@ -1029,8 +1029,8 @@ class Ingest():
 
       # add to Nomic document map
       if len(response.data) > 0:
-        inserted_data = response.data[0]
-        log_to_document_map(inserted_data)
+        course_name = contexts[0].metadata.get('course_name')
+        log_to_document_map(course_name)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
