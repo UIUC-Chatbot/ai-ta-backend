@@ -221,8 +221,8 @@ def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface
     # proper web error "400 Bad request"
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  map_id = service.log_to_conversation_map(course_name)
-  #map_id = flaskExecutor.submit(service.log_to_conversation_map, course_name)
+  #map_id = service.log_to_conversation_map(course_name)
+  map_id = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
 
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -246,7 +246,7 @@ def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
 
   # background execution of tasks!!
   #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
-  response = flaskExecutor.submit(service.log_to_conversation_map, course_name)
+  result = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
