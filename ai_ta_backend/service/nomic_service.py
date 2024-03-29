@@ -150,12 +150,8 @@ class NomicService():
         project_response = self.sql.updateProjects(course_name, project_info)
         print("Update response from supabase: ", project_response)
     
-    # check if existing conversation
-    existing_convo = self.log_to_existing_conversation(course_name, conversation)
-
-    if existing_convo != "success": # log to existing conversation rebuilds the map
-      # rebuild the map
-      self.rebuild_map(course_name, "conversation")
+    # rebuild the map
+    self.rebuild_map(course_name, "conversation")
 
     return "success"
   
