@@ -78,9 +78,10 @@ class NomicService():
     response = self.sql.getConvoMapFromProjects(course_name)
     print("Response from supabase: ", response.data)
 
-    if not response.data[0]['convo_map_id']:
-      print("Map does not exist for this course. Redirecting to map creation...")
-      return self.create_conversation_map(course_name)
+    if not response.data:
+      if not response.data[0]['convo_map_id']:
+        print("Map does not exist for this course. Redirecting to map creation...")
+        return self.create_conversation_map(course_name)
 
     project_id = response.data[0]['convo_map_id']
     last_uploaded_convo_id = response.data[0]['last_uploaded_convo_id']
