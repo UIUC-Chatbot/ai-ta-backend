@@ -8,7 +8,7 @@ import nomic
 import numpy as np
 import pandas as pd
 from injector import inject
-from langchain.embeddings import OpenAIEmbeddings
+from langchain.embeddings.openai import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 
 from ai_ta_backend.database.sql import SQLDatabase
@@ -620,10 +620,13 @@ class NomicService():
       #print("Metadata row:", meta_row)
       metadata.append(meta_row)
 
-    embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
-                                        openai_api_base="https://api.openai.com/v1/",
-                                        openai_api_key=os.environ['VLADS_OPENAI_KEY'],
-                                        openai_api_version="2020-11-07")
+    embeddings_model = OpenAIEmbeddings(
+        model='text-embedding-ada-002',
+        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+        openai_api_type=os.environ['OPENAI_API_TYPE'],
+        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+        openai_api_version=os.environ["OPENAI_API_VERSION"],
+    )
     embeddings = embeddings_model.embed_documents(user_queries)
 
     metadata = pd.DataFrame(metadata)
