@@ -166,18 +166,12 @@ class NomicService():
       conversation_id = conversation['id']
 
       # fetch id from supabase
-      id_response = self.sql.getConversation(course_name, conversation_id)
-      if not id_response.data:
-        print("Conversation not found in Supabase.")
-        return "Conversation not found in Supabase."
-
-      print("Conversation found in Supabase.")
-      print("Conversation ID: ", id_response)
+      incoming_id_response = self.sql.getConversation(course_name, key="convo_id", value=conversation_id)
       
       project_name = 'Conversation Map for ' + course_name
       project = AtlasProject(name=project_name, add_datums_if_exists=True)
 
-      prev_id = id_response.data[0]['id']
+      prev_id = incoming_id_response.data[0]['id']
       uploaded_data = project.get_data(ids=[prev_id]) 
       prev_convo = uploaded_data[0]['conversation']
 
