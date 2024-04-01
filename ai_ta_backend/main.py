@@ -713,6 +713,8 @@ def get_all_workflows() -> Response:
   name = request.args.get('workflow_name', default='', type=str)
   print(request.args)
 
+  print("In get_all_workflows.. api_key: ", api_key)
+
   if api_key == '':
     # proper web error "400 Bad request"
     abort(400, description=f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`")
@@ -724,8 +726,12 @@ def get_all_workflows() -> Response:
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
   except Exception as e:
-    if e == "Unauthorized":
+    if "unauthorized" in str(e).lower():
+      print("Unauthorized error in get_all_workflows: ", e)
       abort(401, description=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
+    else:
+      print("Error in get_all_workflows: ", e)
+      abort(500, description=f"Failed to fetch n8n workflows: {e}")
 
 
 @app.route('/switch_workflow', methods=['GET'])
