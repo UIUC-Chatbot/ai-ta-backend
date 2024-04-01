@@ -147,7 +147,7 @@ class Flows():
     new_data = {}
     for k, v in inputted.items():
       new_data[data[k]] = v
-
+    print("Done with formatting")
     return new_data
 
   # TODO: activate and disactivate workflows
@@ -182,25 +182,25 @@ class Flows():
     if not api_key:
       raise ValueError('api_key is required')
     print("Starting")
-    execution = self.get_executions(limit=1, api_key=api_key)
-    print("Got executions")
     hookId = self.get_hook(name, api_key)
     hook = self.url + f"/form/{hookId}"
     print("Hook!!!: ", hook)
 
     new_data = self.format_data(data, api_key, name)
 
-    response = self.supabase_client.table('n8n_api_keys').select("*").execute()
+    response = self.supabase_client.table('n8n_workflows').select("latest_workflow_id").execute()
     print("Got response")
 
     ids = []
     for row in dict(response)['data']:
-      ids.append(row['id'])
+      ids.append(row['latest_workflow_id'])
 
     if len(ids) > 0:
       id = max(ids) + 1
       print("Execution found in supabase: ", id)
     else:
+      execution = self.get_executions(limit=1, api_key=api_key)
+      print("Got executions")
       if execution:
         id = int(execution[0][0]['id']) + 1
         print("Execution found through n8n: ", id)
@@ -208,18 +208,17 @@ class Flows():
         raise Exception('No executions found')
     id = str(id)
 
-    # start job
     try:
       start_time = time.monotonic()
-      self.supabase_client.table('n8n_api_keys').insert({"in_progress_workflow_id": id}).execute()
+      self.supabase_client.table('n8n_workflows').insert({"latest_workflow_id": id, "is_locked": True}).execute()
       self.execute_flow(hook, new_data)
       print("Executed")
       print(f"⏰ Runtime to execute_flow(): {(time.monotonic() - start_time):.4f} seconds")
     except:
-      pass
+      self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
     finally:
       # TODO: Remove lock from Supabase table.
-      pass
+      self.supabase_client.table('n8n_workflows').update({"is_locked": False}).eq('latest_workflow_id', id).execute()
 
     try:
       executions = self.get_executions(20, id, True, api_key)
@@ -230,11 +229,10 @@ class Flows():
         print("Can't find id in executions")
         time.sleep(1)
       print("Found id in executions ")
-      self.supabase_client.table('n8n_api_keys').delete().eq('in_progress_workflow_id', id).execute()
+      self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
       print("Deleted id")
       print("Returning")
     except Exception as e:
-      self.supabase_client.table('n8n_api_keys').delete().eq('in_progress_workflow_id', id).execute()
+      self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
       return {"error": str(e)}
-
     return executions
