@@ -208,10 +208,20 @@ class Flows():
         raise Exception('No executions found')
     id = str(id)
 
+    # start job
     try:
-      self.supabase_client.table('n8n_api_keys').insert({"id": id}).execute()
+      start_time = time.monotonic()
+      self.supabase_client.table('n8n_api_keys').insert({"in_progress_workflow_id": id}).execute()
       self.execute_flow(hook, new_data)
       print("Executed")
+      print(f"⏰ Runtime to execute_flow(): {(time.monotonic() - start_time):.4f} seconds")
+    except:
+      pass
+    finally:
+      # TODO: Remove lock from Supabase table.
+      pass
+
+    try:
       executions = self.get_executions(20, id, True, api_key)
       print("Got executions", executions)
       while executions is None:
@@ -220,10 +230,11 @@ class Flows():
         print("Can't find id in executions")
         time.sleep(1)
       print("Found id in executions ")
-      self.supabase_client.table('n8n_api_keys').delete().eq('id', id).execute()
+      self.supabase_client.table('n8n_api_keys').delete().eq('in_progress_workflow_id', id).execute()
       print("Deleted id")
       print("Returning")
     except Exception as e:
-      self.supabase_client.table('n8n_api_keys').delete().eq('id', id).execute()
+      self.supabase_client.table('n8n_api_keys').delete().eq('in_progress_workflow_id', id).execute()
       return {"error": str(e)}
+
     return executions
