@@ -92,14 +92,13 @@ class Model:
     """
     print("Inside predict() endpoint")
 
-    print("Request: ", request)
     input = await request.json()
     print("Request.json(): ", input)
     image_urls = input.get('image_urls', [])
-    print(f"Image URLS (no parsing): {image_urls}")
 
-    image_urls = json.loads(image_urls)
-    print(f"json parsed Image URLS: {image_urls}")
+    if image_urls and isinstance(image_urls, str):
+      image_urls = json.loads(image_urls)
+    print(f"Final image URLs: {image_urls}")
 
     try:
       # Run the plugin
