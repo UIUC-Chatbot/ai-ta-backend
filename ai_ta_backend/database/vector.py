@@ -23,11 +23,14 @@ class VectorDatabase():
     self.qdrant_client = QdrantClient(
         url=os.environ['QDRANT_URL'],
         api_key=os.environ['QDRANT_API_KEY'],
+        timeout=20,  # default is 5 seconds. Getting timeout errors w/ document groups.
     )
 
-    self.vectorstore = Qdrant(client=self.qdrant_client,
-                              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                              embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE))
+    self.vectorstore = Qdrant(
+        client=self.qdrant_client,
+        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+        embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE),
+    )
 
   def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n):
     """
