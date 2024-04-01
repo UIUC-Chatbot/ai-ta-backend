@@ -57,7 +57,7 @@ class RetrievalService:
                      search_query: str,
                      course_name: str,
                      token_limit: int = 4_000,
-                     doc_groups: List[str] = []) -> Union[List[Dict], str]:
+                     doc_groups: List[str] | None = None) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
         /GET arguments
@@ -68,6 +68,8 @@ class RetrievalService:
         or
         String: An error message with traceback.
         """
+    if doc_groups is None:
+      doc_groups = []
     try:
       start_time_overall = time.monotonic()
 
@@ -345,7 +347,9 @@ class RetrievalService:
       print(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
       self.sentry.capture_exception(e)
 
-  def vector_search(self, search_query, course_name, doc_groups: List[str] = []):
+  def vector_search(self, search_query, course_name, doc_groups: List[str] | None = None):
+    if doc_groups is None:
+      doc_groups = []
     top_n = 80
     # EMBED
     openai_start_time = time.monotonic()
