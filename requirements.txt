@@ -20,7 +20,7 @@ typing_extensions==4.8.0
 
 # Utils
 tiktoken==0.5.1
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 pydantic==1.10.13 # pydantic v1 works better for ray
 flask-executor==1.0.0
 
