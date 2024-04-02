@@ -39,6 +39,7 @@ from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 
 from ai_ta_backend.beam.nomic_logging import create_document_map
+from ai_ta_backend.utils.pubmed_extraction import extractPubmedData
 
 app = Flask(__name__)
 CORS(app)
@@ -340,6 +341,17 @@ def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogSer
   found_documents = service.getTopContextsWithMQR(search_query, course_name, token_limit)
 
   response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/pubmedExtraction', methods=['GET'])
+def pubmedExtraction():
+  """
+  Extracts metadata and download papers from PubMed.
+  """
+  result = extractPubmedData()
+
+  response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
