@@ -126,26 +126,30 @@ class Flows():
       raise Exception('No nodes found in the workflow')
 
   def format_data(self, inputted, api_key: str, workflow_name):
-    work_flow = self.get_workflows(100, api_key=api_key, workflow_name=workflow_name)
-    print("Got workflow")
-    values = []
-    if isinstance(work_flow, dict) and 'nodes' in work_flow:
-      for node in work_flow['nodes']:
-        if node['name'] == 'n8n Form Trigger':
-          values = node['parameters']['formFields']['values']
-    data = {}
-    inputted = json.loads(inputted)
-    inputted = dict(inputted)
-    for i, value in enumerate(values):
-      field_name = 'field-' + str(i)
-      data[value['fieldLabel']] = field_name
-    new_data = {}
-    for k, v in inputted.items():
-      if isinstance(v, list):
-        new_data[data[k]] = json.dumps(v)
-      else:
-        new_data[data[k]] = v
-    return new_data
+    try:
+      work_flow = self.get_workflows(100, api_key=api_key, workflow_name=workflow_name)
+      print("Got workflow")
+      values = []
+      if isinstance(work_flow, dict) and 'nodes' in work_flow:
+        for node in work_flow['nodes']:
+          if node['name'] == 'n8n Form Trigger':
+            values = node['parameters']['formFields']['values']
+      data = {}
+      # Check if inputted is already a dict, if not, try to load it as JSON
+      if not isinstance(inputted, dict):
+        inputted = json.loads(inputted)
+      for i, value in enumerate(values):
+        field_name = 'field-' + str(i)
+        data[value['fieldLabel']] = field_name
+      new_data = {}
+      for k, v in inputted.items():
+        if isinstance(v, list):
+          new_data[data[k]] = json.dumps(v)
+        else:
+          new_data[data[k]] = v
+      return new_data
+    except Exception as e:
+      print("Error in format_data: ", e)
 
   # TODO: activate and disactivate workflows
 
