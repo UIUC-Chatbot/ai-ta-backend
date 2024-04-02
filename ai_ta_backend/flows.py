@@ -37,6 +37,7 @@ class Flows():
     return all_users
 
   def execute_flow(self, hook: str, data=None) -> None:
+    print("Executing flow")
     if not data:
       data = {'field-0': ''}
     url = hook
@@ -67,7 +68,6 @@ class Flows():
         cursor = executions.get('nextCursor')
         if id:
           for execution in all_executions:
-            print(execution[0]['id'], ":ID:")
             if execution[0]['id'] == id:
               return execution
 
@@ -130,24 +130,21 @@ class Flows():
     print("Got workflow")
     values = []
     if isinstance(work_flow, dict) and 'nodes' in work_flow:
-      print("passed if")
       for node in work_flow['nodes']:
         if node['name'] == 'n8n Form Trigger':
           values = node['parameters']['formFields']['values']
-          print("found value")
     data = {}
-    print(inputted)
     inputted = json.loads(inputted)
-    print("Done with json")
     inputted = dict(inputted)
-    print("Got data")
     for i, value in enumerate(values):
       field_name = 'field-' + str(i)
       data[value['fieldLabel']] = field_name
     new_data = {}
     for k, v in inputted.items():
-      new_data[data[k]] = v
-    print("Done with formatting")
+      if type(v) == list:
+        new_data[data[k]] = json.dumps(v)
+      else:
+        new_data[data[k]] = v
     return new_data
 
   # TODO: activate and disactivate workflows
@@ -210,14 +207,20 @@ class Flows():
 
     try:
       start_time = time.monotonic()
+      print("Inserting")
       self.supabase_client.table('n8n_workflows').insert({"latest_workflow_id": id, "is_locked": True}).execute()
+      print("inserted")
       self.execute_flow(hook, new_data)
       print("Executed")
       print(f"⏰ Runtime to execute_flow(): {(time.monotonic() - start_time):.4f} seconds")
-    except:
+    except Exception as e:
+      # TODO: Decrease number by one, is locked false
+      # self.supabase_client.table('n8n_workflows').update({"latest_workflow_id": str(int(id) - 1), "is_locked": False}).eq('latest_workflow_id', id).execute()
       self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
+      return {"error": str(e)}
     finally:
       # TODO: Remove lock from Supabase table.
+      print("id: ", id)
       self.supabase_client.table('n8n_workflows').update({"is_locked": False}).eq('latest_workflow_id', id).execute()
 
     try:
