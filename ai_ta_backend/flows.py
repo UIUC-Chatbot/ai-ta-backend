@@ -141,7 +141,7 @@ class Flows():
       data[value['fieldLabel']] = field_name
     new_data = {}
     for k, v in inputted.items():
-      if type(v) == list:
+      if isinstance(v, list):
         new_data[data[k]] = json.dumps(v)
       else:
         new_data[data[k]] = v
