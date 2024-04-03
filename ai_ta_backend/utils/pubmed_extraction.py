@@ -19,14 +19,20 @@ SUPBASE_CLIENT = supabase.create_client(    # type: ignore
     supabase_key=os.getenv('SUPABASE_API_KEY')  # type: ignore
 )
 
+MINIO_CLIENT = Minio(os.environ['MINIO_URL'],
+    access_key=os.environ['MINIO_ACCESS_KEY'],
+    secret_key=os.environ['MINIO_SECRET_KEY'],
+    secure=False
+)
+
 def extractPubmedData():
     """
-    Extracts metadata from the files listed in FTP folder and stores it in SQL DB.
+    Main function to extract metadata and articles from the PubMed baseline folder.
     """
     ftp_address = "ftp.ncbi.nlm.nih.gov"
     ftp_path = "pubmed/baseline"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
-
+    
     gz_filepath = downloadXML(ftp_address, ftp_path, file_list[0], "pubmed")
     print("GZ Downloaded: ", gz_filepath)
 
@@ -58,6 +64,13 @@ def extractPubmedData():
 def downloadXML(ftp_address: str, ftp_path: str, file: str, local_dir: str):
     """
     Downloads a .gz XML file from the FTP baseline folder and stores it in the local directory.
+    Args:
+        ftp_address: FTP server address.
+        ftp_path: Path to the FTP folder.
+        file: File to download.
+        local_dir: Local directory to store the downloaded file.
+    Returns:
+        local_filepath: Path to the downloaded file.
     """
     # create local directory if it doesn't exist
     os.makedirs(local_dir, exist_ok=True)
@@ -78,7 +91,13 @@ def downloadXML(ftp_address: str, ftp_path: str, file: str, local_dir: str):
 
 def getFileList(ftp_address: str, ftp_path: str, extension: str = ".gz"):
     """
-    Returns a list of .gz files in the FTP folder.
+    Returns a list of .gz files in the FTP baseline folder.
+    Args:
+        ftp_address: FTP server address.
+        ftp_path: Path to the FTP folder.
+        extension: File extension to filter for.
+    Returns:
+        gz_files: List of .gz files in the FTP folder.
     """
     # connect to the FTP server
     ftp = ftplib.FTP(ftp_address)
@@ -107,7 +126,7 @@ def extractXMLFile(gz_filepath: str):
     Returns:
         xml_filepath: Path to the extracted XML file.
     """
-    print("gz file path: ", gz_filepath)
+    print("Downloaded .gz file path: ", gz_filepath)
     xml_filepath = gz_filepath.replace(".gz", "")
     with gzip.open(gz_filepath, 'rb') as f_in:
         with open(xml_filepath, 'wb') as f_out:
@@ -117,7 +136,9 @@ def extractXMLFile(gz_filepath: str):
 
 def extractMetadataFromXML(xml_filepath: str):
     """
-    Extracts metadata from the XML file and stores it in a dictionary.
+    Extracts article details from the XML file and stores it in a dictionary.
+    Details extracted: PMID, PMCID, DOI, ISSN, journal title, article title, 
+    last revised date, published date, abstract.
     Args: 
         xml_filepath: Path to the XML file.
     Returns:
@@ -130,6 +151,7 @@ def extractMetadataFromXML(xml_filepath: str):
     root = tree.getroot()
     metadata = []
     
+    # PARALLELIZE THE BELOW FOR LOOP AND EXTRACT METADATA FOR ALL ARTICLES AT ONCE - IN 1000s
     # Extract metadata from the XML file
     for item in root.iter('PubmedArticle'):
         article_data = {}
@@ -209,7 +231,13 @@ def extractMetadataFromXML(xml_filepath: str):
 
 def getArticleIDs(metadata: list):
     """
-    Retrieves the PMC ID and DOI for given articles and updates the metadata.
+    Uses the PubMed ID converter API to get PMCID and DOI for each article.
+    Queries the API in batches of 200 articles at a time.
+    Also updates the metadata with the release date and live status - some articles are yet to be released.
+    Args:
+        metadata: List of dictionaries containing metadata for each article.
+    Returns:
+        metadata: Updated metadata with PMCID, DOI, release date, and live status information.
     """
     base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
     app_details = "?tool=ncsa_uiuc&email=caiincsa@gmail.com&format=json"
@@ -221,7 +249,8 @@ def getArticleIDs(metadata: list):
         response = requests.get(base_url + app_details + "&ids=" + ids)
         data = response.json()        
         records = data['records']
-
+        
+        # PARALLELIZE THIS FOR LOOP - UPDATES ADDITIONAL FIELDS FOR ALL ARTICLES AT ONCE
         for record in records:
             if 'errmsg' in record:
                 print("Error: ", record['errmsg'])
@@ -244,8 +273,11 @@ def getArticleIDs(metadata: list):
 
 def downloadArticles(metadata: list):
     """
-    Downloads articles from PMC and stores them in bucket.
-    Updates metadata with license information.
+    Downloads articles from PMC and stores them in local directory.
+    Args:
+        metadata: List of dictionaries containing metadata for each article.
+    Returns:
+        metadata: Updated metadata with license, FTP link, and downloaded filepath information.
     """
 
     base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?"
@@ -255,6 +287,7 @@ def downloadArticles(metadata: list):
     ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
     ftp.login()
 
+    # PARALLELIZE THIS FOR LOOP - DOWNLOAD + METADATA UPDATE
     for article in metadata:
 
         if article['live'] is False or article['pmcid'] is None:
@@ -262,14 +295,15 @@ def downloadArticles(metadata: list):
         
         # else proceed with download
         if article['pmcid']:
-            # download the article
+            # query URL for article download
             final_url = base_url + "id=" + article['pmcid'] 
-            print("Downloading: ", final_url)
+            print("Download URL: ", final_url)
 
             xml_response = requests.get(final_url)
+            # get license and FTP link
             extracted_data = extractArticleData(xml_response.text)
             
-            print("\nExtracted data: ", extracted_data)
+            print("\nExtracted license and link data: ", extracted_data)
 
             # if no data extracted (reason: article not released/open-access), skip to next article
             if not extracted_data:
@@ -289,23 +323,28 @@ def downloadArticles(metadata: list):
             local_file = os.path.join("pubmed_abstracts", filename)
             with open(local_file, 'wb') as f:
                 ftp.retrbinary('RETR ' + ftp_path, f.write)
-            print("Downloaded: ", local_file)
+            print("Downloaded PDF file: ", local_file)
             article['filepath'] = local_file
 
             # if file is .tar.gz, extract the PDF and delete the tar.gz file
             if filename.endswith(".tar.gz"):
                 extracted_pdf_paths = extractPDF(local_file)
-                print("Extracted PDF: ", extracted_pdf_paths)
+                print("Extracted PDFs from .tar.gz file: ", extracted_pdf_paths)
                 article['filepath'] = ",".join(extracted_pdf_paths)
                 os.remove(local_file)
             
             print("\nUpdated metadata after download: ", article)
-    ftp.login()
+    ftp.quit()
     return metadata          
 
 def extractPDF(tar_gz_filepath: str):
     """
-    Extracts the PDF file from the .tar.gz file.
+    Extracts PDF files from the downloaded .tar.gz file. The zipped folder contains other supplementary
+    materials like images, etc. which are not extracted.
+    Args:
+        tar_gz_filepath: Path to the .tar.gz file.
+    Returns:
+        extracted_paths: List of paths to the extracted PDF files.
     """
     print("Extracting PDF from: ", tar_gz_filepath)
     extracted_paths = []
@@ -321,18 +360,25 @@ def extractPDF(tar_gz_filepath: str):
 def extractArticleData(xml_string: str):
     """
     Extracts license information and article download link from the XML response.
+    This function process XML response for single article.
+    Args:
+        xml_string: XML response from PMC download API.
+    Returns:
+        extracted_data: List of dictionaries containing license and download link for the article.
     """
-    root = ET.fromstring(xml_string)
+    print("In extractArticleData")
 
+    root = ET.fromstring(xml_string)
+    # if there is an errors (article not open-access), return empty list (skip article)
     if root.find(".//error") is not None:
         return []
 
     records = root.findall(".//record")
     extracted_data = []
     href = None
-    print("In extractArticleData")
+    
     for record in records:
-        record_id = record.get("id")
+        record_id = record.get("id")    # pmcid
         license = record.get("license")
         links = record.findall(".//link")
 
@@ -354,20 +400,14 @@ def extractArticleData(xml_string: str):
 
 def uploadToStorage(filepath: str):
     """
-    Uploads all files present in given folder to Minio bucket.
+    Uploads all files present under given filepath to Minio bucket.
     """
     print("in uploadToStorage()")
     
-    minio_client = Minio(os.environ['MINIO_URL'],
-        access_key=os.environ['MINIO_ACCESS_KEY'],
-        secret_key=os.environ['MINIO_SECRET_KEY'],
-        secure=False
-    )
-
     bucket_name = "pubmed"
-    found = minio_client.bucket_exists(bucket_name)
+    found = MINIO_CLIENT.bucket_exists(bucket_name)
     if not found:
-        minio_client.make_bucket(bucket_name)
+        MINIO_CLIENT.make_bucket(bucket_name)
         print("Created bucket", bucket_name)
     else:
         print("Bucket", bucket_name, "already exists")
@@ -378,7 +418,7 @@ def uploadToStorage(filepath: str):
             file_path = os.path.join(root, file)
             object_name = file_path.split("/")[-1]
             # insert local file into remote bucket
-            minio_client.fput_object(bucket_name, object_name, file_path)
+            MINIO_CLIENT.fput_object(bucket_name, object_name, file_path)
             print("Uploaded: ", object_name)
     return "success"
 
