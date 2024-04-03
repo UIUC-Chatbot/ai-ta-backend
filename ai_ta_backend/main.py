@@ -17,7 +17,7 @@ from flask import (
 from flask_cors import CORS
 from flask_executor import Executor
 from posthog import Posthog
-import ray
+# import ray
 import sentry_sdk
 
 from ai_ta_backend.canvas import CanvasAPI
@@ -45,7 +45,7 @@ executor = Executor(app)
 # load API keys from globally-availabe .env file
 load_dotenv()
 
-ray.init()
+# ray.init()
 
 print("NUM ACTIVE THREADS (top of main):", threading.active_count())
 
@@ -764,17 +764,17 @@ def switch_workflow() -> Response:
       abort(400, description=f"Bad request: {e}")
 
 
-@app.route('/run_flow', methods=['GET'])
+@app.route('/run_flow', methods=['POST'])
 def run_flow() -> Response:
   """
   Run flow for a user and return results.
   """
 
-  api_key = request.args.get('api_key', default='', type=str)
-  name = request.args.get('name', default='', type=str)
-  data = request.args.get('data', default='', type=str)
+  api_key = request.json.get('api_key', '')
+  name = request.json.get('name', '')
+  data = request.json.get('data', '')
 
-  print(request.args)
+  print("Got /run_flow request:", request.json)
 
   if api_key == '':
     # proper web error "400 Bad request"
