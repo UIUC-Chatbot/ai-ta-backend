@@ -23,6 +23,17 @@ def extractPubmedData():
     """
     Extracts metadata from the files listed in FTP folder and stores it in SQL DB.
     """
+    ftp_address = "ftp.ncbi.nlm.nih.gov"
+    ftp_path = "pubmed/baseline"
+    file_list = getFileList(ftp_address, ftp_path, ".gz")
+
+    gz_filepath = downloadXML(ftp_address, ftp_path, file_list[0], "pubmed")
+    print("GZ Downloaded: ", gz_filepath)
+
+    # extract the XML file
+    xml_filepath = extractXMLFile(gz_filepath)
+    print("XML Extracted: ", xml_filepath)
+
     xml_filepath = "pubmed/pubmed24n1219.xml"
     metadata = extractMetadataFromXML(xml_filepath)
 
@@ -31,48 +42,22 @@ def extractPubmedData():
 
     # download the articles
     complete_metadata = downloadArticles(metadata_with_ids)
-
     print("Complete metadata: ", complete_metadata)
     
     # upload articles to bucket
     article_upload = uploadToStorage("pubmed_abstracts")
+    print("Uploaded articles: ", article_upload)
 
     # upload metadata to SQL DB
+    response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute()
+    print("Supabase response: ", response)
+    exit()
 
-    
-
-    # ftp_address = "ftp.ncbi.nlm.nih.gov"
-    # ftp_path = "pubmed/baseline"
-    # file_list = getFileList(ftp_address, ftp_path, ".gz")
-
-    # for file in file_list:
-    #     # download the .gz file
-    #     gz_filepath = downloadFromFTP(ftp_address, ftp_path, file, "pubmed")
-    #     print("Downloaded: ", gz_filepath)
-
-    #     # extract the XML file
-    #     xml_filepath = extractXMLFile(gz_filepath)
-    #     print("XML Extracted: ", xml_filepath)
-
-    #     # extract metadata from the XML file
-    #     xml_filepath = "pubmed/pubmed24n1219.xml"
-    #     metadata = extractMetadataFromXML(xml_filepath)
-
-    #     # find PMC ID and DOI for all articles
-    #     for article in metadata:
-    #         pmid = article['pmid']
-    #         article_ids = getArticleIDs(pmid)
-
-        
-        # delete XML and .gz files
-        
-
-    
     return "success"
 
-def downloadFromFTP(ftp_address: str, ftp_path: str, file: str, local_dir: str):
+def downloadXML(ftp_address: str, ftp_path: str, file: str, local_dir: str):
     """
-    Downloads a .gz file from the FTP folder and stores it in the local directory.
+    Downloads a .gz XML file from the FTP baseline folder and stores it in the local directory.
     """
     # create local directory if it doesn't exist
     os.makedirs(local_dir, exist_ok=True)
@@ -190,7 +175,6 @@ def extractMetadataFromXML(xml_filepath: str):
         else:
             article_data['published'] = None
         
-        
         # extract and store abstract in a text file
         abstract = article.find('Abstract')
         if abstract is not None:
@@ -219,7 +203,7 @@ def extractMetadataFromXML(xml_filepath: str):
         article_data['filepath'] = abstract_filename
 
         metadata.append(article_data)
-        if len(metadata) == 300:
+        if len(metadata) == 20:
             return metadata
     return metadata
 
@@ -240,7 +224,11 @@ def getArticleIDs(metadata: list):
 
         for record in records:
             if 'errmsg' in record:
-                article['live'] = False
+                print("Error: ", record['errmsg'])
+                for article in batch:
+                    if article['pmid'] == record['pmid']:
+                        article['live'] = False
+                        break
                 continue
             else:
                 # find article with matching pmid and update pmcid, doi, live, and release date fields
@@ -368,20 +356,30 @@ def uploadToStorage(filepath: str):
     """
     Uploads all files present in given folder to Minio bucket.
     """
-    minio_client = Minio(
-        endpoint=os.getenv('MINIO_ENDPOINT'),
-        access_key=os.getenv('MINIO_ACCESS_KEY'),
-        secret_key=os.getenv('MINIO_SECRET_KEY'),
+    print("in uploadToStorage()")
+    
+    minio_client = Minio(os.environ['MINIO_URL'],
+        access_key=os.environ['MINIO_ACCESS_KEY'],
+        secret_key=os.environ['MINIO_SECRET_KEY'],
         secure=False
     )
 
     bucket_name = "pubmed"
+    found = minio_client.bucket_exists(bucket_name)
+    if not found:
+        minio_client.make_bucket(bucket_name)
+        print("Created bucket", bucket_name)
+    else:
+        print("Bucket", bucket_name, "already exists")
+
     for root, dirs, files in os.walk(filepath):
+        # can parallelize this upload
         for file in files:
             file_path = os.path.join(root, file)
-            print("Uploading: ", file_path)
-            
-    
+            object_name = file_path.split("/")[-1]
+            # insert local file into remote bucket
+            minio_client.fput_object(bucket_name, object_name, file_path)
+            print("Uploaded: ", object_name)
     return "success"
 
 
