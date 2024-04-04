@@ -11,6 +11,7 @@ import tarfile
 import os
 import shutil
 from minio import Minio
+import time
 
 
 
@@ -29,19 +30,27 @@ def extractPubmedData():
     """
     Main function to extract metadata and articles from the PubMed baseline folder.
     """
+    start_time = time.time()
+
     ftp_address = "ftp.ncbi.nlm.nih.gov"
     ftp_path = "pubmed/baseline"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
     gz_filepath = downloadXML(ftp_address, ftp_path, file_list[0], "pubmed")
     print("GZ Downloaded: ", gz_filepath)
+    print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
 
     # extract the XML file
     xml_filepath = extractXMLFile(gz_filepath)
     print("XML Extracted: ", xml_filepath)
+    print("Time taken to extract XML file: ", round(time.time() - start_time, 2), "seconds")
 
     xml_filepath = "pubmed/pubmed24n1219.xml"
     metadata = extractMetadataFromXML(xml_filepath)
+    print("Number of articles found in this file: ", len(metadata))
+    print("\nSample metadata: ", metadata)
+    print("\n\nTime taken to extract metadata: ", round(time.time() - start_time, 2), "seconds")
+    exit()
 
     # find PMC ID and DOI for all articles
     metadata_with_ids = getArticleIDs(metadata)
@@ -55,10 +64,9 @@ def extractPubmedData():
     print("Uploaded articles: ", article_upload)
 
     # upload metadata to SQL DB
-    response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute()
+    response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
     print("Supabase response: ", response)
-    exit()
-
+    
     return "success"
 
 def downloadXML(ftp_address: str, ftp_path: str, file: str, local_dir: str):
@@ -144,16 +152,121 @@ def extractMetadataFromXML(xml_filepath: str):
     Returns:
         metadata: List of dictionaries containing metadata for each article.
     """
+    print("inside extractMetadataFromXML()")
+
     # create a directory to store abstracts
     os.makedirs("pubmed_abstracts", exist_ok=True)
 
     tree = ET.parse(xml_filepath)
     root = tree.getroot()
     metadata = []
+
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = []
+        article_items = list(item for item in root.iter('PubmedArticle'))  # Convert generator to list
+        total_items = len(article_items)  # Use len() since article_items is now a list
+        article_items_100 = (article_items[i:i+50] for i in range(0, total_items, 50))
+        for chunk in article_items_100:
+            for item in chunk:
+                future = executor.submit(processArticleItem, item)
+                futures.append(future)
+        
+                for future in concurrent.futures.as_completed(futures):
+                    article_data = future.result()
+                    metadata.append(article_data)
+
+    print("Extracted metadata for 20 articles: ", metadata[:20])
+    print("Total articles extracted: ", len(metadata))
+    return metadata
     
-    # PARALLELIZE THE BELOW FOR LOOP AND EXTRACT METADATA FOR ALL ARTICLES AT ONCE - IN 1000s
-    # Extract metadata from the XML file
-    for item in root.iter('PubmedArticle'):
+    # # PARALLELIZE THE BELOW FOR LOOP AND EXTRACT METADATA FOR ALL ARTICLES AT ONCE - IN 1000s
+    # # Extract metadata from the XML file
+    # for item in root.iter('PubmedArticle'):
+    #     article_data = {}
+
+    #     medline_citation = item.find('MedlineCitation')
+    #     article = medline_citation.find('Article')
+    #     journal = article.find('Journal')
+    #     issue = journal.find('JournalIssue')
+
+    #     if medline_citation.find('PMID') is not None:
+    #         article_data['pmid'] = medline_citation.find('PMID').text
+    #         article_data['pmcid'] = None
+    #         article_data['doi'] = None
+    #     else:
+    #         continue
+
+    #     if journal.find('ISSN') is not None:
+    #         article_data['issn'] = journal.find('ISSN').text
+    #     else:
+    #         article_data['issn'] = None
+
+    #     if journal.find('Title') is not None:
+    #         article_data['journal_title'] = journal.find('Title').text
+    #     else:
+    #         article_data['journal_title'] = None
+        
+    #     # some articles don't have an article title
+    #     article_title = article.find('ArticleTitle')
+    #     if article_title is not None and article_title.text is not None:
+    #         article_data['article_title'] = article_title.text.replace('[', '').replace(']', '')
+    #     else:
+    #         article_data['article_title'] = None
+
+    #     article_data['last_revised'] = f"{medline_citation.find('DateRevised/Year').text}-{medline_citation.find('DateRevised/Month').text}-{medline_citation.find('DateRevised/Day').text}"
+        
+    #     # some articles don't have all fields present for publication date
+    #     if issue.find('PubDate/Year') is not None and issue.find('PubDate/Month') is not None and issue.find('PubDate/Day') is not None:   
+    #         article_data['published'] = f"{issue.find('PubDate/Year').text}-{issue.find('PubDate/Month').text}-{issue.find('PubDate/Day').text}"
+    #     elif issue.find('PubDate/Year') is not None and issue.find('PubDate/Month') is not None:
+    #         article_data['published'] = f"{issue.find('PubDate/Year').text}-{issue.find('PubDate/Month').text}"
+    #     elif issue.find('PubDate/Year') is not None:
+    #         article_data['published'] = f"{issue.find('PubDate/Year').text}"
+    #     else:
+    #         article_data['published'] = None
+        
+    #     # extract and store abstract in a text file
+    #     abstract = article.find('Abstract')
+    #     if abstract is not None:
+    #         abstract_text = ""
+    #         for abstract_text_element in abstract.iter('AbstractText'):
+    #             # if labels (objective, methods, etc.) are present, add them to the text (e.g. "OBJECTIVE: ")
+    #             if abstract_text_element.attrib.get('Label') is not None:
+    #                 abstract_text += abstract_text_element.attrib.get('Label') + ": "
+    #             if abstract_text_element.text is not None:
+    #                 abstract_text += abstract_text_element.text + "\n"
+            
+    #         # save abstract to a text file
+    #         abstract_filename = f"pubmed_abstracts/{article_data['pmid']}.txt"
+    #         with open(abstract_filename, 'w') as f:
+    #             if article_data['article_title']:
+    #                 f.write("Article title: " + article_data['article_title'] + "\n")
+    #             if article_data['journal_title']:
+    #                 f.write("Journal title: " + article_data['journal_title'] + "\n")
+    #             f.write("Abstract: " + abstract_text)
+        
+    #     # some articles are listed, but not released online yet. Adding fields for such articles to maintain uniformity.
+    #     article_data['live'] = True
+    #     article_data['release_date'] = None
+    #     article_data['license'] = None
+    #     article_data['pubmed_ftp_link'] = None
+    #     article_data['filepath'] = abstract_filename
+
+    #     metadata.append(article_data)
+    #     if len(metadata) == 20:
+    #         return metadata
+    # return metadata
+
+def processArticleItem(item: ET.Element):
+    """
+    Extracts article details from a single PubmedArticle XML element. This is used in the process pool executor.
+    Args:
+        item: PubmedArticle XML element.
+    Returns:
+        article_data: Dictionary containing metadata for the article.
+    """
+    try:
         article_data = {}
 
         medline_citation = item.find('MedlineCitation')
@@ -166,7 +279,7 @@ def extractMetadataFromXML(xml_filepath: str):
             article_data['pmcid'] = None
             article_data['doi'] = None
         else:
-            continue
+            return article_data
 
         if journal.find('ISSN') is not None:
             article_data['issn'] = journal.find('ISSN').text
@@ -177,7 +290,7 @@ def extractMetadataFromXML(xml_filepath: str):
             article_data['journal_title'] = journal.find('Title').text
         else:
             article_data['journal_title'] = None
-        
+
         # some articles don't have an article title
         article_title = article.find('ArticleTitle')
         if article_title is not None and article_title.text is not None:
@@ -186,7 +299,7 @@ def extractMetadataFromXML(xml_filepath: str):
             article_data['article_title'] = None
 
         article_data['last_revised'] = f"{medline_citation.find('DateRevised/Year').text}-{medline_citation.find('DateRevised/Month').text}-{medline_citation.find('DateRevised/Day').text}"
-        
+            
         # some articles don't have all fields present for publication date
         if issue.find('PubDate/Year') is not None and issue.find('PubDate/Month') is not None and issue.find('PubDate/Day') is not None:   
             article_data['published'] = f"{issue.find('PubDate/Year').text}-{issue.find('PubDate/Month').text}-{issue.find('PubDate/Day').text}"
@@ -196,9 +309,10 @@ def extractMetadataFromXML(xml_filepath: str):
             article_data['published'] = f"{issue.find('PubDate/Year').text}"
         else:
             article_data['published'] = None
-        
+
         # extract and store abstract in a text file
         abstract = article.find('Abstract')
+        abstract_filename = None
         if abstract is not None:
             abstract_text = ""
             for abstract_text_element in abstract.iter('AbstractText'):
@@ -207,27 +321,26 @@ def extractMetadataFromXML(xml_filepath: str):
                     abstract_text += abstract_text_element.attrib.get('Label') + ": "
                 if abstract_text_element.text is not None:
                     abstract_text += abstract_text_element.text + "\n"
-            
+        
             # save abstract to a text file
             abstract_filename = f"pubmed_abstracts/{article_data['pmid']}.txt"
             with open(abstract_filename, 'w') as f:
-                if article_data['article_title']:
-                    f.write("Article title: " + article_data['article_title'] + "\n")
                 if article_data['journal_title']:
-                    f.write("Journal title: " + article_data['journal_title'] + "\n")
+                    f.write("Journal title: " + article_data['journal_title'] + "\n\n")
+                if article_data['article_title']:
+                    f.write("Article title: " + article_data['article_title'] + "\n\n")
                 f.write("Abstract: " + abstract_text)
-        
-        # some articles are listed, but not released online yet. Adding fields for such articles to maintain uniformity.
+
+        # some articles are listed, but not released yet. Adding fields for such articles to maintain uniformity.
         article_data['live'] = True
         article_data['release_date'] = None
         article_data['license'] = None
         article_data['pubmed_ftp_link'] = None
         article_data['filepath'] = abstract_filename
 
-        metadata.append(article_data)
-        if len(metadata) == 20:
-            return metadata
-    return metadata
+        return article_data
+    except Exception as e:
+        return {'error': str(e)}
 
 def getArticleIDs(metadata: list):
     """
