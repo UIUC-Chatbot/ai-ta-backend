@@ -246,7 +246,7 @@ def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
 
   # background execution of tasks!!
   #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
-  result = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
+  result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
