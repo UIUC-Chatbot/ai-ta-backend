@@ -1,3 +1,4 @@
+import json
 import os
 import time
 from typing import List
@@ -105,6 +106,7 @@ def getTopContexts(service: RetrievalService) -> Response:
   search_query: str = request.args.get('search_query', default='', type=str)
   course_name: str = request.args.get('course_name', default='', type=str)
   token_limit: int = request.args.get('token_limit', default=3000, type=int)
+  doc_groups_str: str = request.args.get('doc_groups', default='[]', type=str)
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
     abort(
@@ -113,7 +115,12 @@ def getTopContexts(service: RetrievalService) -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  found_documents = service.getTopContexts(search_query, course_name, token_limit)
+  doc_groups: List[str] = []
+
+  if doc_groups_str != '[]':
+    doc_groups = json.loads(doc_groups_str)
+
+  found_documents = service.getTopContexts(search_query, course_name, token_limit, doc_groups)
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
