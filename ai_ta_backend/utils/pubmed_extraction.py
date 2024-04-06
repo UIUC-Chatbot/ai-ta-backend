@@ -12,6 +12,8 @@ import os
 import shutil
 from minio import Minio
 import time
+from multiprocessing import Manager
+
 
 
 
@@ -46,26 +48,28 @@ def extractPubmedData():
     print("Time taken to extract XML file: ", round(time.time() - start_time, 2), "seconds")
 
     xml_filepath = "pubmed/pubmed24n1219.xml"
-    metadata = extractMetadataFromXML(xml_filepath)
-    print("Number of articles found in this file: ", len(metadata))
-    print("\nSample metadata: ", metadata)
-    print("\n\nTime taken to extract metadata: ", round(time.time() - start_time, 2), "seconds")
-    exit()
-
-    # find PMC ID and DOI for all articles
-    metadata_with_ids = getArticleIDs(metadata)
-
-    # download the articles
-    complete_metadata = downloadArticles(metadata_with_ids)
-    print("Complete metadata: ", complete_metadata)
     
-    # upload articles to bucket
-    article_upload = uploadToStorage("pubmed_abstracts")
-    print("Uploaded articles: ", article_upload)
+    for metadata in extractMetadataFromXML(xml_filepath):
+        print("Total articles retrieved: ", len(metadata))
+        print("Time taken to extract metadata for 2000 articles: ", round(time.time() - start_time, 2), "seconds")
 
-    # upload metadata to SQL DB
-    response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
-    print("Supabase response: ", response)
+        # find PMC ID and DOI for all articles
+        metadata_with_ids = getArticleIDs(metadata)
+        print("Time taken to get PMC ID and DOI for 2000 articles: ", round(time.time() - start_time, 2), "seconds")
+
+        # download the articles
+        complete_metadata = downloadArticles(metadata_with_ids)
+        print("Time taken to download articles for 2000 articles: ", round(time.time() - start_time, 2), "seconds")
+        print("Complete metadata: ", complete_metadata[:20])
+    
+        # upload articles to bucket
+        # article_upload = uploadToStorage("pubmed_abstracts")
+        # print("Uploaded articles: ", article_upload)
+
+        # upload metadata to SQL DB
+        response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
+        print("Supabase response: ", response)
+        exit()
     
     return "success"
 
@@ -165,20 +169,23 @@ def extractMetadataFromXML(xml_filepath: str):
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures = []
         article_items = list(item for item in root.iter('PubmedArticle'))  # Convert generator to list
-        total_items = len(article_items)  # Use len() since article_items is now a list
-        article_items_100 = (article_items[i:i+50] for i in range(0, total_items, 50))
-        for chunk in article_items_100:
-            for item in chunk:
-                future = executor.submit(processArticleItem, item)
-                futures.append(future)
-        
-                for future in concurrent.futures.as_completed(futures):
-                    article_data = future.result()
-                    metadata.append(article_data)
+    
+        for item in article_items:
+            future = executor.submit(processArticleItem, item)
+            article_data = future.result()
 
-    print("Extracted metadata for 20 articles: ", metadata[:20])
-    print("Total articles extracted: ", len(metadata))
-    return metadata
+            metadata.append(article_data)
+
+            if len(metadata) == 500:
+                print("collected 500 articles")
+                return metadata
+                metadata = []   # reset metadata for next batch
+
+    if metadata:
+        yield metadata
+    
+    print("Metadata extraction complete.")
+
     
     # # PARALLELIZE THE BELOW FOR LOOP AND EXTRACT METADATA FOR ALL ARTICLES AT ONCE - IN 1000s
     # # Extract metadata from the XML file
@@ -352,17 +359,45 @@ def getArticleIDs(metadata: list):
     Returns:
         metadata: Updated metadata with PMCID, DOI, release date, and live status information.
     """
+    print("In getArticleIDs()")
     base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
     app_details = "?tool=ncsa_uiuc&email=caiincsa@gmail.com&format=json"
 
     batch_size = 200    # maximum number of articles API can process in one request
+    
+    # # Create a shared list using multiprocessing.Manager
+    # manager = Manager()
+    # shared_metadata = manager.list(metadata)  # Copy initial metadata into the shared list
+
+    # for i in range(0, len(metadata), batch_size):
+    #     batch = metadata[i:i+batch_size]
+    #     ids = ",".join([article['pmid'] for article in batch])
+    #     response = requests.get(base_url + app_details + "&ids=" + ids)
+    #     data = response.json()        
+    #     records = data['records']
+
+    #     with concurrent.futures.ProcessPoolExecutor() as executor:
+    #         futures = []
+    #         for record in records:
+    #             future = executor.submit(updateArticleMetadata, shared_metadata, record)
+    #             futures.append(future)
+
+    #         # process results from parallel tasks
+    #         for future in futures:
+    #             try:
+    #                 future.result()
+    #             except Exception as e:
+    #                 print(f"Error updating metadata for article: {e}")
+
+    # print("Updated metadata in ID converter: ", len(shared_metadata))
+    # return shared_metadata
+    
     for i in range(0, len(metadata), batch_size):
         batch = metadata[i:i+batch_size]
         ids = ",".join([article['pmid'] for article in batch])
         response = requests.get(base_url + app_details + "&ids=" + ids)
         data = response.json()        
         records = data['records']
-        
         # PARALLELIZE THIS FOR LOOP - UPDATES ADDITIONAL FIELDS FOR ALL ARTICLES AT ONCE
         for record in records:
             if 'errmsg' in record:
@@ -383,6 +418,29 @@ def getArticleIDs(metadata: list):
                         print("Updated metadata in ID converter: ", article)
                         break
     return metadata
+
+def updateArticleMetadata(shared_metadata: list, record: dict):
+    """
+    Updates metadata with PMCID, DOI, release date, and live status information for given article.
+    """
+    if 'errmsg' in record:
+        print("Error: ", record['errmsg'])
+        for article in shared_metadata:
+            if article['pmid'] == record['pmid']:
+                article['live'] = False
+                break
+        
+    else:
+        # find article with matching pmid and update pmcid, doi, live, and release date fields
+        for article in shared_metadata:
+            if article['pmid'] == record['pmid']:
+                article['pmcid'] = record['pmcid']
+                article['doi'] = record['doi']
+                article['live'] = False if 'live' in record and record['live'] == "false" else True
+                article['release_date'] = record.get('release-date', article['release_date'])
+                print("Updated metadata in ID converter: ", article)
+                break
+
 
 def downloadArticles(metadata: list):
     """
