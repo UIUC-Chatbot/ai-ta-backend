@@ -12,7 +12,7 @@ from ai_ta_backend.executors.process_pool_executor import ProcessPoolExecutorAda
 #  supabase_key=os.environ['SUPABASE_API_KEY'])  # type: ignore
 
 
-def context_parent_doc_padding(found_docs, search_query, course_name):
+def context_parent_doc_padding(found_docs, course_name):
   """
     Takes top N contexts acquired from QRANT similarity search and pads them
     """
