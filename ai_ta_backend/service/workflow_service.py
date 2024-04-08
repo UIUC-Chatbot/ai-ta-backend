@@ -42,14 +42,13 @@ class WorkflowService:
     print("Executing flow")
     if not data:
       data = {'field-0': ''}
-    url = hook
-    response = requests.post(url, files=data, timeout=60)
-    body = response.json()
+    response = requests.post(hook, files=data, timeout=60)
     if not response.ok:
-      raise Exception(f"Error: {response.status_code} \n Message: {body.get('message')}")
+      raise Exception(f"Error: {response.status_code}")
     pass
 
   def get_executions(self, limit, id=None, pagination: bool = True, api_key: str = ""):
+    # limit <= 250
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
@@ -71,7 +70,7 @@ class WorkflowService:
         if id:
           for execution in all_executions:
             if execution[0]['id'] == id:
-              return execution
+              return execution[0]
 
     if id:
       for execution in executions['data']:
@@ -202,15 +201,15 @@ class WorkflowService:
       id = max(ids) + 1
       print("Execution found in supabase: ", id)
     else:
-      execution = self.get_executions(limit=1, api_key=api_key)
+      execution = self.get_executions(limit=1, api_key=api_key, pagination=False)
       print("Got executions")
       if execution:
-        id = int(execution[0][0]['id']) + 1
+        print(execution)
+        id = int(execution[0]['id']) + 1
         print("Execution found through n8n: ", id)
       else:
         raise Exception('No executions found')
     id = str(id)
-
     try:
       start_time = time.monotonic()
       print("Inserting")
@@ -226,15 +225,12 @@ class WorkflowService:
       return {"error": str(e)}
     finally:
       # TODO: Remove lock from Supabase table.
-      print("id: ", id)
       self.sqlDb.unlockWorkflow(id)
 
     try:
       executions = self.get_executions(20, id, True, api_key)
-      print("Got executions", executions)
       while executions is None:
-        executions = self.get_executions(1, id, True, api_key)
-        print("Executions: ", executions)
+        executions = self.get_executions(20, id, True, api_key)
         print("Can't find id in executions")
         time.sleep(1)
       print("Found id in executions ")
