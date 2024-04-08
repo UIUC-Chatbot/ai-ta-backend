@@ -296,9 +296,9 @@ def export_conversations_custom(service: ExportService):
   to_date: str = request.args.get('to_date', default='', type=str)
   emails: str = request.args.getlist('destination_emails_list')
 
-  if course_name == '':
+  if course_name == '' and emails == []:
     # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+    abort(400, description=f"Missing required parameter: 'course_name' and 'destination_email_ids' must be provided.")
 
   export_status = service.export_conversations(course_name, from_date, to_date, emails)
   print("EXPORT FILE LINKS: ", export_status)
