@@ -51,11 +51,11 @@ def extractPubmedData():
     
     for metadata in extractMetadataFromXML(xml_filepath):
         print("Total articles retrieved: ", len(metadata))
-        print("Time taken to extract metadata for 2000 articles: ", round(time.time() - start_time, 2), "seconds")
+        print("Time taken to extract metadata for 100 articles: ", round(time.time() - start_time, 2), "seconds")
 
         # find PMC ID and DOI for all articles
         metadata_with_ids = getArticleIDs(metadata)
-        print("Time taken to get PMC ID and DOI for 2000 articles: ", round(time.time() - start_time, 2), "seconds")
+        print("Time taken to get PMC ID and DOI for 100 articles: ", round(time.time() - start_time, 2), "seconds")
 
         # download the articles
         complete_metadata = downloadArticles(metadata_with_ids)
@@ -63,8 +63,8 @@ def extractPubmedData():
         print("Complete metadata: ", complete_metadata[:20])
     
         # upload articles to bucket
-        # article_upload = uploadToStorage("pubmed_abstracts")
-        # print("Uploaded articles: ", article_upload)
+        article_upload = uploadToStorage("pubmed_abstracts")
+        print("/n/nUploaded articles: ", article_upload)
 
         # upload metadata to SQL DB
         response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
@@ -176,9 +176,9 @@ def extractMetadataFromXML(xml_filepath: str):
 
             metadata.append(article_data)
 
-            if len(metadata) == 500:
-                print("collected 500 articles")
-                return metadata
+            if len(metadata) == 100:
+                print("collected 100 articles")
+                yield metadata
                 metadata = []   # reset metadata for next batch
 
     if metadata:
@@ -311,9 +311,9 @@ def processArticleItem(item: ET.Element):
         if issue.find('PubDate/Year') is not None and issue.find('PubDate/Month') is not None and issue.find('PubDate/Day') is not None:   
             article_data['published'] = f"{issue.find('PubDate/Year').text}-{issue.find('PubDate/Month').text}-{issue.find('PubDate/Day').text}"
         elif issue.find('PubDate/Year') is not None and issue.find('PubDate/Month') is not None:
-            article_data['published'] = f"{issue.find('PubDate/Year').text}-{issue.find('PubDate/Month').text}"
+            article_data['published'] = f"{issue.find('PubDate/Year').text}-{issue.find('PubDate/Month').text}-01"
         elif issue.find('PubDate/Year') is not None:
-            article_data['published'] = f"{issue.find('PubDate/Year').text}"
+            article_data['published'] = f"{issue.find('PubDate/Year').text}-01-01"
         else:
             article_data['published'] = None
 
