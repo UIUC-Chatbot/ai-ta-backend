@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -22,19 +23,27 @@ class VectorDatabase():
     self.qdrant_client = QdrantClient(
         url=os.environ['QDRANT_URL'],
         api_key=os.environ['QDRANT_API_KEY'],
+        timeout=20,  # default is 5 seconds. Getting timeout errors w/ document groups.
     )
 
-    self.vectorstore = Qdrant(client=self.qdrant_client,
-                              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                              embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE))
+    self.vectorstore = Qdrant(
+        client=self.qdrant_client,
+        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+        embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE),
+    )
 
-  def vector_search(self, search_query, course_name, user_query_embedding, top_n):
+  def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n):
     """
     Search the vector database for a given query.
     """
-    myfilter = models.Filter(must=[
-        models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name)),
-    ])
+    # print(f"Searching for: {search_query} with doc_groups: {doc_groups}")
+    must_conditions: list[models.Condition] = [
+        models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name))
+    ]
+    if doc_groups and doc_groups != []:
+      must_conditions.append(models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups)))
+    myfilter = models.Filter(must=must_conditions)
+    print(f"Filter: {myfilter}")
     search_results = self.qdrant_client.search(
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
         query_filter=myfilter,

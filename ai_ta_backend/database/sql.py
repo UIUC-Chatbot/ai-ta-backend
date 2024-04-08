@@ -107,3 +107,6 @@ class SQLDatabase:
   def updateProjects(self, course_name: str, data: dict):
     return self.supabase_client.table("projects").update(data).eq("course_name", course_name).execute()
   
+  def getConversation(self, course_name: str, key: str, value: str):
+    return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
+  
