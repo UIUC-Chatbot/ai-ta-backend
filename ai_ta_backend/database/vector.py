@@ -41,7 +41,13 @@ class VectorDatabase():
         models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name))
     ]
     if doc_groups and doc_groups != []:
-      must_conditions.append(models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups)))
+      # Condition for matching any of the specified doc_groups
+      match_any_condition = models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups))
+      # Condition for matching documents where doc_groups is not set
+      is_empty_condition = models.IsEmptyCondition(is_empty=models.PayloadField(key="doc_groups"))
+      # Combine the above conditions using a should clause to create a logical OR condition
+      combined_condition = models.Filter(should=[match_any_condition, is_empty_condition])
+      must_conditions.append(combined_condition)
     myfilter = models.Filter(must=must_conditions)
     print(f"Filter: {myfilter}")
     search_results = self.qdrant_client.search(
