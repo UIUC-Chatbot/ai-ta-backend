@@ -289,20 +289,12 @@ def export_convo_history(service: ExportService):
 
   return response
 
-@app.route('/export-conversations-custom', methods=['POST'])
+@app.route('/export-conversations-custom', methods=['GET'])
 def export_conversations_custom(service: ExportService):
-  data = request.get_json()
-  course_name = data['course_name']
-  if 'from_date' in data:
-    from_date = data['from_date']
-  else:
-    from_date = ""
-  if 'to_date' in data:
-    to_date = data['to_date']
-  else:
-    to_date = ""
-
-  emails = data['destination_emails_list']
+  course_name: str = request.args.get('course_name', default='', type=str)
+  from_date: str = request.args.get('from_date', default='', type=str)
+  to_date: str = request.args.get('to_date', default='', type=str)
+  emails: str = request.args.getlist('destination_emails_list')
 
   if course_name == '':
     # proper web error "400 Bad request"
