@@ -73,87 +73,96 @@ class NomicService():
     """
     nomic.login(os.getenv('NOMIC_API_KEY'))
     NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+    try:
+      # check if map exists
+      response = self.sql.getConvoMapFromProjects(course_name)
+      print("Response from supabase: ", response.data)
 
-    # check if map exists
-    response = self.sql.getConvoMapFromProjects(course_name)
-    print("Response from supabase: ", response.data)
-
-    if not response.data:
-      if not response.data[0]['convo_map_id']:
+      # entry not present in projects table
+      if not response.data:
         print("Map does not exist for this course. Redirecting to map creation...")
         return self.create_conversation_map(course_name)
+      
+      # entry present for doc map, but not convo map
+      elif not response.data[0]['convo_map_id']:
+        print("Map does not exist for this course. Redirecting to map creation...")
+        return self.create_conversation_map(course_name)
+          
+      project_id = response.data[0]['convo_map_id']
+      last_uploaded_convo_id = response.data[0]['last_uploaded_convo_id']
 
-    project_id = response.data[0]['convo_map_id']
-    last_uploaded_convo_id = response.data[0]['last_uploaded_convo_id']
+      # check if project is accepting data
+      project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
+      if not project.is_accepting_data:
+        return "Project is currently indexing and cannot ingest new datums. Try again later."
 
-    # check if project is accepting data
-    project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
-    if not project.is_accepting_data:
-      return "Project is currently indexing and cannot ingest new datums. Try again later."
+      # fetch count of conversations since last upload
+      response = self.sql.getCountFromLLMConvoMonitor(course_name, last_id=last_uploaded_convo_id)
+      total_convo_count = response.count
+      print("Total number of unlogged conversations in Supabase: ", total_convo_count)
 
-    # fetch count of conversations since last upload
-    response = self.sql.getCountFromLLMConvoMonitor(course_name, last_id=last_uploaded_convo_id)
-    total_convo_count = response.count
-    print("Total number of unlogged conversations in Supabase: ", total_convo_count)
+      if total_convo_count == 0:
+        # log to an existing conversation
+        existing_convo = self.log_to_existing_conversation(course_name, conversation)
+        return existing_convo
 
-    if total_convo_count == 0:
-      # log to an existing conversation
-      existing_convo = self.log_to_existing_conversation(course_name, conversation)
-      return existing_convo
+      first_id = last_uploaded_convo_id
+      combined_dfs = []
+      current_convo_count = 0
+      convo_count = 0
 
-    first_id = last_uploaded_convo_id
-    combined_dfs = []
-    current_convo_count = 0
-    convo_count = 0
+      while current_convo_count < total_convo_count:
+        response = self.sql.getAllConversationsBetweenIds(course_name, first_id, 0, 100)
+        print("Response count: ", len(response.data))
+        if len(response.data) == 0:
+          break
+        df = pd.DataFrame(response.data)
+        combined_dfs.append(df)
+        current_convo_count += len(response.data)
+        convo_count += len(response.data)
+        print(current_convo_count)
 
-    while current_convo_count < total_convo_count:
-      response = self.sql.getAllConversationsBetweenIds(course_name, first_id, 0, 100)
-      print("Response count: ", len(response.data))
-      if len(response.data) == 0:
-        break
-      df = pd.DataFrame(response.data)
-      combined_dfs.append(df)
-      current_convo_count += len(response.data)
-      convo_count += len(response.data)
-      print(current_convo_count)
+        if convo_count >= 500:
+          # concat all dfs from the combined_dfs list
+          final_df = pd.concat(combined_dfs, ignore_index=True)
+          # prep data for nomic upload
+          embeddings, metadata = self.data_prep_for_convo_map(final_df)
+          # append to existing map
+          print("Appending data to existing map...")
+          result = self.append_to_map(embeddings, metadata, NOMIC_MAP_NAME_PREFIX + course_name)
+          if result == "success":
+            last_id = int(final_df['id'].iloc[-1])
+            project_info = {'course_name': course_name, 'convo_map_id': project_id, 'last_uploaded_convo_id': last_id}
+            project_response = self.sql.updateProjects(course_name, project_info)
+            print("Update response from supabase: ", project_response)
+          # reset variables
+          combined_dfs = []
+          convo_count = 0
+          print("Records uploaded: ", current_convo_count)
 
-      if convo_count >= 500:
-        # concat all dfs from the combined_dfs list
+        # set first_id for next iteration
+        first_id = response.data[-1]['id'] + 1
+
+      # upload last set of convos
+      if convo_count > 0:
+        print("Uploading last set of conversations...")
         final_df = pd.concat(combined_dfs, ignore_index=True)
-        # prep data for nomic upload
         embeddings, metadata = self.data_prep_for_convo_map(final_df)
-        # append to existing map
-        print("Appending data to existing map...")
         result = self.append_to_map(embeddings, metadata, NOMIC_MAP_NAME_PREFIX + course_name)
         if result == "success":
           last_id = int(final_df['id'].iloc[-1])
           project_info = {'course_name': course_name, 'convo_map_id': project_id, 'last_uploaded_convo_id': last_id}
           project_response = self.sql.updateProjects(course_name, project_info)
           print("Update response from supabase: ", project_response)
-        # reset variables
-        combined_dfs = []
-        convo_count = 0
-        print("Records uploaded: ", current_convo_count)
-
-      # set first_id for next iteration
-      first_id = response.data[-1]['id'] + 1
-
-    # upload last set of convos
-    if convo_count > 0:
-      print("Uploading last set of conversations...")
-      final_df = pd.concat(combined_dfs, ignore_index=True)
-      embeddings, metadata = self.data_prep_for_convo_map(final_df)
-      result = self.append_to_map(embeddings, metadata, NOMIC_MAP_NAME_PREFIX + course_name)
-      if result == "success":
-        last_id = int(final_df['id'].iloc[-1])
-        project_info = {'course_name': course_name, 'convo_map_id': project_id, 'last_uploaded_convo_id': last_id}
-        project_response = self.sql.updateProjects(course_name, project_info)
-        print("Update response from supabase: ", project_response)
+      
+      # rebuild the map
+      self.rebuild_map(course_name, "conversation")
+      return "success"
     
-    # rebuild the map
-    self.rebuild_map(course_name, "conversation")
-
-    return "success"
+    except Exception as e:
+      print(e)
+      self.sentry.capture_exception(e)
+      return "Error in logging to conversation map: {e}"
   
   
   def log_to_existing_conversation(self, course_name: str, conversation):
@@ -172,7 +181,7 @@ class NomicService():
       project = AtlasProject(name=project_name, add_datums_if_exists=True)
 
       prev_id = incoming_id_response.data[0]['id']
-      uploaded_data = project.get_data(ids=[prev_id]) 
+      uploaded_data = project.get_data(ids=[prev_id]) # fetch data point from nomic
       prev_convo = uploaded_data[0]['conversation']
 
       # update conversation
