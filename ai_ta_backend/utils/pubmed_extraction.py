@@ -40,18 +40,17 @@ def extractPubmedData():
     
     gz_filepath = downloadXML(ftp_address, ftp_path, file_list[1], "pubmed")
     print("GZ Downloaded: ", gz_filepath)
-    gz_file_download_time = round(time.time() - start_time, 2)
-    print("Time taken to download .gz file: ", gz_file_download_time, "seconds")
+    print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
+    gz_file_download_time = time.time()
 
     # extract the XML file
     if not gz_filepath:
         return "failure"
     xml_filepath = extractXMLFile(gz_filepath)
     print("XML Extracted: ", xml_filepath)
-    xml_extract_time = round(time.time() - gz_file_download_time, 2)
-    print("Time taken to extract XML file: ", xml_extract_time, "seconds")
+    print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
     
-    #xml_filepath = "pubmed/pubmed24n1219.xml"
+    
     
     for metadata in extractMetadataFromXML(xml_filepath):
         metadata_extract_start_time = time.time() 
@@ -59,10 +58,12 @@ def extractPubmedData():
         # find PMC ID and DOI for all articles
         metadata_with_ids = getArticleIDs(metadata)
         print("Time taken to get PMC ID and DOI for 100 articles: ", round(time.time() - start_time, 2), "seconds")
-
+        #print("Metadata with IDs: ", metadata_with_ids)
+        
         # download the articles
         complete_metadata = downloadArticles(metadata_with_ids)
-
+        print(complete_metadata)
+        
         # store metadata in csv file
         print("\n")
         print("Total articles retrieved: ", len(complete_metadata))
@@ -315,79 +316,153 @@ def processArticleItem(item: ET.Element):
     except Exception as e:
         return {'error': str(e)}
 
+# def getArticleIDs(metadata: list):
+#     """
+#     Uses the PubMed ID converter API to get PMCID and DOI for each article.
+#     Queries the API in batches of 200 articles at a time.
+#     Also updates the metadata with the release date and live status - some articles are yet to be released.
+#     Args:
+#         metadata: List of dictionaries containing metadata for each article.
+#     Returns:
+#         metadata: Updated metadata with PMCID, DOI, release date, and live status information.
+#     """
+#     print("In getArticleIDs()")
+    
+#     base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
+#     app_details = "?tool=ncsa_uiuc&email=caiincsa@gmail.com&format=json"
+
+#     batch_size = 200    # maximum number of articles API can process in one request
+            
+#     for i in range(0, len(metadata), batch_size):
+#         batch = metadata[i:i+batch_size]
+#         ids = ",".join([article['pmid'] for article in batch])
+#         response = requests.get(base_url + app_details + "&ids=" + ids)
+#         data = response.json()        
+#         records = data['records']
+#         # PARALLELIZE THIS FOR LOOP - UPDATES ADDITIONAL FIELDS FOR ALL ARTICLES AT ONCE
+#         with Manager() as manager:
+#             shared_metadata = manager.list(batch)
+#             with concurrent.futures.ProcessPoolExecutor() as executor:
+#                 futures = {executor.submit(updateArticleMetadata, shared_metadata, record): record for record in records}
+#                 concurrent.futures.wait(futures)
+#             for future in concurrent.futures.as_completed(futures):
+#                 record = futures[future]
+#                 try:
+#                     future.result()
+#                 except Exception as exc:
+#                     print('%r generated an exception: %s' % (record, exc))
+            
+#             print("Updated metadata: ", list(shared_metadata))
+       
+#     print("Length of metadata after ID conversion: ", len(metadata))
+                
+#     return metadata
+    
+
+# def updateArticleMetadata(shared_metadata, record):
+#     """
+#     Updates metadata with PMCID, DOI, release date, and live status information for given article.
+#     Used withing getArticleIDs() function.
+#     """
+    
+#     if 'errmsg' in record:
+#         print("Error: ", record['errmsg'])
+#         for article in shared_metadata:
+#             if article['pmid'] == record['pmid']:
+#                 article['live'] = False
+#                 break
+#     else:
+#         # find article with matching pmid and update pmcid, doi, live, and release date fields
+#         print("record: ", record)
+#         for article in shared_metadata:
+#             if article['pmid'] == record['pmid']:
+#                 article['pmcid'] = record['pmcid']
+#                 article['doi'] = record['doi']
+#                 article['live'] = False if 'live' in record and record['live'] == "false" else True
+#                 article['release_date'] = record.get('release-date', article['release_date'])
+#                 print("Updated metadata in ID converter: ", article)
+#                 break
+
 def getArticleIDs(metadata: list):
-    """
-    Uses the PubMed ID converter API to get PMCID and DOI for each article.
-    Queries the API in batches of 200 articles at a time.
-    Also updates the metadata with the release date and live status - some articles are yet to be released.
-    Args:
-        metadata: List of dictionaries containing metadata for each article.
-    Returns:
-        metadata: Updated metadata with PMCID, DOI, release date, and live status information.
-    """
-    print("In getArticleIDs()")
-    try:
-        base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
-        app_details = "?tool=ncsa_uiuc&email=caiincsa@gmail.com&format=json"
+  """
+  Uses the PubMed ID converter API to get PMCID and DOI for each article.
+  Queries the API in batches of 200 articles at a time.
+  Also updates the metadata with the release date and live status - some articles are yet to be released.
+  Args:
+      metadata: List of dictionaries containing metadata for each article.
+  Returns:
+      metadata: Updated metadata with PMCID, DOI, release date, and live status information.
+  """
+  print("In getArticleIDs()")
 
-        batch_size = 200    # maximum number of articles API can process in one request
-            
-        for i in range(0, len(metadata), batch_size):
-            batch = metadata[i:i+batch_size]
-            ids = ",".join([article['pmid'] for article in batch])
-            response = requests.get(base_url + app_details + "&ids=" + ids)
-            data = response.json()        
-            records = data['records']
-            # PARALLELIZE THIS FOR LOOP - UPDATES ADDITIONAL FIELDS FOR ALL ARTICLES AT ONCE
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                executor.map(updateArticleMetadata, batch, records)
+  base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
+  app_details = "?tool=ncsa_uiuc&email=caiincsa@gmail.com&format=json"
 
-            # for record in records:
-            #     if 'errmsg' in record:
-            #         print("Error: ", record['errmsg'])
-            #         for article in batch:
-            #             if article['pmid'] == record['pmid']:
-            #                 article['live'] = False
-            #                 break
-            #         continue
-            #     else:
-            #         # find article with matching pmid and update pmcid, doi, live, and release date fields
-            #         for article in batch:
-            #             if article['pmid'] == record['pmid']:
-            #                 article['pmcid'] = record['pmcid']
-            #                 article['doi'] = record['doi']
-            #                 article['live'] = False if 'live' in record and record['live'] == "false" else True
-            #                 article['release_date'] = record.get('release-date', article['release_date'])
-            #                 print("Updated metadata in ID converter: ", article)
-            #                 break
+  batch_size = 200  # maximum number of articles API can process in one request
 
-            
-        return metadata
-    except Exception as e:
-        print("Error getting article IDs: ", e)
-        return metadata
+  for i in range(0, len(metadata), batch_size):
+    batch = metadata[i:i + batch_size]
+    ids = ",".join([article['pmid'] for article in batch])
+    response = requests.get(base_url + app_details + "&ids=" + ids)
+    data = response.json()
+    records = data['records']
 
-def updateArticleMetadata(shared_metadata: list, record: dict):
-    """
-    Updates metadata with PMCID, DOI, release date, and live status information for given article.
-    """
-    if 'errmsg' in record:
-        print("Error: ", record['errmsg'])
-        for article in shared_metadata:
-            if article['pmid'] == record['pmid']:
-                article['live'] = False
-                break
-        
-    else:
-        # find article with matching pmid and update pmcid, doi, live, and release date fields
-        for article in shared_metadata:
-            if article['pmid'] == record['pmid']:
-                article['pmcid'] = record['pmcid']
-                article['doi'] = record['doi']
-                article['live'] = False if 'live' in record and record['live'] == "false" else True
-                article['release_date'] = record.get('release-date', article['release_date'])
-                print("Updated metadata in ID converter: ", article)
-                break
+    # PARALLELIZE THIS FOR LOOP - UPDATES ADDITIONAL FIELDS FOR ALL ARTICLES AT ONCE
+    with Manager() as manager:
+        shared_metadata = manager.dict()  # Use a shared dictionary
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            futures = {
+            executor.submit(updateArticleMetadata, shared_metadata, record): record
+            for record in records
+            }
+            concurrent.futures.wait(futures)
+            for future in concurrent.futures.as_completed(futures):
+                record = futures[future]
+                try:
+                    future.result()
+                except Exception as exc:
+                    print('%r generated an exception: %s' % (record, exc))        
+
+        # Update original metadata after loop
+        for article in metadata:
+            if article['pmid'] in shared_metadata:
+                # print("Shared metadata: ", shared_metadata[article['pmid']])
+                if 'errmsg' in shared_metadata[article['pmid']]:
+                    article['live'] = False
+                else:
+                    article['pmcid'] = shared_metadata[article['pmid']]['pmcid']
+                    article['doi'] = shared_metadata[article['pmid']]['doi']
+                    article['live'] = shared_metadata[article['pmid']]['live']
+                    article['release_date'] = shared_metadata[article['pmid']]['release_date']
+                #print("Updated metadata: ", article)
+
+  #print("Length of metadata after ID conversion: ", len(metadata))
+  return metadata
+
+
+def updateArticleMetadata(shared_metadata, record):
+  """
+  Updates metadata with PMCID, DOI, release date, and live status information for given article.
+  Used within getArticleIDs() function.
+  """
+
+  if 'errmsg' in record:
+    print("Error: ", record['errmsg'])
+    shared_metadata[record['pmid']] = {
+        **record,  # Create a copy with record data
+        'live': False
+    }
+  else:
+    # Update shared dictionary with pmid as key and updated article data as value
+    shared_metadata[record['pmid']] = {
+        **record,  # Create a copy with record data
+        'pmcid': record['pmcid'],
+        'doi': record['doi'],
+        'live': False if 'live' in record and record['live'] == "false" else True,
+        'release_date': record['release-date'] if 'release-date' in record else None,
+    }
+    #print("Updated metadata in ID converter: ", shared_metadata[record['pmid']])
+
 
 
 def downloadArticles(metadata: list):
@@ -398,6 +473,7 @@ def downloadArticles(metadata: list):
     Returns:
         metadata: Updated metadata with license, FTP link, and downloaded filepath information.
     """
+    print("In downloadArticles()")
     try:
         base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?"
         print("Downloading articles...")
@@ -405,13 +481,11 @@ def downloadArticles(metadata: list):
         # connect to FTP server anonymously
         ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
         ftp.login()
-
-        # PARALLELIZE THIS FOR LOOP - DOWNLOAD + METADATA UPDATE
+        
         for article in metadata:
-
             if article['live'] is False or article['pmcid'] is None:
                 continue
-            
+
             # else proceed with download
             if article['pmcid']:
                 # query URL for article download
@@ -420,51 +494,55 @@ def downloadArticles(metadata: list):
 
                 xml_response = requests.get(final_url)
                 # get license and FTP link
-                extracted_data = extractArticleData(xml_response.text)
-                
+                extracted_data = extractArticleData(xml_response.text) 
                 print("\nExtracted license and link data: ", extracted_data)
 
                 # if no data extracted (reason: article not released/open-access), skip to next article
                 if not extracted_data:
                     article['live'] = False
                     continue
-
+                
                 # update metadata with license and ftp link information
                 article['license'] = extracted_data[0]['license']
                 article['pubmed_ftp_link'] = extracted_data[0]['href'] if 'href' in extracted_data[0] else None
-                
+                        
                 # download the article
                 ftp_url = urlparse(extracted_data[0]['href'])
                 ftp_path = ftp_url.path[1:]
                 print("FTP path: ", ftp_path)
-                
+
                 # Set a timeout of 15 minutes - some files take > 1 hour to download and everything hangs
-                timeout = threading.Timer(15 * 60, lambda: print("Download timed out!"))
-                timeout.start()
-                
+                # timeout = threading.Timer(15 * 60, lambda: print("Download timeout reached."))
+                # timeout.start()
+                        
                 filename = ftp_path.split("/")[-1]
                 local_file = os.path.join("pubmed_abstracts", filename)
-                try:
-                    with open(local_file, 'wb') as f:
-                        ftp.retrbinary('RETR ' + ftp_path, f.write)
-                    print("Downloaded PDF file: ", local_file)
-                    article['filepath'] = local_file
 
-                    # if file is .tar.gz, extract the PDF and delete the tar.gz file
-                    if filename.endswith(".tar.gz"):
-                        extracted_pdf_paths = extractPDF(local_file)
-                        print("Extracted PDFs from .tar.gz file: ", extracted_pdf_paths)
-                        article['filepath'] = ",".join(extracted_pdf_paths)
-                        os.remove(local_file)
-                finally:
-                    timeout.cancel() # cancel the timer if download finishes before timeout
-                
-                print("\nUpdated metadata after download: ", article)
+                try:
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(ftp.retrbinary, 'RETR ' + ftp_path, open(local_file, 'wb').write)
+                        future.result(timeout=15*60)  # Set a timeout of 15 minutes
+                        print("Downloaded PDF file: ", local_file)
+                        article['filepath'] = local_file
+
+                        # if file is .tar.gz, extract the PDF and delete the tar.gz file
+                        if filename.endswith(".tar.gz"):
+                            extracted_pdf_paths = extractPDF(local_file)
+                            print("Extracted PDFs from .tar.gz file: ", extracted_pdf_paths)
+                            article['filepath'] = ",".join(extracted_pdf_paths)
+                            os.remove(local_file)
+                except concurrent.futures.TimeoutError:
+                    print("Download timeout reached.")
+                    continue  # Skip the download and continue with the rest of the code
+                        
+                print("\nUpdated metadata after download: ", article) 
+        
         ftp.quit()
         return metadata   
     except Exception as e:
         print("Error downloading articles: ", e)
-        return metadata       
+        return metadata   
+           
 
 def extractPDF(tar_gz_filepath: str):
     """
