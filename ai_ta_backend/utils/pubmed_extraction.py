@@ -16,6 +16,9 @@ from multiprocessing import Manager
 import pandas as pd
 import threading 
 import json
+from functools import partial
+
+
 
 SUPBASE_CLIENT = supabase.create_client(    # type: ignore
     supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
@@ -38,7 +41,7 @@ def extractPubmedData():
     ftp_path = "pubmed/baseline"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
-    gz_filepath = downloadXML(ftp_address, ftp_path, file_list[1], "pubmed")
+    gz_filepath = downloadXML(ftp_address, ftp_path, file_list[2], "pubmed")
     print("GZ Downloaded: ", gz_filepath)
     print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
     gz_file_download_time = time.time()
@@ -50,19 +53,20 @@ def extractPubmedData():
     print("XML Extracted: ", xml_filepath)
     print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
     
-    
-    
     for metadata in extractMetadataFromXML(xml_filepath):
         metadata_extract_start_time = time.time() 
 
         # find PMC ID and DOI for all articles
         metadata_with_ids = getArticleIDs(metadata)
-        print("Time taken to get PMC ID and DOI for 100 articles: ", round(time.time() - start_time, 2), "seconds")
+        metadata_update_time = time.time()
+        print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
         #print("Metadata with IDs: ", metadata_with_ids)
         
         # download the articles
         complete_metadata = downloadArticles(metadata_with_ids)
         print(complete_metadata)
+        print("Time taken to download articles for 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
+
         
         # store metadata in csv file
         print("\n")
@@ -83,7 +87,7 @@ def extractPubmedData():
 
     # upload articles to bucket
     print("Uploading articles to storage...")
-    article_upload = uploadToStorage("pubmed_abstracts")
+    article_upload = uploadToStorage("pubmed_abstracts")    # need to parallelize upload
     print("Uploaded articles: ", article_upload)
     
     # upload metadata to SQL DB
@@ -100,7 +104,6 @@ def extractPubmedData():
     response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
     print("Supabase response: ", response)
         
-    
     return "success"
 
 def downloadXML(ftp_address: str, ftp_path: str, file: str, local_dir: str):
@@ -465,84 +468,188 @@ def updateArticleMetadata(shared_metadata, record):
 
 
 
+# def downloadArticles(metadata: list):
+#     """
+#     Downloads articles from PMC and stores them in local directory.
+#     Args:
+#         metadata: List of dictionaries containing metadata for each article.
+#     Returns:
+#         metadata: Updated metadata with license, FTP link, and downloaded filepath information.
+#     """
+#     print("In downloadArticles()")
+#     try:
+#         base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?"
+#         print("Downloading articles...")
+
+#         # connect to FTP server anonymously
+#         ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+#         ftp.login()
+        
+#         for article in metadata:
+#             if article['live'] is False or article['pmcid'] is None:
+#                 continue
+
+#             # else proceed with download
+#             if article['pmcid']:
+#                 # query URL for article download
+#                 final_url = base_url + "id=" + article['pmcid'] 
+#                 print("Download URL: ", final_url)
+
+#                 xml_response = requests.get(final_url)
+#                 # get license and FTP link
+#                 extracted_data = extractArticleData(xml_response.text) 
+#                 print("\nExtracted license and link data: ", extracted_data)
+
+#                 # if no data extracted (reason: article not released/open-access), skip to next article
+#                 if not extracted_data:
+#                     article['live'] = False
+#                     continue
+                
+#                 # update metadata with license and ftp link information
+#                 article['license'] = extracted_data[0]['license']
+#                 article['pubmed_ftp_link'] = extracted_data[0]['href'] if 'href' in extracted_data[0] else None
+                        
+#                 # download the article
+#                 ftp_url = urlparse(extracted_data[0]['href'])
+#                 ftp_path = ftp_url.path[1:]
+#                 print("FTP path: ", ftp_path)
+
+#                 # Set a timeout of 15 minutes - some files take > 1 hour to download and everything hangs
+#                 # timeout = threading.Timer(15 * 60, lambda: print("Download timeout reached."))
+#                 # timeout.start()
+                        
+#                 filename = ftp_path.split("/")[-1]
+#                 local_file = os.path.join("pubmed_abstracts", filename)
+
+#                 try:
+#                     with concurrent.futures.ThreadPoolExecutor() as executor:
+#                         future = executor.submit(ftp.retrbinary, 'RETR ' + ftp_path, open(local_file, 'wb').write)
+#                         future.result(timeout=15*60)  # Set a timeout of 15 minutes
+#                         print("Downloaded PDF file: ", local_file)
+#                         article['filepath'] = local_file
+
+#                         # if file is .tar.gz, extract the PDF and delete the tar.gz file
+#                         if filename.endswith(".tar.gz"):
+#                             extracted_pdf_paths = extractPDF(local_file)
+#                             print("Extracted PDFs from .tar.gz file: ", extracted_pdf_paths)
+#                             article['filepath'] = ",".join(extracted_pdf_paths)
+#                             os.remove(local_file)
+#                 except concurrent.futures.TimeoutError:
+#                     print("Download timeout reached.")
+#                     continue  # Skip the download and continue with the rest of the code
+                        
+#                 print("\nUpdated metadata after download: ", article) 
+        
+#         ftp.quit()
+#         return metadata   
+#     except Exception as e:
+#         print("Error downloading articles: ", e)
+#         return metadata   
+
 def downloadArticles(metadata: list):
     """
     Downloads articles from PMC and stores them in local directory.
     Args:
         metadata: List of dictionaries containing metadata for each article.
     Returns:
-        metadata: Updated metadata with license, FTP link, and downloaded filepath information.
+      metadata: Updated metadata with license, FTP link, and downloaded filepath information.
     """
     print("In downloadArticles()")
     try:
         base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?"
-        print("Downloading articles...")
 
-        # connect to FTP server anonymously
-        ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
-        ftp.login()
+        updated_articles = {}
         
-        for article in metadata:
-            if article['live'] is False or article['pmcid'] is None:
-                continue
-
-            # else proceed with download
-            if article['pmcid']:
-                # query URL for article download
-                final_url = base_url + "id=" + article['pmcid'] 
-                print("Download URL: ", final_url)
-
-                xml_response = requests.get(final_url)
-                # get license and FTP link
-                extracted_data = extractArticleData(xml_response.text) 
-                print("\nExtracted license and link data: ", extracted_data)
-
-                # if no data extracted (reason: article not released/open-access), skip to next article
-                if not extracted_data:
-                    article['live'] = False
-                    continue
-                
-                # update metadata with license and ftp link information
-                article['license'] = extracted_data[0]['license']
-                article['pubmed_ftp_link'] = extracted_data[0]['href'] if 'href' in extracted_data[0] else None
-                        
-                # download the article
-                ftp_url = urlparse(extracted_data[0]['href'])
-                ftp_path = ftp_url.path[1:]
-                print("FTP path: ", ftp_path)
-
-                # Set a timeout of 15 minutes - some files take > 1 hour to download and everything hangs
-                # timeout = threading.Timer(15 * 60, lambda: print("Download timeout reached."))
-                # timeout.start()
-                        
-                filename = ftp_path.split("/")[-1]
-                local_file = os.path.join("pubmed_abstracts", filename)
-
+        # Use ThreadPoolExecutor to run download_article for each article in parallel
+        download_article_partial = partial(download_article, api_url=base_url)
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            futures = [executor.submit(download_article_partial, article) for article in metadata]
+            for future in concurrent.futures.as_completed(futures):
                 try:
-                    with concurrent.futures.ThreadPoolExecutor() as executor:
-                        future = executor.submit(ftp.retrbinary, 'RETR ' + ftp_path, open(local_file, 'wb').write)
-                        future.result(timeout=15*60)  # Set a timeout of 15 minutes
-                        print("Downloaded PDF file: ", local_file)
-                        article['filepath'] = local_file
+                    updated_article = future.result(timeout=15*60)  # Check result without blocking
+                    if updated_article:
+                        updated_articles[updated_article['pmid']] = updated_article
+                    print("Updated article: ", updated_article)
+                except Exception as e:
+                    print("Error downloading article:", e)
 
-                        # if file is .tar.gz, extract the PDF and delete the tar.gz file
-                        if filename.endswith(".tar.gz"):
-                            extracted_pdf_paths = extractPDF(local_file)
-                            print("Extracted PDFs from .tar.gz file: ", extracted_pdf_paths)
-                            article['filepath'] = ",".join(extracted_pdf_paths)
-                            os.remove(local_file)
-                except concurrent.futures.TimeoutError:
-                    print("Download timeout reached.")
-                    continue  # Skip the download and continue with the rest of the code
-                        
-                print("\nUpdated metadata after download: ", article) 
+        # Update original metadata with updated articles
+        for article in metadata:
+            if article['pmid'] in updated_articles:
+                article.update(updated_articles[article['pmid']])
+                
+        print("Updated metadata after download: ", metadata)
         
-        ftp.quit()
-        return metadata   
+        return metadata
+
     except Exception as e:
         print("Error downloading articles: ", e)
-        return metadata   
-           
+        return metadata
+
+def download_article(article, api_url):
+    """
+    Downloads the article from given FTP link and updates metadata with license, FTP link, and downloaded filepath information.
+    This function is used within downloadArticles() function.
+    Args:
+        article: Dictionary containing metadata for the article.
+        api_url: URL for the article download API.
+        ftp: FTP connection object.
+    Returns:
+        article: Updated metadata for the article.
+    """
+
+    print("Downloading articles...")
+    if not article['live'] or article['pmcid'] is None:
+        return
+
+    # Proceed with download
+    # Connect to FTP server anonymously
+    ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+    ftp.login()
+
+    if article['pmcid']:
+        final_url = api_url + "id=" + article['pmcid']
+        print("\nDownload URL: ", final_url)
+
+        xml_response = requests.get(final_url)
+        extracted_data = extractArticleData(xml_response.text)
+        print("Extracted license and link data: ", extracted_data)
+
+        if not extracted_data:
+            article['live'] = False
+            return
+
+        article['license'] = extracted_data[0]['license']
+        article['pubmed_ftp_link'] = extracted_data[0]['href'] if 'href' in extracted_data[0] else None
+
+        ftp_url = urlparse(extracted_data[0]['href'])
+        ftp_path = ftp_url.path[1:]
+        print("FTP path: ", ftp_path)
+
+        filename = ftp_path.split("/")[-1]
+        local_file = os.path.join("pubmed_abstracts", filename)
+
+        try:
+            with open(local_file, 'wb') as f:
+                ftp.retrbinary('RETR ' + ftp_path, f.write)  # Download directly to file
+
+            print("Downloaded FTP file: ", local_file)
+            article['filepath'] = local_file
+
+            if filename.endswith(".tar.gz"):
+                extracted_pdf_paths = extractPDF(local_file)
+                print("Extracted PDFs from .tar.gz file: ", extracted_pdf_paths)
+                article['filepath'] = ",".join(extracted_pdf_paths)
+                os.remove(local_file)
+
+        except concurrent.futures.TimeoutError:
+            print("Download timeout reached.")
+
+        ftp.quit()
+
+        print("\nUpdated metadata after download: ", article)
+        return article
+         
 
 def extractPDF(tar_gz_filepath: str):
     """
@@ -619,9 +726,7 @@ def uploadToStorage(filepath: str):
     print("in uploadToStorage()")
     try:
         bucket_name = "pubmed"
-        print(os.environ['MINIO_URL'])
-        print(os.environ['MINIO_SECRET_KEY'])
-        print(os.environ['MINIO_ACCESS_KEY'])
+        
         found = MINIO_CLIENT.bucket_exists(bucket_name)
         if not found:
             MINIO_CLIENT.make_bucket(bucket_name)
