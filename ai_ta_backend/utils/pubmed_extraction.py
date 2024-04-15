@@ -19,7 +19,6 @@ import json
 from functools import partial
 
 
-
 SUPBASE_CLIENT = supabase.create_client(    # type: ignore
     supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
     supabase_key=os.getenv('SUPABASE_API_KEY')  # type: ignore
@@ -41,7 +40,7 @@ def extractPubmedData():
     ftp_path = "pubmed/baseline"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
-    gz_filepath = downloadXML(ftp_address, ftp_path, file_list[2], "pubmed")
+    gz_filepath = downloadXML(ftp_address, ftp_path, file_list[3], "pubmed")
     print("GZ Downloaded: ", gz_filepath)
     print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
     gz_file_download_time = time.time()
@@ -53,6 +52,7 @@ def extractPubmedData():
     print("XML Extracted: ", xml_filepath)
     print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
     
+    #xml_filepath = "pubmed/pubmed24n1217.xml"
     for metadata in extractMetadataFromXML(xml_filepath):
         metadata_extract_start_time = time.time() 
 
@@ -91,6 +91,7 @@ def extractPubmedData():
     print("Uploaded articles: ", article_upload)
     
     # upload metadata to SQL DB
+    csv_filepath = "metadata.csv"
     df = pd.read_csv(csv_filepath)
     
     complete_metadata = df.to_dict('records')
@@ -604,7 +605,7 @@ def download_article(article, api_url):
 
     # Proceed with download
     # Connect to FTP server anonymously
-    ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov")
+    ftp = ftplib.FTP("ftp.ncbi.nlm.nih.gov", timeout=15*60)
     ftp.login()
 
     if article['pmcid']:
@@ -628,7 +629,7 @@ def download_article(article, api_url):
 
         filename = ftp_path.split("/")[-1]
         local_file = os.path.join("pubmed_abstracts", filename)
-
+        
         try:
             with open(local_file, 'wb') as f:
                 ftp.retrbinary('RETR ' + ftp_path, f.write)  # Download directly to file
@@ -718,15 +719,25 @@ def extractArticleData(xml_string: str):
     except Exception as e:
         print("Error extracting article data: ", e)
         return []
-    
+
+def upload_file(client, bucket_name, file_path, object_name):
+    """
+    Uploads a single file to the Minio bucket.
+    """
+    try:
+        client.fput_object(bucket_name, object_name, file_path)
+        print(f"Uploaded: {object_name}")
+    except Exception as e:
+        print(f"Error uploading {object_name}: {e}")
+
 def uploadToStorage(filepath: str):
     """
-    Uploads all files present under given filepath to Minio bucket.
+    Uploads all files present under given filepath to Minio bucket in parallel.
     """
     print("in uploadToStorage()")
     try:
         bucket_name = "pubmed"
-        
+
         found = MINIO_CLIENT.bucket_exists(bucket_name)
         if not found:
             MINIO_CLIENT.make_bucket(bucket_name)
@@ -734,18 +745,54 @@ def uploadToStorage(filepath: str):
         else:
             print("Bucket", bucket_name, "already exists")
 
-        for root, dirs, files in os.walk(filepath):
-            # can parallelize this upload
-            for file in files:
+        # Get all files to upload
+        files = []
+        for root, _, files_ in os.walk(filepath):
+            for file in files_:
                 file_path = os.path.join(root, file)
                 object_name = file_path.split("/")[-1]
-                # insert local file into remote bucket
-                MINIO_CLIENT.fput_object(bucket_name, object_name, file_path)
-                print("Uploaded: ", object_name)
+                files.append((MINIO_CLIENT, bucket_name, file_path, object_name))
+
+        # Use concurrent.futures ThreadPoolExecutor for parallel upload 
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Submit all upload tasks to the executor
+            futures = [executor.submit(upload_file, *args) for args in files]
+            # Wait for all tasks to complete
+            for future in futures:
+                future.result()  # This will raise any exceptions from upload_file
+
         return "success"
     except Exception as e:
         print("Error uploading to storage: ", e)
         return "failure"
+  
+# def uploadToStorage(filepath: str):
+#     """
+#     Uploads all files present under given filepath to Minio bucket.
+#     """
+#     print("in uploadToStorage()")
+#     try:
+#         bucket_name = "pubmed"
+        
+#         found = MINIO_CLIENT.bucket_exists(bucket_name)
+#         if not found:
+#             MINIO_CLIENT.make_bucket(bucket_name)
+#             print("Created bucket", bucket_name)
+#         else:
+#             print("Bucket", bucket_name, "already exists")
+
+#         for root, dirs, files in os.walk(filepath):
+#             # can parallelize this upload
+#             for file in files:
+#                 file_path = os.path.join(root, file)
+#                 object_name = file_path.split("/")[-1]
+#                 # insert local file into remote bucket
+#                 MINIO_CLIENT.fput_object(bucket_name, object_name, file_path)
+#                 print("Uploaded: ", object_name)
+#         return "success"
+#     except Exception as e:
+#         print("Error uploading to storage: ", e)
+#         return "failure"
 
 
 
