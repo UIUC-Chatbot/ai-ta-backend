@@ -40,7 +40,7 @@ def extractPubmedData():
     ftp_path = "pubmed/baseline"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
-    gz_filepath = downloadXML(ftp_address, ftp_path, file_list[3], "pubmed")
+    gz_filepath = downloadXML(ftp_address, ftp_path, file_list[4], "pubmed")
     print("GZ Downloaded: ", gz_filepath)
     print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
     gz_file_download_time = time.time()
@@ -567,6 +567,7 @@ def downloadArticles(metadata: list):
             futures = [executor.submit(download_article_partial, article) for article in metadata]
             for future in concurrent.futures.as_completed(futures):
                 try:
+                    print("Starting new download...")
                     updated_article = future.result(timeout=15*60)  # Check result without blocking
                     if updated_article:
                         updated_articles[updated_article['pmid']] = updated_article
