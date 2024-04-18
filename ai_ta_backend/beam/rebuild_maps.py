@@ -8,8 +8,10 @@ import supabase
 import requests
 import nomic
 from nomic.project import AtlasClass
+from nomic import AtlasProject
 from beam import App, QueueDepthAutoscaler, Runtime  
 from posthog import Posthog
+import pandas as pd
 
 
 requirements = [
@@ -79,7 +81,7 @@ def loader():
 autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
 
 @app1.rest_api()
-def rebuild_maps(course_name: None) -> str:
+def rebuild_maps(course_name=None, map_type='conversation') -> str:
     """
     This rebuild all maps in Nomic dashboard.
     1. Get a list of all maps from Nomic.
@@ -87,31 +89,60 @@ def rebuild_maps(course_name: None) -> str:
     3. If the last entry is older than 3 months, skip rebuild, otherwise re-build the map.
     """
     print("in rebuild_maps")
-    print(os.getenv('NOMIC_API_KEY'))
     nomic.cli.login(os.getenv('NOMIC_API_KEY'))
 
-    supabase_client = supabase.create_client(  # type: ignore
-      supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
-    
-    nomic_projects = list_projects()
-
-    for project in nomic_projects:
-        course_name = project['name'].split(' ')[-1]
-        print(f"Processing project: {course_name}")
-
-        map_type = project['name'].split(' ')[0].lower()    # will be conversation or document
-
-        # Fetch last Supabase entry
-        if map_type == 'conversation':
-            table_name = 'llm-convo-monitor'
+    if course_name is not None:
+        # if course_name is provided, rebuild only that course
+        if map_type == 'document':
+            project_name = "Document Map for " + course_name
         else:
-            table_name = 'documents'
+            project_name = "Conversation Map for " + course_name
 
-        response = supabase_client.table(table_name).select('created_at').eq('course_name', course_name).order('created_at', ascending=False).limit(1).execute()
-        last_created_time = response['data'][0]['created_at']
+        project = AtlasProject(name=project_name, add_datums_if_exists=True)
+            
+        if project.is_accepting_data: # will skip rebuilding if project is locked
+            project.rebuild_maps()
+        
+        return "success"
+    
+    else:
+        supabase_client = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY']) # type: ignore
+        
+        nomic_projects = list_projects()
 
-        print(f"Last created time: {last_created_time}")
-        print(type(last_created_time))
+        for project in nomic_projects:
+            course_name = project['name'].split(' ')[-1]
+            print(f"Processing project: {course_name}")
+
+            map_type = project['name'].split(' ')[0].lower()    # will be conversation or document
+
+            # Fetch last Supabase entry
+            if map_type == 'conversation':
+                table_name = 'llm-convo-monitor'
+            else:
+                table_name = 'documents'
+
+            response = supabase_client.table(table_name).select('created_at').eq('course_name', course_name).order('created_at', desc=True).limit(1).execute()
+            last_created_time = response.data[0]['created_at']
+
+            print(f"Last created time: {last_created_time}")
+            last_created_time = pd.Timestamp(last_created_time).timestamp()
+            current_time = time.time()
+            print("Time difference in days: ", (current_time - last_created_time)/(24*60*60))
+        
+            if (current_time - last_created_time) < 90*24*60*60:
+                print(f"Skipping rebuild for {course_name}")
+                continue
+            else:
+                print(f"Rebuilding map for {course_name}")
+                project_name = project['name']
+                print(f"Project name: {project_name}")
+
+                project = AtlasProject(name=project_name, add_datums_if_exists=True)
+                if project.is_accepting_data:
+                    project.rebuild_maps()
+        
+            exit()
 
     return "success"
 
