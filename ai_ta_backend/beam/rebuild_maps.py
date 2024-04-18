@@ -1,18 +1,14 @@
 import os
 import time
 import traceback
-from typing import Any, Callable, Dict, List, Optional, Union
 import beam
-import boto3
 import openai
 import sentry_sdk
 import supabase
-import nomic
 import requests
+import nomic
 from nomic.project import AtlasClass
-from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
-
-from PIL import Image
+from beam import App, QueueDepthAutoscaler, Runtime  
 from posthog import Posthog
 
 
@@ -43,7 +39,7 @@ requirements = [
 ]
 
 # TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
-app = App("rebuild_maps",
+app1 = App("rebuild_maps",
           runtime=Runtime(
               cpu=1,
               memory="3Gi",
@@ -63,7 +59,6 @@ def loader():
   The loader function will run once for each worker that starts up. https://docs.beam.cloud/deployment/loaders
   """
   openai.api_key = os.getenv("VLADS_OPENAI_KEY")
-  nomic.login(os.getenv('NOMIC_API_KEY'))
 
   # Create a Supabase client
   supabase_client = supabase.create_client(  # type: ignore
@@ -83,15 +78,40 @@ def loader():
 # autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
 autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
 
-def rebuild_maps(supabase_client, posthog):
+@app1.rest_api()
+def rebuild_maps(course_name: None) -> str:
     """
     This rebuild all maps in Nomic dashboard.
     1. Get a list of all maps from Nomic.
     2. For each map, check last inserted entry in Supabase.
     3. If the last entry is older than 3 months, skip rebuild, otherwise re-build the map.
     """
+    print("in rebuild_maps")
+    print(os.getenv('NOMIC_API_KEY'))
+    nomic.cli.login(os.getenv('NOMIC_API_KEY'))
+
+    supabase_client = supabase.create_client(  # type: ignore
+      supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
+    
     nomic_projects = list_projects()
 
+    for project in nomic_projects:
+        course_name = project['name'].split(' ')[-1]
+        print(f"Processing project: {course_name}")
+
+        map_type = project['name'].split(' ')[0].lower()    # will be conversation or document
+
+        # Fetch last Supabase entry
+        if map_type == 'conversation':
+            table_name = 'llm-convo-monitor'
+        else:
+            table_name = 'documents'
+
+        response = supabase_client.table(table_name).select('created_at').eq('course_name', course_name).order('created_at', ascending=False).limit(1).execute()
+        last_created_time = response['data'][0]['created_at']
+
+        print(f"Last created time: {last_created_time}")
+        print(type(last_created_time))
 
     return "success"
 
