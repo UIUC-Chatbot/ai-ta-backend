@@ -2,18 +2,23 @@ import json
 import sqlite3
 from ai_ta_backend.utils.types import DocumentMetadata
 
+DB_NAME = "science.db"
+TABLE_NAME = "documents"
+
 def insert_doc(doc: DocumentMetadata, commit_on_change: bool = True):
-  # Establishing the connection
-  db = sqlite3.connect('science.db')
+  db = sqlite3.connect(DB_NAME)
   cursor = db.cursor()
   try:
     # Dynamically get field names from DocumentMetadata
     fields = list(DocumentMetadata.schema()["properties"].keys())
+    for field in fields:
+      add_column_if_missing(db, TABLE_NAME, field, "TEXT")
+    
     # Convert field names to the format expected in the SQL statement
     sql_fields = ", ".join(fields)
     sql_values = ", ".join(["?"] * len(fields))  # SQLite uses "?" as placeholder
 
-    add_document = f"INSERT INTO documents ({sql_fields}) VALUES ({sql_values})"
+    add_document = f"INSERT INTO {TABLE_NAME} ({sql_fields}) VALUES ({sql_values})"
 
     # Convert DocumentMetadata object to a tuple for database insertion
     # No lists in SQLite: if type == list, do json.dumps()
@@ -38,6 +43,18 @@ def insert_doc(doc: DocumentMetadata, commit_on_change: bool = True):
     print("SQLite connection is closed")
 
 
+
+def add_column_if_missing(db, table_name, column_name, data_type):
+  """
+  Add column to table if not exists.
+  """
+  cursor = db.cursor()
+  cursor.execute(f"PRAGMA table_info({table_name});")
+  columns = [info[1] for info in cursor.fetchall()]  # Column names are in the second position
+  if column_name not in columns:
+    cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {data_type}")
+    print(f"Column {column_name} added to {table_name}.")
+  cursor.close()
 
 # !Manual method (auto-method used below)
     # SQL command to insert the data
