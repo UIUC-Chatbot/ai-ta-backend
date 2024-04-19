@@ -9,6 +9,8 @@ def insert_doc(doc: DocumentMetadata, commit_on_change: bool = True):
   db = sqlite3.connect(DB_NAME)
   cursor = db.cursor()
   try:
+    create_database_and_table(cursor)
+
     # Dynamically get field names from DocumentMetadata
     fields = list(DocumentMetadata.schema()["properties"].keys())
     for field in fields:
@@ -42,6 +44,27 @@ def insert_doc(doc: DocumentMetadata, commit_on_change: bool = True):
     db.close()
     print("SQLite connection is closed")
 
+def create_database_and_table(cursor):
+  """
+  Create database and table if not exists.
+  """
+  # Correctly formatted f-string with TABLE_NAME variable
+  cursor.execute('''
+    CREATE TABLE IF NOT EXISTS documents (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        authors TEXT,
+        journal_name TEXT,
+        publication_date DATE,
+        keywords TEXT,
+        doi TEXT,
+        title TEXT,
+        subtitle TEXT,
+        visible_urls TEXT,
+        field_of_science TEXT,
+        concise_summary TEXT,
+        specific_questions_document_can_answer TEXT
+    );
+    ''')
 
 
 def add_column_if_missing(db, table_name, column_name, data_type):
