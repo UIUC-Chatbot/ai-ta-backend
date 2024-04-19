@@ -39,72 +39,83 @@ def extractPubmedData():
     ftp_address = "ftp.ncbi.nlm.nih.gov"
     ftp_path = "pubmed/baseline"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
-    
-    gz_filepath = downloadXML(ftp_address, ftp_path, file_list[4], "pubmed")
-    print("GZ Downloaded: ", gz_filepath)
-    print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
-    gz_file_download_time = time.time()
 
-    # extract the XML file
-    if not gz_filepath:
-        return "failure"
-    xml_filepath = extractXMLFile(gz_filepath)
-    print("XML Extracted: ", xml_filepath)
-    print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
-    
-    #xml_filepath = "pubmed/pubmed24n1217.xml"
-    for metadata in extractMetadataFromXML(xml_filepath):
-        metadata_extract_start_time = time.time() 
-
-        # find PMC ID and DOI for all articles
-        metadata_with_ids = getArticleIDs(metadata)
-        metadata_update_time = time.time()
-        print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
-        #print("Metadata with IDs: ", metadata_with_ids)
+    for file in file_list[5:]:  # already processed first 5 files
+        try:
+            print("Processing file: ", file)
         
-        # download the articles
-        complete_metadata = downloadArticles(metadata_with_ids)
-        print(complete_metadata)
-        print("Time taken to download articles for 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
+            gz_filepath = downloadXML(ftp_address, ftp_path, file, "pubmed")
+            print("GZ Downloaded: ", gz_filepath)
+            print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
+            gz_file_download_time = time.time()
 
+            # extract the XML file
+            if not gz_filepath:
+                return "failure"
+            xml_filepath = extractXMLFile(gz_filepath)
+            print("XML Extracted: ", xml_filepath)
+            print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
+            
+            #xml_filepath = "pubmed/pubmed24n1217.xml"
+            for metadata in extractMetadataFromXML(xml_filepath):
+                metadata_extract_start_time = time.time() 
+
+                # find PMC ID and DOI for all articles
+                metadata_with_ids = getArticleIDs(metadata)
+                metadata_update_time = time.time()
+                print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
+                #print("Metadata with IDs: ", metadata_with_ids)
+                
+                # download the articles
+                complete_metadata = downloadArticles(metadata_with_ids)
+                print(complete_metadata)
+                print("Time taken to download articles for 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
+
+                # store metadata in csv file
+                print("\n")
+                print("Total articles retrieved: ", len(complete_metadata))
+                df = pd.DataFrame(complete_metadata)
+                csv_filepath = "metadata.csv"
+
+                if os.path.isfile(csv_filepath):
+                    df.to_csv(csv_filepath, mode='a', header=False, index=False)
+                else:
+                    df.to_csv(csv_filepath, index=False)
+                
+                print("Time taken to extract metadata for 100 articles: ", round(time.time() - metadata_extract_start_time, 2), "seconds")
+
+
+            print("Time taken to download articles: ", round(time.time() - start_time, 2), "seconds")
+            print("Total metadata extracted: ", len(complete_metadata))
+
+            # upload articles to bucket
+            print("Uploading articles to storage...")
+            article_upload = uploadToStorage("pubmed_abstracts")    # need to parallelize upload
+            print("Uploaded articles: ", article_upload)
+            
+            # upload metadata to SQL DB
+            csv_filepath = "metadata.csv"
+            df = pd.read_csv(csv_filepath)
+            
+            complete_metadata = df.to_dict('records')
+            for item in complete_metadata:
+                for key, value in item.items():
+                    if pd.isna(value):  # Or: math.isnan(value)
+                        item[key] = None
         
-        # store metadata in csv file
-        print("\n")
-        print("Total articles retrieved: ", len(complete_metadata))
-        df = pd.DataFrame(complete_metadata)
-        csv_filepath = "metadata.csv"
+            print("Metadata loaded into dataframe: ", len(complete_metadata))
+            # continue with the rest of the code
+            response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
+            print("Uploaded metadata to SQL DB.")
 
-        if os.path.isfile(csv_filepath):
-            df.to_csv(csv_filepath, mode='a', header=False, index=False)
-        else:
-            df.to_csv(csv_filepath, index=False)
+            # delete files
+            os.remove(csv_filepath)
+            os.remove("pubmed_abstracts")
         
-        print("Time taken to extract metadata for 100 articles: ", round(time.time() - metadata_extract_start_time, 2), "seconds")
-
-
-    print("Time taken to download articles: ", round(time.time() - start_time, 2), "seconds")
-    print("Total metadata extracted: ", len(complete_metadata))
-
-    # upload articles to bucket
-    print("Uploading articles to storage...")
-    article_upload = uploadToStorage("pubmed_abstracts")    # need to parallelize upload
-    print("Uploaded articles: ", article_upload)
-    
-    # upload metadata to SQL DB
-    csv_filepath = "metadata.csv"
-    df = pd.read_csv(csv_filepath)
-    
-    complete_metadata = df.to_dict('records')
-    for item in complete_metadata:
-        for key, value in item.items():
-            if pd.isna(value):  # Or: math.isnan(value)
-                item[key] = None
-  
-    print("Metadata loaded into dataframe: ", len(complete_metadata))
-    # continue with the rest of the code
-    response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
-    print("Supabase response: ", response)
-        
+        except Exception as e:
+            print("Error processing file: ", e)
+            continue
+            
     return "success"
 
 def downloadXML(ftp_address: str, ftp_path: str, file: str, local_dir: str):
@@ -754,13 +765,14 @@ def uploadToStorage(filepath: str):
                 object_name = file_path.split("/")[-1]
                 files.append((MINIO_CLIENT, bucket_name, file_path, object_name))
 
-        # Use concurrent.futures ThreadPoolExecutor for parallel upload 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            # Submit all upload tasks to the executor
-            futures = [executor.submit(upload_file, *args) for args in files]
-            # Wait for all tasks to complete
-            for future in futures:
-                future.result()  # This will raise any exceptions from upload_file
+        # Use concurrent.futures ThreadPoolExecutor with limited pool size
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            # Submit files in batches of 10
+            for i in range(0, len(files), 10):
+                batch_files = files[i:i+10]
+                futures = [executor.submit(upload_file, *args) for args in batch_files]
+                for future in futures:
+                    future.result()  # This will raise any exceptions from upload_file
 
         return "success"
     except Exception as e:
