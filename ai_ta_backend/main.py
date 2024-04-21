@@ -67,13 +67,13 @@ def index() -> Response:
   return response
 
 
-@app.route('/getTopContexts', methods=['GET'])
+@app.route('/getTopContexts', methods=['POST'])
 def getTopContexts(service: RetrievalService) -> Response:
   """Get most relevant contexts for a given search query.
   
   Return value
 
-  ## GET body
+  ## POST body
   course name (optional) str
       A json response with TBD fields.
   search_query
