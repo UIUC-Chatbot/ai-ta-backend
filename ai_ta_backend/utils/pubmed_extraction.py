@@ -39,8 +39,9 @@ def extractPubmedData():
     ftp_address = "ftp.ncbi.nlm.nih.gov"
     ftp_path = "pubmed/baseline"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
+    
 
-    for file in file_list[5:]:  # already processed first 5 files
+    for file in file_list[7:]:  # already processed first 5 files
         try:
             print("Processing file: ", file)
         
