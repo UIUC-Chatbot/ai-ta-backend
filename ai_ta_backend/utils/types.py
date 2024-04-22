@@ -24,7 +24,24 @@ class DocumentMetadata(pydantic.BaseModel):
 
 
 class GrobidMetadata(pydantic.BaseModel):
+  """
+  additional_fields is for the paper "sections" with arbitrary section names. 
+  Currently, the SQLite DB will have a separate column for every unique "major_sec_title". 
+  We'll see how messy it gets... maybe LLMs can normalize this some.
+
+  Format of additional_fields:
+  {
+    "major_sec_num": 3,
+    "major_sec_title": "Extracting Metadata",
+    "text": "In the previous section, we...", # full text of the section
+    "tokens": 1067
+  }
+  """
+  uuid: str
+  filepath: str
   total_tokens: int
+  avg_tokens_per_section: int
+  max_tokens_per_section: int
   all_sections: Dict[str, str]
   additional_fields: Optional[List[Dict[str, Any]]] = [{}]
 

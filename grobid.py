@@ -5,17 +5,35 @@
 # from grobid_client.grobid_client import GrobidClient
 import json
 import math
+import os
+import uuid
 from os import PathLike
 from pathlib import Path
-from typing import Optional
+from typing import Dict, Optional
 
+import ray
 import tiktoken
 
 from ai_ta_backend.utils.types import GrobidMetadata
+from allenai_grobid_parser import process_pdf_file
 from SQLite import insert_grobid_metadata
 
 
-def runGrobid(pdf_dir: PathLike, output_dir: Optional[PathLike] = None):
+def main(pdf_dir: PathLike):
+  pdf_paths = []
+  for root, dirs, files in os.walk(pdf_dir):
+    for file in files:
+      if file.endswith(".pdf"):
+        pdf_paths.append(os.path.join(root, file))
+
+  ray.init()
+  futures = [runGrobid.remote(pdf) for pdf in pdf_paths]
+  all_results = ray.get(futures)
+  print("All results:", all_results)
+
+
+@ray.remote
+def runGrobid(pdf_path: PathLike):
   """
   Use ALLenAI's Grobid wrapper: https://github.com/allenai/s2orc-doc2json
 
@@ -24,14 +42,30 @@ def runGrobid(pdf_dir: PathLike, output_dir: Optional[PathLike] = None):
 
   But would be better to do this in python... maybe capture the JSON directly without writing to disk.
   """
-  pass
-  # client = GrobidClient(config_path="./config.json")
-  # client.process("processFulltextDocument", input_path=pdf_dir, output=output_dir, n=20)
+
+  final_json: Dict = process_pdf_file(pdf_path, 'tmp-grobid')
+  # print("Final JSON:", json.dumps(final_json, indent=2))
+  result, all_sections, total_tokens, avg_tokens_per_section, max_tokens_per_section = parse_and_group_by_section(
+      final_json)
+
+  file = GrobidMetadata(
+      uuid=str(uuid.uuid4()),
+      filepath=str(pdf_path),  # TODO use minio prefix
+      total_tokens=total_tokens,
+      all_sections=all_sections,
+      additional_fields=result,
+      avg_tokens_per_section=int(avg_tokens_per_section),
+      max_tokens_per_section=max_tokens_per_section)
+
+  insert_grobid_metadata(file, commit_on_change=True)
+  print("✅ Done: ", pdf_path)
 
 
-def parse_and_group_by_section(filepath: PathLike):
+def parse_and_group_by_section(data: Dict):
   """
   This parses the output of AllenAI's Grobid wrapper. https://github.com/allenai/s2orc-doc2json
+
+  # TODO Capture Abstract, authors, bibliography... maybe more.
 
   Output format is two dictionaries: 
   * Full text grouped by major section. 
@@ -73,8 +107,8 @@ def parse_and_group_by_section(filepath: PathLike):
   all_sections = {}
   failed_secs = 0
 
-  with open(filepath, "r") as file:
-    data = json.load(file)
+  # with open(filepath, "r") as file:
+  #   data = json.load(file)
 
   # Iterate over each entry in the body text
   for entry in data["pdf_parse"]["body_text"]:
@@ -113,19 +147,26 @@ def parse_and_group_by_section(filepath: PathLike):
   ]
 
   total_tokens = sum([entry["tokens"] for entry in result])
+  avg_tokens_per_section = total_tokens / max(len(result), 1)
+  try:
+    max_tokens_per_section = max([entry["tokens"] for entry in result])
+  except Exception:
+    max_tokens_per_section = 0
 
-  return result, all_sections, total_tokens
+  return result, all_sections, total_tokens, avg_tokens_per_section, max_tokens_per_section
 
 
 if __name__ == "__main__":
   # Call the function and print the result
-  filepath = Path("/Users/kastanday/code/ncsa/ai-ta/ai-experiments/s2orc-doc2json/output_dir/N18-3011.json")
-  grouped_data, all_sections, total_tokens = parse_and_group_by_section(filepath)
-  print("Main result:", json.dumps(grouped_data, indent=2))
-  print("All sections:", json.dumps(all_sections, indent=2))
-  print("total_tokens:", total_tokens)
+  main(Path("/Users/kastanday/code/ncsa/ai-ta/ai-ta-backend/science-pdfs"))
 
-  insert_grobid_metadata(GrobidMetadata(total_tokens=total_tokens,
-                                        all_sections=all_sections,
-                                        additional_fields=grouped_data),
-                         commit_on_change=True)
+  # filepath = Path("/Users/kastanday/code/ncsa/ai-ta/ai-experiments/s2orc-doc2json/output_dir/N18-3011.json")
+  # grouped_data, all_sections, total_tokens = parse_and_group_by_section(filepath)
+  # print("Main result:", json.dumps(grouped_data, indent=2))
+  # print("All sections:", json.dumps(all_sections, indent=2))
+  # print("total_tokens:", total_tokens)
+
+  # insert_grobid_metadata(GrobidMetadata(total_tokens=total_tokens,
+  #                                       all_sections=all_sections,
+  #                                       additional_fields=grouped_data),
+  #                        commit_on_change=True)

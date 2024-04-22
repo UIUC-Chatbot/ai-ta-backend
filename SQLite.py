@@ -1,11 +1,13 @@
 import json
+import re
 import sqlite3
-from typing import Dict, List, Union
+
+import backoff
 
 from ai_ta_backend.utils.types import DocumentMetadata, GrobidMetadata
 
 DB_NAME = "science.db"
-TABLE_NAME = "documents2"
+TABLE_NAME = "documents11"
 
 
 def insert_grobid_metadata(doc: GrobidMetadata, commit_on_change: bool = True):
@@ -13,6 +15,8 @@ def insert_grobid_metadata(doc: GrobidMetadata, commit_on_change: bool = True):
   cursor = db.cursor()
   try:
     create_database_and_table(cursor)
+
+    # Todo: how to auto-resume? -- Using minio path names.
 
     # Dynamically get field names from DocumentMetadata
     final_cols = []
@@ -23,16 +27,14 @@ def insert_grobid_metadata(doc: GrobidMetadata, commit_on_change: bool = True):
         # print("GrobidMetadata['additional_fields']", doc.additional_fields)
         if doc.additional_fields is not None:
           for dict in doc.additional_fields:
-            key = dict["major_sec_title"].replace(" ", "_").replace("-", "_").replace(":", "").lower()
-            print(f"{dict=}")
-            print(f"{dict['major_sec_title']=}")
-            print("adding column: ", key)
-            add_column_if_missing(db, TABLE_NAME, key, "TEXT")
+            key = re.sub(r'[^a-zA-Z0-9]', '_', dict["major_sec_title"]).lower().strip("_")
+            add_column_if_missing(cursor, TABLE_NAME, key, "TEXT")
             final_cols.append(key)
             final_data_document.append(json.dumps(dict))
       else:
-        add_column_if_missing(db, TABLE_NAME, field, "TEXT")
-        final_cols.append(field)
+        key = re.sub(r'[^a-zA-Z0-9]', '_', field).lower().strip("_")
+        add_column_if_missing(cursor, TABLE_NAME, key, "TEXT")
+        final_cols.append(key)
         final_data_document.append(json.dumps(getattr(doc, field)))
 
     # Data format in SQL
@@ -75,9 +77,9 @@ def insert_doc(doc: DocumentMetadata, commit_on_change: bool = True):
         print("DocumentMetadata['additional_fields']", doc.additional_fields)
         if doc.additional_fields is not None:
           for key in doc.additional_fields.keys():
-            add_column_if_missing(db, TABLE_NAME, key, "TEXT")
+            add_column_if_missing(cursor, TABLE_NAME, key, "TEXT")
       else:
-        add_column_if_missing(db, TABLE_NAME, field, "TEXT")
+        add_column_if_missing(cursor, TABLE_NAME, field, "TEXT")
 
     # Convert field names to the format expected in the SQL statement
     sql_fields = ", ".join(fields)
@@ -112,37 +114,27 @@ def create_database_and_table(cursor):
   Create database and table if not exists.
   """
   # Todo make this dynamic from the DocumentMetadata schema
-  cursor.execute('''
-    CREATE TABLE IF NOT EXISTS documents2 (
+
+  cursor.execute(f'''
+    CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
         id INTEGER PRIMARY KEY AUTOINCREMENT
     );
     ''')
-  # authors TEXT,
-  # journal_name TEXT,
-  # publication_date DATE,
-  # keywords TEXT,
-  # doi TEXT,
-  # title TEXT,
-  # subtitle TEXT,
-  # visible_urls TEXT,
-  # field_of_science TEXT,
-  # concise_summary TEXT,
-  # specific_questions_document_can_answer TEXT
 
 
-def add_column_if_missing(db, table_name, column_name, data_type):
+@backoff.on_exception(backoff.expo, Exception, max_time=60)
+def add_column_if_missing(cursor, table_name, column_name, data_type):
   """
   Add column to table if not exists.
   """
-  cursor = db.cursor()
+  # cursor = db.cursor()
   cursor.execute(f"PRAGMA table_info({table_name});")
   columns = [info[1] for info in cursor.fetchall()]  # Column names are in the second position
-  print("Existing columns:", columns)
-
+  # print("Existing columns:", columns)
   if column_name not in columns:
+    print(f"ATTEMPTING TO ADD Column {column_name}...")
     cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {data_type}")
-    print(f"Column {column_name} added to {table_name}.")
-  cursor.close()
+    print(f"🆕 Column {column_name} added to {table_name}.")
 
 
 # !Manual method (auto-method used below)
