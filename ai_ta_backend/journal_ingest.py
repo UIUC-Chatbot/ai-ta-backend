@@ -148,7 +148,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
     
     main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY)
     print("Full URL: ", main_url)
-    exit()
+    
     
     response = requests.get(main_url, headers=headers)
     print("Status: ", response.status_code)
@@ -186,33 +186,13 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
                 return "Error in next page: " + str(response.status_code) + " - " + response.text
             
             data = response.json()
-    
-    # after all records are downloaded, upload to supabase bucket
-    # try:
-    #     for root, directories, files in os.walk(directory):
-    #         for file in files:
-    #             filepath = os.path.join(root, file)
-    #             print("Uploading: ", file)
-    #             uppload_path = "springer_papers/" + file
-    #             try:
-    #                 with open(filepath, "rb") as f:
-    #                     res = SUPABASE_CLIENT.storage.from_("publications/springer_journals/nature_immunology").upload(file=f, path=uppload_path, file_options={"content-type": "application/pdf"})
-    #                     print("Upload response: ", res)
-    #             except Exception as e:
-    #                 print("Error: ", e)
-            
-    # except Exception as e:
-    #     print("Error: ", e)
                 
-    # # upload to s3
-    # s3_paths = upload_data_files_to_s3(course_name, directory)
+    # send the docs for ingest via beam
+
+    # update document groups for the files  
 
     # # Delete files from local directory
     # shutil.rmtree(directory)
-
-    # # ingest into QDRANT
-    # ingest = Ingest()
-    # journal_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
                                 
     return "success"
 
