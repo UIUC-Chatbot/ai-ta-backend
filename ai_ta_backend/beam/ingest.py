@@ -223,7 +223,8 @@ def ingest(**inputs: Dict[str, Any]):
     print(f"Supabase ingest failure response: {response}")
   else:
     # Success case: rebuild nomic document map after all ingests are done
-    rebuild_status = rebuild_map(str(course_name), map_type='document')
+    # rebuild_status = rebuild_map(str(course_name), map_type='document')
+    pass
 
   print(f"Final success_fail_dict: {success_fail_dict}")
   return json.dumps(success_fail_dict)
@@ -1029,8 +1030,8 @@ class Ingest():
 
       # add to Nomic document map
       if len(response.data) > 0:
-        inserted_data = response.data[0]
-        log_to_document_map(inserted_data)
+        course_name = contexts[0].metadata.get('course_name')
+        log_to_document_map(course_name)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
