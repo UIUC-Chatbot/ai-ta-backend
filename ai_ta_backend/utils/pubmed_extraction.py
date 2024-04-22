@@ -41,7 +41,7 @@ def extractPubmedData():
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
 
-    for file in file_list[7:]:  # already processed first 5 files
+    for file in file_list[8:]:  # already processed first 5 files
         try:
             print("Processing file: ", file)
         
