@@ -9,6 +9,11 @@ from os import PathLike
 from pathlib import Path
 from typing import Optional
 
+import tiktoken
+
+from ai_ta_backend.utils.types import GrobidMetadata
+from SQLite import insert_grobid_metadata
+
 
 def runGrobid(pdf_dir: PathLike, output_dir: Optional[PathLike] = None):
   """
@@ -91,20 +96,36 @@ def parse_and_group_by_section(filepath: PathLike):
       grouped_titles[major_sec_num] = section
 
     # Update all sections with both major and minor sections
-    all_sections[sec_num] = section
+    if sec_num:
+      all_sections[sec_num] = section
+
+  encoding = tiktoken.get_encoding("cl100k_base")
 
   # Format result as a list of dictionaries
-  result = [{
-      "all_text": grouped_texts[key],
-      "major_sec_num": key,
-      "major_sec_title": grouped_titles.get(key, "Unknown")
-  } for key in sorted(grouped_texts)]
-  return result, all_sections
+  result = [
+      {
+          "text": grouped_texts[key],
+          "major_sec_num": key,
+          # "major_sec_title": grouped_titles.get(key, "Misc"),
+          "major_sec_title": grouped_titles.get(key) if grouped_titles.get(key) else "misc",
+          "tokens": len(encoding.encode(grouped_texts[key]))
+      } for key in sorted(grouped_texts)
+  ]
+
+  total_tokens = sum([entry["tokens"] for entry in result])
+
+  return result, all_sections, total_tokens
 
 
 if __name__ == "__main__":
   # Call the function and print the result
   filepath = Path("/Users/kastanday/code/ncsa/ai-ta/ai-experiments/s2orc-doc2json/output_dir/N18-3011.json")
-  grouped_data, all_section_titles = parse_and_group_by_section(filepath)
+  grouped_data, all_sections, total_tokens = parse_and_group_by_section(filepath)
   print("Main result:", json.dumps(grouped_data, indent=2))
-  print("All sections:", json.dumps(all_section_titles, indent=2))
+  print("All sections:", json.dumps(all_sections, indent=2))
+  print("total_tokens:", total_tokens)
+
+  insert_grobid_metadata(GrobidMetadata(total_tokens=total_tokens,
+                                        all_sections=all_sections,
+                                        additional_fields=grouped_data),
+                         commit_on_change=True)

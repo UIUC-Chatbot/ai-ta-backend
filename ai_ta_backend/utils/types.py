@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import pydantic
 
@@ -21,6 +21,12 @@ class DocumentMetadata(pydantic.BaseModel):
   # Can't get this to work properly
   # class Config:
   #     extra = pydantic.Extra.allow  # Allow arbitrary additional fields
+
+
+class GrobidMetadata(pydantic.BaseModel):
+  total_tokens: int
+  all_sections: Dict[str, str]
+  additional_fields: Optional[List[Dict[str, Any]]] = [{}]
 
 
 # Prisma data model https://prisma-client-py.readthedocs.io/en/stable/
