@@ -40,6 +40,7 @@ from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 
 from ai_ta_backend.beam.nomic_logging import create_document_map
+from ai_ta_backend.utils.pub_ingest import downloadSpringerFulltext
 
 app = Flask(__name__)
 CORS(app)
@@ -378,6 +379,32 @@ def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogSer
   found_documents = service.getTopContextsWithMQR(search_query, course_name, token_limit)
 
   response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/get-springer-fulltext', methods=['GET'])
+def get_springer_data():
+  course_name: str = request.args.get('course_name', default='', type=str)
+  issn = request.args.get('issn', default='', type=str)
+  subject = request.args.get('subject', default='', type=str)
+  journal = request.args.get('journal', default='', type=str)
+  title = request.args.get('title', default='', type=str)
+  doi = request.args.get('doi', default='', type=str)
+
+  print("In /get-springer-fulltext")
+
+  if (issn == '' and subject == '' and journal == '' and title == '' and doi == '') or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameters: 'issn' or 'subject' or 'title' or 'journal' or 'doi' and 'course_name' must be provided."
+    )
+
+  fulltext = downloadSpringerFulltext(issn, subject, journal, title, doi, course_name)
+
+  response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
