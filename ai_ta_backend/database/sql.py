@@ -1,4 +1,5 @@
 import os
+from typing import Dict, List
 
 import supabase
 from injector import inject
@@ -109,4 +110,24 @@ class SQLDatabase:
   
   def getConversation(self, course_name: str, key: str, value: str):
     return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
+  
+  def fetchDocumentsByURLs(self, urls: List[str], course_name: str):
+    """
+    Fetch documents that have base_url matching any of the URLs in the provided list.
+    """
+    return self.supabase_client.table("documents").select("id, readable_filename, base_url").in_("base_url", urls).eq("course_name", course_name).execute()
+  
+  def insertDocumentGroupsBulk(self, document_groups: List[Dict]):
+    # Assuming the Supabase client's insert method supports returning inserted records
+    inserted_records = self.supabase_client.table("doc_groups").insert(document_groups).execute()
+    # Extract and return the IDs of the inserted document groups
+    inserted_ids = [record['id'] for record in inserted_records.data]
+    return inserted_ids
+
+  def updateDocumentsDocGroupsBulk(self, document_ids: List[int], doc_group_id: int):
+      # Prepare updates
+      updates = [{"document_id": doc_id, "doc_group_id": doc_group_id} for doc_id in document_ids]
+      # Perform bulk update
+      self.supabase_client.table("documents_doc_groups").upsert(updates).execute()
+  
   

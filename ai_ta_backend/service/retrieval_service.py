@@ -5,6 +5,7 @@ import traceback
 from typing import Dict, List, Union
 
 import openai
+import csv
 from injector import inject
 from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -466,3 +467,62 @@ class RetrievalService:
     ]
 
     return contexts
+  
+  def insertDocumentGroups(self, course_name, csv_path):
+    """
+    Inserts document groups and documents into the database based on the CSV mapping.
+    Additionally, saves doc group name along with the entire document info in the output csv file.
+    """
+    urls = []
+    doc_group_count = 0
+    docs_doc_groups_count = 0
+    # Fetch existing documents by URLs from CSV
+    with open(csv_path, newline='') as csvfile:
+        for row in csv.DictReader(csvfile):
+            urls = eval(row['start_urls'])
+            print(f"fetching existing documents for course_name: {course_name} and URLs: {urls}")
+            existing_documents = self.sqlDb.fetchDocumentsByURLs(urls, course_name)
+            # Prepare data for bulk operations
+            data = parse_csv_and_prepare_data(course_name, existing_documents.data, row)
+
+            document_group = {
+            'name': row['university'],
+            'course_name': course_name,
+            }
+            documents_to_update = existing_documents.data
+
+            # Insert document groups in bulk and get inserted IDs
+            # inserted_doc_groups = self.sqlDb.insertDocumentGroupsBulk(document_groups)
+            print("document groups for insertion: ", document_group)
+            print("documents for update: ", len(documents_to_update))
+            doc_group_count += 1  # Corrected to increment by 1 instead of len(document_group) which was incorrect
+            docs_doc_groups_count += len(documents_to_update)
+            with open(csv_path + 'output.csv', newline='', mode='a') as csvfile:
+                writer = csv.writer(csvfile)
+                for doc in documents_to_update:
+                    # Include document group name in the output CSV file
+                    writer.writerow([document_group['name']] + list(doc.values()))
+            # # Map documents to new document groups and update documents_doc_groups in bulk
+            # for doc_group, inserted_id in zip(document_groups, inserted_doc_groups):
+            #     doc_ids = [doc['id'] for doc in documents_to_update]
+            #     self.sqlDb.updateDocumentsDocGroupsBulk(doc_ids, inserted_id)
+
+    return doc_group_count, docs_doc_groups_count
+
+def parse_csv_and_prepare_data(course_name: str, existing_documents: List[Dict], row) -> Dict[str, List[Dict]]:
+    """
+    Parses the CSV file and prepares the data for document groups and documents insertion.
+    Adjusted to match documents based on start_urls and prepare updates for doc_groups and documents_doc_groups.
+    """
+    document_groups = []
+    documents_to_update = []
+    
+    start_urls = eval(row['start_urls'])  # Convert string representation of list to actual list
+    matched_documents = [doc for doc in existing_documents if doc['base_url'] in start_urls]
+    if matched_documents:
+        document_groups.append({
+            'name': row['university'],
+            'course_name': course_name,
+        })
+        documents_to_update.extend(matched_documents)
+    return {'document_groups': document_groups, 'documents_to_update': documents_to_update}
