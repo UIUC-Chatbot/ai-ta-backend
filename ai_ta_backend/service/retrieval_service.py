@@ -475,54 +475,51 @@ class RetrievalService:
     """
     urls = []
     doc_group_count = 0
+    # Count of documents in all document groups
     docs_doc_groups_count = 0
     # Fetch existing documents by URLs from CSV
     with open(csv_path, newline='') as csvfile:
         for row in csv.DictReader(csvfile):
             urls = eval(row['start_urls'])
-            print(f"fetching existing documents for course_name: {course_name} and URLs: {urls}")
-            existing_documents = self.sqlDb.fetchDocumentsByURLs(urls, course_name)
-            # Prepare data for bulk operations
-            data = parse_csv_and_prepare_data(course_name, existing_documents.data, row)
+            doc_group_name = row['university']
+            # Count of documents in the document group
+            docs_doc_group_count = 0
+            # print(f"fetching existing documents for course_name: {course_name} and URLs: {urls}")
+            page = 1
+            while True:
+                print(f"fetching page: {page} for doc_group: {doc_group_name}, with urls: {urls}")
+                existing_documents_response = self.sqlDb.fetchDocumentsByURLs(urls, course_name, page)
+                existing_documents = existing_documents_response.data
+                if not existing_documents:
+                    break  # Exit loop if no more documents are returned
+                
+                # Process documents in batches here
+                document_group = {'name': doc_group_name, 'course_name': course_name}
+                documents_to_update = existing_documents
 
-            document_group = {
-            'name': row['university'],
-            'course_name': course_name,
-            }
-            documents_to_update = existing_documents.data
+                print("Document groups for insertion: ", document_group)
+                print("Documents for update: ", len(documents_to_update))
+                
+                docs_doc_groups_count += len(documents_to_update)
+                docs_doc_group_count += len(documents_to_update)
 
-            # Insert document groups in bulk and get inserted IDs
-            # inserted_doc_groups = self.sqlDb.insertDocumentGroupsBulk(document_groups)
-            print("document groups for insertion: ", document_group)
-            print("documents for update: ", len(documents_to_update))
-            doc_group_count += 1  # Corrected to increment by 1 instead of len(document_group) which was incorrect
-            docs_doc_groups_count += len(documents_to_update)
-            with open(csv_path + 'output.csv', newline='', mode='a') as csvfile:
-                writer = csv.writer(csvfile)
-                for doc in documents_to_update:
-                    # Include document group name in the output CSV file
-                    writer.writerow([document_group['name']] + list(doc.values()))
-            # # Map documents to new document groups and update documents_doc_groups in bulk
-            # for doc_group, inserted_id in zip(document_groups, inserted_doc_groups):
-            #     doc_ids = [doc['id'] for doc in documents_to_update]
-            #     self.sqlDb.updateDocumentsDocGroupsBulk(doc_ids, inserted_id)
+                doc_group_id = self.sqlDb.insertDocumentGroupsBulk(document_group)
+
+                # Bulk update
+                self.sqlDb.updateDocumentsDocGroupsBulk(documents_to_update, doc_group_id)
+                
+                page += 1  # Move to the next page
+
+                # Output to CSV is handled outside the pagination loop
+                with open('updated_documents.csv', newline='', mode='a') as output_csvfile:
+                    writer = csv.writer(output_csvfile)
+                    for doc in documents_to_update:
+                        writer.writerow([document_group['name']] + list(doc.values()))
+
+            with open('doc_groups.csv', newline='', mode='a') as output_csvfile:
+                writer = csv.writer(output_csvfile)
+                writer.writerow([doc_group_name, docs_doc_group_count])
+              
+            doc_group_count += 1
 
     return doc_group_count, docs_doc_groups_count
-
-def parse_csv_and_prepare_data(course_name: str, existing_documents: List[Dict], row) -> Dict[str, List[Dict]]:
-    """
-    Parses the CSV file and prepares the data for document groups and documents insertion.
-    Adjusted to match documents based on start_urls and prepare updates for doc_groups and documents_doc_groups.
-    """
-    document_groups = []
-    documents_to_update = []
-    
-    start_urls = eval(row['start_urls'])  # Convert string representation of list to actual list
-    matched_documents = [doc for doc in existing_documents if doc['base_url'] in start_urls]
-    if matched_documents:
-        document_groups.append({
-            'name': row['university'],
-            'course_name': course_name,
-        })
-        documents_to_update.extend(matched_documents)
-    return {'document_groups': document_groups, 'documents_to_update': documents_to_update}

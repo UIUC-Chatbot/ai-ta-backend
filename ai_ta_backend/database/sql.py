@@ -111,17 +111,18 @@ class SQLDatabase:
   def getConversation(self, course_name: str, key: str, value: str):
     return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
   
-  def fetchDocumentsByURLs(self, urls: List[str], course_name: str):
+  def fetchDocumentsByURLs(self, urls: List[str], course_name: str, page: int = 1, items_per_page: int = 1500):
     """
     Fetch documents that have base_url matching any of the URLs in the provided list.
     """
-    return self.supabase_client.table("documents").select("id, readable_filename, base_url").in_("base_url", urls).eq("course_name", course_name).execute()
+    return self.supabase_client.table("documents").select("id, readable_filename, base_url").in_("base_url", urls).eq("course_name", course_name).range((page - 1) * items_per_page, page * items_per_page - 1).execute()
   
-  def insertDocumentGroupsBulk(self, document_groups: List[Dict]):
+  def insertDocumentGroupsBulk(self, document_group):
     # Assuming the Supabase client's insert method supports returning inserted records
-    inserted_records = self.supabase_client.table("doc_groups").insert(document_groups).execute()
+    inserted_records = self.supabase_client.table("doc_groups").insert(document_group).execute()
+    print(f"Inserted records: {inserted_records}")
     # Extract and return the IDs of the inserted document groups
-    inserted_ids = [record['id'] for record in inserted_records.data]
+    inserted_ids = inserted_records.data[0]['id']
     return inserted_ids
 
   def updateDocumentsDocGroupsBulk(self, document_ids: List[int], doc_group_id: int):
