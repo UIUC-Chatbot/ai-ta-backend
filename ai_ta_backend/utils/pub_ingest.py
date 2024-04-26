@@ -1,23 +1,20 @@
 import os
+import json
+import pandas as pd
 import shutil
 import requests
-import json
-import arxiv
-import crossref_commons.retrieval
-import xml.etree.ElementTree as ET
-import ftplib
-from urllib.parse import urlparse
-import urllib.parse
 import supabase
-import tarfile
+import xml.etree.ElementTree as ET
+from urllib.parse import urlparse
 import concurrent.futures
-import time
+from ai_ta_backend.database import aws, sql
 
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 
-SUPABASE_CLIENT = supabase.create_client(  # type: ignore
-      supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-      supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
+s3_client = aws.AWSStorage()
+aws_bucket = os.getenv('S3_BUCKET_NAME')
+supabase_client = supabase.create_client(  # type: ignore
+      supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
 
 
 def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, doi=None, course_name=None):
@@ -31,6 +28,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
     The initial API response returns a list of articles with metadata.
     
     """
+    print("in downloadSpringerFulltext")
     # create directory to store files
     directory = os.path.join(os.getcwd(), 'springer_papers')
     if not os.path.exists(directory):
@@ -96,14 +94,51 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
             
             data = response.json()
 
-    # call ingest function here
-    
+    print("Course name: ", course_name)
+    # prep payload for beam ingest
+    ingest_data = []
 
-    # call document groups API       
+    # upload files to S3 bucket
+    for file in os.listdir(directory):
+        data = {
+            "course_name": course_name,
+            "s3_paths": "",
+            "readable_filename": "",
+            "base_url": "",
+            "url": "",
+            "issn": issn
+        }
+        s3_path = "courses/" + course_name + "/" + file # type: ignore
+        data["s3_paths"] = s3_path
+        data["readable_filename"] = file
+        s3_client.upload_file(directory + "/" + file, aws_bucket, s3_path)  # type: ignore
+        ingest_data.append(data)
     
+    # save ingest data to csv
+    ingest_df = pd.DataFrame(ingest_data)
+    csv_file = "publications_data.csv"
+    if not os.path.exists(csv_file):
+        ingest_df.to_csv(csv_file, index=False)
+    else:
+        ingest_df.to_csv(csv_file, mode='a', header=False, index=False)
 
-    # # Delete files from local directory
-    # shutil.rmtree(directory)
+
+    # call ingest
+    beam_url = "https://41kgx.apps.beam.cloud"
+    headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Basic " + os.getenv('BEAM_AUTH_TOKEN')    # type: ignore
+    }
+    for data in ingest_data:
+        payload = json.dumps(data)
+        response = requests.post(beam_url, headers=headers, data=payload)
+        if response.status_code == 200:
+            print("Task status retrieved successfully!")
+        else:
+            print(f"Error: {response.status_code}. {response.text}")
+
+    # Delete files from local directory
+    shutil.rmtree(directory)
                                 
     return "success"
 
