@@ -478,48 +478,73 @@ class RetrievalService:
     # Count of documents in all document groups
     docs_doc_groups_count = 0
     # Fetch existing documents by URLs from CSV
-    with open(csv_path, newline='') as csvfile:
-        for row in csv.DictReader(csvfile):
-            urls = eval(row['start_urls'])
-            doc_group_name = row['university']
-            # Count of documents in the document group
-            docs_doc_group_count = 0
-            # print(f"fetching existing documents for course_name: {course_name} and URLs: {urls}")
-            page = 1
-            while True:
-                print(f"fetching page: {page} for doc_group: {doc_group_name}, with urls: {urls}")
-                existing_documents_response = self.sqlDb.fetchDocumentsByURLs(urls, course_name, page)
-                existing_documents = existing_documents_response.data
-                if not existing_documents:
-                    break  # Exit loop if no more documents are returned
-                
-                # Process documents in batches here
+    try:
+        with open(csv_path, newline='') as csvfile:
+            for row in csv.DictReader(csvfile):
+                urls = eval(row['start_urls'])
+                doc_group_name = row['university']
+                # Count of documents in the document group
+                docs_doc_group_count = 0
+                # print(f"fetching existing documents for course_name: {course_name} and URLs: {urls}")
+                page = 1
+                # Create document group
                 document_group = {'name': doc_group_name, 'course_name': course_name}
-                documents_to_update = existing_documents
+                # Ingest document group
+                try:
+                  doc_group_id = self.sqlDb.insertDocumentGroupsBulk(document_group)
+                except Exception as e:
+                    print(f"Failed to insert document group {doc_group_name} due to: {str(e)}")
+                    continue
+                while True:
+                    print(f"fetching page: {page} for doc_group: {doc_group_name}, with urls: {urls}")
+                    try:
+                        existing_documents_response = self.sqlDb.fetchDocumentsByURLs(urls, course_name, page)
+                        existing_documents = existing_documents_response.data
+                        if not existing_documents:
+                            break  # Exit loop if no more documents are returned
+                    except Exception as e:
+                        print(f"Failed to fetch documents for page {page} and doc_group {doc_group_name} due to: {str(e)}")
+                        break
+                    
+                    # Process documents in batches here
+                    
+                    documents_to_update = [doc["id"] for doc in existing_documents]
 
-                print("Document groups for insertion: ", document_group)
-                print("Documents for update: ", len(documents_to_update))
-                
-                docs_doc_groups_count += len(documents_to_update)
-                docs_doc_group_count += len(documents_to_update)
+                    print("Document groups for insertion: ", document_group)
+                    print("Documents for update: ", documents_to_update)
+                    
+                    docs_doc_groups_count += len(documents_to_update)
+                    docs_doc_group_count += len(documents_to_update)
 
-                doc_group_id = self.sqlDb.insertDocumentGroupsBulk(document_group)
+                    try:
+                        # Bulk update
+                        self.sqlDb.updateDocumentsDocGroupsBulk(documents_to_update, doc_group_id)
+                        # print("skipping ingest for testing")
+                    except Exception as e:
+                        print(f"Failed to insert/update document groups for {doc_group_name} and {page} due to: {str(e)}")
+                    
+                    page += 1  # Move to the next page
 
-                # Bulk update
-                self.sqlDb.updateDocumentsDocGroupsBulk(documents_to_update, doc_group_id)
-                
-                page += 1  # Move to the next page
+                    # Output to CSV is handled outside the pagination loop
+                    try:
+                        with open('final_output/updated_documents.csv', newline='', mode='a') as output_csvfile:
+                            writer = csv.writer(output_csvfile)
+                            for doc in existing_documents:
+                                writer.writerow([document_group['name']] + list(doc.values()))
+                    except Exception as e:
+                        print(f"Failed to write updated documents to CSV for {doc_group_name} due to: {str(e.with_traceback)}")
 
-                # Output to CSV is handled outside the pagination loop
-                with open('updated_documents.csv', newline='', mode='a') as output_csvfile:
-                    writer = csv.writer(output_csvfile)
-                    for doc in documents_to_update:
-                        writer.writerow([document_group['name']] + list(doc.values()))
-
-            with open('doc_groups.csv', newline='', mode='a') as output_csvfile:
-                writer = csv.writer(output_csvfile)
-                writer.writerow([doc_group_name, docs_doc_group_count])
-              
-            doc_group_count += 1
+                try:
+                    with open('final_output/doc_groups.csv', newline='', mode='a') as output_csvfile:
+                        writer = csv.writer(output_csvfile)
+                        writer.writerow([doc_group_name, docs_doc_group_count])
+                except Exception as e:
+                    print(f"Failed to write document group counts to CSV for {doc_group_name} due to: {str(e.with_traceback)}")
+                  
+                doc_group_count += 1
+    except FileNotFoundError as e:
+        print(f"CSV file not found: {str(e)}")
+    except Exception as e:
+        print(f"An error occurred while processing the CSV file: {str(e.with_traceback)}")
 
     return doc_group_count, docs_doc_groups_count

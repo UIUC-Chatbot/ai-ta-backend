@@ -119,8 +119,8 @@ class SQLDatabase:
   
   def insertDocumentGroupsBulk(self, document_group):
     # Assuming the Supabase client's insert method supports returning inserted records
-    inserted_records = self.supabase_client.table("doc_groups").insert(document_group).execute()
-    print(f"Inserted records: {inserted_records}")
+    inserted_records = self.supabase_client.table("doc_groups").upsert(document_group, on_conflict="name, course_name", ignore_duplicates=True).execute()
+    print(f"Inserted records: {inserted_records.data}")
     # Extract and return the IDs of the inserted document groups
     inserted_ids = inserted_records.data[0]['id']
     return inserted_ids
@@ -129,6 +129,6 @@ class SQLDatabase:
       # Prepare updates
       updates = [{"document_id": doc_id, "doc_group_id": doc_group_id} for doc_id in document_ids]
       # Perform bulk update
-      self.supabase_client.table("documents_doc_groups").upsert(updates).execute()
+      self.supabase_client.table("documents_doc_groups").upsert(updates,on_conflict="document_id, doc_group_id", ignore_duplicates=True).execute()
   
   
