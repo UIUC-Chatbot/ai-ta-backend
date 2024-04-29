@@ -4,7 +4,8 @@ import os
 import supabase
 from urllib.parse import quote
 import json
-
+from posthog import Posthog
+import sentry_sdk
 
 class Flows():
 
@@ -13,6 +14,13 @@ class Flows():
     self.url = "https://primary-production-1817.up.railway.app"
     self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
+    self.posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+    sentry_sdk.init(dsn="https://examplePublicKey@o0.ingest.sentry.io/0",
+      # Enable performance monitoring
+      enable_tracing=True,
+      )
+
+
 
   def get_users(self, limit: int = 50, pagination: bool = True, api_key: str = ""):
     if not api_key:
@@ -149,6 +157,7 @@ class Flows():
       return new_data
     except Exception as e:
       print("Error in format_data: ", e)
+      sentry_sdk.capture_exception(e)
 
   # TODO: activate and disactivate workflows
 
@@ -225,6 +234,13 @@ class Flows():
       # TODO: Decrease number by one, is locked false
       # self.supabase_client.table('n8n_workflows').update({"latest_workflow_id": str(int(id) - 1), "is_locked": False}).eq('latest_workflow_id', id).execute()
       # self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
+      self.posthog.capture('distinct_id_of_flow',
+                        event='execution_error',
+                        properties={'id': id,
+                                    'name': name,
+                                    'data': data,
+                                    'error': e})
+      sentry_sdk.capture_exception(e)
       return {"error!!": str(e)}
     finally:
       # TODO: Remove lock from Supabase table.
@@ -246,6 +262,18 @@ class Flows():
       print("Returning")
     except Exception as e:
       self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
+      self.posthog.capture('distinct_id_of_flow',
+                        event='retrieval_error',
+                        properties={'id': id,
+                                    'name': name,
+                                    'data': data,
+                                    'error': e})
+      sentry_sdk.capture_exception(e)
       return {"error": str(e)}
+    self.posthog.capture('distinct_id_of_flow',
+                  event='retrieval_success',
+                  properties={'id': id,
+                              'name': name,
+                              'data': data})
     print("Returning execution")
     return executions
