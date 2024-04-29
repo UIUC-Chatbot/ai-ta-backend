@@ -67,23 +67,24 @@ def index() -> Response:
   return response
 
 
-@app.route('/getTopContexts', methods=['GET'])
+@app.route('/getTopContexts', methods=['POST'])
 def getTopContexts(service: RetrievalService) -> Response:
   """Get most relevant contexts for a given search query.
   
   Return value
 
-  ## GET arguments
+  ## POST body
   course name (optional) str
       A json response with TBD fields.
   search_query
-  top_n
+  token_limit
+  doc_groups
   
   Returns
   -------
   JSON
       A json response with TBD fields.
-  Metadata fileds
+  Metadata fields
   * pagenumber_or_timestamp
   * readable_filename
   * s3_pdf_path
@@ -103,10 +104,12 @@ def getTopContexts(service: RetrievalService) -> Response:
   Exception
       Testing how exceptions are handled.
   """
-  search_query: str = request.args.get('search_query', default='', type=str)
-  course_name: str = request.args.get('course_name', default='', type=str)
-  token_limit: int = request.args.get('token_limit', default=3000, type=int)
-  doc_groups_str: str = request.args.get('doc_groups', default='[]', type=str)
+  data = request.get_json()
+  search_query: str = data.get('search_query', '')
+  course_name: str = data.get('course_name', '')
+  token_limit: int = data.get('token_limit', 3000)
+  doc_groups: List[str] = data.get('doc_groups', [])
+
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
     abort(
@@ -114,11 +117,6 @@ def getTopContexts(service: RetrievalService) -> Response:
         description=
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
-
-  doc_groups: List[str] = []
-
-  if doc_groups_str != '[]':
-    doc_groups = json.loads(doc_groups_str)
 
   found_documents = service.getTopContexts(search_query, course_name, token_limit, doc_groups)
 
