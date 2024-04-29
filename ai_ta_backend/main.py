@@ -1,3 +1,4 @@
+import json
 import os
 import time
 from typing import List
@@ -106,6 +107,7 @@ def getTopContexts(service: RetrievalService) -> Response:
   search_query: str = request.args.get('search_query', default='', type=str)
   course_name: str = request.args.get('course_name', default='', type=str)
   token_limit: int = request.args.get('token_limit', default=3000, type=int)
+  doc_groups_str: str = request.args.get('doc_groups', default='[]', type=str)
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
     abort(
@@ -114,7 +116,12 @@ def getTopContexts(service: RetrievalService) -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  found_documents = service.getTopContexts(search_query, course_name, token_limit)
+  doc_groups: List[str] = []
+
+  if doc_groups_str != '[]':
+    doc_groups = json.loads(doc_groups_str)
+
+  found_documents = service.getTopContexts(search_query, course_name, token_limit, doc_groups)
 
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -247,7 +254,7 @@ def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
 
   # background execution of tasks!!
   #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
-  result = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
+  result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -264,6 +271,37 @@ def export_convo_history(service: ExportService):
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   export_status = service.export_convo_history_json(course_name, from_date, to_date)
+  print("EXPORT FILE LINKS: ", export_status)
+
+  if export_status['response'] == "No data found between the given dates.":
+    response = Response(status=204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  elif export_status['response'] == "Download from S3":
+    response = jsonify({"response": "Download from S3", "s3_path": export_status['s3_path']})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  else:
+    response = make_response(
+        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
+    os.remove(export_status['response'][0])
+
+  return response
+
+@app.route('/export-conversations-custom', methods=['GET'])
+def export_conversations_custom(service: ExportService):
+  course_name: str = request.args.get('course_name', default='', type=str)
+  from_date: str = request.args.get('from_date', default='', type=str)
+  to_date: str = request.args.get('to_date', default='', type=str)
+  emails: str = request.args.getlist('destination_emails_list')
+
+  if course_name == '' and emails == []:
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' and 'destination_email_ids' must be provided.")
+
+  export_status = service.export_conversations(course_name, from_date, to_date, emails)
   print("EXPORT FILE LINKS: ", export_status)
 
   if export_status['response'] == "No data found between the given dates.":

@@ -118,4 +118,8 @@ class SQLDatabase:
   
   def unlockWorkflow(self, id: str):
     return self.supabase_client.table('n8n_workflows').update({"is_locked": False}).eq('latest_workflow_id', id).execute()
+
+  def getConversation(self, course_name: str, key: str, value: str):
+    return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
+
   
