@@ -89,7 +89,7 @@ def extractPubmedData():
             print("Time taken to download articles: ", round(time.time() - start_time, 2), "seconds")
             print("Total metadata extracted: ", len(complete_metadata))
 
-            upload articles to bucket
+            # upload articles to bucket
             print("Uploading articles to storage...")
             article_upload = uploadToStorage("pubmed_abstracts")    # need to parallelize upload
             print("Uploaded articles: ", article_upload)
