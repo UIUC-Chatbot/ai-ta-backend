@@ -41,7 +41,7 @@ def extractPubmedData():
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
 
-    for file in file_list[8:]:  # already processed first 5 files
+    for file in file_list[10:]:  # already processed first 5 files
         try:
             print("Processing file: ", file)
         
@@ -89,7 +89,7 @@ def extractPubmedData():
             print("Time taken to download articles: ", round(time.time() - start_time, 2), "seconds")
             print("Total metadata extracted: ", len(complete_metadata))
 
-            # upload articles to bucket
+            upload articles to bucket
             print("Uploading articles to storage...")
             article_upload = uploadToStorage("pubmed_abstracts")    # need to parallelize upload
             print("Uploaded articles: ", article_upload)
@@ -108,7 +108,7 @@ def extractPubmedData():
             # continue with the rest of the code
             response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
             print("Uploaded metadata to SQL DB.")
-
+            
             # delete files
             os.remove(csv_filepath)
             os.remove("pubmed_abstracts")
@@ -116,6 +116,7 @@ def extractPubmedData():
         except Exception as e:
             print("Error processing file: ", e)
             continue
+        exit()
             
     return "success"
 
