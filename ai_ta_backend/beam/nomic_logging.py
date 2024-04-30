@@ -215,22 +215,23 @@ def log_to_document_map(course_name: str):
   # check if map exists
     response = SUPABASE_CLIENT.table("projects").select("doc_map_id, last_uploaded_doc_id").eq("course_name", course_name).execute()
     if response.data:
-      project_id = response.data[0]['doc_map_id']
-      last_uploaded_doc_id = response.data[0]['last_uploaded_doc_id']
-    else:
-      # create a map
-      map_creation_result = create_document_map(course_name)
-      if map_creation_result != "success":
-        return "The project has less than 20 documents and a map cannot be created."
-      else:
-        # fetch project id
-        response = SUPABASE_CLIENT.table("projects").select("doc_map_id, last_uploaded_doc_id").eq("course_name", course_name).execute()
+      if response.data[0]['doc_map_id']:
         project_id = response.data[0]['doc_map_id']
         last_uploaded_doc_id = response.data[0]['last_uploaded_doc_id']
+      else:
+        # entry present in supabase, but doc map not present
+        create_document_map(course_name)
+        return "Document map not present, triggering map creation."
 
+    else:
+      # create a map
+      create_document_map(course_name)
+      return "Document map not present, triggering map creation."
+      
     project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
     project_name = "Document Map for " + course_name
-    # check if project is locked, if yes -> skip logging
+    
+    # check if project is LOCKED, if yes -> skip logging
     if not project.is_accepting_data:
       return "Skipping Nomic logging because project is locked."
         
@@ -422,7 +423,7 @@ def rebuild_map(course_name:str, map_type:str):
     project_name = NOMIC_MAP_NAME_PREFIX + course_name
     project = AtlasProject(name=project_name, add_datums_if_exists=True)
 
-    with project.wait_for_project_lock():
+    if project.is_accepting_data: # temporary fix - will skip rebuilding if project is locked
       project.rebuild_maps()
     return "success"
   except Exception as e:

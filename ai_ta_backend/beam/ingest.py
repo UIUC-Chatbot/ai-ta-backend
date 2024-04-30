@@ -223,7 +223,8 @@ def ingest(**inputs: Dict[str, Any]):
     print(f"Supabase ingest failure response: {response}")
   else:
     # Success case: rebuild nomic document map after all ingests are done
-    rebuild_status = rebuild_map(str(course_name), map_type='document')
+    # rebuild_status = rebuild_map(str(course_name), map_type='document')
+    pass
 
   print(f"Final success_fail_dict: {success_fail_dict}")
   return json.dumps(success_fail_dict)
