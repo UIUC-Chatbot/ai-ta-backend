@@ -110,3 +110,8 @@ class SQLDatabase:
   def getConversation(self, course_name: str, key: str, value: str):
     return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
   
+  def getDocsByURLs(self, course_name: str, urls: list):
+    return self.supabase_client.table("documents").select("*").eq("course_name", course_name).in_("url", urls).execute()
+  
+  def getDocsByS3Paths(self, course_name: str, s3_paths: list):
+    return self.supabase_client.table("documents").select("*").eq("course_name", course_name).in_("s3_path", s3_paths).execute()

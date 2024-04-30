@@ -21,7 +21,6 @@ from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.utils_tokenization import count_tokens_and_cost
-#from ai_ta_backend.utils.context_parent_doc_padding import context_parent_doc_padding
 from ai_ta_backend.executors.process_pool_executor import ProcessPoolExecutorAdapter
 from functools import partial
 from multiprocessing import Manager
@@ -59,7 +58,7 @@ class RetrievalService:
         openai_api_key=os.environ["AZURE_OPENAI_KEY"],
         openai_api_version=os.environ["OPENAI_API_VERSION"],
         openai_api_type=os.environ['OPENAI_API_TYPE'],
-    )
+    ) # type: ignore
 
   def getTopContexts(self,
                      search_query: str,
@@ -130,7 +129,7 @@ class RetrievalService:
           },
       )
 
-      return self.format_for_json_mqr(valid_docs)
+      return valid_docs
     except Exception as e:
       # return full traceback to front end
       # err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
@@ -486,130 +485,41 @@ class RetrievalService:
     """
     print("inside main context padding")
     start_time = time.monotonic()
-  
+
+    # form a list of urls and s3_paths
+    urls = []
+    s3_paths = []
+    for doc in found_docs[:5]:
+      if 'url' in doc.metadata.keys():
+        urls.append(doc.metadata['url'])
+      elif 's3_path' in doc.metadata.keys():
+        s3_paths.append(doc.metadata['s3_path'])
+    
+    # query Supabase
+    supabase_url_content = self.sqlDb.getDocsByURLs(course_name, urls)
+    supabase_s3_content = self.sqlDb.getDocsByS3Paths(course_name, s3_paths)
+    supabase_data = supabase_url_content.data + supabase_s3_content.data
+    
     with Manager() as manager:
       qdrant_contexts = manager.list()
       supabase_contexts = manager.list()
       partial_func1 = partial(qdrant_context_processing, course_name=course_name, result_contexts=qdrant_contexts)
-      partial_func2 = partial(supabase_context_padding, course_name=course_name, result_docs=supabase_contexts)
+      partial_func2 = partial(supabase_context_padding, course_name=course_name, sql_data=supabase_data, result_docs=supabase_contexts)
 
       with self.executor as executor:
         executor.map(partial_func1, found_docs[5:])
         executor.map(partial_func2, found_docs[:5])
-
-      # with self.executor as executor:
-      #   executor.map(lambda doc: self.qdrant_context_processing(doc, course_name=course_name, result_contexts=[]), found_docs[5:])
-      #   executor.map(lambda doc: self.supabase_context_padding(doc, course_name=course_name, result_docs=[]), found_docs[:5])
-
-
+  
       supabase_contexts_no_duplicates = []
       for context in supabase_contexts:
         if context not in supabase_contexts_no_duplicates:
           supabase_contexts_no_duplicates.append(context)
 
       result_contexts = supabase_contexts_no_duplicates + list(qdrant_contexts)
-      #print("len of supabase contexts: ", len(supabase_contexts_no_duplicates))
-
+      print("len of supabase contexts: ", len(supabase_contexts_no_duplicates))
       print(f"⏰ Context padding runtime: {(time.monotonic() - start_time):.2f} seconds")
-
       return result_contexts
-  
-  # def qdrant_context_processing(self, doc, course_name, result_contexts):
-  #   """
-  #     Re-factor QDRANT objects into Supabase objects and append to result_docs
-  #   """
-  #   print("inside qdrant context processing")
-  #   context_dict = {
-  #     'text': doc.page_content,
-  #     'embedding': '',
-  #     'pagenumber': doc.metadata['pagenumber'],
-  #     'readable_filename': doc.metadata['readable_filename'],
-  #     'course_name': course_name,
-  #     's3_path': doc.metadata['s3_path']
-  #   }
 
-  #   if 'url' in doc.metadata.keys():
-  #     context_dict['url'] = doc.metadata['url']
-  #   else:
-  #     context_dict['url'] = ''
-
-  #   if 'base_url' in doc.metadata.keys():
-  #     context_dict['base_url'] = doc.metadata['url']
-  #   else:
-  #     context_dict['base_url'] = ''
-
-  #   result_contexts.append(context_dict)
-  
-  # def supabase_context_padding(self, doc, course_name, result_docs):
-  #   """
-  #   Does context padding for given doc.
-  #   """
-  #   print("inside supabase context padding")
-  #   SQL_DB = SQLDatabase()
-
-  #   # query by url or s3_path
-  #   if 'url' in doc.metadata.keys() and doc.metadata['url']:
-  #     parent_doc_id = doc.metadata['url']
-  #     response = SQL_DB.getMaterialsForCourseAndKeyAndValue(course_name=course_name, key='url', value=parent_doc_id)
-  #   else:
-  #     parent_doc_id = doc.metadata['s3_path']
-  #     response = SQL_DB.getMaterialsForCourseAndS3Path(course_name=course_name, s3_path=parent_doc_id)
-    
-  #   data = response.data
-      
-  #   if len(data) > 0:
-  #     # do the padding
-  #     filename = data[0]['readable_filename']
-  #     contexts = data[0]['contexts']
-  #     #print("no of contexts within the og doc: ", len(contexts))
-        
-  #     if 'chunk_index' in doc.metadata and 'chunk_index' in contexts[0].keys():
-  #       #print("inside chunk index")
-  #       # pad contexts by chunk index + 3 and - 3
-  #       target_chunk_index = doc.metadata['chunk_index']
-  #       for context in contexts:
-  #         curr_chunk_index = context['chunk_index']
-  #         if (target_chunk_index - 3 <= curr_chunk_index <= target_chunk_index + 3):
-  #           context['readable_filename'] = filename
-  #           context['course_name'] = course_name
-  #           context['s3_path'] = data[0]['s3_path']
-  #           context['url'] = data[0]['url']
-  #           context['base_url'] = data[0]['base_url']
-  #           result_docs.append(context)
-
-  #     elif doc.metadata['pagenumber'] != '':
-  #       #print("inside page number")
-  #       # pad contexts belonging to same page number
-  #       pagenumber = doc.metadata['pagenumber']
-
-  #       for context in contexts:
-  #         # pad contexts belonging to same page number
-  #         if int(context['pagenumber']) == pagenumber:
-  #           context['readable_filename'] = filename
-  #           context['course_name'] = course_name
-  #           context['s3_path'] = data[0]['s3_path']
-  #           context['url'] = data[0]['url']
-  #           context['base_url'] = data[0]['base_url']
-  #           result_docs.append(context)
-
-  #     else:
-  #       #print("inside else")
-  #       # refactor as a Supabase object and append
-  #       context_dict = {
-  #         'text': doc.page_content,
-  #         'embedding': '',
-  #         'pagenumber': doc.metadata['pagenumber'],
-  #         'readable_filename': doc.metadata['readable_filename'],
-  #         'course_name': course_name,
-  #         's3_path': doc.metadata['s3_path'],
-  #         'base_url': doc.metadata['base_url']
-  #       }
-  #       if 'url' in doc.metadata.keys():
-  #         context_dict['url'] = doc.metadata['url']
-  #       else:
-  #         context_dict['url'] = ''
-
-  #       result_docs.append(context_dict)
   
 def qdrant_context_processing(doc, course_name, result_contexts):
   """
@@ -637,31 +547,24 @@ def qdrant_context_processing(doc, course_name, result_contexts):
 
   result_contexts.append(context_dict)
   
-def supabase_context_padding(doc, course_name, result_docs):
+def supabase_context_padding(doc, course_name, sql_data, result_docs):
   """
   Does context padding for given doc.
-  """
-  #print("inside supabase context padding")
-  SQL_DB = SQLDatabase()
-
-  # query by url or s3_path
-  if 'url' in doc.metadata.keys() and doc.metadata['url']:
-    parent_doc_id = doc.metadata['url']
-    response = SQL_DB.getMaterialsForCourseAndKeyAndValue(course_name=course_name, key='url', value=parent_doc_id)
+  """ 
+  # search the document in sql_data
+  if 'url' in doc.metadata.keys():
+    supabase_doc = next((item for item in sql_data if item['url'] == doc.metadata['url']), None)
+  elif 's3_path' in doc.metadata.keys():
+    supabase_doc = next((item for item in sql_data if item['s3_path'] == doc.metadata['s3_path']), None)
   else:
-    parent_doc_id = doc.metadata['s3_path']
-    response = SQL_DB.getMaterialsForCourseAndS3Path(course_name=course_name, s3_path=parent_doc_id)
-  
-  data = response.data
-    
-  if len(data) > 0:
-    # do the padding
-    filename = data[0]['readable_filename']
-    contexts = data[0]['contexts']
-    #print("no of contexts within the og doc: ", len(contexts))
-      
+    supabase_doc = None
+
+  # create a dictionary
+  if supabase_doc:
+    contexts = supabase_doc['contexts']
+    filename = supabase_doc['readable_filename']
+
     if 'chunk_index' in doc.metadata and 'chunk_index' in contexts[0].keys():
-      #print("inside chunk index")
       # pad contexts by chunk index + 3 and - 3
       target_chunk_index = doc.metadata['chunk_index']
       for context in contexts:
@@ -669,13 +572,13 @@ def supabase_context_padding(doc, course_name, result_docs):
         if (target_chunk_index - 3 <= curr_chunk_index <= target_chunk_index + 3):
           context['readable_filename'] = filename
           context['course_name'] = course_name
-          context['s3_path'] = data[0]['s3_path']
-          context['url'] = data[0]['url']
-          context['base_url'] = data[0]['base_url']
+          context['s3_path'] = supabase_doc['s3_path']
+          context['url'] = supabase_doc['url']
+          context['base_url'] = supabase_doc['base_url']
+          context.pop('embedding', None)
           result_docs.append(context)
-
+    
     elif doc.metadata['pagenumber'] != '':
-      #print("inside page number")
       # pad contexts belonging to same page number
       pagenumber = doc.metadata['pagenumber']
 
@@ -684,17 +587,16 @@ def supabase_context_padding(doc, course_name, result_docs):
         if int(context['pagenumber']) == pagenumber:
           context['readable_filename'] = filename
           context['course_name'] = course_name
-          context['s3_path'] = data[0]['s3_path']
-          context['url'] = data[0]['url']
-          context['base_url'] = data[0]['base_url']
+          context['s3_path'] = supabase_doc['s3_path']
+          context['url'] = supabase_doc['url']
+          context['base_url'] = supabase_doc['base_url']
+          context.pop('embedding', None)
           result_docs.append(context)
-
+    
     else:
-      #print("inside else")
       # refactor as a Supabase object and append
       context_dict = {
         'text': doc.page_content,
-        'embedding': '',
         'pagenumber': doc.metadata['pagenumber'],
         'readable_filename': doc.metadata['readable_filename'],
         'course_name': course_name,
@@ -707,5 +609,4 @@ def supabase_context_padding(doc, course_name, result_docs):
         context_dict['url'] = ''
 
       result_docs.append(context_dict)
-
   
