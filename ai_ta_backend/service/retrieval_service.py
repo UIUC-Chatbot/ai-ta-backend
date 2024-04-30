@@ -491,14 +491,14 @@ class RetrievalService:
     s3_paths = []
     for doc in found_docs[:5]:
       if 'url' in doc.metadata.keys():
-        urls.append(doc.metadata['url'])
+        urls.append(doc.metadata.get('url'))
       elif 's3_path' in doc.metadata.keys():
-        s3_paths.append(doc.metadata['s3_path'])
+        s3_paths.append(doc.metadata.get('s3_path'))
     
     # query Supabase
-    supabase_url_content = self.sqlDb.getDocsByURLs(course_name, urls)
-    supabase_s3_content = self.sqlDb.getDocsByS3Paths(course_name, s3_paths)
-    supabase_data = supabase_url_content.data + supabase_s3_content.data
+    supabase_url_content = self.sqlDb.getDocsByURLs(course_name, urls).data if urls else []
+    supabase_s3_content = self.sqlDb.getDocsByS3Paths(course_name, s3_paths).data if s3_paths else []
+    supabase_data = supabase_url_content + supabase_s3_content
     
     with Manager() as manager:
       qdrant_contexts = manager.list()
@@ -510,15 +510,10 @@ class RetrievalService:
         executor.map(partial_func1, found_docs[5:])
         executor.map(partial_func2, found_docs[:5])
   
-      supabase_contexts_no_duplicates = []
-      for context in supabase_contexts:
-        if context not in supabase_contexts_no_duplicates:
-          supabase_contexts_no_duplicates.append(context)
-
-      result_contexts = supabase_contexts_no_duplicates + list(qdrant_contexts)
-      print("len of supabase contexts: ", len(supabase_contexts_no_duplicates))
+      unique_contexts = list(set(tuple(item.items()) for item in list(supabase_contexts) + list(qdrant_contexts)))
+      unique_contexts = [dict(item) for item in unique_contexts]
       print(f"⏰ Context padding runtime: {(time.monotonic() - start_time):.2f} seconds")
-      return result_contexts
+      return unique_contexts
 
   
 def qdrant_context_processing(doc, course_name, result_contexts):
@@ -528,23 +523,13 @@ def qdrant_context_processing(doc, course_name, result_contexts):
   #print("inside qdrant context processing")
   context_dict = {
     'text': doc.page_content,
-    'embedding': '',
-    'pagenumber': doc.metadata['pagenumber'],
-    'readable_filename': doc.metadata['readable_filename'],
+    'pagenumber': doc.metadata.get('pagenumber', ''),
+    'readable_filename': doc.metadata.get('readable_filename', ''),
     'course_name': course_name,
-    's3_path': doc.metadata['s3_path']
+    's3_path': doc.metadata.get('s3_path', ''),
+    'url': doc.metadata.get('url', ''),
+    'base_url': doc.metadata.get('base_url', '')
   }
-
-  if 'url' in doc.metadata.keys():
-    context_dict['url'] = doc.metadata['url']
-  else:
-    context_dict['url'] = ''
-
-  if 'base_url' in doc.metadata.keys():
-    context_dict['base_url'] = doc.metadata['url']
-  else:
-    context_dict['base_url'] = ''
-
   result_contexts.append(context_dict)
   
 def supabase_context_padding(doc, course_name, sql_data, result_docs):
@@ -552,12 +537,8 @@ def supabase_context_padding(doc, course_name, sql_data, result_docs):
   Does context padding for given doc.
   """ 
   # search the document in sql_data
-  if 'url' in doc.metadata.keys():
-    supabase_doc = next((item for item in sql_data if item['url'] == doc.metadata['url']), None)
-  elif 's3_path' in doc.metadata.keys():
-    supabase_doc = next((item for item in sql_data if item['s3_path'] == doc.metadata['s3_path']), None)
-  else:
-    supabase_doc = None
+  url_match = next((item for item in sql_data if item.get('url') == doc.metadata.get('url')), None)
+  supabase_doc = url_match or next((item for item in sql_data if item.get('s3_path') == doc.metadata.get('s3_path')), None)
 
   # create a dictionary
   if supabase_doc:
@@ -576,6 +557,7 @@ def supabase_context_padding(doc, course_name, sql_data, result_docs):
           context['url'] = supabase_doc['url']
           context['base_url'] = supabase_doc['base_url']
           context.pop('embedding', None)
+
           result_docs.append(context)
     
     elif doc.metadata['pagenumber'] != '':
@@ -597,16 +579,12 @@ def supabase_context_padding(doc, course_name, sql_data, result_docs):
       # refactor as a Supabase object and append
       context_dict = {
         'text': doc.page_content,
-        'pagenumber': doc.metadata['pagenumber'],
-        'readable_filename': doc.metadata['readable_filename'],
+        'pagenumber': doc.metadata.get('pagenumber', ''),
+        'readable_filename': doc.metadata.get('readable_filename', ''),
         'course_name': course_name,
-        's3_path': doc.metadata['s3_path'],
-        'base_url': doc.metadata['base_url']
+        's3_path': doc.metadata.get('s3_path', ''),
+        'base_url': doc.metadata.get('base_url', ''),
+        'url': doc.metadata.get('url', '')
       }
-      if 'url' in doc.metadata.keys():
-        context_dict['url'] = doc.metadata['url']
-      else:
-        context_dict['url'] = ''
-
       result_docs.append(context_dict)
   
