@@ -310,28 +310,28 @@ class RetrievalService:
     #   sentry_sdk.capture_exception(e)
     #   return err
 
-  def format_for_json_mqr(self, found_docs) -> List[Dict]:
-    """
-    Same as format_for_json, but for the new MQR pipeline.
-    """
-    for found_doc in found_docs:
-      if "pagenumber" not in found_doc.keys():
-        print("found no pagenumber")
-        found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
+  # def format_for_json_mqr(self, found_docs) -> List[Dict]:
+  #   """
+  #   Same as format_for_json, but for the new MQR pipeline.
+  #   """
+  #   for found_doc in found_docs:
+  #     if "pagenumber" not in found_doc.keys():
+  #       print("found no pagenumber")
+  #       found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
 
-    contexts = [
-        {
-            'text': doc['text'],
-            'readable_filename': doc['readable_filename'],
-            'course_name ': doc['course_name'],
-            's3_path': doc['s3_path'],
-            'pagenumber': doc['pagenumber'],
-            'url': doc['url'],  # wouldn't this error out?
-            'base_url': doc['base_url'],
-        } for doc in found_docs
-    ]
+  #   contexts = [
+  #       {
+  #           'text': doc['text'],
+  #           'readable_filename': doc['readable_filename'],
+  #           'course_name ': doc['course_name'],
+  #           's3_path': doc['s3_path'],
+  #           'pagenumber': doc['pagenumber'],
+  #           'url': doc['url'],  # wouldn't this error out?
+  #           'base_url': doc['base_url'],
+  #       } for doc in found_docs
+  #   ]
 
-    return contexts
+  #   return contexts
 
   def delete_from_nomic_and_supabase(self, course_name: str, identifier_key: str, identifier_value: str):
     try:
@@ -483,7 +483,7 @@ class RetrievalService:
     """
       Takes top N contexts acquired from QRANT similarity search and pads them
     """
-    print("inside main context padding")
+    print("inside context_parent_doc_padding()")
     start_time = time.monotonic()
 
     # form a list of urls and s3_paths
@@ -491,9 +491,9 @@ class RetrievalService:
     s3_paths = []
     for doc in found_docs[:5]:
       if 'url' in doc.metadata.keys():
-        urls.append(doc.metadata.get('url'))
-      elif 's3_path' in doc.metadata.keys():
-        s3_paths.append(doc.metadata.get('s3_path'))
+        urls.append(doc.metadata['url'])
+      else:
+        s3_paths.append(doc.metadata['s3_path'])
     
     # query Supabase
     supabase_url_content = self.sqlDb.getDocsByURLs(course_name, urls).data if urls else []
