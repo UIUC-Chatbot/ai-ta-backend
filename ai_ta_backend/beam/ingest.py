@@ -762,7 +762,11 @@ class Ingest():
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
         ### READ OCR of PDF
-        doc = fitz.open(pdf_tmpfile.name)  # type: ignore
+        try:
+          doc = fitz.open(pdf_tmpfile.name)  # type: ignore
+        except fitz.fitz.EmptyFileError as e:
+          print(f"Empty PDF file: {s3_path}")
+          return "Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text."
 
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
