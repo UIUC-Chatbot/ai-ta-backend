@@ -41,7 +41,7 @@ def extractPubmedData():
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
 
-    for file in file_list[10:]:  # already processed first 5 files
+    for file in file_list[18:20]:  
         try:
             print("Processing file: ", file)
         
@@ -65,7 +65,6 @@ def extractPubmedData():
                 metadata_with_ids = getArticleIDs(metadata)
                 metadata_update_time = time.time()
                 print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
-                #print("Metadata with IDs: ", metadata_with_ids)
                 
                 # download the articles
                 complete_metadata = downloadArticles(metadata_with_ids)
@@ -95,28 +94,26 @@ def extractPubmedData():
             print("Uploaded articles: ", article_upload)
             
             # upload metadata to SQL DB
-            csv_filepath = "metadata.csv"
             df = pd.read_csv(csv_filepath)
-            
             complete_metadata = df.to_dict('records')
             for item in complete_metadata:
                 for key, value in item.items():
                     if pd.isna(value):  # Or: math.isnan(value)
                         item[key] = None
-        
             print("Metadata loaded into dataframe: ", len(complete_metadata))
+            
             # continue with the rest of the code
             response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
             print("Uploaded metadata to SQL DB.")
             
-            # delete files
-            os.remove(csv_filepath)
-            os.remove("pubmed_abstracts")
-        
         except Exception as e:
             print("Error processing file: ", e)
-            continue
-        exit()
+
+        # delete files            
+        shutil.rmtree("F:/MSIM/ML_Projects/ai-ta-backend/pubmed_abstracts")
+        os.remove("F:/MSIM/ML_Projects/ai-ta-backend/metadata.csv")
+        #os.remove(xml_filepath)
+        print("Finished file: ", file)
             
     return "success"
 
