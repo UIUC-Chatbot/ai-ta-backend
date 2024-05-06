@@ -35,85 +35,86 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
         os.makedirs(directory)
 
     # set headers
-    # api_url = "http://api.springernature.com/openaccess/json?q="
-    # headers = {'Accept': 'application/json'}
+    api_url = "http://api.springernature.com/openaccess/json?q="
+    headers = {'Accept': 'application/json'}
 
-    # # form the query URL based on the input parameters received
-    # if doi:
-    #     query_str = "doi:" + doi
-    # elif issn:
-    #     query_str = "issn:" + issn
-    # elif journal:   
-    #     journal = "%22" + journal.replace(" ", "%20") + "%22"
-    #     query_str = "journal:" + journal
-    # elif title:
-    #     title = "%22" + title.replace(" ", "%20") + "%22"
-    #     query_str = "title:" + title
-    # elif subject:
-    #     query_str = "subject:" + subject
-    # else:
-    #     return "No query parameters provided"
+    # form the query URL based on the input parameters received
+    if doi:
+        query_str = "doi:" + doi
+    elif issn:
+        query_str = "issn:" + issn
+    elif journal:   
+        journal = "%22" + journal.replace(" ", "%20") + "%22"
+        query_str = "journal:" + journal
+    elif title:
+        title = "%22" + title.replace(" ", "%20") + "%22"
+        query_str = "title:" + title
+    elif subject:
+        query_str = "subject:" + subject
+    else:
+        return "No query parameters provided"
     
-    # main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY)
-    # print("Full URL: ", main_url)
+    main_url = api_url + query_str + "&api_key=" + str(SPRINGER_API_KEY)
+    print("Full URL: ", main_url)
     
-    # response = requests.get(main_url, headers=headers)
-    # print("Status: ", response.status_code)
+    response = requests.get(main_url, headers=headers)
+    print("Status: ", response.status_code)
 
-    # if response.status_code != 200:
-    #     return "Error: " + str(response.status_code) + " - " + response.text
+    if response.status_code != 200:
+        return "Error: " + str(response.status_code) + " - " + response.text
 
-    # data = response.json()
-    # # check for total number of records 
-    # total_records = int(data['result'][0]['total'])
-    # print("Total records: ", total_records)
-    # current_records = 0
-    # while current_records < total_records:
-    #     # check if nextPage exists
-    #     try:
-    #         if 'nextPage' in data:
-    #             next_page_url = "http://api.springernature.com" + data['nextPage']
-    #         else:
-    #             next_page_url = None
+    data = response.json()
+    # check for total number of records 
+    total_records = int(data['result'][0]['total'])
+    print("Total records: ", total_records)
+    current_records = 0
+    while current_records < total_records:
+        # check if nextPage exists
+        try:
+            if 'nextPage' in data:
+                next_page_url = "http://api.springernature.com" + data['nextPage']
+            else:
+                next_page_url = None
 
-    #         # multi-process all records in current page
-    #         with concurrent.futures.ProcessPoolExecutor() as executor:
-    #             results = [executor.submit(downloadPDFSpringer, record, directory) for record in data['records']]
-    #             for f in concurrent.futures.as_completed(results):
-    #                 print(f.result())
+            # multi-process all records in current page
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                results = [executor.submit(downloadPDFSpringer, record, directory) for record in data['records']]
+                for f in concurrent.futures.as_completed(results):
+                    print(f.result())
 
-    #         # update current records count
-    #         current_records += int(len(data['records']))
+            # update current records count
+            current_records += int(len(data['records']))
 
-    #         # if next page exists, update next page url and call the API again
-    #         if next_page_url:
-    #             # API key is already present in the URL
-    #             response = requests.get(next_page_url, headers=headers)
-    #             if response.status_code != 200:
-    #                 return "Error in next page: " + str(response.status_code) + " - " + response.text
+            # if next page exists, update next page url and call the API again
+            if next_page_url:
+                # API key is already present in the URL
+                response = requests.get(next_page_url, headers=headers)
+                if response.status_code != 200:
+                    return "Error in next page: " + str(response.status_code) + " - " + response.text
                 
-    #             data = response.json()
-    #     except Exception as e:
-    #         print(e)
+                data = response.json()
+        except Exception as e:
+            print(e)
 
     print("Course name: ", course_name)
     # prep payload for beam ingest
     ingest_data = []
-
+    
     # upload files to S3 bucket
     for file in os.listdir(directory):
+        doi = file[:-4]
+        doi = doi.replace("_", "/")
+        doi_link = f"https://doi.org/{doi}"
         data = {
             "course_name": course_name,
             "group": "springer_open",
-            "s3_paths": "",
-            "readable_filename": "",
+            "s3_paths": "courses/" + course_name + "/" + file, # type: ignore
+            "readable_filename": file,
             "base_url": "",
-            "url": "",
-            "journal": "rice",
+            "url": doi_link,
+            "journal": "",
         }
-        s3_path = "courses/" + course_name + "/" + file # type: ignore
-        data["s3_paths"] = s3_path
-        data["readable_filename"] = file
+        
         s3_client.upload_file(directory + "/" + file, aws_bucket, s3_path)  # type: ignore
         ingest_data.append(data)
     
