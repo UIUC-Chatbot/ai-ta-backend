@@ -20,7 +20,8 @@ def send_html_email(subject: str, html_text: str, sender: str, receipients: list
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
   
   # Get the list of unsubscribed emails
-  unsubscribe_list = supabase_client.table(table_name='email-newsletter').select("email").eq("unsubscribed-from-newsletter", "TRUE").execute()
+  unsubscribed = supabase_client.table(table_name='email-newsletter').select("email").eq("unsubscribed-from-newsletter", "TRUE").execute()
+  unsubscribe_list = [row['email'] for row in unsubscribed.data]
 
   # Remove any receipients that are in the unsubscribe list
   new_receipients = [r for r in receipients if r not in unsubscribe_list]
