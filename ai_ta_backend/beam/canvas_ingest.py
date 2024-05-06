@@ -1,38 +1,108 @@
 import os
 import shutil
+import re
 
+import boto3
 import requests
 from canvasapi import Canvas
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.beam import Ingest
 
+requirements = [
+  "boto3==1.28.79",
+  "posthog==3.1.0",
+  "canvasapi==3.2.0",
+]
 
-class CanvasAPI():
+app = App("ingest",
+          runtime=Runtime(
+              cpu=1,
+              memory="2Gi",
+              image=beam.Image(
+                  python_version="python3.10",
+                  python_packages=requirements,
+                  # commands=["apt-get update && apt-get install -y ffmpeg tesseract-ocr"],
+              ),
+          ))
 
-  def __init__(self):
-    self.canvas_client = Canvas("https://canvas.illinois.edu", os.getenv('CANVAS_ACCESS_TOKEN'))
+
+def loader():
+  """
+  The loader function will run once for each worker that starts up. https://docs.beam.cloud/deployment/loaders
+  """
+
+  # S3
+  s3_client = boto3.client(
+      's3',
+      aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+      aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+  )
+  canvas_client = Canvas("https://canvas.illinois.edu", os.getenv('CANVAS_ACCESS_TOKEN'))
+  
+  return s3_client, canvas_client
+
+
+autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=2, max_replicas=3)
+
+@app.task_queue(
+    workers=1,
+    # callback_url is used for 'in progress' & 'failed' tracking. But already handeled by other Beam endpoint.
+    # callback_url='https://uiuc-chat-git-ingestprogresstracking-kastanday.vercel.app/api/UIUC-api/ingestTaskCallback',
+    max_pending_tasks=15_000,
+    max_retries=3,
+    timeout=-1,
+    loader=loader,
+    autoscaler=autoscaler)
+def canvas_ingest(**inputs: Dict[str, Any]):
+  s3_client, posthog = inputs["context"]
+
+  course_name: List[str] | str = inputs.get('course_name', '')
+  canvas_url: List[str] | str | None = inputs.get('url', None)
+  
+  # canvas.illinois.edu/courses/COURSE_CODE
+  match = re.search(r'canvas\.illinois\.edu/courses/([^/]+)', canvas_url)
+  canvas_course_id = match.group(1) if match else None
+
+  ingester = CanvasIngest(s3_client, canvas_client, posthog)
+  ingester.ingest_course_content(canvas_course_id, course_name)
+
+  ingester.add_users(canvas_course_id, course_name)
+
+
+class CanvasIngest():
+
+  def __init__(self, s3_client, canvas_client, posthog):
+    self.posthog = posthog
+    self.s3_client = s3_client
+    self.canvas_client = canvas_client
     self.headers = {"Authorization": "Bearer " + os.getenv('CANVAS_ACCESS_TOKEN')}
 
+  def upload_file(self, file_path: str, bucket_name: str, object_name: str):
+    self.s3_client.upload_file(file_path, bucket_name, object_name)
+  
   def add_users(self, canvas_course_id: str, course_name: str):
     """
         Get all users in a course by course ID and add them to uiuc.chat course
         - Student profile does not have access to emails.
         - Currently collecting all names in a list.
         """
-    course = self.canvas_client.get_course(canvas_course_id)
-    users = course.get_users()
+    try: 
+      course = self.canvas_client.get_course(canvas_course_id)
+      users = course.get_users()
 
-    user_names = []
-    for user in users:
-      user_names.append(user.name)
+      user_names = []
+      for user in users:
+        user_names.append(user.name)
 
-    print("Collected names: ", user_names)
+      print("Collected names: ", user_names)
 
-    if len(user_names) > 0:
-      return "Success"
-    else:
-      return "Failed"
+      if len(user_names) > 0:
+        return "Success"
+      else:
+        return "Failed"
+    except Exception as e:
+      return "Failed to `add users`! Error: " + str(e)
 
   def download_course_content(self, canvas_course_id: int, dest_folder: str, content_ingest_dict: dict) -> str:
     """
@@ -110,14 +180,42 @@ class CanvasAPI():
       self.download_course_content(canvas_course_id, folder_path, content_ingest_dict)
 
       # Upload files to S3
-      s3_paths = upload_data_files_to_s3(course_name, folder_path)
+
+      # get a list of ALL files (recursive) in folder_path
+      all_file_paths = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder_path) for f in filenames]
+
+      all_s3_paths = []
+      # Upload each file to S3
+      for file_path in all_file_paths:
+        # upload_file(file_path, bucket_name, object_name)
+        uuid = str(uuid.uuid4()) + '-'
+        unique_filename = course_name + "/" + uuid + file_path.split('/')[-1]
+        all_s3_paths.append(unique_filename)
+        self.upload_file(file_path, os.getenv('S3_BUCKET_NAME'), unique_filename)
 
       # Delete files from local directory
       shutil.rmtree(folder_path)
 
       # Ingest files into QDRANT
-      ingest = Ingest()
-      canvas_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
+      # TODO: How to call this via Requests? 
+      url = 'https://41kgx.apps.beam.cloud'
+      headers = {
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate',
+        'Authorization': f"Basic {os.getenv('BEAM_API_KEY')}",
+        'Content-Type': 'application/json',
+      }
+
+      for s3_path in all_s3_paths: 
+        data = {
+          'course_name': course_name,
+          's3_paths': s3_path,
+        }
+        response = requests.post(url, headers=headers, data=json.dumps(data))
+
+
+      # ingest = Ingest()
+      # canvas_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
       return canvas_ingest
 
     except Exception as e:
