@@ -125,6 +125,64 @@ def getTopContexts(service: RetrievalService) -> Response:
   return response
 
 
+@app.route('/getTopContextsv2', methods=['POST'])
+def getTopContextsv2(service: RetrievalService) -> Response:
+  """Get most relevant contexts for a given search query.
+  
+  Return value
+
+  ## POST body
+  course name (optional) str
+      A json response with TBD fields.
+  search_query
+  token_limit
+  doc_groups
+  
+  Returns
+  -------
+  JSON
+      A json response with TBD fields.
+  Metadata fields
+  * pagenumber_or_timestamp
+  * readable_filename
+  * s3_pdf_path
+  
+  Example: 
+  [
+    {
+      'readable_filename': 'Lumetta_notes', 
+      'pagenumber_or_timestamp': 'pg. 19', 
+      's3_pdf_path': '/courses/<course>/Lumetta_notes.pdf', 
+      'text': 'In FSM, we do this...'
+    }, 
+  ]
+
+  Raises
+  ------
+  Exception
+      Testing how exceptions are handled.
+  """
+  data = request.get_json()
+  search_query: str = data.get('search_query', '')
+  course_name: str = data.get('course_name', '')
+  token_limit: int = data.get('token_limit', 3000)
+  doc_groups: List[str] = data.get('doc_groups', [])
+
+  if search_query == '' or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
+    )
+
+  found_documents = service.getTopContextsv2(search_query, course_name, token_limit, doc_groups)
+
+  response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 @app.route('/getAll', methods=['GET'])
 def getAll(service: RetrievalService) -> Response:
   """Get all course materials based on the course_name
