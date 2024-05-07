@@ -39,7 +39,6 @@ class WorkflowService:
     return all_users
 
   def execute_flow(self, hook: str, data=None) -> None:
-    print("Executing flow")
     if not data:
       data = {'field-0': ''}
     response = requests.post(hook, files=data, timeout=60)
@@ -129,7 +128,6 @@ class WorkflowService:
   def format_data(self, inputted, api_key: str, workflow_name):
     try:
       work_flow = self.get_workflows(100, api_key=api_key, workflow_name=workflow_name)
-      print("Got workflow")
       values = []
       if isinstance(work_flow, dict) and 'nodes' in work_flow:
         for node in work_flow['nodes']:
@@ -152,8 +150,6 @@ class WorkflowService:
     except Exception as e:
       print("Error in format_data: ", e)
 
-  # TODO: activate and disactivate workflows
-
   def switch_workflow(self, id, api_key: str = "", activate: 'str' = 'True'):
     if not api_key:
       raise ValueError('api_key is required')
@@ -164,34 +160,18 @@ class WorkflowService:
       url = self.url + f"/api/v1/workflows/{id}/deactivate"
     response = requests.post(url, headers=headers, timeout=8)
     result = response.json()
-    # if result.get('message'):
-    #   raise Exception(result.get('message'))
     return result
 
-  # Making this so it can be synchronous so that OpenAi API can call it.
-  # TODO: Status update on ID, running/done/error
-  # Todo: Before running, check if it is active by fetching the latest execution, increment if necessary and then run the flow.
-  # TODO: Create a dummy endpoint to pass to openai function call expecting n8n webhook and necessary parameters in the request.
-
-  # TODO: Take the last one/ ALWAYS end in JSON
-  def get_data(self, id):
-    self.get_executions(20, id)
-
-  # TODO: NEED to have keyword args for workflows like Pest Detection.
-  # TODO: make the supabase rpc call to make the transaction
-  # What if some data takes longer to parse, so the transactional supabase call is wrong.
   def main_flow(self, name: str, api_key: str = "", data: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
     print("Starting")
     hookId = self.get_hook(name, api_key)
     hook = self.url + f"/form/{hookId}"
-    print("Hook!!!: ", hook)
 
     new_data = self.format_data(data, api_key, name)
 
     response = self.sqlDb.getLatestWorkflowId()
-    print("Got response")
 
     ids = []
     for row in dict(response)['data']:
@@ -211,13 +191,10 @@ class WorkflowService:
         raise Exception('No executions found')
     id = str(id)
     try:
-      start_time = time.monotonic()
-      print("Inserting")
       self.sqlDb.lockWorkflow(id)
-      print("inserted")
+      print("inserted flow into supabase")
       self.execute_flow(hook, new_data)
-      print("Executed")
-      print(f"⏰ Runtime to execute_flow(): {(time.monotonic() - start_time):.4f} seconds")
+      print("Executed workflow")
     except Exception as e:
       # TODO: Decrease number by one, is locked false
       # self.supabase_client.table('n8n_workflows').update({"latest_workflow_id": str(int(id) - 1), "is_locked": False}).eq('latest_workflow_id', id).execute()
@@ -236,7 +213,6 @@ class WorkflowService:
       print("Found id in executions ")
       self.sqlDb.deleteLatestWorkflowId(id)
       print("Deleted id")
-      print("Returning")
     except Exception as e:
       self.sqlDb.deleteLatestWorkflowId(id)
       return {"error": str(e)}
