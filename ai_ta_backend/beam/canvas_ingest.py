@@ -85,8 +85,24 @@ def canvas_ingest(**inputs: Dict[str, Any]):
 
   course_name: List[str] | str = inputs.get('course_name', '')
   canvas_url: List[str] | str | None = inputs.get('canvas_url', None)
+  # Options:
+  files: bool = inputs.get('files', True)
+  pages: bool = inputs.get('pages', True)
+  modules: bool = inputs.get('modules', True)
+  syllabus: bool = inputs.get('syllabus', True)
+  assignments: bool = inputs.get('assignments', True)
+  discussions: bool = inputs.get('discussions', True)
+  options = {
+      'files': str(files).lower() == 'true',
+      'pages': str(pages).lower() == 'true',
+      'modules': str(modules).lower() == 'true',
+      'syllabus': str(syllabus).lower() == 'true',
+      'assignments': str(assignments).lower() == 'true',
+      'discussions': str(discussions).lower() == 'true',
+  }
   print(f"{course_name}=")
   print(f"{canvas_url}=")
+  print("Download options: ", options)
 
   try:
     # canvas.illinois.edu/courses/COURSE_CODE
@@ -94,7 +110,9 @@ def canvas_ingest(**inputs: Dict[str, Any]):
     canvas_course_id = match.group(1) if match else None
 
     ingester = CanvasIngest(s3_client, canvas_client, posthog)
-    ingester.ingest_course_content(canvas_course_id, course_name)
+    ingester.ingest_course_content(canvas_course_id=canvas_course_id,
+                                   course_name=course_name,
+                                   content_ingest_dict=options)
 
     # Can get names, but not emails. e.g. Collected names:  ['UIUC Course AI', 'Shannon Bradley', 'Asmita Vijay Dabholkar', 'Kastan Day', 'Volodymyr Kindratenko', 'Max Lindsey', 'Rohan Marwaha', 'Joshua Min', 'Neha Sheth', 'George Tamas']
     # ingester.add_users(canvas_course_id, course_name)
@@ -147,6 +165,8 @@ class CanvasIngest():
     """
     print("In download_course_content")
 
+    print(f"content_ingest_dict (in final download section) = {content_ingest_dict}")
+
     try:
       api_path = "https://canvas.illinois.edu/api/v1/courses/" + str(canvas_course_id)
 
@@ -173,7 +193,10 @@ class CanvasIngest():
       sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
-  def ingest_course_content(self, canvas_course_id: int, course_name: str, content_ingest_dict: dict = None) -> str:
+  def ingest_course_content(self,
+                            canvas_course_id: int,
+                            course_name: str,
+                            content_ingest_dict: Dict[str, bool] = None) -> str:
     """
     Ingests all Canvas course materials through the course ID.
     1. Download zip file from Canvas and store in local directory
@@ -195,6 +218,7 @@ class CanvasIngest():
             'discussions': True
         }
 
+      print("{content_ingest_dict}=")
       # Create a canvas directory with a course folder inside it.
       canvas_dir = "canvas_materials"
       folder_name = "canvas_course_" + str(canvas_course_id) + "_ingest"
@@ -271,6 +295,7 @@ class CanvasIngest():
     """
     Downloads all files in a Canvas course into given folder.
     """
+    print("In download_files")
     try:
       # files_request = requests.get(api_path + "/files", headers=self.headers)
       # files = files_request.json()
