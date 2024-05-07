@@ -1,13 +1,21 @@
+"""
+To deploy: beam deploy canvas_ingest.py --profile caii-ncsa
+Use CAII gmail to auth.
+"""
+
 import os
 import shutil
 import re
+import json
+import uuid
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import boto3
+from posthog import Posthog
 import requests
 from canvasapi import Canvas
-
-from ai_ta_backend.aws import upload_data_files_to_s3
-from ai_ta_backend.beam import Ingest
+import beam
+from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
 
 requirements = [
   "boto3==1.28.79",
@@ -15,7 +23,7 @@ requirements = [
   "canvasapi==3.2.0",
 ]
 
-app = App("ingest",
+app = App("canvas_ingest",
           runtime=Runtime(
               cpu=1,
               memory="2Gi",
@@ -39,8 +47,14 @@ def loader():
       aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
   )
   canvas_client = Canvas("https://canvas.illinois.edu", os.getenv('CANVAS_ACCESS_TOKEN'))
+
+  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  # sentry_sdk.init(
+  #     dsn="https://examplePublicKey@o0.ingest.sentry.io/0",
+  #     enable_tracing=True,
+  # )
   
-  return s3_client, canvas_client
+  return s3_client, canvas_client, posthog
 
 
 autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=2, max_replicas=3)
@@ -55,10 +69,13 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=2, max_replicas=3)
     loader=loader,
     autoscaler=autoscaler)
 def canvas_ingest(**inputs: Dict[str, Any]):
-  s3_client, posthog = inputs["context"]
+  s3_client, canvas_client, posthog = inputs["context"]
+
 
   course_name: List[str] | str = inputs.get('course_name', '')
-  canvas_url: List[str] | str | None = inputs.get('url', None)
+  canvas_url: List[str] | str | None = inputs.get('canvas_url', None)
+  print(f"{course_name}=")
+  print(f"{canvas_url}=")
   
   # canvas.illinois.edu/courses/COURSE_CODE
   match = re.search(r'canvas\.illinois\.edu/courses/([^/]+)', canvas_url)
@@ -67,7 +84,8 @@ def canvas_ingest(**inputs: Dict[str, Any]):
   ingester = CanvasIngest(s3_client, canvas_client, posthog)
   ingester.ingest_course_content(canvas_course_id, course_name)
 
-  ingester.add_users(canvas_course_id, course_name)
+  # Can get names, but not emails. e.g. Collected names:  ['UIUC Course AI', 'Shannon Bradley', 'Asmita Vijay Dabholkar', 'Kastan Day', 'Volodymyr Kindratenko', 'Max Lindsey', 'Rohan Marwaha', 'Joshua Min', 'Neha Sheth', 'George Tamas']
+  # ingester.add_users(canvas_course_id, course_name)
 
 
 class CanvasIngest():
@@ -185,35 +203,42 @@ class CanvasIngest():
       all_file_paths = [os.path.join(dp, f) for dp, dn, filenames in os.walk(folder_path) for f in filenames]
 
       all_s3_paths = []
+      all_readable_filenames = []
       # Upload each file to S3
       for file_path in all_file_paths:
-        # upload_file(file_path, bucket_name, object_name)
-        uuid = str(uuid.uuid4()) + '-'
-        unique_filename = course_name + "/" + uuid + file_path.split('/')[-1]
+        file_name = file_path.split('/')[-1]
+        extension = file_name[file_name.rfind('.'):]
+        name_without_extension = re.sub(r'[^a-zA-Z0-9]', '-', file_name[:file_name.rfind('.')])
+        uid = str(uuid.uuid4()) + '-'
+        
+        unique_filename = uid + name_without_extension + extension
+        readable_filename = name_without_extension + extension
         all_s3_paths.append(unique_filename)
+        all_readable_filenames.append(readable_filename)
+        print("Uploading file: ", readable_filename)
         self.upload_file(file_path, os.getenv('S3_BUCKET_NAME'), unique_filename)
 
       # Delete files from local directory
       shutil.rmtree(folder_path)
 
-      # Ingest files into QDRANT
-      # TODO: How to call this via Requests? 
+      # Ingest files
       url = 'https://41kgx.apps.beam.cloud'
-      headers = {
-        'Accept': '*/*',
-        'Accept-Encoding': 'gzip, deflate',
-        'Authorization': f"Basic {os.getenv('BEAM_API_KEY')}",
-        'Content-Type': 'application/json',
-      }
+      headers = {'Authorization': f"Basic {os.getenv('BEAM_API_KEY')}",}
 
-      for s3_path in all_s3_paths: 
+      print("Number of docs to ingest: ", len(all_s3_paths))
+      for s3_path, readable_filename in zip(all_s3_paths, all_readable_filenames): 
         data = {
           'course_name': course_name,
+          'readable_filename': readable_filename,
           's3_paths': s3_path,
+
+          'base_url': "https://canvas.illinois.edu/courses/" + str(canvas_course_id),
         }
+        print("Posting S3 path: ", s3_path, "\nreadable_filename: ", readable_filename)
         response = requests.post(url, headers=headers, data=json.dumps(data))
+        print("response=", response.json())
 
-
+      # legacy method
       # ingest = Ingest()
       # canvas_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
       return canvas_ingest
