@@ -163,9 +163,7 @@ class Flows():
       print("Error in format_data: ", e)
       sentry_sdk.capture_exception(e)
 
-  # TODO: activate and disactivate workflows
-
-  def switch_workflow(self, id, api_key: str = "", activate: 'str' = 'True'):
+  def switch_workflow(self, id, api_key: str = "", activate: str = 'True'):
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
@@ -175,28 +173,14 @@ class Flows():
       url = self.url + f"/api/v1/workflows/{id}/deactivate"
     response = requests.post(url, headers=headers, timeout=8)
     result = response.json()
-    # if result.get('message'):
-    #   raise Exception(result.get('message'))
     return result
 
-  # Making this so it can be synchronous so that OpenAi API can call it.
-  # TODO: Status update on ID, running/done/error
-  # Todo: Before running, check if it is active by fetching the latest execution, increment if necessary and then run the flow.
-  # TODO: Create a dummy endpoint to pass to openai function call expecting n8n webhook and necessary parameters in the request.
-
-  # TODO: Take the last one/ ALWAYS end in JSON
-  def get_data(self, id):
-    self.get_executions(20, id)
-
-  # TODO: make the supabase rpc call to make the transaction
-  # todo: Another problem with supabase calling for id is if someone manually runs a workflow.
   def main_flow(self, name: str, api_key: str = "", data: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
     print("Starting")
     hookId = self.get_hook(name, api_key)
     hook = self.url + f"/form/{hookId}"
-    print("Hook!!!: ", hook)
 
     new_data = self.format_data(data, api_key, name)
 
@@ -222,22 +206,15 @@ class Flows():
     id = str(id)
 
     try:
-      start_time = time.monotonic()
-      print("Inserting")
       insert_response = self.supabase_client.table('n8n_workflows').insert({
           "latest_workflow_id": id,
           "is_locked": True
       }).execute()
-      print("Insert response: ", insert_response)
-      print("inserted")
+      print("inserted response to supabase")
       execute_response = self.execute_flow(hook, new_data)
-      print("Execute response: ", execute_response)
-      print("Executed")
-      print(f"⏰ Runtime to execute_flow(): {(time.monotonic() - start_time):.4f} seconds")
+      print("Executed flow")
     except Exception as e:
-      # TODO: Decrease number by one, is locked false
-      # self.supabase_client.table('n8n_workflows').update({"latest_workflow_id": str(int(id) - 1), "is_locked": False}).eq('latest_workflow_id', id).execute()
-      # self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
+      self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
       self.posthog.capture('distinct_id_of_flow',
                         event='execution_error',
                         properties={'id': id,
@@ -247,23 +224,18 @@ class Flows():
       sentry_sdk.capture_exception(e)
       return {"error!!": str(e)}
     finally:
-      # TODO: Remove lock from Supabase table.
       print("Removing lock from: ", id)
       self.supabase_client.table('n8n_workflows').update({"is_locked": False}).eq('latest_workflow_id', id).execute()
 
     try:
-      print("Checking executions")
       executions = self.get_executions(20, id, True, api_key)
-      print("Got executions", executions)
       while executions is None:
         executions = self.get_executions(20, id, True, api_key)
         print("Executions: ", executions)
-        print("Can't find id in executions")
         time.sleep(1)
       print("Found id in executions ")
       self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
       print("Deleted id")
-      print("Returning")
     except Exception as e:
       self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
       self.posthog.capture('distinct_id_of_flow',
