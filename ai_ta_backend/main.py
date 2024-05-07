@@ -397,9 +397,11 @@ def get_all_workflows(service: WorkflowService) -> Response:
 
   print("In get_all_workflows.. api_key: ", api_key)
 
-  if api_key == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`")
+
+  # if no API Key, return empty set.
+  # if api_key == '':
+  #   # proper web error "400 Bad request"
+  #   abort(400, description=f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`")
 
   try:
     response = service.get_workflows(limit, pagination, api_key, active, name)
