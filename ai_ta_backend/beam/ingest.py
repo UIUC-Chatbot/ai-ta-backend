@@ -22,6 +22,7 @@ import boto3
 import fitz
 import openai
 import pytesseract
+import pdfplumber
 import sentry_sdk
 import supabase
 from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
@@ -75,6 +76,7 @@ requirements = [
     "beautifulsoup4==4.12.2",
     "sentry-sdk==1.39.1",
     "nomic==2.0.14",
+    "pdfplumber==0.11.0", # PDF OCR, better performance than Fitz/PyMuPDF in my Gies PDF testing.
 ]
 
 # TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
@@ -760,14 +762,18 @@ class Ingest():
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
         ### READ OCR of PDF
-        doc = fitz.open(pdf_tmpfile.name)  # type: ignore
+        try:
+          doc = fitz.open(pdf_tmpfile.name)  # type: ignore
+        except fitz.fitz.EmptyFileError as e:
+          print(f"Empty PDF file: {s3_path}")
+          return "Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text."
 
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
         zoom_y = 2.0  # vertical zoom
         mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
 
-        pdf_pages_OCRed: List[Dict] = []
+        pdf_pages_no_OCR: List[Dict] = []
         for i, page in enumerate(doc):  # type: ignore
 
           # UPLOAD FIRST PAGE IMAGE to S3
@@ -784,7 +790,7 @@ class Ingest():
 
           # Extract text
           text = page.get_text().encode("utf8").decode("utf8", errors='ignore')  # get plain text (is in UTF-8)
-          pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
+          pdf_pages_no_OCR.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
 
         metadatas: List[Dict[str, Any]] = [
             {
@@ -795,19 +801,79 @@ class Ingest():
                 'readable_filename': kwargs.get('readable_filename', page['readable_filename']),
                 'url': kwargs.get('url', ''),
                 'base_url': kwargs.get('base_url', ''),
-            } for page in pdf_pages_OCRed
+            } for page in pdf_pages_no_OCR
         ]
-        pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+        pdf_texts = [page['text'] for page in pdf_pages_no_OCR]
 
-        success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        # count the total number of words in the pdf_texts. If it's less than 100, we'll OCR the PDF
+        has_words = any(text.strip() for text in pdf_texts)
+        if has_words:
+          success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        else:
+          print("⚠️ PDF IS EMPTY -- OCR-ing the PDF.")
+          success_or_failure = self._ocr_pdf(s3_path=s3_path, course_name=course_name, **kwargs)
+
         return success_or_failure
     except Exception as e:
-      err = f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      err = f"❌❌ Error in PDF ingest (no OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )  # type: ignore
       print(err)
       sentry_sdk.capture_exception(e)
       return err
     return "Success"
+
+  def _ocr_pdf(self, s3_path: str, course_name: str, **kwargs):
+    self.posthog.capture('distinct_id_of_the_user',
+                         event='ocr_pdf_invoked',
+                         properties={
+                             'course_name': course_name,
+                             's3_path': s3_path,
+                         })
+
+    pdf_pages_OCRed: List[Dict] = []
+    try:
+      with NamedTemporaryFile() as pdf_tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
+
+        with pdfplumber.open(pdf_tmpfile.name) as pdf:
+          # for page in :
+          for i, page in enumerate(pdf.pages):
+            im = page.to_image()
+            text = pytesseract.image_to_string(im.original)
+            print("Page number: ", i, "Text: ", text[:100])
+            pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
+      
+      metadatas: List[Dict[str, Any]] = [
+              {
+                  'course_name': course_name,
+                  's3_path': s3_path,
+                  'pagenumber': page['page_number'] + 1,  # +1 for human indexing
+                  'timestamp': '',
+                  'readable_filename': kwargs.get('readable_filename', page['readable_filename']),
+                  'url': kwargs.get('url', ''),
+                  'base_url': kwargs.get('base_url', ''),
+              } for page in pdf_pages_OCRed
+      ]
+      pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+      self.posthog.capture('distinct_id_of_the_user',
+                         event='ocr_pdf_succeeded',
+                         properties={
+                             'course_name': course_name,
+                             's3_path': s3_path,
+                         })
+
+      has_words = any(text.strip() for text in pdf_texts)
+      if not has_words:
+        raise ValueError("Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text.")
+
+      success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+      return success_or_failure
+    except Exception as e:
+      err = f"❌❌ Error in PDF ingest (with OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      print(err)
+      sentry_sdk.capture_exception(e)
+      return err
 
   def _ingest_single_txt(self, s3_path: str, course_name: str, **kwargs) -> str:
     """Ingest a single .txt or .md file from S3.
