@@ -1,38 +1,41 @@
 """
-To deploy: beam deploy canvas_ingest.py --profile caii-ncsa
+To deploy: beam deploy canvas_ingest.py
 Use CAII gmail to auth.
 """
 
-import os
-import shutil
-import re
 import json
+import os
+import re
+import shutil
 import uuid
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Dict, List
 
-import boto3
-from posthog import Posthog
-import requests
-from canvasapi import Canvas
 import beam
+import boto3
+import requests
+import sentry_sdk
 from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
+from canvasapi import Canvas
+from posthog import Posthog
 
 requirements = [
-  "boto3==1.28.79",
-  "posthog==3.1.0",
-  "canvasapi==3.2.0",
+    "boto3==1.28.79",
+    "posthog==3.1.0",
+    "canvasapi==3.2.0",
+    "sentry-sdk==1.39.1",
 ]
 
-app = App("canvas_ingest",
-          runtime=Runtime(
-              cpu=1,
-              memory="2Gi",
-              image=beam.Image(
-                  python_version="python3.10",
-                  python_packages=requirements,
-                  # commands=["apt-get update && apt-get install -y ffmpeg tesseract-ocr"],
-              ),
-          ))
+app = App(
+    "canvas_ingest",
+    runtime=Runtime(
+        cpu=1,
+        memory="2Gi",
+        image=beam.Image(
+            python_version="python3.10",
+            python_packages=requirements,
+            # commands=["apt-get update && apt-get install -y ffmpeg tesseract-ocr"],
+        ),
+    ))
 
 
 def loader():
@@ -49,15 +52,18 @@ def loader():
   canvas_client = Canvas("https://canvas.illinois.edu", os.getenv('CANVAS_ACCESS_TOKEN'))
 
   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
-  # sentry_sdk.init(
-  #     dsn="https://examplePublicKey@o0.ingest.sentry.io/0",
-  #     enable_tracing=True,
-  # )
-  
+
+  # Init sentry, but no need to pass it around.
+  sentry_sdk.init(
+      dsn="https://examplePublicKey@o0.ingest.sentry.io/0",
+      enable_tracing=True,
+  )
+
   return s3_client, canvas_client, posthog
 
 
 autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=2, max_replicas=3)
+
 
 @app.task_queue(
     workers=1,
@@ -69,23 +75,33 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=2, max_replicas=3)
     loader=loader,
     autoscaler=autoscaler)
 def canvas_ingest(**inputs: Dict[str, Any]):
+  """
+  Main function.
+  Params:
+    course_name: str
+    canvas_url: str
+  """
   s3_client, canvas_client, posthog = inputs["context"]
-
 
   course_name: List[str] | str = inputs.get('course_name', '')
   canvas_url: List[str] | str | None = inputs.get('canvas_url', None)
   print(f"{course_name}=")
   print(f"{canvas_url}=")
-  
-  # canvas.illinois.edu/courses/COURSE_CODE
-  match = re.search(r'canvas\.illinois\.edu/courses/([^/]+)', canvas_url)
-  canvas_course_id = match.group(1) if match else None
 
-  ingester = CanvasIngest(s3_client, canvas_client, posthog)
-  ingester.ingest_course_content(canvas_course_id, course_name)
+  try:
+    # canvas.illinois.edu/courses/COURSE_CODE
+    match = re.search(r'canvas\.illinois\.edu/courses/([^/]+)', canvas_url)
+    canvas_course_id = match.group(1) if match else None
 
-  # Can get names, but not emails. e.g. Collected names:  ['UIUC Course AI', 'Shannon Bradley', 'Asmita Vijay Dabholkar', 'Kastan Day', 'Volodymyr Kindratenko', 'Max Lindsey', 'Rohan Marwaha', 'Joshua Min', 'Neha Sheth', 'George Tamas']
-  # ingester.add_users(canvas_course_id, course_name)
+    ingester = CanvasIngest(s3_client, canvas_client, posthog)
+    ingester.ingest_course_content(canvas_course_id, course_name)
+
+    # Can get names, but not emails. e.g. Collected names:  ['UIUC Course AI', 'Shannon Bradley', 'Asmita Vijay Dabholkar', 'Kastan Day', 'Volodymyr Kindratenko', 'Max Lindsey', 'Rohan Marwaha', 'Joshua Min', 'Neha Sheth', 'George Tamas']
+    # ingester.add_users(canvas_course_id, course_name)
+  except Exception as e:
+    print("Top level error:", e)
+    sentry_sdk.capture_exception(e)
+    return "Failed"
 
 
 class CanvasIngest():
@@ -98,14 +114,14 @@ class CanvasIngest():
 
   def upload_file(self, file_path: str, bucket_name: str, object_name: str):
     self.s3_client.upload_file(file_path, bucket_name, object_name)
-  
+
   def add_users(self, canvas_course_id: str, course_name: str):
     """
         Get all users in a course by course ID and add them to uiuc.chat course
         - Student profile does not have access to emails.
         - Currently collecting all names in a list.
         """
-    try: 
+    try:
       course = self.canvas_client.get_course(canvas_course_id)
       users = course.get_users()
 
@@ -120,14 +136,15 @@ class CanvasIngest():
       else:
         return "Failed"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed to `add users`! Error: " + str(e)
 
   def download_course_content(self, canvas_course_id: int, dest_folder: str, content_ingest_dict: dict) -> str:
     """
-        Downloads all Canvas course materials through the course ID and stores in local directory.
-        1. Iterate through content_ingest_dict and download all.
-        2. Maintain a list of URLs and convert HTML strings to proper format.
-        """
+    Downloads all Canvas course materials through the course ID and stores in local directory.
+    1. Iterate through content_ingest_dict and download all.
+    2. Maintain a list of URLs and convert HTML strings to proper format.
+    """
     print("In download_course_content")
 
     try:
@@ -153,16 +170,17 @@ class CanvasIngest():
 
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def ingest_course_content(self, canvas_course_id: int, course_name: str, content_ingest_dict: dict = None) -> str:
     """
-        Ingests all Canvas course materials through the course ID.
-        1. Download zip file from Canvas and store in local directory
-        2. Upload all files to S3
-        3. Call bulk_ingest() to ingest all files into QDRANT
-        4. Delete extracted files from local directory
-        """
+    Ingests all Canvas course materials through the course ID.
+    1. Download zip file from Canvas and store in local directory
+    2. Upload all files to S3
+    3. Call bulk_ingest() to ingest all files into QDRANT
+    4. Delete extracted files from local directory
+    """
 
     print("In ingest_course_content")
     try:
@@ -210,7 +228,7 @@ class CanvasIngest():
         extension = file_name[file_name.rfind('.'):]
         name_without_extension = re.sub(r'[^a-zA-Z0-9]', '-', file_name[:file_name.rfind('.')])
         uid = str(uuid.uuid4()) + '-'
-        
+
         unique_filename = uid + name_without_extension + extension
         readable_filename = name_without_extension + extension
         all_s3_paths.append(unique_filename)
@@ -223,16 +241,17 @@ class CanvasIngest():
 
       # Ingest files
       url = 'https://41kgx.apps.beam.cloud'
-      headers = {'Authorization': f"Basic {os.getenv('BEAM_API_KEY')}",}
+      headers = {
+          'Authorization': f"Basic {os.getenv('BEAM_API_KEY')}",
+      }
 
       print("Number of docs to ingest: ", len(all_s3_paths))
-      for s3_path, readable_filename in zip(all_s3_paths, all_readable_filenames): 
+      for s3_path, readable_filename in zip(all_s3_paths, all_readable_filenames):
         data = {
-          'course_name': course_name,
-          'readable_filename': readable_filename,
-          's3_paths': s3_path,
-
-          'base_url': "https://canvas.illinois.edu/courses/" + str(canvas_course_id),
+            'course_name': course_name,
+            'readable_filename': readable_filename,
+            's3_paths': s3_path,
+            'base_url': "https://canvas.illinois.edu/courses/" + str(canvas_course_id),
         }
         print("Posting S3 path: ", s3_path, "\nreadable_filename: ", readable_filename)
         response = requests.post(url, headers=headers, data=json.dumps(data))
@@ -245,12 +264,13 @@ class CanvasIngest():
 
     except Exception as e:
       print(e)
+      sentry_sdk.capture_exception(e)
       return "Failed"
 
   def download_files(self, dest_folder: str, api_path: str) -> str:
     """
-        Downloads all files in a Canvas course into given folder.
-        """
+    Downloads all files in a Canvas course into given folder.
+    """
     try:
       # files_request = requests.get(api_path + "/files", headers=self.headers)
       # files = files_request.json()
@@ -270,12 +290,13 @@ class CanvasIngest():
 
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def download_pages(self, dest_folder: str, api_path: str) -> str:
     """
-        Downloads all pages as HTML and stores them in given folder.
-        """
+    Downloads all pages as HTML and stores them in given folder.
+    """
     print("In download_pages")
     try:
       pages_request = requests.get(api_path + "/pages", headers=self.headers)
@@ -296,8 +317,8 @@ class CanvasIngest():
 
   def download_syllabus(self, dest_folder: str, api_path: str) -> str:
     """
-        Downloads syllabus as HTML and stores in given folder.
-        """
+    Downloads syllabus as HTML and stores in given folder.
+    """
     print("In download_syllabus")
     try:
       course_settings_request = requests.get(api_path + "?include=syllabus_body", headers=self.headers)
@@ -308,14 +329,15 @@ class CanvasIngest():
         html_file.write(syllabus_body)
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def download_modules(self, dest_folder: str, api_path: str) -> str:
     """
-        Downloads all content uploaded in modules.
-        Modules may contain: assignments, quizzes, files, pages, discussions, external tools and external urls.
-        Rest of the things are covered in other functions.
-        """
+    Downloads all content uploaded in modules.
+    Modules may contain: assignments, quizzes, files, pages, discussions, external tools and external urls.
+    Rest of the things are covered in other functions.
+    """
     print("In download_modules")
     try:
       module_request = requests.get(api_path + "/modules?include=items", headers=self.headers)
@@ -336,12 +358,13 @@ class CanvasIngest():
                 html_file.write(response.text)
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def download_assignments(self, dest_folder: str, api_path: str) -> str:
     """
-        The description attribute has the assignment content in HTML format. Access that and store it as an HTML file.
-        """
+    The description attribute has the assignment content in HTML format. Access that and store it as an HTML file.
+    """
     print("In download_assignments")
     try:
       assignment_request = requests.get(api_path + "/assignments", headers=self.headers)
@@ -356,12 +379,13 @@ class CanvasIngest():
             html_file.write(assignment_description)
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
 
   def download_discussions(self, dest_folder: str, api_path: str) -> str:
     """
-        Download course discussions as HTML and store in given folder.
-        """
+    Download course discussions as HTML and store in given folder.
+    """
     print("In download_discussions")
     try:
       discussion_request = requests.get(api_path + "/discussion_topics", headers=self.headers)
@@ -375,4 +399,5 @@ class CanvasIngest():
           html_file.write(discussion_content)
       return "Success"
     except Exception as e:
+      sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
