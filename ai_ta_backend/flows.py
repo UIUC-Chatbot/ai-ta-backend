@@ -93,6 +93,8 @@ class Flows():
                     workflow_name: str = ''):
     if not api_key:
       raise ValueError('api_key is required')
+
+
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
     url = self.url + f"/api/v1/workflows?limit={limit}"
     if active:
@@ -121,6 +123,8 @@ class Flows():
           return workflow
       else:
         raise Exception('Workflow not found')
+    print("Returning all workflows")
+    print(json.dumps(all_workflows))
     return all_workflows
 
   def get_hook(self, name: str, api_key: str = ""):
