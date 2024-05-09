@@ -40,7 +40,7 @@ from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 
 from ai_ta_backend.beam.nomic_logging import create_document_map
-from ai_ta_backend.utils.pub_ingest import downloadSpringerFulltext
+from ai_ta_backend.utils.pub_ingest import downloadSpringerFulltext, downloadWileyFulltext
 
 app = Flask(__name__)
 CORS(app)
@@ -403,6 +403,28 @@ def get_springer_data():
     )
 
   fulltext = downloadSpringerFulltext(issn, subject, journal, title, doi, course_name)
+
+  response = jsonify(fulltext)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/get-wiley-fulltext', methods=['GET'])
+def get_wiley_data():
+  course_name: str = request.args.get('course_name', default='', type=str)
+  issn = request.args.get('issn', default='', type=str)
+  #doi = request.args.get('doi', default='', type=str)
+
+  print("In /get-wiley-fulltext")
+
+  if issn == '' or course_name == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing required parameters: 'issn' or 'doi' and 'course_name' must be provided."
+    )
+
+  fulltext = downloadWileyFulltext(course_name, issn)
 
   response = jsonify(fulltext)
   response.headers.add('Access-Control-Allow-Origin', '*')

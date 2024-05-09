@@ -1,15 +1,22 @@
 import os
 import json
+import time
 import pandas as pd
 import shutil
 import requests
 import supabase
-import xml.etree.ElementTree as ET
-from urllib.parse import urlparse
 import concurrent.futures
+from crossref.restful import Works, Journals
 from ai_ta_backend.database import aws, sql
 
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
+LICENSES = {
+    "http://onlinelibrary.wiley.com/termsAndConditions#vor": "closed_access",
+    "http://creativecommons.org/licenses/by/4.0/": "CC BY",
+    "http://creativecommons.org/licenses/by-nc/4.0/": "CC BY-NC",
+    "http://creativecommons.org/licenses/by-nc-nd/4.0/": "CC BY-NC-ND",
+    "http://creativecommons.org/licenses/by-nc-sa/4.0/": "CC BY-NC-SA",
+}
 
 s3_client = aws.AWSStorage()
 aws_bucket = os.getenv('S3_BUCKET_NAME')
@@ -114,7 +121,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
             "url": doi_link,
             "journal": "",
         }
-        
+        s3_path = "courses/" + course_name + "/" + file # type: ignore
         s3_client.upload_file(directory + "/" + file, aws_bucket, s3_path)  # type: ignore
         ingest_data.append(data)
     
@@ -193,3 +200,222 @@ def downloadPDFSpringer(record: dict, directory: str):
         return "success"
     except Exception as e:
         return "Error in downloading PDF: " + str(e)
+
+
+def downloadWileyFulltext(course_name=None, issn=None):
+    """
+    This function fetches metadata from Crossref and downloads 
+    full-text articles from a given journal from Wiley.
+    """
+    # create directory to store files
+    directory = os.path.join(os.getcwd(), 'wiley_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    api_key = os.environ.get("WILEY_TDM_TOKEN")
+    metadata = []
+
+    # get journal metadata
+    journals = Journals()
+    works = journals.works(issn=issn)
+    count = 0
+    for item in works:
+        open_access = True
+        count += 1
+        article_metadata = {}
+        # check if the license is open access - variant of CC
+        if 'license' not in item:
+            continue
+            
+        for license in item['license']:
+            print("License URL: ", license['URL'])
+            if license['URL'] in LICENSES:
+                if LICENSES[license['URL']] == "closed_access":
+                    #print("Article is not open access: ", item['DOI'])
+                    open_access = False
+                else:
+                    print("Article is open access: ", item['DOI'])
+                    article_metadata['license'] = LICENSES[license['URL']]
+                    article_metadata['license_link'] = license['URL']
+            else:
+                article_metadata['license_link'] = license['URL']
+            
+        if not open_access:
+            continue
+
+        article_metadata['doi'] = item['DOI']
+        article_metadata['title'] = item['title'][0]
+        article_metadata['journal'] = item['container-title'][0]
+        article_metadata['publisher'] = item['publisher']
+        article_metadata['issn'] = item['ISSN'][0]
+        article_metadata['url'] = item['URL']
+        article_metadata['filename'] = item['DOI'].replace("/", "_") + ".pdf"
+
+        print("Article Metadata: ", article_metadata)
+
+        # download PDF based on doi
+        download_status = downloadWileyPDF(item['DOI'])
+        print("Download status: ", download_status)
+        metadata.append(article_metadata)
+    
+    print("Download complete.")
+    print("Total articles: ", count)
+    metadata_csv = "wiley_metadata.csv"
+    metadata_df = pd.DataFrame(metadata)
+    if not os.path.exists(metadata_csv):
+        metadata_df.to_csv(metadata_csv, index=False)
+    else:
+        metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
+    # prep payload for beam ingest
+    # ingest_data = []
+        
+    # # upload files to S3 bucket
+    # for file in os.listdir(directory):
+    #     doi = file[:-4]
+    #     doi = doi.replace("_", "/")
+    #     doi_link = f"https://doi.org/{doi}"
+    #     data = {
+    #         "course_name": course_name,
+    #         "group": "wiley",
+    #         "s3_paths": "courses/" + course_name + "/" + file, # type: ignore
+    #         "readable_filename": file,
+    #         "base_url": "",
+    #         "url": doi_link,
+    #         "journal": "",
+    #     }
+    #     s3_path = "courses/" + course_name + "/" + file # type: ignore
+    #     s3_client.upload_file(directory + "/" + file, aws_bucket, s3_path)  # type: ignore
+    #     ingest_data.append(data)
+        
+    # # save ingest data to csv
+    # ingest_df = pd.DataFrame(ingest_data)
+    # csv_file = "publications_data.csv"
+    # if not os.path.exists(csv_file):
+    #     ingest_df.to_csv(csv_file, index=False)
+    # else:
+    #     ingest_df.to_csv(csv_file, mode='a', header=False, index=False)
+
+
+    # # call ingest
+    # beam_url = "https://41kgx.apps.beam.cloud"
+    # headers = {
+    # "Content-Type": "application/json",
+    # "Authorization": "Basic " + os.getenv('BEAM_AUTH_TOKEN')    # type: ignore
+    # }
+    # for data in ingest_data:
+    #     payload = json.dumps(data)
+    #     response = requests.post(beam_url, headers=headers, data=payload)
+    #     if response.status_code == 200:
+    #         print("Task status retrieved successfully!")
+    #     else:
+    #         print(f"Error: {response.status_code}. {response.text}")
+
+    # Delete files from local directory
+    #shutil.rmtree(directory)
+                
+
+def downloadWileyPDF(doi=None):
+    """
+    This function downloads a PDF file from Wiley based on the DOI.
+    """
+    # create directory to store files
+    directory = os.path.join(os.getcwd(), 'wiley_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    api_key = os.environ.get("WILEY_TDM_TOKEN")
+
+    # download PDF based on doi
+    base_url = "https://api.wiley.com/onlinelibrary/tdm/v1/articles/"
+    url = base_url + str(doi)
+    print("URL: ", url)
+
+    headers = {
+        'Wiley-TDM-Client-Token': api_key,
+        'Content-Type': 'application/json'
+    }
+    time.sleep(3)
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        return "Error in accessing article link: " + str(response.status_code) + " - " + response.text
+        
+    filename = str(doi).replace("/", "_") + ".pdf"
+    with open(directory + "/" + filename, "wb") as f:  # Open a file in binary write mode ("wb")
+        for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+            f.write(chunk)
+    print("Downloaded: ", filename)
+    
+    return "success"
+
+
+def downloadWileyArticle(doi=None):
+    """
+    This function fetches metadata from Crossref and downloads open access full text articles from Wiley.
+    """
+    # create directory to store files
+    directory = os.path.join(os.getcwd(), 'wiley_papers')
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    api_key = os.environ.get("WILEY_TDM_TOKEN")
+    metadata = {}
+    
+    # get metadata from Crossref
+    if doi:
+        # get article metadata
+        works = Works()
+        article_data = works.doi(doi)
+        print("Article license: ", article_data['license'])
+        
+        article_licenses = []
+        
+        for item in article_data['license']:
+            article_licenses.append(item['URL'])
+        print("Licenses: ", article_licenses)
+        # check if the license is open access - variant of CC
+        for license in article_licenses:
+            if license in LICENSES:
+                print("License found: ", license)
+                if LICENSES[license] == "closed_access":
+                    return "Article is not open access."
+                else:
+                    metadata['license'] = LICENSES[license]
+                    break
+            else:
+                return "License not found."
+        
+        metadata['doi'] = doi
+        metadata['title'] = article_data['title'][0]
+        metadata['journal'] = article_data['container-title'][0]
+        metadata['publisher'] = article_data['publisher']
+        metadata['issn'] = article_data['ISSN'][0]
+        metadata['url'] = article_data['URL']
+
+        print("Metadata: ", metadata)
+
+        # download PDF based on doi
+        base_url = "https://api.wiley.com/onlinelibrary/tdm/v1/articles/"
+        url = base_url + str(doi)
+
+        print("URL: ", url)
+
+        headers = {
+            'Wiley-TDM-Client-Token': api_key,
+            'Content-Type': 'application/json'
+        }
+
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            return "Error in accessing article link: " + str(response.status_code) + " - " + response.text
+        
+        filename = str(doi).replace("/", "_")
+        with open(directory + "/" + filename + ".pdf", "wb") as f:  # Open a file in binary write mode ("wb")
+            for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+                f.write(chunk)
+        print("Downloaded: ", filename)
+
+        # upload file to S3 bucket
+
+        # prep payload for beam ingest
+
+        return "success"
