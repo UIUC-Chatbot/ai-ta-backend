@@ -1,14 +1,17 @@
 import os
 import pprint
 import smtplib
+import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import List
 
 import pydantic
 import requests
+import sentry_sdk
 import supabase
 from dotenv import load_dotenv
+from retry import retry
 
 from ai_ta_backend.types.types import ClerkUser
 
@@ -48,16 +51,16 @@ def get_all_users_from_clerk() -> List[ClerkUser]:
   return clerkUsers
 
 
-def send_html_email(subject: str,
-                    html_text: str,
-                    sender: str,
-                    receipients: list | None = None,
-                    bcc_receipients: list | None = None):
+def send_html_email(subject: str, html_text: str, sender: str, receipients: list | None = None):
   """
   If receipients is empty, send to all users (unless they've unsubscribed from newsletter). 
   If recipients is supplied, send to ONLY the receipients.
 
   bcc_receipients will be added to ALL emails, in all cases. 
+
+  Note account limits:
+    * Maximum send rate: 14 emails per second
+    * Daily sending quota: 50,000 emails per 24-hour period
 
   Send an email using the AWS SES service
   :param subject: The subject of the email
@@ -82,6 +85,7 @@ def send_html_email(subject: str,
   unsubscribed = supabase_client.table(table_name='email-newsletter').select("email").eq(
       "unsubscribed-from-newsletter", "TRUE").execute()
   unsubscribe_list = [row['email'] for row in unsubscribed.data]
+  print("Unsubscribed emails: ", unsubscribe_list)
 
   # Remove any receipients that are in the unsubscribe list
   new_receipients = [r for r in emails if r not in unsubscribe_list]
@@ -92,33 +96,60 @@ def send_html_email(subject: str,
   message["From"] = sender
   message["To"] = ", ".join(new_receipients)
 
-  if len(bcc_receipients) > 0:
-    message["Bcc"] = ", ".join(bcc_receipients)
+  # if len(bcc_receipients) > 0:
+  #   message["Bcc"] = ", ".join(bcc_receipients)
 
-  # Add plain text part
-  part1 = MIMEText(html_text, "html")
-  message.attach(part1)
+  start_time = time.time()
+  emails_sent = 0
 
-  # Add additional parts for HTML, attachments, etc. (optional)
+  for user_email in new_receipients:
+    # Limit to 14 emails per second
+    if emails_sent >= 14:
+      elapsed = time.time() - start_time
+      if elapsed < 1:
+        time.sleep(1 - elapsed)
+      start_time = time.time()
+      emails_sent = 0
 
-  # Connect to SMTP server
-  with smtplib.SMTP_SSL(os.getenv('SES_HOST'), os.getenv('SES_PORT')) as server:  # type: ignore
-    server.login(os.getenv('USERNAME_SMTP'), os.getenv('PASSWORD_SMTP'))  # type: ignore
-    server.sendmail(sender, receipients + bcc_receipients, message.as_string())
+    # Add custom unsubscribe links
+    customized_html_content = html_text.replace('https://uiuc.chat/newsletter-unsubscribe',
+                                                f'https://uiuc.chat/newsletter-unsubscribe?email={user_email}')
+    # Add plain text part
+    part1 = MIMEText(customized_html_content, "html")
+    message.attach(part1)
+    try:
+      send_email_safely(sender, user_email, message)
+      emails_sent += 1
+    except Exception as e:
+      print("Error sending email to", user_email, e)
+      sentry_sdk.capture_exception(e)
 
   return "Email sent successfully!"
+
+
+# start with 1 second delay, incrememnt by 1 at a time. Max tries of 65 (> 1 minute)
+@retry(exceptions=Exception, tries=65, delay=1, max_delay=None, backoff=1, jitter=0)
+def send_email_safely(sender, receipients, message):
+  """
+  Send an email using the AWS SES service. Retry if there is an exception.
+  Note account limits:
+    * Maximum send rate: 14 emails per second
+    * Daily sending quota: 50,000 emails per 24-hour period
+  """
+  with smtplib.SMTP_SSL(os.getenv('SES_HOST'), os.getenv('SES_PORT')) as server:  # type: ignore
+    server.login(os.getenv('USERNAME_SMTP'), os.getenv('PASSWORD_SMTP'))  # type: ignore
+    server.sendmail(sender, receipients, message.as_string())
 
 
 if __name__ == "__main__":
 
   # Test with: python -m ai_ta_backend.utils.send_newsletter_email
 
-  with open("ai_ta_backend/utils/product-update-1.html", "r", encoding="utf-8") as file:
+  with open("ai_ta_backend/utils/email/product-update-1.html", "r", encoding="utf-8") as file:
     html_content = file.read()
 
-    send_html_email(subject="Test Newsletter Email",
-                    html_text=html_content,
-                    sender="kvday2@illinois.edu",
-                    receipients=["kvday2@illinois.edu", "jkmin3@illinois.edu"],
-                    bcc_receipients=[])
-    print("email sent")
+    success_or_fail = send_html_email(subject="UIUC.chat Product Update 1",
+                                      html_text=html_content,
+                                      sender="kvday2@illinois.edu",
+                                      receipients=["kvday2@illinois.edu", "jkmin3@illinois.edu"])
+    print("success_or_fail:", success_or_fail)
