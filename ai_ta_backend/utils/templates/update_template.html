@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UIUC.chat Update</title>
+    <style>
+      /* Inline CSS for email styling */
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #202123;
+        color: #fff;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        width: 100%;
+        padding: 0;
+      }
+
+      .logo {
+        max-width: 100px;
+        /* Adjust the width as needed */
+        height: 80%;
+        margin-right: 20px;
+        margin-top: 10%;
+        border-radius: 10%;
+      }
+
+      h1 {
+        color: #fff;
+        margin-top: 0;
+        margin-bottom: 20px;
+      }
+
+      p {
+        color: #ccc;
+        margin-bottom: 20px;
+      }
+
+      .feature {
+        margin-bottom: 20px;
+      }
+
+      .feature h2 {
+        color: #007bff;
+        margin-top: 0;
+      }
+
+      .feature p {
+        margin-top: 0;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 3px;
+      }
+
+      .bold {
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .courseCardHeroImage {
+        object-fit: cover;
+      }
+
+      .flex-container {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .item-wide {
+        flex: 2;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      .item {
+        flex: 1;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      .goldUnderline {
+        text-decoration: underline;
+        text-decoration-color: gold;
+      }
+
+      .fade-2-lines {
+        overflow: hidden;
+        position: relative;
+        max-height: 1.525em;
+        /* exactly one lines */
+        max-height: 3.05em;
+        /* exactly two lines */
+      }
+
+      .fade-2-lines::after {
+        content: "";
+        text-align: right;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 40%;
+        height: 1.2em;
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0),
+          #0e1116 90%
+        );
+      }
+
+      .fade-3-lines {
+        overflow: hidden;
+        position: relative;
+        max-height: 1.525em;
+        /* exactly one lines */
+        max-height: 4.575em;
+        /* exactly two lines */
+      }
+
+      .fade-3-lines::after {
+        content: "";
+        text-align: right;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 40%;
+        height: 1.2em;
+        background: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0),
+          #0e1116 90%
+        );
+      }
+      .course-page-main {
+        /* height: 400px;     */
+        background: -webkit-gradient(
+          linear,
+          left top,
+          left bottom,
+          from(#2e026d),
+          to(#020307),
+          color-stop(0.75, #15162c)
+        );
+        background-color: #020307;
+        background-size:
+          100% 45%,
+          0%;
+        background-repeat: no-repeat;
+      }
+      .navbar {
+        background-color: #15162c;
+        padding-bottom: 64px;
+        padding-left: 20px;
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: 20px;
+        border-radius: 1.9rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container course-page-main">
+      <div class="header">
+        <div class="navbar">
+          <img
+            src="https://i.ibb.co/bH7PwCf/uiuc-chat-logo.png"
+            alt="UIUC.chat Logo"
+            class="logo"
+          />
+          <h1 style="margin-top: 13%">UIUC.chat Update</h1>
+        </div>
+      </div>
+
+      <p><span class="bold">Dear UIUC.chat Users,</span></p>
+
+      <p>
+        Welcome back! We hope this email finds you in good spirits. It's been a
+        while since our last communication, but we're thrilled to reconnect with
+        you and share some exciting news.
+      </p>
+
+      <div class="feature">
+        <h2>Web Scrape:</h2>
+        <p>
+          This is a new and improved version! Gather information from the web
+          directly within the UIUC.chat interface. It has improved reliability,
+          customizability, and improved instructions guiding the user to better
+          use this feature.
+        </p>
+        <img
+          src="https://via.placeholder.com/150"
+          alt="Web Scrape Image"
+          class="courseCardHeroImage"
+        />
+      </div>
+
+      <div class="feature">
+        <h2>New Documentation:</h2>
+        <p>
+          Access updated and comprehensive documentation to help you make the
+          most out of UIUC.chat. Whether you're a new user looking to get
+          started or a seasoned pro seeking advanced tips and tricks, our new
+          documentation has got you covered. Find the documentation
+          <a href="https://docs.uiuc.chat/">here</a>.
+        </p>
+        <img
+          src="https://via.placeholder.com/150"
+          alt="New Documentation Image"
+          class="courseCardHeroImage"
+        />
+      </div>
+
+      <div class="feature">
+        <h2>Document Groupings:</h2>
+        <p>
+          Organize your documents more efficiently with document groupings.
+          Whether you're working on multiple projects or collaborating with
+          different teams, document groupings make it simple to keep everything
+          organized and easily accessible.
+        </p>
+        <img
+          src="https://via.placeholder.com/150"
+          alt="Document Groupings Image"
+          class="courseCardHeroImage"
+        />
+      </div>
+
+      <p>
+        We believe that these new features will revolutionize the way you
+        interact with UIUC.chat, making it easier and more efficient to
+        collaborate, learn, and share information with others.
+      </p>
+
+      <p>
+        Thank you for your continued support and we look forward to serving you
+        with even more exciting updates in the future!
+      </p>
+
+      <p>Best regards,<br />UIUC.chat Team</p>
+    </div>
+  </body>
+</html>
