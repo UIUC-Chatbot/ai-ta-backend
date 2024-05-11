@@ -8,6 +8,7 @@ import supabase
 import concurrent.futures
 from crossref.restful import Works, Journals
 from ai_ta_backend.database import aws, sql
+import backoff
 
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 LICENSES = {
@@ -252,11 +253,12 @@ def downloadWileyFulltext(course_name=None, issn=None):
         article_metadata['filename'] = item['DOI'].replace("/", "_") + ".pdf"
 
         print("Article Metadata: ", article_metadata)
+        metadata.append(article_metadata)
 
         # download PDF based on doi
         download_status = downloadWileyPDF(item['DOI'])
         print("Download status: ", download_status)
-        metadata.append(article_metadata)
+        
     
     print("Download complete.")
     print("Total articles: ", count)
@@ -313,7 +315,7 @@ def downloadWileyFulltext(course_name=None, issn=None):
     # Delete files from local directory
     #shutil.rmtree(directory)
                 
-
+@backoff.on_exception(backoff.expo, requests.exceptions.HTTPError, max_tries=20)
 def downloadWileyPDF(doi=None):
     """
     This function downloads a PDF file from Wiley based on the DOI.
@@ -334,10 +336,9 @@ def downloadWileyPDF(doi=None):
         'Wiley-TDM-Client-Token': api_key,
         'Content-Type': 'application/json'
     }
-    time.sleep(3)
+    
     response = requests.get(url, headers=headers)
-    if response.status_code != 200:
-        return "Error in accessing article link: " + str(response.status_code) + " - " + response.text
+    response.raise_for_status()
         
     filename = str(doi).replace("/", "_") + ".pdf"
     with open(directory + "/" + filename, "wb") as f:  # Open a file in binary write mode ("wb")
@@ -406,6 +407,9 @@ def downloadWileyArticle(doi=None):
 
         response = requests.get(url, headers=headers)
         if response.status_code != 200:
+            # exponential backoff logic
+            print("Error in accessing article link, retrying: ", response.text)
+
             return "Error in accessing article link: " + str(response.status_code) + " - " + response.text
         
         filename = str(doi).replace("/", "_")
