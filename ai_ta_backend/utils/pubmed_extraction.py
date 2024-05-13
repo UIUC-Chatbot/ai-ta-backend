@@ -41,77 +41,77 @@ def extractPubmedData():
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
 
-    for file in file_list[18:20]:  
-        try:
-            print("Processing file: ", file)
+    for file in file_list[20:21]:  
+        # try:
+        #     print("Processing file: ", file)
         
-            gz_filepath = downloadXML(ftp_address, ftp_path, file, "pubmed")
-            print("GZ Downloaded: ", gz_filepath)
-            print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
-            gz_file_download_time = time.time()
+        #     gz_filepath = downloadXML(ftp_address, ftp_path, file, "pubmed")
+        #     print("GZ Downloaded: ", gz_filepath)
+        #     print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
+        #     gz_file_download_time = time.time()
 
-            # extract the XML file
-            if not gz_filepath:
-                return "failure"
-            xml_filepath = extractXMLFile(gz_filepath)
-            print("XML Extracted: ", xml_filepath)
-            print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
+        #     # extract the XML file
+        #     if not gz_filepath:
+        #         return "failure"
+        #     xml_filepath = extractXMLFile(gz_filepath)
+        #     print("XML Extracted: ", xml_filepath)
+        #     print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
             
-            #xml_filepath = "pubmed/pubmed24n1217.xml"
-            for metadata in extractMetadataFromXML(xml_filepath):
-                metadata_extract_start_time = time.time() 
+        #     #xml_filepath = "pubmed/pubmed24n1217.xml"
+        #     for metadata in extractMetadataFromXML(xml_filepath):
+        #         metadata_extract_start_time = time.time() 
 
-                # find PMC ID and DOI for all articles
-                metadata_with_ids = getArticleIDs(metadata)
-                metadata_update_time = time.time()
-                print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
+        #         # find PMC ID and DOI for all articles
+        #         metadata_with_ids = getArticleIDs(metadata)
+        #         metadata_update_time = time.time()
+        #         print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
                 
-                # download the articles
-                complete_metadata = downloadArticles(metadata_with_ids)
-                print(complete_metadata)
-                print("Time taken to download articles for 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
+        #         # download the articles
+        #         complete_metadata = downloadArticles(metadata_with_ids)
+        #         print(complete_metadata)
+        #         print("Time taken to download articles for 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
 
-                # store metadata in csv file
-                print("\n")
-                print("Total articles retrieved: ", len(complete_metadata))
-                df = pd.DataFrame(complete_metadata)
-                csv_filepath = "metadata.csv"
+        #         # store metadata in csv file
+        #         print("\n")
+        #         print("Total articles retrieved: ", len(complete_metadata))
+        #         df = pd.DataFrame(complete_metadata)
+        #         csv_filepath = "metadata.csv"
 
-                if os.path.isfile(csv_filepath):
-                    df.to_csv(csv_filepath, mode='a', header=False, index=False)
-                else:
-                    df.to_csv(csv_filepath, index=False)
+        #         if os.path.isfile(csv_filepath):
+        #             df.to_csv(csv_filepath, mode='a', header=False, index=False)
+        #         else:
+        #             df.to_csv(csv_filepath, index=False)
                 
-                print("Time taken to extract metadata for 100 articles: ", round(time.time() - metadata_extract_start_time, 2), "seconds")
+        #         print("Time taken to extract metadata for 100 articles: ", round(time.time() - metadata_extract_start_time, 2), "seconds")
 
 
-            print("Time taken to download articles: ", round(time.time() - start_time, 2), "seconds")
-            print("Total metadata extracted: ", len(complete_metadata))
+        #     print("Time taken to download articles: ", round(time.time() - start_time, 2), "seconds")
+        #     print("Total metadata extracted: ", len(complete_metadata))
 
-            # upload articles to bucket
-            print("Uploading articles to storage...")
-            article_upload = uploadToStorage("pubmed_abstracts")    # need to parallelize upload
-            print("Uploaded articles: ", article_upload)
+        #     # upload articles to bucket
+        #     print("Uploading articles to storage...")
+        #     article_upload = uploadToStorage("pubmed_abstracts")    # need to parallelize upload
+        #     print("Uploaded articles: ", article_upload)
             
-            # upload metadata to SQL DB
-            df = pd.read_csv(csv_filepath)
-            complete_metadata = df.to_dict('records')
-            for item in complete_metadata:
-                for key, value in item.items():
-                    if pd.isna(value):  # Or: math.isnan(value)
-                        item[key] = None
-            print("Metadata loaded into dataframe: ", len(complete_metadata))
+        #     # upload metadata to SQL DB
+        #     df = pd.read_csv(csv_filepath)
+        #     complete_metadata = df.to_dict('records')
+        #     for item in complete_metadata:
+        #         for key, value in item.items():
+        #             if pd.isna(value):  # Or: math.isnan(value)
+        #                 item[key] = None
+        #     print("Metadata loaded into dataframe: ", len(complete_metadata))
             
-            # continue with the rest of the code
-            response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
-            print("Uploaded metadata to SQL DB.")
+        #     # continue with the rest of the code
+        #     response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
+        #     print("Uploaded metadata to SQL DB.")
             
-        except Exception as e:
-            print("Error processing file: ", e)
+        # except Exception as e:
+        #     print("Error processing file: ", e)
 
         # delete files            
-        shutil.rmtree("F:/MSIM/ML_Projects/ai-ta-backend/pubmed_abstracts")
-        os.remove("F:/MSIM/ML_Projects/ai-ta-backend/metadata.csv")
+        shutil.rmtree("pubmed_abstracts")
+        os.remove("metadata.csv")
         #os.remove(xml_filepath)
         print("Finished file: ", file)
             
