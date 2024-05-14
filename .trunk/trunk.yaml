@@ -43,7 +43,6 @@ lint:
       paths:
         - .github/**/*
         - .trunk/**/*
-        - mkdocs.yml
         - .DS_Store
         - .vscode/**/*
         - README.md

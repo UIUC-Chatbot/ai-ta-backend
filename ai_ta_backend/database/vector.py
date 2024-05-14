@@ -61,18 +61,13 @@ class VectorDatabase():
     must_conditions: list[models.Condition] = [
         models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name))
     ]
-    if doc_groups:
+    
+    if doc_groups and 'All Documents' not in doc_groups:
       # Final combined condition
       combined_condition = None
       # Condition for matching any of the specified doc_groups
       match_any_condition = models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups))
       combined_condition = models.Filter(should=[match_any_condition])
-
-      # Condition for matching the default document group
-      if 'All Document Groups' in doc_groups: # This is the default document group, which can be set in an environment variable
-        # Condition for matching documents where doc_groups is not set
-        is_empty_condition = models.IsEmptyCondition(is_empty=models.PayloadField(key="doc_groups"))
-        combined_condition = models.Filter(should=[is_empty_condition])
       
       # Add the combined condition to the must_conditions list
       must_conditions.append(combined_condition)
