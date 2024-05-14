@@ -18,7 +18,6 @@ import threading
 import json
 from functools import partial
 
-
 SUPBASE_CLIENT = supabase.create_client(    # type: ignore
     supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
     supabase_key=os.getenv('SUPABASE_API_KEY')  # type: ignore
@@ -46,7 +45,7 @@ def extractPubmedData():
             print("Processing file: ", file)
         
             gz_filepath = downloadXML(ftp_address, ftp_path, file, "pubmed")
-            print("GZ Downloaded: ", gz_filepath)
+            # print("GZ Downloaded: ", gz_filepath)
             print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
             gz_file_download_time = time.time()
 
@@ -54,7 +53,7 @@ def extractPubmedData():
             if not gz_filepath:
                 return "failure"
             xml_filepath = extractXMLFile(gz_filepath)
-            print("XML Extracted: ", xml_filepath)
+            # print("XML Extracted: ", xml_filepath)
             print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
             
             #xml_filepath = "pubmed/pubmed24n1217.xml"
@@ -68,7 +67,7 @@ def extractPubmedData():
                 
                 # download the articles
                 complete_metadata = downloadArticles(metadata_with_ids)
-                print(complete_metadata)
+                # print(complete_metadata)
                 print("Time taken to download articles for 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
 
                 # store metadata in csv file
@@ -141,7 +140,7 @@ def downloadXML(ftp_address: str, ftp_path: str, file: str, local_dir: str):
         with open(local_filepath, 'wb') as f:
             ftp.retrbinary('RETR ' + file, f.write)
             
-        print(f"Downloaded {file} to {local_filepath}")
+        # print(f"Downloaded {file} to {local_filepath}")
 
         ftp.quit()
         return local_filepath
@@ -175,7 +174,7 @@ def getFileList(ftp_address: str, ftp_path: str, extension: str = ".gz"):
         # Filter for files with the specified extension
         gz_files = [entry for entry in file_listing if entry.endswith(extension)]
         gz_files.sort(reverse=True)
-        print(f"Found {len(gz_files)} files on {ftp_address}/{ftp_path}")
+        # print(f"Found {len(gz_files)} files on {ftp_address}/{ftp_path}")
 
         return gz_files
     except Exception as e:
@@ -191,7 +190,7 @@ def extractXMLFile(gz_filepath: str):
         xml_filepath: Path to the extracted XML file.
     """
     try:
-        print("Downloaded .gz file path: ", gz_filepath)
+        # print("Downloaded .gz file path: ", gz_filepath)
         xml_filepath = gz_filepath.replace(".gz", "")
         with gzip.open(gz_filepath, 'rb') as f_in:
             with open(xml_filepath, 'wb') as f_out:
@@ -212,7 +211,7 @@ def extractMetadataFromXML(xml_filepath: str):
     Returns:
         metadata: List of dictionaries containing metadata for each article.
     """
-    print("inside extractMetadataFromXML()")
+    # print("inside extractMetadataFromXML()")
     try:
         # create a directory to store abstracts
         os.makedirs("pubmed_abstracts", exist_ok=True)
@@ -233,14 +232,14 @@ def extractMetadataFromXML(xml_filepath: str):
                 metadata.append(article_data)
 
                 if len(metadata) == 100:
-                    print("collected 100 articles")
+                    # print("collected 100 articles")
                     yield metadata
                     metadata = []   # reset metadata for next batch
 
         if metadata:
             yield metadata
         
-        print("Metadata extraction complete.")
+        # print("Metadata extraction complete.")
     except Exception as e:
         print("Error extracting metadata: ", e)
         return []
@@ -594,7 +593,7 @@ def downloadArticles(metadata: list):
             if article['pmid'] in updated_articles:
                 article.update(updated_articles[article['pmid']])
                 
-        print("Updated metadata after download: ", metadata)
+        # print("Updated metadata after download: ", metadata)
         
         return metadata
 
@@ -625,7 +624,7 @@ def download_article(article, api_url):
 
     if article['pmcid']:
         final_url = api_url + "id=" + article['pmcid']
-        print("\nDownload URL: ", final_url)
+        # print("\nDownload URL: ", final_url)
 
         xml_response = requests.get(final_url)
         extracted_data = extractArticleData(xml_response.text)
@@ -640,7 +639,7 @@ def download_article(article, api_url):
 
         ftp_url = urlparse(extracted_data[0]['href'])
         ftp_path = ftp_url.path[1:]
-        print("FTP path: ", ftp_path)
+        # print("FTP path: ", ftp_path)
 
         filename = ftp_path.split("/")[-1]
         local_file = os.path.join("pubmed_abstracts", filename)
@@ -649,12 +648,12 @@ def download_article(article, api_url):
             with open(local_file, 'wb') as f:
                 ftp.retrbinary('RETR ' + ftp_path, f.write)  # Download directly to file
 
-            print("Downloaded FTP file: ", local_file)
+            # print("Downloaded FTP file: ", local_file)
             article['filepath'] = local_file
 
             if filename.endswith(".tar.gz"):
                 extracted_pdf_paths = extractPDF(local_file)
-                print("Extracted PDFs from .tar.gz file: ", extracted_pdf_paths)
+                # print("Extracted PDFs from .tar.gz file: ", extracted_pdf_paths)
                 article['filepath'] = ",".join(extracted_pdf_paths)
                 os.remove(local_file)
 
@@ -663,7 +662,7 @@ def download_article(article, api_url):
 
         ftp.quit()
 
-        print("\nUpdated metadata after download: ", article)
+        # print("\nUpdated metadata after download: ", article)
         return article
          
 
@@ -677,7 +676,7 @@ def extractPDF(tar_gz_filepath: str):
         extracted_paths: List of paths to the extracted PDF files.
     """
     try:
-        print("Extracting PDF from: ", tar_gz_filepath)
+        # print("Extracting PDF from: ", tar_gz_filepath)
         extracted_paths = []
         with tarfile.open(tar_gz_filepath, "r:gz") as tar:
             for member in tar:
@@ -700,7 +699,7 @@ def extractArticleData(xml_string: str):
     Returns:
         extracted_data: List of dictionaries containing license and download link for the article.
     """
-    print("In extractArticleData")
+    # print("In extractArticleData")
     try:
         root = ET.fromstring(xml_string)
         # if there is an errors (article not open-access), return empty list (skip article)
@@ -741,7 +740,7 @@ def upload_file(client, bucket_name, file_path, object_name):
     """
     try:
         client.fput_object(bucket_name, object_name, file_path)
-        print(f"Uploaded: {object_name}")
+        # print(f"Uploaded: {object_name}")
     except Exception as e:
         print(f"Error uploading {object_name}: {e}")
 
@@ -749,7 +748,7 @@ def uploadToStorage(filepath: str):
     """
     Uploads all files present under given filepath to Minio bucket in parallel.
     """
-    print("in uploadToStorage()")
+    # print("in uploadToStorage()")
     try:
         bucket_name = "pubmed"
 
@@ -757,8 +756,8 @@ def uploadToStorage(filepath: str):
         if not found:
             MINIO_CLIENT.make_bucket(bucket_name)
             print("Created bucket", bucket_name)
-        else:
-            print("Bucket", bucket_name, "already exists")
+        # else:
+        #     print("Bucket", bucket_name, "already exists")
 
         # Get all files to upload
         files = []
