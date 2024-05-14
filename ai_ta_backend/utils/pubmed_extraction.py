@@ -41,7 +41,7 @@ def extractPubmedData():
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
 
-    for file in file_list[10:]:  # already processed first 5 files
+    for file in file_list[22:23]:  
         try:
             print("Processing file: ", file)
         
@@ -65,7 +65,6 @@ def extractPubmedData():
                 metadata_with_ids = getArticleIDs(metadata)
                 metadata_update_time = time.time()
                 print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
-                #print("Metadata with IDs: ", metadata_with_ids)
                 
                 # download the articles
                 complete_metadata = downloadArticles(metadata_with_ids)
@@ -95,28 +94,26 @@ def extractPubmedData():
             print("Uploaded articles: ", article_upload)
             
             # upload metadata to SQL DB
-            csv_filepath = "metadata.csv"
             df = pd.read_csv(csv_filepath)
-            
             complete_metadata = df.to_dict('records')
             for item in complete_metadata:
                 for key, value in item.items():
                     if pd.isna(value):  # Or: math.isnan(value)
                         item[key] = None
-        
             print("Metadata loaded into dataframe: ", len(complete_metadata))
+            
             # continue with the rest of the code
             response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
             print("Uploaded metadata to SQL DB.")
             
-            # delete files
-            os.remove(csv_filepath)
-            os.remove("pubmed_abstracts")
-        
         except Exception as e:
             print("Error processing file: ", e)
-            continue
-        exit()
+
+        # delete files            
+        shutil.rmtree("pubmed_abstracts")
+        os.remove("metadata.csv")
+        #os.remove(xml_filepath)
+        print("Finished file: ", file)
             
     return "success"
 
@@ -420,39 +417,41 @@ def getArticleIDs(metadata: list):
   for i in range(0, len(metadata), batch_size):
     batch = metadata[i:i + batch_size]
     ids = ",".join([article['pmid'] for article in batch])
-    response = requests.get(base_url + app_details + "&ids=" + ids)
-    data = response.json()
-    records = data['records']
+    try:
+        response = requests.get(base_url + app_details + "&ids=" + ids)
+        data = response.json()
+        records = data['records']
 
-    # PARALLELIZE THIS FOR LOOP - UPDATES ADDITIONAL FIELDS FOR ALL ARTICLES AT ONCE
-    with Manager() as manager:
-        shared_metadata = manager.dict()  # Use a shared dictionary
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            futures = {
-            executor.submit(updateArticleMetadata, shared_metadata, record): record
-            for record in records
-            }
-            concurrent.futures.wait(futures)
-            for future in concurrent.futures.as_completed(futures):
-                record = futures[future]
-                try:
-                    future.result()
-                except Exception as exc:
-                    print('%r generated an exception: %s' % (record, exc))        
+        # PARALLELIZE THIS FOR LOOP - UPDATES ADDITIONAL FIELDS FOR ALL ARTICLES AT ONCE
+        with Manager() as manager:
+            shared_metadata = manager.dict()  # Use a shared dictionary
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                futures = {
+                executor.submit(updateArticleMetadata, shared_metadata, record): record
+                for record in records
+                }
+                concurrent.futures.wait(futures)
+                for future in concurrent.futures.as_completed(futures):
+                    record = futures[future]
+                    try:
+                        future.result()
+                    except Exception as exc:
+                        print('%r generated an exception: %s' % (record, exc))        
 
-        # Update original metadata after loop
-        for article in metadata:
-            if article['pmid'] in shared_metadata:
-                # print("Shared metadata: ", shared_metadata[article['pmid']])
-                if 'errmsg' in shared_metadata[article['pmid']]:
-                    article['live'] = False
-                else:
-                    article['pmcid'] = shared_metadata[article['pmid']]['pmcid']
-                    article['doi'] = shared_metadata[article['pmid']]['doi']
-                    article['live'] = shared_metadata[article['pmid']]['live']
-                    article['release_date'] = shared_metadata[article['pmid']]['release_date']
-                #print("Updated metadata: ", article)
-
+            # Update original metadata after loop
+            for article in metadata:
+                if article['pmid'] in shared_metadata:
+                    # print("Shared metadata: ", shared_metadata[article['pmid']])
+                    if 'errmsg' in shared_metadata[article['pmid']]:
+                        article['live'] = False
+                    else:
+                        article['pmcid'] = shared_metadata[article['pmid']]['pmcid']
+                        article['doi'] = shared_metadata[article['pmid']]['doi']
+                        article['live'] = shared_metadata[article['pmid']]['live']
+                        article['release_date'] = shared_metadata[article['pmid']]['release_date']
+                    #print("Updated metadata: ", article)
+    except Exception as e:
+        print("Error: ", e)
   #print("Length of metadata after ID conversion: ", len(metadata))
   return metadata
 
