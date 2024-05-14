@@ -418,6 +418,7 @@ def getArticleIDs(metadata: list):
     batch = metadata[i:i + batch_size]
     ids = ",".join([article['pmid'] for article in batch])
     # test comment
+    print("test comment")
     try:
         response = requests.get(base_url + app_details + "&ids=" + ids)
         data = response.json()
