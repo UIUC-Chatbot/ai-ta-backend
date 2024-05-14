@@ -39,83 +39,100 @@ def extractPubmedData():
     ftp_address = "ftp.ncbi.nlm.nih.gov"
     ftp_path = "pubmed/baseline"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        futures = [executor.submit(processPubmedXML, file, ftp_address, ftp_path) for file in file_list[21:22]]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print("Error processing file: ", e)
+
     
-
-    for file in file_list[20:21]:  
-        # try:
-        #     print("Processing file: ", file)
-        
-        #     gz_filepath = downloadXML(ftp_address, ftp_path, file, "pubmed")
-        #     print("GZ Downloaded: ", gz_filepath)
-        #     print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
-        #     gz_file_download_time = time.time()
-
-        #     # extract the XML file
-        #     if not gz_filepath:
-        #         return "failure"
-        #     xml_filepath = extractXMLFile(gz_filepath)
-        #     print("XML Extracted: ", xml_filepath)
-        #     print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
-            
-        #     #xml_filepath = "pubmed/pubmed24n1217.xml"
-        #     for metadata in extractMetadataFromXML(xml_filepath):
-        #         metadata_extract_start_time = time.time() 
-
-        #         # find PMC ID and DOI for all articles
-        #         metadata_with_ids = getArticleIDs(metadata)
-        #         metadata_update_time = time.time()
-        #         print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
-                
-        #         # download the articles
-        #         complete_metadata = downloadArticles(metadata_with_ids)
-        #         print(complete_metadata)
-        #         print("Time taken to download articles for 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
-
-        #         # store metadata in csv file
-        #         print("\n")
-        #         print("Total articles retrieved: ", len(complete_metadata))
-        #         df = pd.DataFrame(complete_metadata)
-        #         csv_filepath = "metadata.csv"
-
-        #         if os.path.isfile(csv_filepath):
-        #             df.to_csv(csv_filepath, mode='a', header=False, index=False)
-        #         else:
-        #             df.to_csv(csv_filepath, index=False)
-                
-        #         print("Time taken to extract metadata for 100 articles: ", round(time.time() - metadata_extract_start_time, 2), "seconds")
-
-
-        #     print("Time taken to download articles: ", round(time.time() - start_time, 2), "seconds")
-        #     print("Total metadata extracted: ", len(complete_metadata))
-
-        #     # upload articles to bucket
-        #     print("Uploading articles to storage...")
-        #     article_upload = uploadToStorage("pubmed_abstracts")    # need to parallelize upload
-        #     print("Uploaded articles: ", article_upload)
-            
-        #     # upload metadata to SQL DB
-        #     df = pd.read_csv(csv_filepath)
-        #     complete_metadata = df.to_dict('records')
-        #     for item in complete_metadata:
-        #         for key, value in item.items():
-        #             if pd.isna(value):  # Or: math.isnan(value)
-        #                 item[key] = None
-        #     print("Metadata loaded into dataframe: ", len(complete_metadata))
-            
-        #     # continue with the rest of the code
-        #     response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
-        #     print("Uploaded metadata to SQL DB.")
-            
-        # except Exception as e:
-        #     print("Error processing file: ", e)
-
-        # delete files            
-        shutil.rmtree("pubmed_abstracts")
-        os.remove("metadata.csv")
-        #os.remove(xml_filepath)
-        print("Finished file: ", file)
-            
     return "success"
+
+def processPubmedXML(file:str, ftp_address:str, ftp_path:str):
+    """
+    Main function to extract metadata and articles from the PubMed baseline folder.
+    """
+    start_time = time.monotonic()
+    try:
+        print("Processing file: ", file)
+        gz_filepath = downloadXML(ftp_address, ftp_path, file, "pubmed")
+        print("GZ Downloaded: ", gz_filepath)
+        print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
+        gz_file_download_time = time.time()
+
+        # extract the XML file
+        if not gz_filepath:
+            return "failure"
+        xml_filepath = extractXMLFile(gz_filepath)
+        print("XML Extracted: ", xml_filepath)
+        print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
+        
+        xml_id = xml_filepath[7:-4].replace(".", "_")
+        destination_dir = xml_id + "_papers"
+        csv_filepath = xml_id + "_metadata.csv"
+        print("Destination directory: ", destination_dir)
+        print("CSV file path: ", csv_filepath)
+        #xml_filepath = "pubmed/pubmed24n1217.xml"
+
+        for metadata in extractMetadataFromXML(xml_filepath, destination_dir):
+            metadata_extract_start_time = time.time() 
+
+            # find PMC ID and DOI for all articles
+            metadata_with_ids = getArticleIDs(metadata)
+            metadata_update_time = time.time()
+            print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
+                
+            # download the articles
+            complete_metadata = downloadArticles(metadata_with_ids, destination_dir)
+            print(complete_metadata)
+            print("Time taken to download articles for 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
+
+            # store metadata in csv file
+            print("\n")
+            print("Total articles retrieved: ", len(complete_metadata))
+            df = pd.DataFrame(complete_metadata)
+
+            if os.path.isfile(csv_filepath):
+                df.to_csv(csv_filepath, mode='a', header=False, index=False)
+            else:
+                df.to_csv(csv_filepath, index=False)
+                
+            print("Time taken to extract metadata for 100 articles: ", round(time.time() - metadata_extract_start_time, 2), "seconds")
+
+
+        print("Time taken to download articles: ", round(time.time() - start_time, 2), "seconds")
+        print("Total metadata extracted: ", len(complete_metadata))
+
+        # upload articles to bucket
+        print("Uploading articles to storage...")
+        article_upload = uploadToStorage("pubmed_abstracts")    # need to parallelize upload
+        print("Uploaded articles: ", article_upload)
+            
+        # upload metadata to SQL DB
+        df = pd.read_csv(csv_filepath)
+        complete_metadata = df.to_dict('records')
+        for item in complete_metadata:
+            for key, value in item.items():
+                if pd.isna(value):  # Or: math.isnan(value)
+                    item[key] = None
+        print("Metadata loaded into dataframe: ", len(complete_metadata))
+            
+        # continue with the rest of the code
+        response = SUPBASE_CLIENT.table("publications").upsert(complete_metadata).execute() # type: ignore
+        print("Uploaded metadata to SQL DB.")
+            
+    except Exception as e:
+        print("Error processing file: ", e)
+    
+    # delete files            
+    shutil.rmtree(destination_dir)
+    os.remove(csv_filepath)
+    #os.remove(xml_filepath)
+    print("Finished file: ", file)
+
 
 def downloadXML(ftp_address: str, ftp_path: str, file: str, local_dir: str):
     """
@@ -202,7 +219,7 @@ def extractXMLFile(gz_filepath: str):
         print("Error extracting XML file: ", e)
         return None
 
-def extractMetadataFromXML(xml_filepath: str):
+def extractMetadataFromXML(xml_filepath: str, dir: str):
     """
     Extracts article details from the XML file and stores it in a dictionary.
     Details extracted: PMID, PMCID, DOI, ISSN, journal title, article title, 
@@ -215,7 +232,7 @@ def extractMetadataFromXML(xml_filepath: str):
     print("inside extractMetadataFromXML()")
     try:
         # create a directory to store abstracts
-        os.makedirs("pubmed_abstracts", exist_ok=True)
+        os.makedirs(dir, exist_ok=True)
 
         tree = ET.parse(xml_filepath)
         root = tree.getroot()
@@ -227,7 +244,7 @@ def extractMetadataFromXML(xml_filepath: str):
             article_items = list(item for item in root.iter('PubmedArticle'))  # Convert generator to list
         
             for item in article_items:
-                future = executor.submit(processArticleItem, item)
+                future = executor.submit(processArticleItem, item, dir)
                 article_data = future.result()
 
                 metadata.append(article_data)
@@ -246,7 +263,7 @@ def extractMetadataFromXML(xml_filepath: str):
         return []
     
 
-def processArticleItem(item: ET.Element):
+def processArticleItem(item: ET.Element, directory: str):
     """
     Extracts article details from a single PubmedArticle XML element. This is used in the process pool executor.
     Args:
@@ -311,7 +328,7 @@ def processArticleItem(item: ET.Element):
                     abstract_text += abstract_text_element.text + "\n"
         
             # save abstract to a text file
-            abstract_filename = f"pubmed_abstracts/{article_data['pmid']}.txt"
+            abstract_filename = directory + "/" + article_data['pmid'] + ".txt"
             with open(abstract_filename, 'w') as f:
                 if article_data['journal_title']:
                     f.write("Journal title: " + article_data['journal_title'] + "\n\n")
@@ -557,7 +574,7 @@ def updateArticleMetadata(shared_metadata, record):
 #         print("Error downloading articles: ", e)
 #         return metadata   
 
-def downloadArticles(metadata: list):
+def downloadArticles(metadata: list, dir: str):
     """
     Downloads articles from PMC and stores them in local directory.
     Args:
@@ -572,7 +589,7 @@ def downloadArticles(metadata: list):
         updated_articles = {}
         
         # Use ThreadPoolExecutor to run download_article for each article in parallel
-        download_article_partial = partial(download_article, api_url=base_url)
+        download_article_partial = partial(download_article, api_url=base_url, dir=dir)
         with concurrent.futures.ProcessPoolExecutor() as executor:
             futures = [executor.submit(download_article_partial, article) for article in metadata]
             for future in concurrent.futures.as_completed(futures):
@@ -598,7 +615,7 @@ def downloadArticles(metadata: list):
         print("Error downloading articles: ", e)
         return metadata
 
-def download_article(article, api_url):
+def download_article(article, api_url, dir):
     """
     Downloads the article from given FTP link and updates metadata with license, FTP link, and downloaded filepath information.
     This function is used within downloadArticles() function.
@@ -639,7 +656,7 @@ def download_article(article, api_url):
         print("FTP path: ", ftp_path)
 
         filename = ftp_path.split("/")[-1]
-        local_file = os.path.join("pubmed_abstracts", filename)
+        local_file = os.path.join(dir, filename)
         
         try:
             with open(local_file, 'wb') as f:
@@ -649,7 +666,7 @@ def download_article(article, api_url):
             article['filepath'] = local_file
 
             if filename.endswith(".tar.gz"):
-                extracted_pdf_paths = extractPDF(local_file)
+                extracted_pdf_paths = extractPDF(local_file, dir)
                 print("Extracted PDFs from .tar.gz file: ", extracted_pdf_paths)
                 article['filepath'] = ",".join(extracted_pdf_paths)
                 os.remove(local_file)
@@ -663,7 +680,7 @@ def download_article(article, api_url):
         return article
          
 
-def extractPDF(tar_gz_filepath: str):
+def extractPDF(tar_gz_filepath: str, dest_directory: str):
     """
     Extracts PDF files from the downloaded .tar.gz file. The zipped folder contains other supplementary
     materials like images, etc. which are not extracted.
@@ -678,9 +695,9 @@ def extractPDF(tar_gz_filepath: str):
         with tarfile.open(tar_gz_filepath, "r:gz") as tar:
             for member in tar:
                 if member.isreg() and member.name.endswith(".pdf"):
-                    tar.extract(member, path="pubmed_abstracts")
+                    tar.extract(member, path=dest_directory)
                     print("Extracted: ", member.name)
-                    extracted_paths.append(os.path.join("pubmed_abstracts", member.name))
+                    extracted_paths.append(os.path.join(dest_directory, member.name))
                 
         return extracted_paths
     except Exception as e:
