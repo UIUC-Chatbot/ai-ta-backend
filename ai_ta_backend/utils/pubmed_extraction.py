@@ -18,6 +18,7 @@ import threading
 import json
 from functools import partial
 
+
 SUPBASE_CLIENT = supabase.create_client(    # type: ignore
     supabase_url=os.getenv('SUPABASE_URL'), # type: ignore
     supabase_key=os.getenv('SUPABASE_API_KEY')  # type: ignore
@@ -39,13 +40,12 @@ def extractPubmedData():
     ftp_path = "pubmed/baseline"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
     
-
     for file in file_list[22:23]:  
         try:
             print("Processing file: ", file)
         
             gz_filepath = downloadXML(ftp_address, ftp_path, file, "pubmed")
-            # print("GZ Downloaded: ", gz_filepath)
+            print("GZ Downloaded: ", gz_filepath)
             print("Time taken to download .gz file: ", round(time.time() - start_time, 2), "seconds")
             gz_file_download_time = time.time()
 
@@ -53,7 +53,7 @@ def extractPubmedData():
             if not gz_filepath:
                 return "failure"
             xml_filepath = extractXMLFile(gz_filepath)
-            # print("XML Extracted: ", xml_filepath)
+            print("XML Extracted: ", xml_filepath)
             print("Time taken to extract XML file: ", round(time.time() - gz_file_download_time, 2), "seconds")
             
             #xml_filepath = "pubmed/pubmed24n1217.xml"
@@ -174,7 +174,7 @@ def getFileList(ftp_address: str, ftp_path: str, extension: str = ".gz"):
         # Filter for files with the specified extension
         gz_files = [entry for entry in file_listing if entry.endswith(extension)]
         gz_files.sort(reverse=True)
-        # print(f"Found {len(gz_files)} files on {ftp_address}/{ftp_path}")
+        print(f"Found {len(gz_files)} files on {ftp_address}/{ftp_path}")
 
         return gz_files
     except Exception as e:
@@ -406,7 +406,7 @@ def getArticleIDs(metadata: list):
   Returns:
       metadata: Updated metadata with PMCID, DOI, release date, and live status information.
   """
-  print("In getArticleIDs()")
+#   print("In getArticleIDs()")
 
   base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
   app_details = "?tool=ncsa_uiuc&email=caiincsa@gmail.com&format=json"
@@ -416,8 +416,6 @@ def getArticleIDs(metadata: list):
   for i in range(0, len(metadata), batch_size):
     batch = metadata[i:i + batch_size]
     ids = ",".join([article['pmid'] for article in batch])
-    # test comment
-    print("test comment")
     try:
         response = requests.get(base_url + app_details + "&ids=" + ids)
         data = response.json()
@@ -568,7 +566,7 @@ def downloadArticles(metadata: list):
     Returns:
       metadata: Updated metadata with license, FTP link, and downloaded filepath information.
     """
-    print("In downloadArticles()")
+    # print("In downloadArticles()")
     try:
         base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?"
 
@@ -580,11 +578,11 @@ def downloadArticles(metadata: list):
             futures = [executor.submit(download_article_partial, article) for article in metadata]
             for future in concurrent.futures.as_completed(futures):
                 try:
-                    print("Starting new download...")
+                    # print("Starting new download...")
                     updated_article = future.result(timeout=15*60)  # Check result without blocking
                     if updated_article:
                         updated_articles[updated_article['pmid']] = updated_article
-                    print("Updated article: ", updated_article)
+                    # print("Updated article: ", updated_article)
                 except Exception as e:
                     print("Error downloading article:", e)
 
@@ -613,7 +611,7 @@ def download_article(article, api_url):
         article: Updated metadata for the article.
     """
 
-    print("Downloading articles...")
+    # print("Downloading articles...")
     if not article['live'] or article['pmcid'] is None:
         return
 
@@ -628,7 +626,7 @@ def download_article(article, api_url):
 
         xml_response = requests.get(final_url)
         extracted_data = extractArticleData(xml_response.text)
-        print("Extracted license and link data: ", extracted_data)
+        # print("Extracted license and link data: ", extracted_data)
 
         if not extracted_data:
             article['live'] = False
