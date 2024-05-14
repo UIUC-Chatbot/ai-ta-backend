@@ -384,9 +384,9 @@ def insert_document_groups(service: RetrievalService) -> Response:
     data = request.get_json()
     csv_path: str = data.get('csv_path', '')
     course_name: str = data.get('course_name', '')
-    doc_group_count, docs_doc_group_count = service.insertDocumentGroups(course_name, csv_path)
+    doc_group_count, docs_doc_group_count_sql, docs_doc_group_count_vdb = service.insertDocumentGroups(course_name, csv_path)
     
-    return jsonify({"message": "Document groups and documents inserted successfully.", "doc_group_count": doc_group_count, "docs_doc_group_count": docs_doc_group_count})
+    return jsonify({"message": "Document groups and documents inserted successfully.", "doc_group_count": doc_group_count, "docs_doc_group_count_sql": docs_doc_group_count_sql, "docs_doc_group_count_vdb": docs_doc_group_count_vdb})
 
 def configure(binder: Binder) -> None:
   binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)
