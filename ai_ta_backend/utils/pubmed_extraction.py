@@ -41,7 +41,7 @@ def extractPubmedData():
     file_list = getFileList(ftp_address, ftp_path, ".gz")
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        futures = [executor.submit(processPubmedXML, file, ftp_address, ftp_path) for file in file_list[21:22]]
+        futures = [executor.submit(processPubmedXML, file, ftp_address, ftp_path) for file in file_list[32:33]]
         for future in concurrent.futures.as_completed(futures):
             try:
                 future.result()
@@ -95,13 +95,16 @@ def processPubmedXML(file:str, ftp_address:str, ftp_path:str):
             print("Total articles retrieved: ", len(complete_metadata))
             df = pd.DataFrame(complete_metadata)
 
+            # add a column for the XML file path
+            df['xml_filename'] = os.path.basename(xml_filepath)
+
             if os.path.isfile(csv_filepath):
                 df.to_csv(csv_filepath, mode='a', header=False, index=False)
             else:
                 df.to_csv(csv_filepath, index=False)
                 
             print("Time taken to extract metadata for 100 articles: ", round(time.time() - metadata_extract_start_time, 2), "seconds")
-
+            exit()
 
         print("Time taken to download articles: ", round(time.time() - start_time, 2), "seconds")
         print("Total metadata extracted: ", len(complete_metadata))
