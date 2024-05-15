@@ -28,12 +28,12 @@ class ClerkUser(pydantic.BaseModel):
   email_addresses: List[Dict[str, Any]]
   external_accounts: List[Dict[str, Any]]
   external_id: Optional[str]
-  first_name: str
+  first_name: Optional[str]
   has_image: bool
   id: str
   image_url: str
   last_active_at: int
-  last_name: str
+  last_name: Optional[str]
   last_sign_in_at: int
   locked: bool
   lockout_expires_in_seconds: Optional[int]
@@ -41,7 +41,7 @@ class ClerkUser(pydantic.BaseModel):
   passkeys: List
   password_enabled: bool
   phone_numbers: List
-  primary_email_address_id: str
+  primary_email_address_id: Optional[str]
   primary_phone_number_id: Optional[str]
   primary_web3_wallet_id: Optional[str]
   private_metadata: Dict[str, Any]
