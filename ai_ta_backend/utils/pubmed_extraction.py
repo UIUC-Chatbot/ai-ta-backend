@@ -158,7 +158,7 @@ def downloadXML(ftp_address: str, ftp_path: str, file: str, local_dir: str):
         with open(local_filepath, 'wb') as f:
             ftp.retrbinary('RETR ' + file, f.write)
             
-        print(f"Downloaded {file} to {local_filepath}")
+        # print(f"Downloaded {file} to {local_filepath}")
 
         ftp.quit()
         return local_filepath
@@ -208,7 +208,7 @@ def extractXMLFile(gz_filepath: str):
         xml_filepath: Path to the extracted XML file.
     """
     try:
-        print("Downloaded .gz file path: ", gz_filepath)
+        # print("Downloaded .gz file path: ", gz_filepath)
         xml_filepath = gz_filepath.replace(".gz", "")
         with gzip.open(gz_filepath, 'rb') as f_in:
             with open(xml_filepath, 'wb') as f_out:
@@ -229,7 +229,7 @@ def extractMetadataFromXML(xml_filepath: str, dir: str):
     Returns:
         metadata: List of dictionaries containing metadata for each article.
     """
-    print("inside extractMetadataFromXML()")
+    # print("inside extractMetadataFromXML()")
     try:
         # create a directory to store abstracts
         os.makedirs(dir, exist_ok=True)
@@ -250,14 +250,14 @@ def extractMetadataFromXML(xml_filepath: str, dir: str):
                 metadata.append(article_data)
 
                 if len(metadata) == 100:
-                    print("collected 100 articles")
+                    # print("collected 100 articles")
                     yield metadata
                     metadata = []   # reset metadata for next batch
 
         if metadata:
             yield metadata
         
-        print("Metadata extraction complete.")
+        # print("Metadata extraction complete.")
     except Exception as e:
         print("Error extracting metadata: ", e)
         return []
@@ -424,7 +424,7 @@ def getArticleIDs(metadata: list):
   Returns:
       metadata: Updated metadata with PMCID, DOI, release date, and live status information.
   """
-  print("In getArticleIDs()")
+#   print("In getArticleIDs()")
 
   base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
   app_details = "?tool=ncsa_uiuc&email=caiincsa@gmail.com&format=json"
@@ -434,39 +434,41 @@ def getArticleIDs(metadata: list):
   for i in range(0, len(metadata), batch_size):
     batch = metadata[i:i + batch_size]
     ids = ",".join([article['pmid'] for article in batch])
-    response = requests.get(base_url + app_details + "&ids=" + ids)
-    data = response.json()
-    records = data['records']
+    try:
+        response = requests.get(base_url + app_details + "&ids=" + ids)
+        data = response.json()
+        records = data['records']
 
-    # PARALLELIZE THIS FOR LOOP - UPDATES ADDITIONAL FIELDS FOR ALL ARTICLES AT ONCE
-    with Manager() as manager:
-        shared_metadata = manager.dict()  # Use a shared dictionary
-        with concurrent.futures.ProcessPoolExecutor() as executor:
-            futures = {
-            executor.submit(updateArticleMetadata, shared_metadata, record): record
-            for record in records
-            }
-            concurrent.futures.wait(futures)
-            for future in concurrent.futures.as_completed(futures):
-                record = futures[future]
-                try:
-                    future.result()
-                except Exception as exc:
-                    print('%r generated an exception: %s' % (record, exc))        
+        # PARALLELIZE THIS FOR LOOP - UPDATES ADDITIONAL FIELDS FOR ALL ARTICLES AT ONCE
+        with Manager() as manager:
+            shared_metadata = manager.dict()  # Use a shared dictionary
+            with concurrent.futures.ProcessPoolExecutor() as executor:
+                futures = {
+                executor.submit(updateArticleMetadata, shared_metadata, record): record
+                for record in records
+                }
+                concurrent.futures.wait(futures)
+                for future in concurrent.futures.as_completed(futures):
+                    record = futures[future]
+                    try:
+                        future.result()
+                    except Exception as exc:
+                        print('%r generated an exception: %s' % (record, exc))        
 
-        # Update original metadata after loop
-        for article in metadata:
-            if article['pmid'] in shared_metadata:
-                # print("Shared metadata: ", shared_metadata[article['pmid']])
-                if 'errmsg' in shared_metadata[article['pmid']]:
-                    article['live'] = False
-                else:
-                    article['pmcid'] = shared_metadata[article['pmid']]['pmcid']
-                    article['doi'] = shared_metadata[article['pmid']]['doi']
-                    article['live'] = shared_metadata[article['pmid']]['live']
-                    article['release_date'] = shared_metadata[article['pmid']]['release_date']
-                #print("Updated metadata: ", article)
-
+            # Update original metadata after loop
+            for article in metadata:
+                if article['pmid'] in shared_metadata:
+                    # print("Shared metadata: ", shared_metadata[article['pmid']])
+                    if 'errmsg' in shared_metadata[article['pmid']]:
+                        article['live'] = False
+                    else:
+                        article['pmcid'] = shared_metadata[article['pmid']]['pmcid']
+                        article['doi'] = shared_metadata[article['pmid']]['doi']
+                        article['live'] = shared_metadata[article['pmid']]['live']
+                        article['release_date'] = shared_metadata[article['pmid']]['release_date']
+                    #print("Updated metadata: ", article)
+    except Exception as e:
+        print("Error: ", e)
   #print("Length of metadata after ID conversion: ", len(metadata))
   return metadata
 
@@ -582,7 +584,7 @@ def downloadArticles(metadata: list, dir: str):
     Returns:
       metadata: Updated metadata with license, FTP link, and downloaded filepath information.
     """
-    print("In downloadArticles()")
+    # print("In downloadArticles()")
     try:
         base_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?"
 
@@ -594,11 +596,11 @@ def downloadArticles(metadata: list, dir: str):
             futures = [executor.submit(download_article_partial, article) for article in metadata]
             for future in concurrent.futures.as_completed(futures):
                 try:
-                    print("Starting new download...")
+                    # print("Starting new download...")
                     updated_article = future.result(timeout=15*60)  # Check result without blocking
                     if updated_article:
                         updated_articles[updated_article['pmid']] = updated_article
-                    print("Updated article: ", updated_article)
+                    # print("Updated article: ", updated_article)
                 except Exception as e:
                     print("Error downloading article:", e)
 
@@ -607,7 +609,7 @@ def downloadArticles(metadata: list, dir: str):
             if article['pmid'] in updated_articles:
                 article.update(updated_articles[article['pmid']])
                 
-        print("Updated metadata after download: ", metadata)
+        # print("Updated metadata after download: ", metadata)
         
         return metadata
 
@@ -627,7 +629,7 @@ def download_article(article, api_url, dir):
         article: Updated metadata for the article.
     """
 
-    print("Downloading articles...")
+    # print("Downloading articles...")
     if not article['live'] or article['pmcid'] is None:
         return
 
@@ -638,11 +640,11 @@ def download_article(article, api_url, dir):
 
     if article['pmcid']:
         final_url = api_url + "id=" + article['pmcid']
-        print("\nDownload URL: ", final_url)
+        # print("\nDownload URL: ", final_url)
 
         xml_response = requests.get(final_url)
         extracted_data = extractArticleData(xml_response.text)
-        print("Extracted license and link data: ", extracted_data)
+        # print("Extracted license and link data: ", extracted_data)
 
         if not extracted_data:
             article['live'] = False
@@ -653,7 +655,7 @@ def download_article(article, api_url, dir):
 
         ftp_url = urlparse(extracted_data[0]['href'])
         ftp_path = ftp_url.path[1:]
-        print("FTP path: ", ftp_path)
+        # print("FTP path: ", ftp_path)
 
         filename = ftp_path.split("/")[-1]
         local_file = os.path.join(dir, filename)
@@ -662,7 +664,7 @@ def download_article(article, api_url, dir):
             with open(local_file, 'wb') as f:
                 ftp.retrbinary('RETR ' + ftp_path, f.write)  # Download directly to file
 
-            print("Downloaded FTP file: ", local_file)
+            # print("Downloaded FTP file: ", local_file)
             article['filepath'] = local_file
 
             if filename.endswith(".tar.gz"):
@@ -676,7 +678,7 @@ def download_article(article, api_url, dir):
 
         ftp.quit()
 
-        print("\nUpdated metadata after download: ", article)
+        # print("\nUpdated metadata after download: ", article)
         return article
          
 
@@ -690,7 +692,7 @@ def extractPDF(tar_gz_filepath: str, dest_directory: str):
         extracted_paths: List of paths to the extracted PDF files.
     """
     try:
-        print("Extracting PDF from: ", tar_gz_filepath)
+        # print("Extracting PDF from: ", tar_gz_filepath)
         extracted_paths = []
         with tarfile.open(tar_gz_filepath, "r:gz") as tar:
             for member in tar:
@@ -713,7 +715,7 @@ def extractArticleData(xml_string: str):
     Returns:
         extracted_data: List of dictionaries containing license and download link for the article.
     """
-    print("In extractArticleData")
+    # print("In extractArticleData")
     try:
         root = ET.fromstring(xml_string)
         # if there is an errors (article not open-access), return empty list (skip article)
@@ -754,7 +756,7 @@ def upload_file(client, bucket_name, file_path, object_name):
     """
     try:
         client.fput_object(bucket_name, object_name, file_path)
-        print(f"Uploaded: {object_name}")
+        # print(f"Uploaded: {object_name}")
     except Exception as e:
         print(f"Error uploading {object_name}: {e}")
 
@@ -762,7 +764,7 @@ def uploadToStorage(filepath: str):
     """
     Uploads all files present under given filepath to Minio bucket in parallel.
     """
-    print("in uploadToStorage()")
+    # print("in uploadToStorage()")
     try:
         bucket_name = "pubmed"
 
@@ -770,8 +772,8 @@ def uploadToStorage(filepath: str):
         if not found:
             MINIO_CLIENT.make_bucket(bucket_name)
             print("Created bucket", bucket_name)
-        else:
-            print("Bucket", bucket_name, "already exists")
+        # else:
+        #     print("Bucket", bucket_name, "already exists")
 
         # Get all files to upload
         files = []
