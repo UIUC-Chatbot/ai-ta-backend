@@ -5,6 +5,7 @@ from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
+from qdrant_client.conversions.common_types import WriteOrdering
 
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
 
@@ -86,3 +87,38 @@ class VectorDatabase():
             ),
         ]),
     )
+  
+  def add_document_groups_to_documents(self, course_name: str, documents: List[dict], doc_group_name: str):
+    """
+    Add document groups to documents in the vector database.
+    """
+    print(f"Adding document groups: {doc_group_name} to documents in the vector database for course: {course_name} and {len(documents)} documents.")
+    update_operations = []
+    for document in documents:
+			# print(f"Adding document groups to document: {document} ")
+      key = "url" if "url" in document else "s3_path"
+      value = models.MatchValue(value=document[key])
+      searchFilter = models.Filter(
+				must=[
+					models.FieldCondition(key="course_name", match=models.MatchValue(value=course_name)), 
+					models.FieldCondition(key=key, 
+																match=value)])
+      
+      payload = {
+					"doc_groups": [group["name"] for group in document["doc_groups"]] + [doc_group_name],
+			}
+      
+      # print(f"Updating to Payload: {payload}")
+      
+      update_operations.append(models.SetPayloadOperation(
+				set_payload=models.SetPayload(
+					payload=payload,
+					filter=searchFilter
+				),
+			))
+
+    print(f"update_operations for qdrant: {len(update_operations)}")
+    result = self.qdrant_client.batch_update_points(
+      collection_name=os.environ['QDRANT_COLLECTION_NAME'], 
+      update_operations=update_operations, wait=False)
+    return result

@@ -1,4 +1,5 @@
 import os
+from typing import Dict, List
 
 import supabase
 from injector import inject
@@ -122,4 +123,26 @@ class SQLDatabase:
   def getConversation(self, course_name: str, key: str, value: str):
     return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
 
+  
+  def fetchDocumentsByURLs(self, urls: List[str], course_name: str, page: int = 1, items_per_page: int = 1500):
+    """
+    Fetch documents that have base_url matching any of the URLs in the provided list.
+    """
+    return self.supabase_client.table("documents").select("id, readable_filename, url, s3_path, base_url, doc_groups(name)").in_("base_url", urls).eq("course_name", course_name).range((page - 1) * items_per_page, page * items_per_page - 1).execute()
+  
+  def insertDocumentGroupsBulk(self, document_group):
+    # Assuming the Supabase client's insert method supports returning inserted records
+    inserted_records = self.supabase_client.table("doc_groups").upsert(document_group, on_conflict="name, course_name", ignore_duplicates=False).execute()
+    print(f"Inserted document groups: {inserted_records.data}")
+    # Extract and return the IDs of the inserted document groups
+    inserted_ids = inserted_records.data[0]['id']
+    return inserted_ids
+
+  def updateDocumentsDocGroupsBulk(self, document_ids: List[int], doc_group_id: int):
+      # Prepare updates
+      updates = [{"document_id": doc_id, "doc_group_id": doc_group_id} for doc_id in document_ids]
+      # Perform bulk update
+      self.supabase_client.table("documents_doc_groups").upsert(updates,on_conflict="document_id, doc_group_id", ignore_duplicates=True).execute()
+
+  
   

@@ -380,6 +380,16 @@ def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogSer
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
+@app.route('/insert_document_groups', methods=['POST'])
+def insert_document_groups(service: RetrievalService) -> Response:
+    data = request.get_json()
+    csv_path: str = data.get('csv_path', '')
+    course_name: str = data.get('course_name', '')
+    doc_group_count, docs_doc_group_count_sql, docs_doc_group_count_vdb = service.insertDocumentGroups(course_name, csv_path)
+    
+    return jsonify({"message": "Document groups and documents inserted successfully.", "doc_group_count": doc_group_count, "docs_doc_group_count_sql": docs_doc_group_count_sql, "docs_doc_group_count_vdb": docs_doc_group_count_vdb})
+
 @app.route('/getworkflows', methods=['GET'])
 def get_all_workflows(service: WorkflowService) -> Response:
   """
@@ -470,7 +480,6 @@ def run_flow(service: WorkflowService) -> Response:
       abort(401, description=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
     else:
       abort(400, description=f"Bad request: {e}")
-
 
 def configure(binder: Binder) -> None:
   binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)

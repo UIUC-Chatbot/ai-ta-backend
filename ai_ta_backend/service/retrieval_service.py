@@ -5,6 +5,7 @@ import traceback
 from typing import Dict, List, Union
 
 import openai
+import csv
 from injector import inject
 from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -466,3 +467,89 @@ class RetrievalService:
     ]
 
     return contexts
+  
+  def insertDocumentGroups(self, course_name, csv_path):
+    """
+    Inserts document groups and documents into the database based on the CSV mapping.
+    Additionally, saves doc group name along with the entire document info in the output csv file.
+    """
+    doc_group_count, docs_doc_groups_count_sql, docs_doc_groups_count_vdb = 0, 0, 0
+    try:
+      with open(csv_path, newline='') as csvfile:
+        for row in csv.DictReader(csvfile):
+          urls = eval(row['start_urls'])
+          doc_group_name = row['university']
+          document_group = {'name': doc_group_name, 'course_name': course_name}
+          document_group["id"] = self._ingest_document_group(document_group)
+          if document_group["id"]:
+            doc_group_count += 1
+            sql_count, vdb_count = self._process_documents_in_group(urls, course_name, document_group)
+            docs_doc_groups_count_sql += sql_count
+            docs_doc_groups_count_vdb += vdb_count
+    except FileNotFoundError as e:
+        print(f"CSV file not found: {str(e)}")
+    except Exception as e:
+        print(f"An error occurred while processing the CSV file: {str(e)}")
+
+    return doc_group_count, docs_doc_groups_count_sql, docs_doc_groups_count_vdb
+
+  def _ingest_document_group(self, document_group):
+    print(f"Inserting document group: {document_group['name']}")
+    try:
+      doc_group_id = self.sqlDb.insertDocumentGroupsBulk(document_group)
+      return doc_group_id
+    except Exception as e:
+      print(f"Failed to insert document group {document_group['name']} due to: {str(e)}")
+      return None
+
+  def _process_documents_in_group(self, urls, course_name, document_group):
+    page, docs_doc_group_count_sql, docs_doc_group_count_vdb = 1, 0, 0
+    while True:
+      print(f"fetching page: {page} for doc_group: {document_group['name']}, with urls: {urls}")
+      existing_documents, updated_points = self._fetch_and_update_documents(urls, course_name, page, document_group)
+      if not existing_documents:
+        break
+      docs_doc_group_count_sql += len(existing_documents)
+      docs_doc_group_count_vdb += len(updated_points if updated_points else [])
+      page += 1
+    return docs_doc_group_count_sql, docs_doc_group_count_vdb
+
+  def _fetch_and_update_documents(self, urls, course_name, page, document_group):
+    try:
+      existing_documents_response = self.sqlDb.fetchDocumentsByURLs(urls, course_name, page)
+      existing_documents = existing_documents_response.data
+      print(f"Existing documents for page {page} and doc_group {document_group['name']}: {len(existing_documents)}")
+      if not existing_documents:
+        return None, None
+      documents_to_update = [doc["id"] for doc in existing_documents]
+
+      print(f"Updating documents for page {page} and doc_group {document_group['name']} in SQL")
+      self.sqlDb.updateDocumentsDocGroupsBulk(documents_to_update, document_group["id"])
+      
+      print(f"Updating documents for page {page} and doc_group {document_group['name']} in VDB")
+      updated_points = self.vdb.add_document_groups_to_documents(course_name, existing_documents, document_group['name'])
+      
+      print(f"Writing updated documents to CSV for doc_group {document_group['name']} and page {page}")
+
+      self._write_to_csv('result/updated_documents_sql.csv', existing_documents, document_group)
+      self._write_to_csv('result/updated_documents_vdb.csv', updated_points, document_group, is_vdb=True)
+      return existing_documents, updated_points
+    except Exception as e:
+      print(f"Failed to fetch/update documents for page {page} and doc_group {document_group['name']} due to: {str(e)}")
+      return None, None
+
+  def _write_to_csv(self, file_path, data, document_group, is_vdb=False):
+    try:
+      print(f"Writing updated documents to CSV for {document_group['name']}, is_vdb: {is_vdb}")
+      with open(file_path, newline='', mode='a') as output_csvfile:
+        writer = csv.writer(output_csvfile)
+        if is_vdb:
+          writer.writerow(['doc_group_name', 'operation results'])
+          for doc in data:
+            writer.writerow([document_group['name']] + list(doc))
+        else:
+          writer.writerow(['doc_group_name', 'id', 'readable_filename', 'url', 's3_path', 'base_url'])
+          for doc in data:
+            writer.writerow([document_group['name']] + list(doc.values()))
+    except Exception as e:
+      print(f"Failed to write updated documents to CSV for {document_group['name']} due to: {str(e)}")
