@@ -11,7 +11,7 @@ from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 
-from ai_ta_backend.database.sql import SQLDatabase
+from ai_ta_backend.database.database_impl.sql.supabase import SQLDatabase
 from ai_ta_backend.service.sentry_service import SentryService
 
 LOCK_EXCEPTIONS = [

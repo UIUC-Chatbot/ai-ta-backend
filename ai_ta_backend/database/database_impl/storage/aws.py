@@ -3,8 +3,10 @@ import os
 import boto3
 from injector import inject
 
+from ai_ta_backend.database.base_storage import BaseStorageDatabase
 
-class AWSStorage:
+
+class AWSStorage(BaseStorageDatabase):
 
   @inject
   def __init__(self):

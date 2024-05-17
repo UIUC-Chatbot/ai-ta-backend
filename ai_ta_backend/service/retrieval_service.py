@@ -2,17 +2,16 @@ import inspect
 import os
 import time
 import traceback
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import openai
 from injector import inject
 from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
-
-from ai_ta_backend.database.aws import AWSStorage
-from ai_ta_backend.database.sql import SQLDatabase
-from ai_ta_backend.database.vector import VectorDatabase
+from ai_ta_backend.database.base_sql import BaseSQLDatabase
+from ai_ta_backend.database.base_storage import BaseStorageDatabase
+from ai_ta_backend.database.base_vector import BaseVectorDatabase
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -25,8 +24,8 @@ class RetrievalService:
   """
 
   @inject
-  def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, posthog: PosthogService,
-               sentry: SentryService, nomicService: NomicService):
+  def __init__(self, vdb: BaseVectorDatabase, sqlDb: BaseSQLDatabase, aws: BaseStorageDatabase, posthog: Optional[PosthogService],
+               sentry: Optional[SentryService], nomicService: Optional[NomicService]):
     self.vdb = vdb
     self.sqlDb = sqlDb
     self.aws = aws
@@ -104,18 +103,19 @@ class RetrievalService:
       if len(valid_docs) == 0:
         return []
 
-      self.posthog.capture(
-          event_name="getTopContexts_success_DI",
-          properties={
-              "user_query": search_query,
-              "course_name": course_name,
-              "token_limit": token_limit,
-              "total_tokens_used": token_counter,
-              "total_contexts_used": len(valid_docs),
-              "total_unique_docs_retrieved": len(found_docs),
-              "getTopContext_total_latency_sec": time.monotonic() - start_time_overall,
-          },
-      )
+      if self.posthog is not None:
+        self.posthog.capture(
+            event_name="getTopContexts_success_DI",
+            properties={
+                "user_query": search_query,
+                "course_name": course_name,
+                "token_limit": token_limit,
+                "total_tokens_used": token_counter,
+                "total_contexts_used": len(valid_docs),
+                "total_unique_docs_retrieved": len(found_docs),
+                "getTopContext_total_latency_sec": time.monotonic() - start_time_overall,
+            },
+        )
 
       return self.format_for_json(valid_docs)
     except Exception as e:
@@ -124,7 +124,8 @@ class RetrievalService:
       err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.print_exc} \n{e}"  # type: ignore
       traceback.print_exc()
       print(err)
-      self.sentry.capture_exception(e)
+      if self.sentry is not None:
+        self.sentry.capture_exception(e)
       return err
 
   def getAll(
@@ -179,7 +180,8 @@ class RetrievalService:
     except Exception as e:
       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
-      self.sentry.capture_exception(e)
+      if self.sentry is not None:
+        self.sentry.capture_exception(e)
       return err
 
   def delete_from_s3(self, bucket_name: str, s3_path: str):
@@ -189,7 +191,8 @@ class RetrievalService:
       print(f"AWS response: {response}")
     except Exception as e:
       print("Error in deleting file from s3:", e)
-      self.sentry.capture_exception(e)
+      if self.sentry is not None:
+        self.sentry.capture_exception(e)
 
   def delete_from_qdrant(self, identifier_key: str, identifier_value: str):
     try:
@@ -202,7 +205,8 @@ class RetrievalService:
         pass
       else:
         print("Error in deleting file from Qdrant:", e)
-        self.sentry.capture_exception(e)
+        if self.sentry is not None:
+          self.sentry.capture_exception(e)
 
   def getTopContextsWithMQR(self,
                             search_query: str,
@@ -325,27 +329,32 @@ class RetrievalService:
     try:
       print(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
       response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
-      if not response.data:
+      data = response.data
+      if not data:
         raise Exception(f"No materials found for {course_name} using {identifier_key}: {identifier_value}")
-      data = response.data[0]  # single record fetched
+      data = data[0]  # single record fetched
       nomic_ids_to_delete = [str(data['id']) + "_" + str(i) for i in range(1, len(data['contexts']) + 1)]
 
       # delete from Nomic
       response = self.sqlDb.getProjectsMapForCourse(course_name)
-      if not response.data:
+      data, count = response
+      if not data:
         raise Exception(f"No document map found for this course: {course_name}")
-      project_id = response.data[0]['doc_map_id']
-      self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
+      project_id = data[0]['doc_map_id']
+      if self.nomicService is not None:
+        self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
     except Exception as e:
       print(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
-      self.sentry.capture_exception(e)
+      if self.sentry is not None:
+        self.sentry.capture_exception(e)
 
     try:
       print(f"Supabase Delete. course: {course_name} using {identifier_key}: {identifier_value}")
       response = self.sqlDb.deleteMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
     except Exception as e:
       print(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
-      self.sentry.capture_exception(e)
+      if self.sentry is not None:
+        self.sentry.capture_exception(e)
 
   def vector_search(self, search_query, course_name, doc_groups: List[str] | None = None):
     """
@@ -375,14 +384,15 @@ class RetrievalService:
     return user_query_embedding
 
   def _capture_search_invoked_event(self, search_query, course_name, doc_groups):
-    self.posthog.capture(
-        event_name="vector_search_invoked",
-        properties={
-            "user_query": search_query,
-            "course_name": course_name,
-            "doc_groups": doc_groups,
-        },
-    )
+    if self.posthog is not None:
+      self.posthog.capture(
+          event_name="vector_search_invoked",
+          properties={
+              "user_query": search_query,
+              "course_name": course_name,
+              "doc_groups": doc_groups,
+          },
+      )
 
   def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n):
     qdrant_start_time = time.monotonic()
@@ -403,25 +413,27 @@ class RetrievalService:
         found_docs.append(Document(page_content=page_content, metadata=metadata))
       except Exception as e:
         print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
-        self.sentry.capture_exception(e)
+        if self.sentry is not None:
+          self.sentry.capture_exception(e)
     return found_docs
 
   def _capture_search_succeeded_event(self, search_query, course_name, search_results):
     vector_score_calc_latency_sec = time.monotonic()
     max_vector_score, min_vector_score, avg_vector_score = self._calculate_vector_scores(search_results)
-    self.posthog.capture(
-        event_name="vector_search_succeeded",
-        properties={
-            "user_query": search_query,
-            "course_name": course_name,
-            "qdrant_latency_sec": self.qdrant_latency_sec,
-            "openai_embedding_latency_sec": self.openai_embedding_latency,
-            "max_vector_score": max_vector_score,
-            "min_vector_score": min_vector_score,
-            "avg_vector_score": avg_vector_score,
-            "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,  
-        },
-    )
+    if self.posthog is not None:
+      self.posthog.capture(
+          event_name="vector_search_succeeded",
+          properties={
+              "user_query": search_query,
+              "course_name": course_name,
+              "qdrant_latency_sec": self.qdrant_latency_sec,
+              "openai_embedding_latency_sec": self.openai_embedding_latency,
+              "max_vector_score": max_vector_score,
+              "min_vector_score": min_vector_score,
+              "avg_vector_score": avg_vector_score,
+              "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,  
+          },
+      )
 
   def _calculate_vector_scores(self, search_results):
     max_vector_score = 0

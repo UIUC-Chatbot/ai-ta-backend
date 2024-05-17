@@ -6,10 +6,12 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
 
+from ai_ta_backend.database.base_vector import BaseVectorDatabase
+
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
 
 
-class VectorDatabase():
+class VectorDatabase(BaseVectorDatabase):
   """
   Contains all methods for building and using vector databases.
   """

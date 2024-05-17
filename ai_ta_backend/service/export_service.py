@@ -8,8 +8,8 @@ import pandas as pd
 import requests
 from injector import inject
 
-from ai_ta_backend.database.aws import AWSStorage
-from ai_ta_backend.database.sql import SQLDatabase
+from ai_ta_backend.database.database_impl.storage.aws import AWSStorage
+from ai_ta_backend.database.database_impl.sql.supabase import SQLDatabase
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.emails import send_email
 
@@ -34,8 +34,9 @@ class ExportService:
 		"""
 
     response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date, 'documents')
+    
     # add a condition to route to direct download or s3 download
-    if response.count > 500:
+    if response.count and response.count > 500:
       # call background task to upload to s3
 
       filename = course_name + '_' + str(uuid.uuid4()) + '_documents.zip'
@@ -47,7 +48,7 @@ class ExportService:
 
     else:
       # Fetch data
-      if response.count > 0:
+      if response.count and response.count > 0:
         # batch download
         total_doc_count = response.count
         first_id = response.data[0]['id']

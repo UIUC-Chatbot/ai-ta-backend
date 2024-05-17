@@ -17,10 +17,10 @@ from flask_cors import CORS
 from flask_executor import Executor
 from flask_injector import FlaskInjector, RequestScope
 from injector import Binder, SingletonScope
+from ai_ta_backend.database.base_sql import BaseSQLDatabase
+from ai_ta_backend.database.base_storage import BaseStorageDatabase
+from ai_ta_backend.database.base_vector import BaseVectorDatabase
 
-from ai_ta_backend.database.aws import AWSStorage
-from ai_ta_backend.database.sql import SQLDatabase
-from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.executors.flask_executor import (
     ExecutorInterface,
     FlaskExecutorAdapter,
@@ -473,19 +473,47 @@ def run_flow(service: WorkflowService) -> Response:
 
 
 def configure(binder: Binder) -> None:
-  binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)
-  binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
-  binder.bind(SentryService, to=SentryService, scope=SingletonScope)
-  binder.bind(NomicService, to=NomicService, scope=SingletonScope)
-  binder.bind(ExportService, to=ExportService, scope=SingletonScope)
-  binder.bind(WorkflowService, to=WorkflowService, scope=SingletonScope)
-  binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
-  binder.bind(SQLDatabase, to=SQLDatabase, scope=SingletonScope)
-  binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
+  vector_bound = False
+  sql_bound = False
+  storage_bound = False
+  
+  # Conditionally bind databases based on the availability of their respective secrets
+  if any(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
+    binder.bind(BaseVectorDatabase, to=BaseVectorDatabase, scope=SingletonScope)
+    vector_bound = True
+  
+  if any(os.getenv(key) for key in ["SUPABASE_URL", "SUPABASE_API_KEY", "SUPABASE_DOCUMENTS_TABLE"]) or any(["SQLITE_DB_PATH", "SQLITE_DB_NAME", "SQLITE_DOCUMENTS_TABLE"]):
+    binder.bind(BaseSQLDatabase, to=BaseSQLDatabase, scope=SingletonScope)
+    sql_bound = True
+
+  if any(os.getenv(key) for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]) or any(os.getenv(key) for key in ["MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_URL"]):
+    binder.bind(BaseStorageDatabase, to=BaseStorageDatabase, scope=SingletonScope)
+    storage_bound = True
+
+
+  # Conditionally bind services based on the availability of their respective secrets
+  if os.getenv("NOMIC_API_KEY"):
+      binder.bind(NomicService, to=NomicService, scope=SingletonScope)
+
+  if os.getenv("POSTHOG_API_KEY"):
+      binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
+
+  if os.getenv("SENTRY_DSN"):
+      binder.bind(SentryService, to=SentryService, scope=SingletonScope)
+
+  if os.getenv("EMAIL_SENDER"):
+      binder.bind(ExportService, to=ExportService, scope=SingletonScope)
+
+  if os.getenv("N8N_URL"):
+      binder.bind(WorkflowService, to=WorkflowService, scope=SingletonScope)
+
+  if vector_bound and sql_bound and storage_bound:
+      binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)
+
+  # Always bind the executor and its adapters
   binder.bind(ExecutorInterface, to=FlaskExecutorAdapter(executor), scope=SingletonScope)
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter, scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
-
 
 FlaskInjector(app=app, modules=[configure])
 
