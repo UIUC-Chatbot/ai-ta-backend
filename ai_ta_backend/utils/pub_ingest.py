@@ -11,12 +11,17 @@ from ai_ta_backend.database import aws, sql
 import backoff
 
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
-LICENSES = {
-    "http://onlinelibrary.wiley.com/termsAndConditions#vor": "closed_access",
+CC_LICENSES = {
     "http://creativecommons.org/licenses/by/4.0/": "CC BY",
     "http://creativecommons.org/licenses/by-nc/4.0/": "CC BY-NC",
     "http://creativecommons.org/licenses/by-nc-nd/4.0/": "CC BY-NC-ND",
-    "http://creativecommons.org/licenses/by-nc-sa/4.0/": "CC BY-NC-SA",
+    "http://creativecommons.org/licenses/by-nc-sa/4.0/": "CC BY-NC-SA"
+}
+
+OTHER_LICENSES = {
+    "http://onlinelibrary.wiley.com/termsAndConditions#vor": "wiley_tnc",
+    "http://onlinelibrary.wiley.com/termsAndConditions#am": "wiley_tnc",
+    "http://doi.wiley.com/10.1002/tdm_license_1.1": "wiley_tdm"
 }
 
 s3_client = aws.AWSStorage()
@@ -202,6 +207,61 @@ def downloadPDFSpringer(record: dict, directory: str):
     except Exception as e:
         return "Error in downloading PDF: " + str(e)
 
+def getCrossrefMetadata(issn: str):
+    """
+    Creates a csv file with metadata of all articles for given journal (ISSN)
+    """
+    metadata = []
+    # get journal metadata
+    journals = Journals()
+    works = journals.works(issn=issn)
+    count = 0
+    no_license = 0
+    for item in works:
+        count += 1
+        article_metadata = {}
+        # check if the license is open access - variant of CC
+        if 'license' not in item:
+            no_license += 1
+            continue
+        else:
+            for license in item['license']:
+                # check for creative commons license
+                if license['URL'] in CC_LICENSES:
+                    article_metadata['license'] = CC_LICENSES[license['URL']]
+                    article_metadata['license_url'] = license['URL']
+                    break
+                elif license['URL'] in OTHER_LICENSES:
+                    article_metadata['license'] = OTHER_LICENSES[license['URL']]
+                    article_metadata['license_url'] = license['URL']
+                else:
+                    article_metadata['license'] = "unknown"
+                    article_metadata['license_url'] = license['URL']
+                    
+        article_metadata['doi'] = item['DOI']
+        if 'title' not in item:
+            article_metadata['title'] = "No title found"
+        else:
+            article_metadata['title'] = item['title'][0]
+        article_metadata['journal'] = item['container-title'][0]
+        article_metadata['publisher'] = item['publisher']
+        article_metadata['issn'] = item['ISSN'][0]
+        article_metadata['url'] = item['URL']
+        article_metadata['filename'] = item['DOI'].replace("/", "_") + ".pdf"
+        article_metadata['downloaded'] = "no"
+        metadata.append(article_metadata)
+        print("Processed: ", article_metadata['doi'])
+    
+    print("Total articles: ", count)
+    metadata_csv = "wiley_metadata.csv"
+    metadata_df = pd.DataFrame(metadata)
+    if not os.path.exists(metadata_csv):
+        metadata_df.to_csv(metadata_csv, index=False)
+    else:
+        metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
+    
+    return "success"
+
 
 def downloadWileyFulltext(course_name=None, issn=None):
     """
@@ -213,62 +273,35 @@ def downloadWileyFulltext(course_name=None, issn=None):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    api_key = os.environ.get("WILEY_TDM_TOKEN")
-    metadata = []
+    # fetch metadata
+    # metadata_status = getCrossrefMetadata(issn)
+    # print("Metadata status: ", metadata_status)
 
-    # get journal metadata
-    journals = Journals()
-    works = journals.works(issn=issn)
-    count = 0
-    for item in works:
-        open_access = True
-        count += 1
-        article_metadata = {}
-        # check if the license is open access - variant of CC
-        if 'license' not in item:
-            continue
-            
-        for license in item['license']:
-            print("License URL: ", license['URL'])
-            if license['URL'] in LICENSES:
-                if LICENSES[license['URL']] == "closed_access":
-                    #print("Article is not open access: ", item['DOI'])
-                    open_access = False
-                else:
-                    print("Article is open access: ", item['DOI'])
-                    article_metadata['license'] = LICENSES[license['URL']]
-                    article_metadata['license_link'] = license['URL']
-            else:
-                article_metadata['license_link'] = license['URL']
-            
-        if not open_access:
-            continue
-
-        article_metadata['doi'] = item['DOI']
-        article_metadata['title'] = item['title'][0]
-        article_metadata['journal'] = item['container-title'][0]
-        article_metadata['publisher'] = item['publisher']
-        article_metadata['issn'] = item['ISSN'][0]
-        article_metadata['url'] = item['URL']
-        article_metadata['filename'] = item['DOI'].replace("/", "_") + ".pdf"
-
-        print("Article Metadata: ", article_metadata)
-        metadata.append(article_metadata)
-
-        # download PDF based on doi
-        download_status = downloadWileyPDF(item['DOI'])
-        print("Download status: ", download_status)
-        
     
-    print("Download complete.")
-    print("Total articles: ", count)
+    # download PDFs based on metadata
     metadata_csv = "wiley_metadata.csv"
+    if os.path.exists(metadata_csv):
+        metadata_df = pd.read_csv(metadata_csv)
+        metadata = metadata_df.to_dict(orient='records')
+
+    for item in metadata:
+        try:
+            if item['license'] in ['CC BY', 'CC BY-NC', 'CC BY-NC-ND', 'CC BY-NC-SA'] and item['downloaded'] == 'no':
+                status = downloadWileyPDF(item['doi'])
+                print("Download status: ", status)
+                if status == "success":
+                    item['downloaded'] = 'yes'
+                    
+        except Exception as e:
+            print(e)
+    
     metadata_df = pd.DataFrame(metadata)
-    if not os.path.exists(metadata_csv):
-        metadata_df.to_csv(metadata_csv, index=False)
-    else:
-        metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
-    # prep payload for beam ingest
+    metadata_df.to_csv(metadata_csv, index=False)
+
+    return "success"
+
+    
+    # # prep payload for beam ingest
     # ingest_data = []
         
     # # upload files to S3 bucket
@@ -314,8 +347,10 @@ def downloadWileyFulltext(course_name=None, issn=None):
 
     # Delete files from local directory
     #shutil.rmtree(directory)
+
+    
                 
-@backoff.on_exception(backoff.expo, requests.exceptions.HTTPError, max_tries=20)
+@backoff.on_exception(backoff.expo, requests.exceptions.HTTPError, max_tries=7)
 def downloadWileyPDF(doi=None):
     """
     This function downloads a PDF file from Wiley based on the DOI.
