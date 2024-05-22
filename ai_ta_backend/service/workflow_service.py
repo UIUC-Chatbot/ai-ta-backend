@@ -1,10 +1,11 @@
-import requests
-import time
-import os
-import supabase
-from urllib.parse import quote
 import json
+import os
+import time
+from urllib.parse import quote
+
+import requests
 from injector import inject
+
 from ai_ta_backend.database.sql import SQLDatabase
 
 
@@ -148,7 +149,7 @@ class WorkflowService:
           new_data[data[k]] = v
       return new_data
     except Exception as e:
-      print("Error in format_data: ", e)
+      print("❌ Major error in format_data: ", e)
 
   def switch_workflow(self, id, api_key: str = "", activate: 'str' = 'True'):
     if not api_key:
@@ -199,7 +200,7 @@ class WorkflowService:
       # TODO: Decrease number by one, is locked false
       # self.supabase_client.table('n8n_workflows').update({"latest_workflow_id": str(int(id) - 1), "is_locked": False}).eq('latest_workflow_id', id).execute()
       self.sqlDb.deleteLatestWorkflowId(id)
-      return {"error": str(e)}
+      raise Exception(f"Internal database error: {e}") from e
     finally:
       # TODO: Remove lock from Supabase table.
       self.sqlDb.unlockWorkflow(id)
@@ -215,5 +216,5 @@ class WorkflowService:
       print("Deleted id")
     except Exception as e:
       self.sqlDb.deleteLatestWorkflowId(id)
-      return {"error": str(e)}
+      raise Exception(f"Internal database error: {e}") from e
     return executions

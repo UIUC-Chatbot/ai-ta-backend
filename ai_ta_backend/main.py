@@ -18,6 +18,7 @@ from flask_executor import Executor
 from flask_injector import FlaskInjector, RequestScope
 from injector import Binder, SingletonScope
 
+from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
@@ -38,8 +39,6 @@ from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
-
-from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.service.workflow_service import WorkflowService
 
 app = Flask(__name__)
@@ -205,6 +204,7 @@ def createDocumentMap(service: NomicService):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/createConversationMap', methods=['GET'])
 def createConversationMap(service: NomicService):
   course_name: str = request.args.get('course_name', default='', type=str)
@@ -218,6 +218,7 @@ def createConversationMap(service: NomicService):
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/logToConversationMap', methods=['GET'])
 def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
@@ -287,6 +288,7 @@ def export_convo_history(service: ExportService):
     os.remove(export_status['response'][0])
 
   return response
+
 
 @app.route('/export-conversations-custom', methods=['GET'])
 def export_conversations_custom(service: ExportService):
@@ -380,6 +382,7 @@ def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogSer
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/getworkflows', methods=['GET'])
 def get_all_workflows(service: WorkflowService) -> Response:
   """
@@ -394,7 +397,6 @@ def get_all_workflows(service: WorkflowService) -> Response:
   print(request.args)
 
   print("In get_all_workflows.. api_key: ", api_key)
-
 
   # if no API Key, return empty set.
   # if api_key == '':
@@ -467,9 +469,15 @@ def run_flow(service: WorkflowService) -> Response:
     return response
   except Exception as e:
     if e == "Unauthorized":
-      abort(401, description=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
+      response = jsonify(error=str(e), message=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
+      response.status_code = 401
+      response.headers.add('Access-Control-Allow-Origin', '*')
+      return response
     else:
-      abort(400, description=f"Bad request: {e}")
+      response = jsonify(error=str(e), message=f"Internal Server Error {e}")
+      response.status_code = 500
+      response.headers.add('Access-Control-Allow-Origin', '*')
+      return response
 
 
 def configure(binder: Binder) -> None:
