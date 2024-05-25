@@ -3,10 +3,7 @@ import os
 import supabase
 from injector import inject
 
-from ai_ta_backend.database.base_sql import BaseSQLDatabase
-
-
-class SQLDatabase(BaseSQLDatabase):
+class SQLDatabase():
 
   @inject
   def __init__(self):

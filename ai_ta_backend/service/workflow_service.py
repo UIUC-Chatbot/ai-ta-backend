@@ -5,7 +5,7 @@ import supabase
 from urllib.parse import quote
 import json
 from injector import inject
-from ai_ta_backend.database.database_impl.sql.supabase import SQLDatabase
+from ai_ta_backend.database.supabase import SQLDatabase
 
 
 class WorkflowService:

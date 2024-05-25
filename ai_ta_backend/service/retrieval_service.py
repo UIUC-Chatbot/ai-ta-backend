@@ -9,9 +9,9 @@ from injector import inject
 from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
-from ai_ta_backend.database.base_sql import BaseSQLDatabase
-from ai_ta_backend.database.base_storage import BaseStorageDatabase
-from ai_ta_backend.database.base_vector import BaseVectorDatabase
+from ai_ta_backend.database.sql import SQLAlchemyDatabase
+from ai_ta_backend.database.aws import AWSStorage
+from ai_ta_backend.database.qdrant import VectorDatabase
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -24,7 +24,7 @@ class RetrievalService:
   """
 
   @inject
-  def __init__(self, vdb: BaseVectorDatabase, sqlDb: BaseSQLDatabase, aws: BaseStorageDatabase, posthog: Optional[PosthogService],
+  def __init__(self, vdb: VectorDatabase, sqlDb: SQLAlchemyDatabase, aws: AWSStorage, posthog: Optional[PosthogService],
                sentry: Optional[SentryService], nomicService: Optional[NomicService]):
     self.vdb = vdb
     self.sqlDb = sqlDb
@@ -146,7 +146,7 @@ class RetrievalService:
     distinct_dicts = []
 
     for item in data:
-      combination = (item['s3_path'], item['readable_filename'], item['course_name'], item['url'], item['base_url'])
+      combination = (item.s3_path, item.readable_filename, item.course_name, item.url, item.base_url)
       if combination not in unique_combinations:
         unique_combinations.add(combination)
         distinct_dicts.append(item)
@@ -333,14 +333,15 @@ class RetrievalService:
       if not data:
         raise Exception(f"No materials found for {course_name} using {identifier_key}: {identifier_value}")
       data = data[0]  # single record fetched
-      nomic_ids_to_delete = [str(data['id']) + "_" + str(i) for i in range(1, len(data['contexts']) + 1)]
+      contexts_list = data.contexts if isinstance(data.contexts, list) else []
+      nomic_ids_to_delete = [str(data.id) + "_" + str(i) for i in range(1, len(contexts_list) + 1)]
 
       # delete from Nomic
       response = self.sqlDb.getProjectsMapForCourse(course_name)
-      data, count = response
+      data, count = response.data, response.count
       if not data:
         raise Exception(f"No document map found for this course: {course_name}")
-      project_id = data[0]['doc_map_id']
+      project_id = str(data[0].doc_map_id)
       if self.nomicService is not None:
         self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
     except Exception as e:

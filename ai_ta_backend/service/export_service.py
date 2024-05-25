@@ -8,16 +8,17 @@ import pandas as pd
 import requests
 from injector import inject
 
-from ai_ta_backend.database.database_impl.storage.aws import AWSStorage
-from ai_ta_backend.database.database_impl.sql.supabase import SQLDatabase
+from ai_ta_backend.database.aws import AWSStorage
+from ai_ta_backend.database.sql import SQLAlchemyDatabase
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.emails import send_email
+from ai_ta_backend.extensions import db
 
 
 class ExportService:
 
   @inject
-  def __init__(self, sql: SQLDatabase, s3: AWSStorage, sentry: SentryService):
+  def __init__(self, sql: SQLAlchemyDatabase, s3: AWSStorage, sentry: SentryService):
     self.sql = sql
     self.s3 = s3
     self.sentry = sentry
@@ -33,7 +34,7 @@ class ExportService:
 				to_date (str, optional): The end date for the data export. Defaults to ''.
 		"""
 
-    response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date, 'documents')
+    response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date)
     
     # add a condition to route to direct download or s3 download
     if response.count and response.count > 500:
@@ -51,8 +52,8 @@ class ExportService:
       if response.count and response.count > 0:
         # batch download
         total_doc_count = response.count
-        first_id = response.data[0]['id']
-        last_id = response.data[-1]['id']
+        first_id = int(str(response.data[0].id))
+        last_id = int(str(response.data[-1].id))
 
         print("total_doc_count: ", total_doc_count)
         print("first_id: ", first_id)
@@ -76,7 +77,7 @@ class ExportService:
             df.to_json(file_path, orient='records', lines=True, mode='a')
 
           if len(response.data) > 0:
-            first_id = response.data[-1]['id'] + 1
+            first_id = int(str(response.data[-1].id)) + 1
 
         # Download file
         try:
@@ -106,7 +107,7 @@ class ExportService:
 		"""
     print("Exporting conversation history to json file...")
 
-    response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date, 'llm-convo-monitor')
+    response = self.sql.getConversationsBetweenDates(course_name, from_date, to_date)
 
     if response.count > 500:
       # call background task to upload to s3
@@ -120,8 +121,8 @@ class ExportService:
     # Fetch data
     if response.count > 0:
       print("id count greater than zero")
-      first_id = response.data[0]['id']
-      last_id = response.data[-1]['id']
+      first_id = int(str(response.data[0].id))
+      last_id = int(str(response.data[-1].id))
       total_count = response.count
 
       filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.jsonl'
@@ -143,7 +144,7 @@ class ExportService:
 
         # Update first_id
         if len(response.data) > 0:
-          first_id = response.data[-1]['id'] + 1
+          first_id = int(str(response.data[-1].id)) + 1
           print("updated first_id: ", first_id)
 
       # Download file
@@ -170,7 +171,7 @@ class ExportService:
     """
     print("Exporting conversation history to json file...")
 
-    response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date, 'llm-convo-monitor')
+    response = self.sql.getConversationsBetweenDates(course_name, from_date, to_date)
 
     if response.count > 500:
       # call background task to upload to s3
@@ -184,8 +185,8 @@ class ExportService:
     # Fetch data
     if response.count > 0:
       print("id count greater than zero")
-      first_id = response.data[0]['id']
-      last_id = response.data[-1]['id']
+      first_id = int(str(response.data[0].id))
+      last_id = int(str(response.data[-1].id))
       total_count = response.count
 
       filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.jsonl'
@@ -207,7 +208,7 @@ class ExportService:
 
         # Update first_id
         if len(response.data) > 0:
-          first_id = response.data[-1]['id'] + 1
+          first_id = int(str(response.data[-1].id)) + 1
           print("updated first_id: ", first_id)
 
       # Download file
@@ -245,7 +246,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 	  s3_path (str): The S3 path where the file will be uploaded.
 	"""
   s3 = AWSStorage()
-  sql = SQLDatabase()
+  sql = SQLAlchemyDatabase(db)
 
   total_doc_count = response.count
   first_id = response.data[0]['id']
@@ -259,7 +260,10 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
   # download data in batches of 100
   while curr_doc_count < total_doc_count:
     print("Fetching data from id: ", first_id)
-    response = sql.getAllFromTableForDownloadType(course_name, download_type, first_id)
+    if download_type == "documents":
+      response = sql.getAllDocumentsForDownload(course_name, first_id)
+    else:
+      response = sql.getAllConversationsForDownload(course_name, first_id)
     df = pd.DataFrame(response.data)
     curr_doc_count += len(response.data)
 
@@ -270,7 +274,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
       df.to_json(file_path, orient='records', lines=True, mode='a')
 
     if len(response.data) > 0:
-      first_id = response.data[-1]['id'] + 1
+      first_id = int(str(response.data[-1].id)) + 1
 
   # zip file
   zip_filename = filename.split('.')[0] + '.zip'
@@ -354,7 +358,7 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
 	  s3_path (str): The S3 path where the file will be uploaded.
 	"""
   s3 = AWSStorage()
-  sql = SQLDatabase()
+  sql = SQLAlchemyDatabase(db)
 
   total_doc_count = response.count
   first_id = response.data[0]['id']
@@ -368,7 +372,10 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
   # download data in batches of 100
   while curr_doc_count < total_doc_count:
     print("Fetching data from id: ", first_id)
-    response = sql.getAllFromTableForDownloadType(course_name, download_type, first_id)
+    if download_type == "documents":
+      response = sql.getAllDocumentsForDownload(course_name, first_id)
+    else:
+      response = sql.getAllConversationsForDownload(course_name, first_id)
     df = pd.DataFrame(response.data)
     curr_doc_count += len(response.data)
 
@@ -379,7 +386,7 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
       df.to_json(file_path, orient='records', lines=True, mode='a')
 
     if len(response.data) > 0:
-      first_id = response.data[-1]['id'] + 1
+      first_id = int(str(response.data[-1].id)) + 1
 
   # zip file
   zip_filename = filename.split('.')[0] + '.zip'
