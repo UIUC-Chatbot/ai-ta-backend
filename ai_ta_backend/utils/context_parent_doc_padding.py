@@ -1,28 +1,36 @@
-import os
+#import os
 import time
-from concurrent.futures import ProcessPoolExecutor
+#from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from multiprocessing import Manager
+from ai_ta_backend.database.sql import SQLDatabase
+from ai_ta_backend.executors.process_pool_executor import ProcessPoolExecutorAdapter
 
-DOCUMENTS_TABLE = os.environ['SUPABASE_DOCUMENTS_TABLE']
+
+# DOCUMENTS_TABLE = os.environ['SUPABASE_DOCUMENTS_TABLE']
 # SUPABASE_CLIENT = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'],
 #  supabase_key=os.environ['SUPABASE_API_KEY'])  # type: ignore
 
 
-def context_parent_doc_padding(found_docs, search_query, course_name):
+def context_parent_doc_padding(found_docs, course_name):
   """
     Takes top N contexts acquired from QRANT similarity search and pads them
     """
   print("inside main context padding")
   start_time = time.monotonic()
-
+  #executor = ProcessPoolExecutorAdapter(max_workers=10)
+ 
   with Manager() as manager:
     qdrant_contexts = manager.list()
     supabase_contexts = manager.list()
     partial_func1 = partial(qdrant_context_processing, course_name=course_name, result_contexts=qdrant_contexts)
     partial_func2 = partial(supabase_context_padding, course_name=course_name, result_docs=supabase_contexts)
 
-    with ProcessPoolExecutor() as executor:
+    # with ProcessPoolExecutor() as executor:
+    #   executor.map(partial_func1, found_docs[5:])
+    #   executor.map(partial_func2, found_docs[:5])
+
+    with ProcessPoolExecutorAdapter() as executor:
       executor.map(partial_func1, found_docs[5:])
       executor.map(partial_func2, found_docs[:5])
 
@@ -41,50 +49,54 @@ def context_parent_doc_padding(found_docs, search_query, course_name):
 def qdrant_context_processing(doc, course_name, result_contexts):
   """
     Re-factor QDRANT objects into Supabase objects and append to result_docs
-    """
+  """
   context_dict = {
       'text': doc.page_content,
       'embedding': '',
       'pagenumber': doc.metadata['pagenumber'],
       'readable_filename': doc.metadata['readable_filename'],
       'course_name': course_name,
-      's3_path': doc.metadata['s3_path'],
-      'base_url': doc.metadata['base_url']
+      's3_path': doc.metadata['s3_path']
   }
   if 'url' in doc.metadata.keys():
     context_dict['url'] = doc.metadata['url']
   else:
     context_dict['url'] = ''
 
+  if 'base_url' in doc.metadata.keys():
+    context_dict['base_url'] = doc.metadata['url']
+  else:
+    context_dict['base_url'] = ''
+
   result_contexts.append(context_dict)
-  return result_contexts
 
 
 def supabase_context_padding(doc, course_name, result_docs):
   """
     Does context padding for given doc.
-    """
+  """
+  SQL_DB = SQLDatabase()
 
   # query by url or s3_path
   if 'url' in doc.metadata.keys() and doc.metadata['url']:
     parent_doc_id = doc.metadata['url']
-    response = SUPABASE_CLIENT.table(DOCUMENTS_TABLE).select('*').eq('course_name',
-                                                                     course_name).eq('url', parent_doc_id).execute()
-
+    # response = SUPABASE_CLIENT.table(DOCUMENTS_TABLE).select('*').eq('course_name',
+    #                                                                  course_name).eq('url', parent_doc_id).execute()
+    response = SQL_DB.getMaterialsForCourseAndKeyAndValue(course_name=course_name, key='url', value=parent_doc_id)
   else:
     parent_doc_id = doc.metadata['s3_path']
-    response = SUPABASE_CLIENT.table(DOCUMENTS_TABLE).select('*').eq('course_name',
-                                                                     course_name).eq('s3_path',
-                                                                                     parent_doc_id).execute()
-
+    # response = SUPABASE_CLIENT.table(DOCUMENTS_TABLE).select('*').eq('course_name',
+    #                                                                  course_name).eq('s3_path',
+    #                                                                                  parent_doc_id).execute()
+    response = SQL_DB.getMaterialsForCourseAndS3Path(course_name=course_name, s3_path=parent_doc_id)
   data = response.data
-
+  
   if len(data) > 0:
     # do the padding
     filename = data[0]['readable_filename']
     contexts = data[0]['contexts']
     #print("no of contexts within the og doc: ", len(contexts))
-
+    
     if 'chunk_index' in doc.metadata and 'chunk_index' in contexts[0].keys():
       #print("inside chunk index")
       # pad contexts by chunk index + 3 and - 3
@@ -132,3 +144,5 @@ def supabase_context_padding(doc, course_name, result_docs):
         context_dict['url'] = ''
 
       result_docs.append(context_dict)
+    
+    

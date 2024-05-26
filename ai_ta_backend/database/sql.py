@@ -18,11 +18,11 @@ class SQLDatabase:
             'course_name', course_name).execute()
 
   def getMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
-    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq(
+    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, readable_filename, base_url, url, contexts").eq(
         's3_path', s3_path).eq('course_name', course_name).execute()
 
   def getMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
-    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq(
+    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, readable_filename, base_url, url, contexts").eq(
         key, value).eq('course_name', course_name).execute()
 
   def deleteMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
@@ -123,3 +123,8 @@ class SQLDatabase:
     return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
 
   
+  def getDocsByURLs(self, course_name: str, urls: list):
+    return self.supabase_client.table("documents").select("*").eq("course_name", course_name).in_("url", urls).execute()
+  
+  def getDocsByS3Paths(self, course_name: str, s3_paths: list):
+    return self.supabase_client.table("documents").select("*").eq("course_name", course_name).in_("s3_path", s3_paths).execute()

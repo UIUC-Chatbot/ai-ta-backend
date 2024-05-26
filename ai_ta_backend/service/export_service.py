@@ -34,6 +34,7 @@ class ExportService:
 		"""
 
     response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date, 'documents')
+    print("response count: ", response.count)
     # add a condition to route to direct download or s3 download
     if response.count > 500:
       # call background task to upload to s3
