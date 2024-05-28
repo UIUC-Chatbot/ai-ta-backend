@@ -211,59 +211,62 @@ def getCrossrefMetadata(issn: str):
     """
     Creates a csv file with metadata of all articles for given journal (ISSN)
     """
-    metadata = []
-    # get journal metadata
-    journals = Journals()
-    works = journals.works(issn=issn)
-    count = 0
-    no_license = 0
-    for item in works:
-        count += 1
-        article_metadata = {}
-        # check if the license is open access - variant of CC
-        if 'license' not in item:
-            no_license += 1
-            continue
+    try:
+        metadata = []
+        # get journal metadata
+        journals = Journals()
+        works = journals.works(issn=issn)
+        count = 0
+        no_license = 0
+        for item in works:
+            count += 1
+            article_metadata = {}
+            # check if the license is open access - variant of CC
+            if 'license' not in item:
+                no_license += 1
+                continue
+            else:
+                for license in item['license']:
+                    # check for creative commons license
+                    if license['URL'] in CC_LICENSES:
+                        article_metadata['license'] = CC_LICENSES[license['URL']]
+                        article_metadata['license_url'] = license['URL']
+                        break
+                    elif license['URL'] in OTHER_LICENSES:
+                        article_metadata['license'] = OTHER_LICENSES[license['URL']]
+                        article_metadata['license_url'] = license['URL']
+                    else:
+                        article_metadata['license'] = "unknown"
+                        article_metadata['license_url'] = license['URL']
+                        
+            article_metadata['doi'] = item['DOI']
+            if 'title' not in item:
+                article_metadata['title'] = "No title found"
+            else:
+                article_metadata['title'] = item['title'][0]
+            article_metadata['journal'] = item['container-title'][0]
+            article_metadata['publisher'] = item['publisher']
+            article_metadata['issn'] = item['ISSN'][0]
+            article_metadata['url'] = item['URL']
+            article_metadata['filename'] = item['DOI'].replace("/", "_") + ".pdf"
+            article_metadata['downloaded'] = "no"
+            metadata.append(article_metadata)
+            print("Processed: ", article_metadata['doi'])
+        
+        print("Total articles: ", count)
+        metadata_csv = "wiley_metadata.csv"
+        metadata_df = pd.DataFrame(metadata)
+        if not os.path.exists(metadata_csv):
+            metadata_df.to_csv(metadata_csv, index=False)
         else:
-            for license in item['license']:
-                # check for creative commons license
-                if license['URL'] in CC_LICENSES:
-                    article_metadata['license'] = CC_LICENSES[license['URL']]
-                    article_metadata['license_url'] = license['URL']
-                    break
-                elif license['URL'] in OTHER_LICENSES:
-                    article_metadata['license'] = OTHER_LICENSES[license['URL']]
-                    article_metadata['license_url'] = license['URL']
-                else:
-                    article_metadata['license'] = "unknown"
-                    article_metadata['license_url'] = license['URL']
-                    
-        article_metadata['doi'] = item['DOI']
-        if 'title' not in item:
-            article_metadata['title'] = "No title found"
-        else:
-            article_metadata['title'] = item['title'][0]
-        article_metadata['journal'] = item['container-title'][0]
-        article_metadata['publisher'] = item['publisher']
-        article_metadata['issn'] = item['ISSN'][0]
-        article_metadata['url'] = item['URL']
-        article_metadata['filename'] = item['DOI'].replace("/", "_") + ".pdf"
-        article_metadata['downloaded'] = "no"
-        metadata.append(article_metadata)
-        print("Processed: ", article_metadata['doi'])
-    
-    print("Total articles: ", count)
-    metadata_csv = "wiley_metadata.csv"
-    metadata_df = pd.DataFrame(metadata)
-    if not os.path.exists(metadata_csv):
-        metadata_df.to_csv(metadata_csv, index=False)
-    else:
-        metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
-    
-    return "success"
+            metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
+        
+        return "success"
+    except Exception as e:
+        return "Error: " + str(e)
 
 
-def downloadWileyFulltext(course_name=None, issn=None):
+def downloadWileyFulltext(course_name=None, issn=[]):
     """
     This function fetches metadata from Crossref and downloads 
     full-text articles from a given journal from Wiley.
@@ -273,30 +276,33 @@ def downloadWileyFulltext(course_name=None, issn=None):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    # fetch metadata
-    # metadata_status = getCrossrefMetadata(issn)
-    # print("Metadata status: ", metadata_status)
 
+    # fetch metadata
+    for item in issn:
+        metadata_status = getCrossrefMetadata(item)
+        print("Metadata status: ", metadata_status)
     
     # download PDFs based on metadata
-    metadata_csv = "wiley_metadata.csv"
-    if os.path.exists(metadata_csv):
-        metadata_df = pd.read_csv(metadata_csv)
-        metadata = metadata_df.to_dict(orient='records')
+    # metadata_csv = "wiley_metadata.csv"
+    # if os.path.exists(metadata_csv):
+    #     metadata_df = pd.read_csv(metadata_csv)
+    #     metadata = metadata_df.to_dict(orient='records')
 
-    for item in metadata:
-        try:
-            if item['license'] in ['CC BY', 'CC BY-NC', 'CC BY-NC-ND', 'CC BY-NC-SA'] and item['downloaded'] == 'no':
-                status = downloadWileyPDF(item['doi'])
-                print("Download status: ", status)
-                if status == "success":
-                    item['downloaded'] = 'yes'
-                    
-        except Exception as e:
-            print(e)
+    # for item in metadata:
+    #     try:
+    #         if item['license'] in ['CC BY', 'CC BY-NC', 'CC BY-NC-ND', 'CC BY-NC-SA'] and item['downloaded'] == 'no' and item['publisher'] == 'Wiley':
+    #             status = downloadWileyPDF(item['doi'])
+    #             print("Download status: ", status)
+    #             if status == "success":
+    #                 item['downloaded'] = 'yes'
+    #             time.sleep(5)    
+    #     except Exception as e:
+    #         print(e)
+        
+    #     #time.sleep(10)
     
-    metadata_df = pd.DataFrame(metadata)
-    metadata_df.to_csv(metadata_csv, index=False)
+    # metadata_df = pd.DataFrame(metadata)
+    # metadata_df.to_csv(metadata_csv, index=False) 
 
     return "success"
 
@@ -350,38 +356,42 @@ def downloadWileyFulltext(course_name=None, issn=None):
 
     
                 
-@backoff.on_exception(backoff.expo, requests.exceptions.HTTPError, max_tries=7)
+#@backoff.on_exception(backoff.expo, requests.exceptions.HTTPError, max_tries=1)
 def downloadWileyPDF(doi=None):
     """
     This function downloads a PDF file from Wiley based on the DOI.
     """
-    # create directory to store files
-    directory = os.path.join(os.getcwd(), 'wiley_papers')
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    try:
+        # create directory to store files
+        directory = os.path.join(os.getcwd(), 'wiley_papers')
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-    api_key = os.environ.get("WILEY_TDM_TOKEN")
+        api_key = os.environ.get("WILEY_TDM_TOKEN")
 
-    # download PDF based on doi
-    base_url = "https://api.wiley.com/onlinelibrary/tdm/v1/articles/"
-    url = base_url + str(doi)
-    print("URL: ", url)
+        # download PDF based on doi
+        base_url = "https://api.wiley.com/onlinelibrary/tdm/v1/articles/"
+        url = base_url + str(doi)
+        print("URL: ", url)
 
-    headers = {
-        'Wiley-TDM-Client-Token': api_key,
-        'Content-Type': 'application/json'
-    }
-    
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
+        headers = {
+            'Wiley-TDM-Client-Token': api_key,
+            'Content-Type': 'application/json'
+        }
         
-    filename = str(doi).replace("/", "_") + ".pdf"
-    with open(directory + "/" + filename, "wb") as f:  # Open a file in binary write mode ("wb")
-        for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
-            f.write(chunk)
-    print("Downloaded: ", filename)
-    
-    return "success"
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+            
+        filename = str(doi).replace("/", "_") + ".pdf"
+        with open(directory + "/" + filename, "wb") as f:  # Open a file in binary write mode ("wb")
+            for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
+                f.write(chunk)
+        print("Downloaded: ", filename)
+        
+        return "success"
+    except Exception as e:
+        print("Error: ", e)
+        return "error"
 
 
 def downloadWileyArticle(doi=None):

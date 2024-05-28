@@ -408,15 +408,17 @@ def get_springer_data():
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-@app.route('/get-wiley-fulltext', methods=['GET'])
+@app.route('/get-wiley-fulltext', methods=['POST'])
 def get_wiley_data():
-  course_name: str = request.args.get('course_name', default='', type=str)
-  issn = request.args.get('issn', default='', type=str)
-  #doi = request.args.get('doi', default='', type=str)
-
+  data = request.get_json()
+  print(data)
+  
+  course_name = data['course_name']
+  issn = data['issn']
+  
   print("In /get-wiley-fulltext")
 
-  if issn == '' or course_name == '':
+  if issn == [] or course_name == '':
     # proper web error "400 Bad request"
     abort(
         400,
