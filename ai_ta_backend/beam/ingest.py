@@ -1099,6 +1099,17 @@ class Ingest():
         course_name = contexts[0].metadata.get('course_name')
         log_to_document_map(course_name)
 
+        # add to doc groups code here
+        courseDoc = response.data[0]
+        url = "https://www.uiuc.chat/api/documentGroups"
+        payload = {
+            "action": "addDocumentsToDocGroup",
+            "courseName": "cropwizard-1.5",
+            "doc": courseDoc,
+            "docGroup": "Research Papers"
+        }
+        print("Adding to doc groups...")
+
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
                            properties={
