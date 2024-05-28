@@ -107,8 +107,21 @@ class SQLDatabase:
   def updateProjects(self, course_name: str, data: dict):
     return self.supabase_client.table("projects").update(data).eq("course_name", course_name).execute()
   
+  def getLatestWorkflowId(self):
+    return self.supabase_client.table('n8n_workflows').select("latest_workflow_id").execute()
+  
+  def lockWorkflow(self, id: str):
+    return self.supabase_client.table('n8n_workflows').insert({"latest_workflow_id": id, "is_locked": True}).execute()
+  
+  def deleteLatestWorkflowId(self, id: str):
+    return self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
+  
+  def unlockWorkflow(self, id: str):
+    return self.supabase_client.table('n8n_workflows').update({"is_locked": False}).eq('latest_workflow_id', id).execute()
+
   def getConversation(self, course_name: str, key: str, value: str):
     return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
+
   
   def getCourseDocumentByS3Path(self, course_name: str, s3_path: str):
     return self.supabase_client.table("documents").select("id, course_name, readable_filename, url, base_url, s3_path, created_at").eq("course_name", course_name).eq("s3_path", s3_path).execute()
