@@ -1104,7 +1104,7 @@ class Ingest():
         url = "https://www.uiuc.chat/api/documentGroups"
         payload = {
             "action": "addDocumentsToDocGroup",
-            "courseName": "cropwizard-1.5",
+            "courseName": course_name,
             "doc": courseDoc,
             "docGroup": "Research Papers"
         }
