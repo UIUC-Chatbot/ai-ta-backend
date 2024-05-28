@@ -250,16 +250,22 @@ def getCrossrefMetadata(issn: str):
             article_metadata['url'] = item['URL']
             article_metadata['filename'] = item['DOI'].replace("/", "_") + ".pdf"
             article_metadata['downloaded'] = "no"
-            metadata.append(article_metadata)
+            metadata_csv = "wiley_metadata.csv"
+            metadata_df = pd.DataFrame([article_metadata])
+            if not os.path.exists(metadata_csv):
+                metadata_df.to_csv(metadata_csv, index=False)
+            else:
+                metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
+            #metadata.append(article_metadata)
             print("Processed: ", article_metadata['doi'])
         
         print("Total articles: ", count)
-        metadata_csv = "wiley_metadata.csv"
-        metadata_df = pd.DataFrame(metadata)
-        if not os.path.exists(metadata_csv):
-            metadata_df.to_csv(metadata_csv, index=False)
-        else:
-            metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
+        # metadata_csv = "wiley_metadata.csv"
+        # metadata_df = pd.DataFrame(metadata)
+        # if not os.path.exists(metadata_csv):
+        #     metadata_df.to_csv(metadata_csv, index=False)
+        # else:
+        #     metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
         
         return "success"
     except Exception as e:
