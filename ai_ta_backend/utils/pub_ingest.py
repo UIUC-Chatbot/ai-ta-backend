@@ -219,46 +219,48 @@ def getCrossrefMetadata(issn: str):
         count = 0
         no_license = 0
         for item in works:
-            count += 1
-            article_metadata = {}
-            # check if the license is open access - variant of CC
-            if 'license' not in item:
-                no_license += 1
-                continue
-            else:
-                for license in item['license']:
-                    # check for creative commons license
-                    if license['URL'] in CC_LICENSES:
-                        article_metadata['license'] = CC_LICENSES[license['URL']]
-                        article_metadata['license_url'] = license['URL']
-                        break
-                    elif license['URL'] in OTHER_LICENSES:
-                        article_metadata['license'] = OTHER_LICENSES[license['URL']]
-                        article_metadata['license_url'] = license['URL']
-                    else:
-                        article_metadata['license'] = "unknown"
-                        article_metadata['license_url'] = license['URL']
-                        
-            article_metadata['doi'] = item['DOI']
-            if 'title' not in item:
-                article_metadata['title'] = "No title found"
-            else:
-                article_metadata['title'] = item['title'][0]
-            article_metadata['journal'] = item['container-title'][0]
-            article_metadata['publisher'] = item['publisher']
-            article_metadata['issn'] = item['ISSN'][0]
-            article_metadata['url'] = item['URL']
-            article_metadata['filename'] = item['DOI'].replace("/", "_") + ".pdf"
-            article_metadata['downloaded'] = "no"
-            metadata_csv = "wiley_metadata.csv"
-            metadata_df = pd.DataFrame([article_metadata])
-            if not os.path.exists(metadata_csv):
-                metadata_df.to_csv(metadata_csv, index=False)
-            else:
-                metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
-            #metadata.append(article_metadata)
-            print("Processed: ", article_metadata['doi'])
-        
+            try:
+                count += 1
+                article_metadata = {}
+                # check if the license is open access - variant of CC
+                if 'license' not in item:
+                    no_license += 1
+                    continue
+                else:
+                    for license in item['license']:
+                        # check for creative commons license
+                        if license['URL'] in CC_LICENSES:
+                            article_metadata['license'] = CC_LICENSES[license['URL']]
+                            article_metadata['license_url'] = license['URL']
+                            break
+                        elif license['URL'] in OTHER_LICENSES:
+                            article_metadata['license'] = OTHER_LICENSES[license['URL']]
+                            article_metadata['license_url'] = license['URL']
+                        else:
+                            article_metadata['license'] = "unknown"
+                            article_metadata['license_url'] = license['URL']
+                            
+                article_metadata['doi'] = item['DOI']
+                if 'title' not in item:
+                    article_metadata['title'] = "No title found"
+                else:
+                    article_metadata['title'] = item['title'][0]
+                article_metadata['journal'] = item['container-title'][0]
+                article_metadata['publisher'] = item['publisher']
+                article_metadata['issn'] = item['ISSN'][0]
+                article_metadata['url'] = item['URL']
+                article_metadata['filename'] = item['DOI'].replace("/", "_") + ".pdf"
+                article_metadata['downloaded'] = "no"
+                metadata_csv = "wiley_metadata.csv"
+                metadata_df = pd.DataFrame([article_metadata])
+                if not os.path.exists(metadata_csv):
+                    metadata_df.to_csv(metadata_csv, index=False)
+                else:
+                    metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
+                #metadata.append(article_metadata)
+                print("Processed: ", article_metadata['doi'])
+            except Exception as e:
+                print("Error processing article: ", article_metadata['doi'], e)
         print("Total articles: ", count)
         # metadata_csv = "wiley_metadata.csv"
         # metadata_df = pd.DataFrame(metadata)
@@ -284,31 +286,31 @@ def downloadWileyFulltext(course_name=None, issn=[]):
 
 
     # fetch metadata
-    for item in issn:
-        metadata_status = getCrossrefMetadata(item)
-        print("Metadata status: ", metadata_status)
+    # for item in issn:
+    #     metadata_status = getCrossrefMetadata(item)
+    #     print("Metadata status: ", metadata_status)
     
     # download PDFs based on metadata
-    # metadata_csv = "wiley_metadata.csv"
-    # if os.path.exists(metadata_csv):
-    #     metadata_df = pd.read_csv(metadata_csv)
-    #     metadata = metadata_df.to_dict(orient='records')
+    metadata_csv = "wiley_metadata.csv"
+    if os.path.exists(metadata_csv):
+        metadata_df = pd.read_csv(metadata_csv)
+        metadata = metadata_df.to_dict(orient='records')
 
-    # for item in metadata:
-    #     try:
-    #         if item['license'] in ['CC BY', 'CC BY-NC', 'CC BY-NC-ND', 'CC BY-NC-SA'] and item['downloaded'] == 'no' and item['publisher'] == 'Wiley':
-    #             status = downloadWileyPDF(item['doi'])
-    #             print("Download status: ", status)
-    #             if status == "success":
-    #                 item['downloaded'] = 'yes'
-    #             time.sleep(5)    
-    #     except Exception as e:
-    #         print(e)
+    for item in metadata:
+        try:
+            if item['license'] in ['CC BY', 'CC BY-NC', 'CC BY-NC-ND', 'CC BY-NC-SA'] and item['downloaded'] == 'no' and item['publisher'] == 'Wiley':
+                status = downloadWileyPDF(item['doi'])
+                print("Download status: ", status)
+                if status == "success":
+                    item['downloaded'] = 'yes'
+                time.sleep(5)    
+        except Exception as e:
+            print(e)
         
-    #     #time.sleep(10)
+        #time.sleep(10)
     
-    # metadata_df = pd.DataFrame(metadata)
-    # metadata_df.to_csv(metadata_csv, index=False) 
+    metadata_df = pd.DataFrame(metadata)
+    metadata_df.to_csv(metadata_csv, index=False) 
 
     return "success"
 
