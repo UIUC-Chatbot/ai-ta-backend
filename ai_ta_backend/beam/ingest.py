@@ -48,6 +48,7 @@ from posthog import Posthog
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
+import requests
 
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain.chat_models import AzureChatOpenAI
@@ -1008,8 +1009,8 @@ class Ingest():
                              'base_url': metadatas[0].get('base_url', None),
                          })
 
-    print(f"In split and upload. Metadatas: {metadatas}")
-    print(f"Texts: {texts}")
+    #print(f"In split and upload. Metadatas: {metadatas}")
+    #print(f"Texts: {texts}")
     assert len(texts) == len(
         metadatas
     ), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
@@ -1026,7 +1027,8 @@ class Ingest():
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
 
       # check for duplicates
-      is_duplicate = self.check_for_duplicates(input_texts, metadatas)
+      #is_duplicate = self.check_for_duplicates(input_texts, metadatas)
+      is_duplicate = False
       if is_duplicate:
         self.posthog.capture('distinct_id_of_the_user',
                              event='split_and_upload_succeeded',
@@ -1093,14 +1095,16 @@ class Ingest():
 
       response = self.supabase_client.table(
           os.getenv('SUPABASE_DOCUMENTS_TABLE')).insert(document).execute()  # type: ignore
-
+      print("Supabase response: ", response.data[0]['id'])
       # add to Nomic document map
       if len(response.data) > 0:
         course_name = contexts[0].metadata.get('course_name')
-        log_to_document_map(course_name)
+        #log_to_document_map(course_name)
 
         # add to doc groups code here
         courseDoc = response.data[0]
+        del courseDoc['contexts']
+        courseDoc['doc_groups'] = ["Research Papers"]
         url = "https://www.uiuc.chat/api/documentGroups"
         payload = {
             "action": "addDocumentsToDocGroup",
@@ -1108,7 +1112,12 @@ class Ingest():
             "doc": courseDoc,
             "docGroup": "Research Papers"
         }
-        print("Adding to doc groups...")
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        print(response.text)
+        print("Adding to doc groups: ", payload)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
