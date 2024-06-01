@@ -80,7 +80,6 @@ class SQLDatabase:
     else:
       return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
           'id', first_id).lte('id', last_id).order('id', desc=False).limit(limit).execute()
-    
 
   def getDocsForIdsGte(self, course_name: str, first_id: int, fields: str = "*", limit: int = 100):
     return self.supabase_client.table("documents").select(fields).eq("course_name", course_name).gte(
@@ -90,36 +89,45 @@ class SQLDatabase:
     return self.supabase_client.table("projects").insert(project_info).execute()
 
   def getAllFromLLMConvoMonitor(self, course_name: str):
-    return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).order('id', desc=False).execute()
-  
+    return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name",
+                                                                          course_name).order('id',
+                                                                                             desc=False).execute()
+
   def getCountFromLLMConvoMonitor(self, course_name: str, last_id: int):
     if last_id == 0:
-      return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).order('id', desc=False).execute()
+      return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+          "course_name", course_name).order('id', desc=False).execute()
     else:
-      return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).gt("id", last_id).order('id', desc=False).execute()
-  
+      return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
+          "course_name", course_name).gt("id", last_id).order('id', desc=False).execute()
+
   def getDocMapFromProjects(self, course_name: str):
     return self.supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
-  
+
   def getConvoMapFromProjects(self, course_name: str):
     return self.supabase_client.table("projects").select("*").eq("course_name", course_name).execute()
-  
+
   def updateProjects(self, course_name: str, data: dict):
     return self.supabase_client.table("projects").update(data).eq("course_name", course_name).execute()
-  
+
   def getLatestWorkflowId(self):
-    return self.supabase_client.table('n8n_workflows').select("latest_workflow_id").execute()
-  
-  def lockWorkflow(self, id: str):
+    return self.supabase_client.table('n8n_workflows').select("*").execute()
+
+  def lockWorkflow(self, id: int):
     return self.supabase_client.table('n8n_workflows').insert({"latest_workflow_id": id, "is_locked": True}).execute()
-  
-  def deleteLatestWorkflowId(self, id: str):
+    # return self.supabase_client.table('n8n_workflows').update({"latest_workflow_id":id, "is_locked": True}).eq('latest_workflow_id', supabase_id).execute()
+
+  def deleteLatestWorkflowId(self, id: int):
     return self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
-  
-  def unlockWorkflow(self, id: str):
-    return self.supabase_client.table('n8n_workflows').update({"is_locked": False}).eq('latest_workflow_id', id).execute()
+
+  def unlockWorkflow(self, id: int):
+    return self.supabase_client.table('n8n_workflows').update({
+        "is_locked": False
+    }).eq('latest_workflow_id', id).execute()
+
+  def check_and_lock_flow(self, id):
+    return self.supabase_client.rpc('check_and_lock_flows_v2', {'id': id}).execute()
 
   def getConversation(self, course_name: str, key: str, value: str):
-    return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
-
-  
+    return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name",
+                                                                                         course_name).execute()
