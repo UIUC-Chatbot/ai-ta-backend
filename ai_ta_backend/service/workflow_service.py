@@ -164,27 +164,8 @@ class WorkflowService:
     result = response.json()
     return result
 
-  # def lock_system(self, hook, new_data, id, supabase_id):
-  #   self.sqlDb.lockWorkflow(id, supabase_id)
-  #   try:
-  #     print("this is the id", id)
-  #     self.execute_flow(hook, new_data)
-  #     print("Executed workflow")
-  #   except Exception as e:
-  #     self.sqlDb.unlockWorkflow(id-1)
-  #     is_locked = False
-  #     print("Error message 1:", e)
-  #     raise Exception(f"Internal database error: {e}") from e
-  #   finally:
-  #     # TODO: Remove lock from Supabase table.
-  #     self.sqlDb.unlockWorkflow(id)
-  #     print("Removing lock from: ", id)
-  #     is_locked = False
-  #   return is_locked
-
   def latest_execution(self, api_key: str = ""):
     execution = self.get_executions(limit=1, api_key=api_key, pagination=False)
-    print("Got executions")
     if execution:
       n8n_id = int(execution[0]['id']) + 1
     else:
@@ -201,19 +182,25 @@ class WorkflowService:
 
     # Lock the workflow
     locked = self.sqlDb.check_and_lock_flow(id)
-    print(f"Locked workflow with ID: {id}")
 
-    if locked.data == 'Workflow is already locked':
+    if locked.data == 'Workflow updated':
+      print(f"Locked workflow with ID: {id} Name:", name)
+      pass
+    else:
+      print("Name in retry: ", name)
       start_time = time.time()
       timeout = 300  # Timeout in seconds
       print("Workflow is already locked, trying again")
-      while locked.data == 'Workflow is already locked':
+      while locked.data == 'Workflow is locked' or 'id already exists':
         id = self.latest_execution(api_key)
         locked = self.sqlDb.check_and_lock_flow(id)
+        if locked.data == 'Workflow updated':
+          print("Break loop")
+          break
         if time.time() - start_time > timeout:
           print("Timeout reached, stopping the loop.")
           return None
-      print(f"Locked workflow with ID: {id}")
+      print(f"Locked workflow with ID: {id} Name:", name)
 
     new_data = self.format_data(data, api_key, name)
     hookId = self.get_hook(name, api_key)
@@ -243,39 +230,3 @@ class WorkflowService:
 
     print("Fetched executions")
     return executions
-
-    # # OLDER CODE
-
-    # new_data = self.format_data(data, api_key, name)
-    # hookId = self.get_hook(name, api_key)
-    # hook = self.url + f"/form/{hookId}"
-
-    # id, is_locked, supabase_id = self.latest_execution(api_key)
-    # id_str = str(id)
-
-    # executions = None
-    # if is_locked:
-    #   while is_locked:
-    #     try:
-    #       id, is_locked, supabase_id = self.latest_execution(api_key)
-    #     except Exception as e:
-    #       print("Error with retrieving latest workflow locked status:", e)
-    #       raise Exception(f"Internal database error: {e}") from e
-    #   is_locked = self.lock_system(hook, new_data, id, supabase_id)
-    # else:
-    #   is_locked = self.lock_system(hook, new_data, id, supabase_id)
-
-    #   try:
-    #     executions = self.get_executions(20, id_str, True, api_key)
-    #     print("id_str", id_str)
-    #     while executions is None:
-    #       executions = self.get_executions(20, id_str, True, api_key)
-    #       print("Can't find id in executions")
-    #       time.sleep(1)
-    #     print("Found id in executions ")
-    #   except Exception as e:
-    #     print("Error in finding execution:", e)
-
-    #     raise Exception(f"Internal database error: {e}") from e
-
-    # return executions
