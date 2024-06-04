@@ -14,6 +14,7 @@ with body:
 Inspired by https://modal.com/docs/examples/webcam#prediction-function
 """
 import inspect
+import io
 import json
 import os
 import traceback
@@ -86,55 +87,38 @@ class Model:
 
   @web_endpoint(method="POST")
   async def predict(self, request: Request):
-    """
-    This used to use the method decorator
-    Run the pest detection plugin on an image.
-    """
-    print("Inside predict() endpoint")
+      """
+      Run the pest detection plugin on an image and return image data as blobs.
+      """
+      print("Inside predict() endpoint")
 
-    input = await request.json()
-    print("Request.json(): ", input)
-    image_urls = input.get('image_urls', [])
+      input = await request.json()
+      print("Request.json(): ", input)
+      image_urls = input.get('image_urls', [])
 
-    if image_urls and isinstance(image_urls, str):
-      image_urls = json.loads(image_urls)
-    print(f"Final image URLs: {image_urls}")
+      if image_urls and isinstance(image_urls, str):
+          image_urls = json.loads(image_urls)
+      print(f"Final image URLs: {image_urls}")
 
-    try:
-      # Run the plugin
-      annotated_images = self._detect_pests(image_urls)
-      print(f"annotated_images found: {len(annotated_images)}")
-      results = []
-      # Generate a unique ID for the request
-      unique_id = uuid.uuid4()
-      # self.posthog.capture('distinct_id_of_the_user',
-      #                      event='run_pest_detection_invoked',
-      #                      properties={
-      #                          'image_urls': image_urls,
-      #                          'unique_id': unique_id,
-      #                      })
-      for index, image in enumerate(annotated_images):
-        # Infer the file extension from the image URL or set a default
-        file_extension = '.png'
-        image_format = file_extension[1:].upper()
+      try:
+          # Run the plugin
+          annotated_images = self._detect_pests(image_urls)
+          print(f"annotated_images found: {len(annotated_images)}")
+          blob_results = []
 
-        with NamedTemporaryFile(mode='wb', suffix=file_extension) as tmpfile:
-          # Save the image with the specified format
-          image.save(tmpfile, format=image_format)
-          tmpfile.flush()  # Ensure all data is written to the file
-          tmpfile.seek(0)  # Move the file pointer to the start of the file
-          # Include UUID and index in the s3_path
-          s3_path = f'pest_detection/annotated-{unique_id}-{index}{file_extension}'
-          # Upload the file to S3
-          with open(tmpfile.name, 'rb') as file_data:
-            self.s3_client.upload_fileobj(Fileobj=file_data, Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path)
-          results.append(s3_path)
-      return results
-    except Exception as e:
-      err = f"❌❌ Error in (pest_detection): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n{traceback.format_exc()}"  # type: ignore
-      print(err)
-      # sentry_sdk.capture_exception(e)
-      return err
+          for image in annotated_images:
+              # Convert image to bytes
+              img_byte_arr = io.BytesIO()
+              image.save(img_byte_arr, format='PNG')
+              img_byte_arr = img_byte_arr.getvalue()
+              blob_results.append(img_byte_arr)
+
+          return blob_results
+      except Exception as e:
+          err = f"❌❌ Error in (pest_detection): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n{traceback.format_exc()}"  # type: ignore
+          print(err)
+          # sentry_sdk.capture_exception(e)
+          return err
 
   def _detect_pests(self, image_paths: List[str]) -> List[Image.Image]:
     """ Run pest detection on the given images. """
