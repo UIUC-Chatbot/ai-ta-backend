@@ -41,6 +41,8 @@ from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
 
+from ai_ta_backend.utils.document_groups_publications import ingest_and_group
+
 app = Flask(__name__)
 CORS(app)
 executor = Executor(app)
@@ -382,6 +384,19 @@ def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogSer
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
+@app.route('/ingestAndGroupPubs', methods=['GET'])
+def ingest_and_group_pubs():
+  """
+  Ingest and group all documents in a course.
+  """
+  print("In ingest_and_group_pubs")
+  result = ingest_and_group()
+  response = jsonify(result)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+  
 
 @app.route('/getworkflows', methods=['GET'])
 def get_all_workflows(service: WorkflowService) -> Response:

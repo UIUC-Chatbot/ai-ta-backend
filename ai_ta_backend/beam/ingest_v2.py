@@ -81,7 +81,7 @@ requirements = [
 ]
 
 # TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
-app = App("ingest",
+app = App("ingest_v2",
           runtime=Runtime(
               cpu=1,
               memory="3Gi",
@@ -157,7 +157,7 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
     timeout=-1,
     loader=loader,
     autoscaler=autoscaler)
-def ingest(**inputs: Dict[str, Any]):
+def ingest_v2(**inputs: Dict[str, Any]):
 
   qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
 
@@ -167,6 +167,7 @@ def ingest(**inputs: Dict[str, Any]):
   base_url: List[str] | str | None = inputs.get('base_url', None)
   readable_filename: List[str] | str = inputs.get('readable_filename', '')
   content: str | None = inputs.get('content', None)  # is webtext if content exists
+  doc_groups: List[str] | str = inputs.get('groups', [])
 
   print(
       f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}"
@@ -174,32 +175,33 @@ def ingest(**inputs: Dict[str, Any]):
 
   ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
 
-  def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content):
+  def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
     if content:
       return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename)
     elif readable_filename == '':
-      return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url)
+      return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=groups)
     else:
       return ingester.bulk_ingest(course_name,
                                   s3_paths,
                                   readable_filename=readable_filename,
                                   base_url=base_url,
-                                  url=url)
+                                  url=url,
+                                  groups=groups)
 
   # First try
-  success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
+  success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
 
   # retries
   num_retires = 5
   for retry_num in range(1, num_retires):
     if isinstance(success_fail_dict, str):
       print(f"STRING ERROR: {success_fail_dict = }")
-      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
+      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
       time.sleep(13 * retry_num)  # max is 65
     elif success_fail_dict['failure_ingest']:
       print(f"Ingest failure -- Retry attempt {retry_num}. File: {success_fail_dict}")
       # s3_paths = success_fail_dict['failure_ingest'] # retry only failed paths.... what if this is a URL instead?
-      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
+      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
       time.sleep(13 * retry_num)  # max is 65
     else:
       break
@@ -809,7 +811,7 @@ class Ingest():
         # count the total number of words in the pdf_texts. If it's less than 100, we'll OCR the PDF
         has_words = any(text.strip() for text in pdf_texts)
         if has_words:
-          success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+          success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas, **kwargs)
         else:
           print("⚠️ PDF IS EMPTY -- OCR-ing the PDF.")
           success_or_failure = self._ocr_pdf(s3_path=s3_path, course_name=course_name, **kwargs)
@@ -988,7 +990,7 @@ class Ingest():
       sentry_sdk.capture_exception(e)
       return err
 
-  def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
+  def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]], **kwargs):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
     Takes in Text and Metadata (from Langchain doc loaders) and splits / uploads to Qdrant.
 
@@ -1027,8 +1029,8 @@ class Ingest():
       input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
 
       # check for duplicates
-      #is_duplicate = self.check_for_duplicates(input_texts, metadatas)
-      is_duplicate = False
+      is_duplicate = self.check_for_duplicates(input_texts, metadatas)
+      #is_duplicate = False
       if is_duplicate:
         self.posthog.capture('distinct_id_of_the_user',
                              event='split_and_upload_succeeded',
@@ -1098,26 +1100,30 @@ class Ingest():
       print("Supabase response: ", response.data[0]['id'])
       # add to Nomic document map
       if len(response.data) > 0:
-        course_name = contexts[0].metadata.get('course_name')
-        #log_to_document_map(course_name)
+        # get groups from kwargs
+        groups = kwargs.get('groups', '')
+        if groups:
+          print("GROUPS: ", groups)
+          course_name = contexts[0].metadata.get('course_name')
+          #log_to_document_map(course_name)
 
-        # add to doc groups code here
-        courseDoc = response.data[0]
-        del courseDoc['contexts']
-        courseDoc['doc_groups'] = ["Research Papers"]
-        url = "https://www.uiuc.chat/api/documentGroups"
-        payload = {
-            "action": "addDocumentsToDocGroup",
-            "courseName": course_name,
-            "doc": courseDoc,
-            "docGroup": "Research Papers"
-        }
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        response = requests.post(url, headers=headers, data=json.dumps(payload))
-        print(response.text)
-        print("Adding to doc groups: ", payload)
+          # add to doc groups code here
+          courseDoc = response.data[0]
+          del courseDoc['contexts']
+          courseDoc['doc_groups'] = groups
+          url = "https://www.uiuc.chat/api/documentGroups"
+          payload = {
+              "action": "addDocumentsToDocGroup",
+              "courseName": course_name,
+              "doc": courseDoc,
+              "docGroup": groups
+          }
+          headers = {
+              'Content-Type': 'application/json'
+          }
+          response = requests.post(url, headers=headers, data=json.dumps(payload))
+          print(response.text)
+          print("Adding to doc groups: ", payload)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
