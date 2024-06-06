@@ -286,9 +286,9 @@ def downloadWileyFulltext(course_name=None, issn=[]):
 
 
     # fetch metadata
-    # for item in issn:
-    #     metadata_status = getCrossrefMetadata(item)
-    #     print("Metadata status: ", metadata_status)
+    for item in issn:
+        metadata_status = getCrossrefMetadata(item)
+        print("Metadata status: ", metadata_status)
     
     # download PDFs based on metadata
     metadata_csv = "wiley_metadata.csv"
