@@ -21,8 +21,8 @@ import beam
 import boto3
 import fitz
 import openai
-import pytesseract
 import pdfplumber
+import pytesseract
 import sentry_sdk
 import supabase
 from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
@@ -76,7 +76,7 @@ requirements = [
     "beautifulsoup4==4.12.2",
     "sentry-sdk==1.39.1",
     "nomic==2.0.14",
-    "pdfplumber==0.11.0", # PDF OCR, better performance than Fitz/PyMuPDF in my Gies PDF testing.
+    "pdfplumber==0.11.0",  # PDF OCR, better performance than Fitz/PyMuPDF in my Gies PDF testing.
 ]
 
 # TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
@@ -133,11 +133,13 @@ def loader():
 
   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   sentry_sdk.init(
-      dsn="https://examplePublicKey@o0.ingest.sentry.io/0",
-
-      # Enable performance monitoring
-      enable_tracing=True,
-  )
+      dsn=os.getenv("SENTRY_DSN"),
+      # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+      traces_sample_rate=1.0,
+      # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
+      # We recommend adjusting this value in production.
+      profiles_sample_rate=1.0,
+      enable_tracing=True)
 
   return qdrant_client, vectorstore, s3_client, supabase_client, posthog
 
@@ -153,7 +155,7 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
     callback_url='https://uiuc-chat-git-ingestprogresstracking-kastanday.vercel.app/api/UIUC-api/ingestTaskCallback',
     max_pending_tasks=15_000,
     max_retries=3,
-    timeout=-1,
+    timeout=60 * 5,
     loader=loader,
     autoscaler=autoscaler)
 def ingest(**inputs: Dict[str, Any]):
@@ -229,6 +231,7 @@ def ingest(**inputs: Dict[str, Any]):
     pass
 
   print(f"Final success_fail_dict: {success_fail_dict}")
+  sentry_sdk.flush(timeout=20)
   return json.dumps(success_fail_dict)
 
 
@@ -843,34 +846,36 @@ class Ingest():
             text = pytesseract.image_to_string(im.original)
             print("Page number: ", i, "Text: ", text[:100])
             pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
-      
+
       metadatas: List[Dict[str, Any]] = [
-              {
-                  'course_name': course_name,
-                  's3_path': s3_path,
-                  'pagenumber': page['page_number'] + 1,  # +1 for human indexing
-                  'timestamp': '',
-                  'readable_filename': kwargs.get('readable_filename', page['readable_filename']),
-                  'url': kwargs.get('url', ''),
-                  'base_url': kwargs.get('base_url', ''),
-              } for page in pdf_pages_OCRed
+          {
+              'course_name': course_name,
+              's3_path': s3_path,
+              'pagenumber': page['page_number'] + 1,  # +1 for human indexing
+              'timestamp': '',
+              'readable_filename': kwargs.get('readable_filename', page['readable_filename']),
+              'url': kwargs.get('url', ''),
+              'base_url': kwargs.get('base_url', ''),
+          } for page in pdf_pages_OCRed
       ]
       pdf_texts = [page['text'] for page in pdf_pages_OCRed]
       self.posthog.capture('distinct_id_of_the_user',
-                         event='ocr_pdf_succeeded',
-                         properties={
-                             'course_name': course_name,
-                             's3_path': s3_path,
-                         })
+                           event='ocr_pdf_succeeded',
+                           properties={
+                               'course_name': course_name,
+                               's3_path': s3_path,
+                           })
 
       has_words = any(text.strip() for text in pdf_texts)
       if not has_words:
-        raise ValueError("Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text.")
+        raise ValueError(
+            "Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text.")
 
       success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
       return success_or_failure
     except Exception as e:
-      err = f"❌❌ Error in PDF ingest (with OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
+      err = f"❌❌ Error in PDF ingest (with OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       sentry_sdk.capture_exception(e)
       return err
@@ -1044,6 +1049,8 @@ class Ingest():
       for i, context in enumerate(contexts):
         context.metadata['chunk_index'] = i
 
+      print("Starting to call embeddings API")
+      embeddings_start_time = time.monotonic()
       oai = OpenAIAPIProcessor(
           input_prompts_list=input_texts,
           request_url='https://api.openai.com/v1/embeddings',
@@ -1056,6 +1063,7 @@ class Ingest():
           logging_level=logging.INFO,
           token_encoding_name='cl100k_base')  # nosec -- reasonable bandit error suppression
       asyncio.run(oai.process_api_requests_from_file())
+      print(f"⏰ embeddings tuntime: {(time.monotonic() - embeddings_start_time):.2f} seconds")
       # parse results into dict of shape page_content -> embedding
       embeddings_dict: dict[str, List[float]] = {
           item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results
@@ -1071,7 +1079,7 @@ class Ingest():
 
       self.qdrant_client.upsert(
           collection_name=os.environ['QDRANT_COLLECTION_NAME'],  # type: ignore
-          points=vectors  # type: ignore
+          points=vectors,  # type: ignore
       )
       ### Supabase SQL ###
       contexts_for_supa = [{
@@ -1107,6 +1115,7 @@ class Ingest():
                                'readable_filename': metadatas[0].get('readable_filename', None),
                                'url': metadatas[0].get('url', None),
                                'base_url': metadatas[0].get('base_url', None),
+                               'is_duplicate': False,
                            })
       print("successful END OF split_and_upload")
       return "Success"
@@ -1114,6 +1123,7 @@ class Ingest():
       err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       sentry_sdk.capture_exception(e)
+      sentry_sdk.flush(timeout=20)
       return err
 
   def check_for_duplicates(self, texts: List[Dict], metadatas: List[Dict[str, Any]]) -> bool:
