@@ -3,6 +3,7 @@ To deploy: beam deploy pest_detection.py
 For testing: beam serve pest_detection.py
 Use CAII gmail to auth.
 """
+import base64
 import inspect
 import io
 import json
@@ -104,7 +105,9 @@ def predict(**inputs: Dict[str, Any]):
       img_byte_arr = io.BytesIO()
       image.save(img_byte_arr, format='PNG')
       img_byte_arr = img_byte_arr.getvalue()
-      blob_results.append(img_byte_arr)
+      # Encode bytes to base64 string
+      base64_encoded = base64.b64encode(img_byte_arr).decode('utf-8')
+      blob_results.append(base64_encoded)
 
     return blob_results
   except Exception as e:
