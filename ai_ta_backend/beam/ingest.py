@@ -310,7 +310,7 @@ class Ingest():
         else:
           # No supported ingest... Fallback to attempting utf-8 decoding, otherwise fail.
           try:
-            self._ingest_single_txt(s3_path, course_name)
+            self._ingest_single_txt(s3_path, course_name, **kwargs)
             success_status['success_ingest'] = s3_path
             print(f"No ingest methods -- Falling back to UTF-8 INGEST... s3_path = {s3_path}")
           except Exception as e:

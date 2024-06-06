@@ -177,7 +177,7 @@ def ingest_v2(**inputs: Dict[str, Any]):
 
   def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
     if content:
-      return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename)
+      return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=groups)
     elif readable_filename == '':
       return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=groups)
     else:
@@ -359,7 +359,7 @@ class Ingest():
       print(f"MAJOR ERROR IN /bulk_ingest: {str(e)}")
       return success_status
 
-  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str):
+  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str, **kwargs):
     """Crawlee integration
     """
     self.posthog.capture('distinct_id_of_the_user',
@@ -384,7 +384,7 @@ class Ingest():
           'url': url,
           'base_url': base_url,
       }]
-      self.split_and_upload(texts=text, metadatas=metadatas)
+      self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
       self.posthog.capture('distinct_id_of_the_user',
                            event='ingest_single_web_text_succeeded',
                            properties={
@@ -429,7 +429,7 @@ class Ingest():
       #print(texts)
       os.remove(file_path)
 
-      success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+      success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
       print("Python ingest: ", success_or_failure)
       return success_or_failure
 
@@ -463,7 +463,7 @@ class Ingest():
             'base_url': '',
         } for doc in documents]
 
-        success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+        success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return success_or_failure
     except Exception as e:
       err = f"❌❌ Error in (VTT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -497,7 +497,7 @@ class Ingest():
           'timestamp': '',
       }]
 
-      success_or_failure = self.split_and_upload(text, metadata)
+      success_or_failure = self.split_and_upload(text, metadata, **kwargs)
       print(f"_ingest_html: {success_or_failure}")
       return success_or_failure
     except Exception as e:
@@ -580,7 +580,7 @@ class Ingest():
           'base_url': '',
       } for txt in text]
 
-      self.split_and_upload(texts=text, metadatas=metadatas)
+      self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
       return "Success"
     except Exception as e:
       err = f"❌❌ Error in (VIDEO ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -609,7 +609,7 @@ class Ingest():
             'base_url': '',
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -645,7 +645,7 @@ class Ingest():
       if len(text) == 0:
         return "Error: SRT file appears empty. Skipping."
 
-      self.split_and_upload(texts=texts, metadatas=metadatas)
+      self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
       return "Success"
     except Exception as e:
       err = f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -676,7 +676,7 @@ class Ingest():
             'base_url': '',
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -713,7 +713,7 @@ class Ingest():
             'base_url': '',
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -743,7 +743,7 @@ class Ingest():
             'base_url': '',
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -870,7 +870,7 @@ class Ingest():
       if not has_words:
         raise ValueError("Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text.")
 
-      success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+      success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas, **kwargs)
       return success_or_failure
     except Exception as e:
       err = f"❌❌ Error in PDF ingest (with OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
@@ -906,7 +906,7 @@ class Ingest():
       }]
       print("Prior to ingest", metadatas)
 
-      success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
+      success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
       return success_or_failure
     except Exception as e:
       err = f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -940,7 +940,7 @@ class Ingest():
             'base_url': '',
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
