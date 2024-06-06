@@ -90,6 +90,9 @@ def predict(**inputs: Dict[str, Any]):
     image_urls = json.loads(image_urls)
   print(f"Final image URLs: {image_urls}")
 
+  if not image_urls:
+    return "❌ No input image URLs provided."
+
   try:
     # Run the plugin
     annotated_images = _detect_pests(model, image_urls)
