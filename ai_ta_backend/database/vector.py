@@ -32,20 +32,15 @@ class VectorDatabase():
         embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE),
     )
 
-  def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n, disabled_doc_groups: List[str]):
+  def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n,
+                    disabled_doc_groups: List[str]):
     """
     Search the vector database for a given query.
     """
-    must_conditions, must_not_conditions = self._create_search_conditions(course_name, doc_groups, disabled_doc_groups)
-    
-    # Filter for the must_conditions
-    myfilter = models.Filter(must=must_conditions, must_not=must_not_conditions)
-    print(f"Filter: {myfilter}")
-    
     # Search the vector database
     search_results = self.qdrant_client.search(
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-        query_filter=myfilter,
+        query_filter=self._create_search_filter(course_name, doc_groups, disabled_doc_groups),
         with_vectors=False,
         query_vector=user_query_embedding,
         limit=top_n,  # Return n closest points
@@ -53,21 +48,21 @@ class VectorDatabase():
         search_params=models.SearchParams(quantization=models.QuantizationSearchParams(rescore=False)))
     return search_results
 
-  def _create_search_conditions(self, course_name, doc_groups: List[str], disabled_doc_groups: List[str]):
+  def _create_search_filter(self, course_name, doc_groups: List[str], disabled_doc_groups: List[str]) -> models.Filter:
     """
     Create search conditions for the vector search.
     """
     must_conditions: list[models.Condition] = [
         models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name)),
     ]
-    
+
     if doc_groups and 'All Documents' not in doc_groups:
       # Final combined condition
       combined_condition = None
       # Condition for matching any of the specified doc_groups
       match_any_condition = models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups))
       combined_condition = models.Filter(should=[match_any_condition])
-      
+
       # Add the combined condition to the must_conditions list
       must_conditions.append(combined_condition)
 
@@ -75,11 +70,11 @@ class VectorDatabase():
 
     if disabled_doc_groups:
       # Condition for not matching any of the specified doc_groups
-      must_not_conditions = [
-        models.FieldCondition(key='doc_groups', match=models.MatchAny(any=disabled_doc_groups))
-        ]
-    
-    return must_conditions, must_not_conditions
+      must_not_conditions = [models.FieldCondition(key='doc_groups', match=models.MatchAny(any=disabled_doc_groups))]
+
+    vector_search_filter = models.Filter(must=must_conditions, must_not=must_not_conditions)
+    print(f"Vector search filter: {vector_search_filter}")
+    return vector_search_filter
 
   def delete_data(self, collection_name: str, key: str, value: str):
     """
