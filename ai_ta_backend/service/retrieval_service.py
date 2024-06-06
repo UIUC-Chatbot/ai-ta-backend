@@ -351,9 +351,18 @@ class RetrievalService:
     """
     Search the vector database for a given query, course name, and document groups.
     """
+    # Fetch disabled doc groups from the database
+    disabled_doc_groups = self.sqlDb.getDisabledDocGroups(course_name)
+    disabled_doc_groups = [doc_group['name'] for doc_group in disabled_doc_groups.data]
+    # print(f"Disabled doc groups: {disabled_doc_groups}")
+
     # Return empty list if no search query is provided
     if doc_groups is None:
       doc_groups = []
+
+    if disabled_doc_groups is None:
+      disabled_doc_groups = []
+
     # Max number of search results to return
     top_n = 80
     # Embed the user query and measure the latency
@@ -361,7 +370,7 @@ class RetrievalService:
     # Capture the search invoked event to PostHog
     self._capture_search_invoked_event(search_query, course_name, doc_groups)
     # Perform the vector search
-    search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n)
+    search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n, disabled_doc_groups)
     # Process the search results by extracting the page content and metadata
     found_docs = self._process_search_results(search_results, course_name)
     # Capture the search succeeded event to PostHog with the vector scores
@@ -384,9 +393,9 @@ class RetrievalService:
         },
     )
 
-  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n):
+  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n, disabled_doc_groups):
     qdrant_start_time = time.monotonic()
-    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n)
+    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n, disabled_doc_groups)
     self.qdrant_latency_sec = time.monotonic() - qdrant_start_time
     return search_results
 
