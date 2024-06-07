@@ -81,8 +81,8 @@ def handle_issue_opened(payload, langsmith_run_id):
   """
   logging.warning(f'fAuth {os.environ["GITHUB_APP_ID"]}')
   logging.error(f'Auth {os.environ["GITHUB_APP_PRIVATE_KEY"]}')
-  # print("Auth ", os.environ["GITHUB_APP_ID"])
-  # print("Auth ", os.environ["GITHUB_APP_PRIVATE_KEY"])
+  print("Auth ", os.environ["GITHUB_APP_ID"])
+  print("Auth ", os.environ["GITHUB_APP_PRIVATE_KEY"])
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],

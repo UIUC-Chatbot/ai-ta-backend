@@ -336,7 +336,7 @@ def webhook():
   """
 
   payload = request.json
-  # print(f"{payload}\n","-"*50, "\n")
+  print(f"{payload}\n","-"*50, "\n")
   if not payload:
     raise ValueError(f"Missing the body of the webhook response. Response is {payload}")
   
