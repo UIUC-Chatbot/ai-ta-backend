@@ -87,8 +87,11 @@ def handle_issue_opened(payload, langsmith_run_id):
       os.environ["GITHUB_APP_ID"],
       os.environ["GITHUB_APP_PRIVATE_KEY"],
   )
+  logging.info(f"After auth setup, auth: {auth}")
   gi = GithubIntegration(auth=auth)
+  logging.info(f"After GI setup")
   installation = gi.get_installations()[0]
+  logging.info(f"After gi.get_installations")
   g = installation.get_github_for_installation()
 
   logging.info("After get instillation")
