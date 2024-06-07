@@ -82,7 +82,7 @@ def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> Lis
     traceback.print_exc()
     return [steps[-1]]
 
-def get_langsmit_run_from_metadata(metadata_value, metadata_key="run_id_in_metadata") -> langsmith.schemas.Run:
+def get_langsmit_run_from_metadata(metadata_value, metadata_key="langsmith_run_id") -> langsmith.schemas.Run:
   """This will only return the FIRST match on single metadta field
 
   Args:
@@ -93,12 +93,6 @@ def get_langsmit_run_from_metadata(metadata_value, metadata_key="run_id_in_metad
       Run: _description_
   """
   langsmith_client = Client()
-  runs = langsmith_client.list_runs(project_name=os.environ['LANGCHAIN_PROJECT'])
-
-  count = 0
-  for r in runs: 
-    count += 1
-  print(f"Found num runs: {count}")
 
   for run in langsmith_client.list_runs(project_name=os.environ['LANGCHAIN_PROJECT']):
     if run.extra and run.extra.get('metadata') and run.extra.get('metadata').get(metadata_key) == metadata_value:

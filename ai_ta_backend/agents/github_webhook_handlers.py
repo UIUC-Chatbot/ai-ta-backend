@@ -131,7 +131,7 @@ dUMZYr5EevnUfOKByHo0ZIUgVQmEZvMmech0W8c//rWgPzggteYUYg==
   number = payload.get('issue').get('number')
   issue: Issue = repo.get_issue(number=number)
 
-  metadata = {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
+  metadata = {"issue": str(issue), 'number': number, "repo_name": repo_name, "run_id_in_metadata": langsmith_run_id}
   # logging.info(f"New issue created: #{number}", metadata)
   # logging.info(f"New issue created: #{number}. Metadata: {metadata}")
 
@@ -145,10 +145,10 @@ dUMZYr5EevnUfOKByHo0ZIUgVQmEZvMmech0W8c//rWgPzggteYUYg==
 
     # 1. INTRO COMMENT
     # issue.create_comment(messageForNewIssues)
-    # result_futures.append(post_comment.remote(issue_or_pr=issue, text=MESSAGE_HANDLE_ISSUE_OPENED, time_delay_s=0))
+    result_futures.append(post_comment.remote(issue_or_pr=issue, text=MESSAGE_HANDLE_ISSUE_OPENED, time_delay_s=0))
 
     # 2. SHARABLE URL (in background)
-    result_futures.append(post_sharable_url.remote(issue=issue, langsmith_run_id=langsmith_run_id, time_delay_s=20))
+    result_futures.append(post_sharable_url.remote(issue=issue, langsmith_run_id=langsmith_run_id, time_delay_s=10))
 
     # 3. RUN BOT
     # bot = github_agent.GH_Agent.remote()

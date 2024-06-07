@@ -31,7 +31,7 @@ class WorkflowAgent:
     self.agent = self.make_agent()
 
   def run(self, input):
-    result = self.agent.with_config({"run_name": "ML4BIO Plan & Execute Agent"}).invoke({"input":f"{input}"}, {"metadata": {"langsmith_run_id": str(self.langsmith_run_id)}})
+    result = self.agent.with_config({"run_name": "ML4BIO Plan & Execute Agent"}).invoke({"input":f"{input}"}, {"metadata": {"run_id_in_metadata": str(self.langsmith_run_id)}})
     
     print(f"Result: {result}")
     return result
