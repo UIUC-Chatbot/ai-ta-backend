@@ -1,0 +1,2113 @@
+{
+    "paper_id": "tmpp_9om5ua1791-809X",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-06T15:53:41.139931Z"
+    },
+    "title": "Reliability of Information Abstracted from Diabetic Patients' Medical Records in Palestine",
+    "authors": [
+        {
+            "first": "Nuha",
+            "middle": [
+                "A"
+            ],
+            "last": "El",
+            "suffix": "",
+            "affiliation": {},
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "Background: Questionnaire based surveys are an importance tool in epidemiology and public health research. Although there may be a certain degree of bias in this quality of care assessment tool since some of these measurements may be misleading, it remains an inexpensive tool for such assessments. The quality of services provided to diabetic patients in Palestine has not been studied previously. This study provides a context for the measurement of the quality of care of patients with diabetes.\nObjectives: To evaluate the agreement on testing at the proper time between self-report and medical record in primary care centers in the West Bank.\nMethods: Data from interviews and medical records were available on 882 diabetic patients attending nine primary health care centers in Palestine. Cohen's kappa coefficient (k), agreement beyond chance, between data provided in patient medical record and self-report was calculated.\nAgreement on testing at the proper time between self-report and medical record was poor to fair in strength (k: 0.06-0.28), and was poor to substantial (k: 0.10-0.70) for diabetes comorbids. After adjustment, clinic location and ownership were strong determinants for agreement in the proper time of testing. Also, the personal characteristic age and gender were the most important factors in determining comorbids in those patients.\nThe evaluation of the quality of care based on medical records should be treated with great caution in Palestine since it's a manual process. However, reliance on both sources of information is useful to establish monitoring tools on which decisions can be based.",
+    "pdf_parse": {
+        "paper_id": "tmpp_9om5ua1791-809X",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "Background: Questionnaire based surveys are an importance tool in epidemiology and public health research. Although there may be a certain degree of bias in this quality of care assessment tool since some of these measurements may be misleading, it remains an inexpensive tool for such assessments. The quality of services provided to diabetic patients in Palestine has not been studied previously. This study provides a context for the measurement of the quality of care of patients with diabetes.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            },
+            {
+                "text": "Objectives: To evaluate the agreement on testing at the proper time between self-report and medical record in primary care centers in the West Bank.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            },
+            {
+                "text": "Methods: Data from interviews and medical records were available on 882 diabetic patients attending nine primary health care centers in Palestine. Cohen's kappa coefficient (k), agreement beyond chance, between data provided in patient medical record and self-report was calculated.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            },
+            {
+                "text": "Agreement on testing at the proper time between self-report and medical record was poor to fair in strength (k: 0.06-0.28), and was poor to substantial (k: 0.10-0.70) for diabetes comorbids. After adjustment, clinic location and ownership were strong determinants for agreement in the proper time of testing. Also, the personal characteristic age and gender were the most important factors in determining comorbids in those patients.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            },
+            {
+                "text": "The evaluation of the quality of care based on medical records should be treated with great caution in Palestine since it's a manual process. However, reliance on both sources of information is useful to establish monitoring tools on which decisions can be based.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": "Most reliability or validation studies of self-reported chronic diseases have compared self-reports by participants with their medical records [1] [2] [3] . Studies that investigate diabetes, hypertension [2, [4] [5] [6] , hyper-lipidemia [2, 6] , and cardiovascular diseases [4, [7] [8] [9] found variable agreement between these two sources of information. These studies found that agreement was most likely to be affected by the personal characteristics of patients such as age, gender, socioeconomic status, obesity, clinical characteristics of patients, patients awareness and literacy, understanding of their health condition, a family history of disease and their ability to recall [2, 3, [10] [11] [12] [13] [14] . However, similar validation studies in countries of political instability with a protracted conflict and which are suffering from fragile infrastructure of social and public health services are not published yet.",
+                "cite_spans": [
+                    {
+                        "start": 143,
+                        "end": 146,
+                        "text": "[1]",
+                        "ref_id": "BIBREF0"
+                    },
+                    {
+                        "start": 147,
+                        "end": 150,
+                        "text": "[2]",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 151,
+                        "end": 154,
+                        "text": "[3]",
+                        "ref_id": "BIBREF2"
+                    },
+                    {
+                        "start": 205,
+                        "end": 208,
+                        "text": "[2,",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 209,
+                        "end": 212,
+                        "text": "[4]",
+                        "ref_id": "BIBREF3"
+                    },
+                    {
+                        "start": 213,
+                        "end": 216,
+                        "text": "[5]",
+                        "ref_id": "BIBREF4"
+                    },
+                    {
+                        "start": 217,
+                        "end": 220,
+                        "text": "[6]",
+                        "ref_id": "BIBREF5"
+                    },
+                    {
+                        "start": 239,
+                        "end": 242,
+                        "text": "[2,",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 243,
+                        "end": 245,
+                        "text": "6]",
+                        "ref_id": "BIBREF5"
+                    },
+                    {
+                        "start": 276,
+                        "end": 279,
+                        "text": "[4,",
+                        "ref_id": "BIBREF3"
+                    },
+                    {
+                        "start": 280,
+                        "end": 283,
+                        "text": "[7]",
+                        "ref_id": "BIBREF6"
+                    },
+                    {
+                        "start": 284,
+                        "end": 287,
+                        "text": "[8]",
+                        "ref_id": "BIBREF7"
+                    },
+                    {
+                        "start": 288,
+                        "end": 291,
+                        "text": "[9]",
+                        "ref_id": "BIBREF8"
+                    },
+                    {
+                        "start": 689,
+                        "end": 692,
+                        "text": "[2,",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 693,
+                        "end": 695,
+                        "text": "3,",
+                        "ref_id": "BIBREF2"
+                    },
+                    {
+                        "start": 696,
+                        "end": 700,
+                        "text": "[10]",
+                        "ref_id": "BIBREF9"
+                    },
+                    {
+                        "start": 701,
+                        "end": 705,
+                        "text": "[11]",
+                        "ref_id": "BIBREF10"
+                    },
+                    {
+                        "start": 706,
+                        "end": 710,
+                        "text": "[12]",
+                        "ref_id": "BIBREF11"
+                    },
+                    {
+                        "start": 711,
+                        "end": 715,
+                        "text": "[13]",
+                        "ref_id": "BIBREF12"
+                    },
+                    {
+                        "start": 716,
+                        "end": 720,
+                        "text": "[14]",
+                        "ref_id": "BIBREF13"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "The validation studies attempted to determine whether selfreports agreed with the reliable diagnoses obtained by means of clinical examinations, biometrical measurements or structured interviews, whereas validation itself consists of measuring the actual extent of this concordance. Selfreporting of diabetes-specific data has been shown to present moderate validity and be prone to both under and overreporting. [13, [15] [16] [17] [18] [19] [20] These studies found variable agreement for eye examinations and eye problems, [17, [19] [20] [21] diabetic foot, [13, 21] erectile dysfunction, [15, 16] microalbuminuria, [20, 21] levels of glycosylated hemoglobin, [20, 21] lipids, [21] blood pressure [2, 21] and organ amputation [17] .",
+                "cite_spans": [
+                    {
+                        "start": 413,
+                        "end": 417,
+                        "text": "[13,",
+                        "ref_id": "BIBREF12"
+                    },
+                    {
+                        "start": 418,
+                        "end": 422,
+                        "text": "[15]",
+                        "ref_id": "BIBREF14"
+                    },
+                    {
+                        "start": 423,
+                        "end": 427,
+                        "text": "[16]",
+                        "ref_id": "BIBREF15"
+                    },
+                    {
+                        "start": 428,
+                        "end": 432,
+                        "text": "[17]",
+                        "ref_id": "BIBREF16"
+                    },
+                    {
+                        "start": 433,
+                        "end": 437,
+                        "text": "[18]",
+                        "ref_id": "BIBREF17"
+                    },
+                    {
+                        "start": 438,
+                        "end": 442,
+                        "text": "[19]",
+                        "ref_id": "BIBREF18"
+                    },
+                    {
+                        "start": 443,
+                        "end": 447,
+                        "text": "[20]",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 526,
+                        "end": 530,
+                        "text": "[17,",
+                        "ref_id": "BIBREF16"
+                    },
+                    {
+                        "start": 531,
+                        "end": 535,
+                        "text": "[19]",
+                        "ref_id": "BIBREF18"
+                    },
+                    {
+                        "start": 536,
+                        "end": 540,
+                        "text": "[20]",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 541,
+                        "end": 545,
+                        "text": "[21]",
+                        "ref_id": "BIBREF20"
+                    },
+                    {
+                        "start": 561,
+                        "end": 565,
+                        "text": "[13,",
+                        "ref_id": "BIBREF12"
+                    },
+                    {
+                        "start": 566,
+                        "end": 569,
+                        "text": "21]",
+                        "ref_id": "BIBREF20"
+                    },
+                    {
+                        "start": 592,
+                        "end": 596,
+                        "text": "[15,",
+                        "ref_id": "BIBREF14"
+                    },
+                    {
+                        "start": 597,
+                        "end": 600,
+                        "text": "16]",
+                        "ref_id": "BIBREF15"
+                    },
+                    {
+                        "start": 619,
+                        "end": 623,
+                        "text": "[20,",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 624,
+                        "end": 627,
+                        "text": "21]",
+                        "ref_id": "BIBREF20"
+                    },
+                    {
+                        "start": 663,
+                        "end": 667,
+                        "text": "[20,",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 668,
+                        "end": 671,
+                        "text": "21]",
+                        "ref_id": "BIBREF20"
+                    },
+                    {
+                        "start": 680,
+                        "end": 684,
+                        "text": "[21]",
+                        "ref_id": "BIBREF20"
+                    },
+                    {
+                        "start": 700,
+                        "end": 703,
+                        "text": "[2,",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 704,
+                        "end": 707,
+                        "text": "21]",
+                        "ref_id": "BIBREF20"
+                    },
+                    {
+                        "start": 729,
+                        "end": 733,
+                        "text": "[17]",
+                        "ref_id": "BIBREF16"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "Palestine is a country of political instability due to a protracted conflict that has been ongoing for more than 50 years. The Israeli-Palestinian conflict presents professionals with unprecedented challenges and undermines already fragile health care services. The services for diabetic patients are offered by four main care providers: Ministry of Health (MoH), United Nations Relief and Works Agency for Palestine Refugees in the Near East (UNRWA), non-governmental organizations (NGOs), and the private sector. However, there is a lack of evidence-based practice due to very limited engagement in research; poor participation by patients and families in diabetes management; and a scarcity of specialist diabetic healthcare professionals.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "A population based study (30-65 years of age) showed that the prevalence for type 2 diabetes (DM2), was 11.6% and was 10.3% for impaired glucose intolerance (IGT) [22, 23] . The quality of services provided to diabetic patients has not been studied previously. This quantitative study is part of ongoing, mixed methods clinical-based national research to assess the clinical management of diabetes and inform quality improvement initiatives. Details about compliance with and awareness of diabetes guidelines among physicians and nurses in Palestine have already been published. This initial quantitative study highlighted training on diabetes guidelines as the main factor significantly associated with self-reported compliance by nurses and physicians to guidelines for the treatment of diabetic patients. Other factors influencing behaviour were time constraints, availability of guidelines and availability of laboratory tests [24] . This study aims to evaluate the relationship between quality of diabetes care and patient satisfaction in a cohort of 882 diabetic patients using the agreement beyond chance as a tool.",
+                "cite_spans": [
+                    {
+                        "start": 163,
+                        "end": 167,
+                        "text": "[22,",
+                        "ref_id": "BIBREF21"
+                    },
+                    {
+                        "start": 168,
+                        "end": 171,
+                        "text": "23]",
+                        "ref_id": "BIBREF22"
+                    },
+                    {
+                        "start": 931,
+                        "end": 935,
+                        "text": "[24]",
+                        "ref_id": "BIBREF23"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "A cross-sectional primary health care (PHC) clinic based survey was conducted in 11 governorates in the West Bank. Three governorates were selected to represent the north, middle and southern governorates. From each selected governorate, three major PHC centers were selected: MoH, UNRWA, and a non-governmental PHC (the Palestinian Medical Relief Society, PMRS).",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Study design and population",
+                "sec_num": null
+            },
+            {
+                "text": "Diabetic patients registered at the selected centers who visit general practitioners (GP) and/or diabetes care clinics were eligible to participate in the study. A calculated sample size of 900 patients was divided equally between the three governorates. This sample of 300 patients was then distributed proportionally according to the size of the selected centers in each governorate. In each center, a random sample of patients' records was selected and those patients were invited to participate on the day they visit the clinic. The study protocol and questionnaire was approved by Al Quds University Research Ethical Committee. Consent was obtained from the various stakeholders to carry out the study in their centers and to assess their services. All participating patients gave written consent for their involvement in the study.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Study design and population",
+                "sec_num": null
+            },
+            {
+                "text": "A questionnaire-based interview survey was conducted. This questionnaire was based on a previously validated questionnaire [25, 26] , with some minor modifications as suggested by the research team and by the major stakeholders themselves. The questionnaire comprised questions to assess the background characteristics of patients (age, gender, marital status, educational level and address) and diabetes characteristics (family history of diabetes, type of diabetes, patient medical regime and ownership of a glucometer). Also, patients were asked about how their physicians cared for their diabetes in term of laboratory tests (HbA1c, lipid profile, microalbuminurea, kidney function testing); examinations (electro-cardiogram-ECG, foot examination, blood pressure measurements, and eye examination by ophthalmologist); and referral timing and the frequency of performing these tests and examinations. There were also questions on comorbid conditions: eyes problems (retinopathy), extremes numbness (neuropathy), kidney problems (nephropathy), foot ulcer (diabetic foot), heart failure, hypoglycemia, and hypertension. Some questions related to the perception of patients on the follow up of laboratory tests and examinations and diabetes comorbidities associated with their diabetic condition. The final interview format was concluded after the pilot testing of the questionnaire. Patients records data were collected from their records using a specially prepared form.",
+                "cite_spans": [
+                    {
+                        "start": 123,
+                        "end": 127,
+                        "text": "[25,",
+                        "ref_id": "BIBREF24"
+                    },
+                    {
+                        "start": 128,
+                        "end": 131,
+                        "text": "26]",
+                        "ref_id": "BIBREF25"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Collection of data",
+                "sec_num": null
+            },
+            {
+                "text": "Based on the two sets of diabetes management guidelines existing in Palestine: i.e., from the Ministry of Health (MoH) and the United Nation Relief Works Agency (UNRWA), we defined the \"proper time of testing\" as the presence of laboratory test results of HbA1c in the previous three months, last year's reports for lipid profile, kidney function tests, microalbuminuria, a report of an eye examination by an ophthalmologist, and an ECG report.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Statistical analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Total agreement, over-and under-reporting were calculated depending on patients responses by \"Yes\" and \"No\" answers in the questionnaire in comparison to what was recorded in patients files.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Statistical analysis",
+                "sec_num": null
+            },
+            {
+                "text": "The level of agreement for dichotomous \"proper time of testing\" and the reporting of signs of diabetes comorbids was calculated using the proportion of absolute agreement and beyond chance agreement using Cohen's kappa statistic (k). The benchmark for determining the closeness of the comparison for k was based on Landis and Koch (1977) [27] . In their scale, the strength of agreement was as follows: 0.00-0.20 (poor), 0.21-0.40 (fair), 0.41-0.60 (moderate), 0.61-0.80 (substantial), and 0.81-1.00 (almost perfect). The measurement of the presence of diabetes comorbids was also analyzed in a similar manner. All data were entered in a database and were analyzed by SPSS 20 (Statistical Package for the Social Sciences) for Windows.",
+                "cite_spans": [
+                    {
+                        "start": 315,
+                        "end": 337,
+                        "text": "Landis and Koch (1977)",
+                        "ref_id": "BIBREF26"
+                    },
+                    {
+                        "start": 338,
+                        "end": 342,
+                        "text": "[27]",
+                        "ref_id": "BIBREF26"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Statistical analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Separate binary logistic regression models were run separately for all tests and signs of diabetes comorbids. The variables: patients age, gender, marital status, educational level, center location, center supervising body, and number of years since diagnosis were entered in these models. Each variable used in the study was examined for its effect on each model. Variables were omitted from the analyses if they were not significantly associated with agreement in tests, examinations performed or comorbids at a significant level of less than 0.05. However, the year of diagnosis was excluded since it weakened the fitness of all models: the Hosmer and Lemeshow Test.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Statistical analysis",
+                "sec_num": null
+            },
+            {
+                "text": "The characteristics of the cohort are described in Figure 1 . Of the 882 participants, 40% were in the 20 to 39 year age group, 5% were less than 20 years of age, and 87% had been educated to school level. In Table 1 , about 70% of the study sample had been diagnosed with diabetes for five years or more, and about 73% of them reported having a family history of diabetes. Eighty patients did not know their type of diabetes and it was not stated in their medical records. Of them, 113 (14%) were diabetes type one; 46 of these patients were below the age of 20. Compared to what is recorded in patients files, the proportion of observed agreement for laboratory testing was low (36.6% to 78%) versus the observed agreement for signs of diabetes comorbids (52% to 91.6%) (Table 2 ). According to Landis and Koch's scale the strength of these observed agreements for performing testing at the proper time ranged from fair to substantial. However, agreement of poor to fair strength (k: 0.06 to 0.28) was shown for testing at the proper timing. The poorest agreement was seen for annual testing of microalbuminuria (k: 0.06, total agreement 36.6%) (Table 2 ).",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 58,
+                        "end": 59,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    },
+                    {
+                        "start": 215,
+                        "end": 216,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    },
+                    {
+                        "start": 779,
+                        "end": 780,
+                        "text": "2",
+                        "ref_id": "TABREF1"
+                    },
+                    {
+                        "start": 1154,
+                        "end": 1155,
+                        "text": "2",
+                        "ref_id": "TABREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Results",
+                "sec_num": null
+            },
+            {
+                "text": "The agreement of proper time of testing for HbA1c in the previous three months was 73.3% (k: 0.21) and was 73.1% (k: 0.27) for having an ECG in the previous year. Lipid profiling in the previous year had similar agreement (78%), but lower kappa (0.14) (Table 2 ). For comorbids, the strength of observed agreement was moderate to almost perfect, but the strength of beyond chance agreement was poor to substantial (0.10 to 0.70). The strongest was for having a hypoglycemic event in the previous year (k: 0.70) (Table 2 and Figure 2 ). The associations of clinic location, clinic ownership and cohort characteristics with the strength of agreement between the survey and the data collected from patients medical records are shown in Figures 3 and 4 . The location of the clinic in the north and middle regions showed stronger agreement between the two sources of information than for the south for HbA1c, lipid profiling, eye examination, and kidney function testing, but not for others (Figure 3 ). Similarly, eye problems, kidney problems, heart failure, hypertension and hypoglycemia had doubled agreement in clinics in the north and middle regions compared with the south, but not for extreme numbness (Figure 4 ).",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 259,
+                        "end": 260,
+                        "text": "2",
+                        "ref_id": "TABREF1"
+                    },
+                    {
+                        "start": 518,
+                        "end": 519,
+                        "text": "2",
+                        "ref_id": "TABREF1"
+                    },
+                    {
+                        "start": 531,
+                        "end": 532,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    },
+                    {
+                        "start": 741,
+                        "end": 742,
+                        "text": "3",
+                        "ref_id": "FIGREF2"
+                    },
+                    {
+                        "start": 747,
+                        "end": 748,
+                        "text": "4",
+                        "ref_id": "FIGREF3"
+                    },
+                    {
+                        "start": 995,
+                        "end": 996,
+                        "text": "3",
+                        "ref_id": "FIGREF2"
+                    },
+                    {
+                        "start": 1214,
+                        "end": 1215,
+                        "text": "4",
+                        "ref_id": "FIGREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Results",
+                "sec_num": null
+            },
+            {
+                "text": "Ownership of the clinic by MoH and UNRWA showed higher agreement between the two sources of information for lipid profiling, having micro-albumin testing and proper timing of ECG testing in the previous year, but not for HbA1c or kidney function testing (Table 2 ). This finding was inversely associated for most diabetes comorbids, where NGO patients reported more agreement in general, but similar agreement was found between MoH and UNRWA patient's reports. However, being educated for more than 12 years showed higher agreement between self-reported proper time of testing for lipid profile, kidney function testing, but not for HbA1c (Figure 3 ). Patient's gender, marital status, and patient's age did not show any significant association with the proper time of testing.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 261,
+                        "end": 262,
+                        "text": "2",
+                        "ref_id": "TABREF1"
+                    },
+                    {
+                        "start": 647,
+                        "end": 648,
+                        "text": "3",
+                        "ref_id": "FIGREF2"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Results",
+                "sec_num": null
+            },
+            {
+                "text": "Figure 4 shows that younger, female and highly educated patients showed better agreement in reporting most comorbids compared with older, male and less educated patients. Marital status and clinic ownership did not have any significant agreement with any cormobid. * Reference category: Clinic location in the South, ownership NGO, educational level >12 years \u2020 Hosmer and Lemeshow Test was not significant for all testing. \u2020 \u2020 Agreement /disagreement includes all responses from self-report and medical records data (e.g., agreement =\"Yes/ Yes\" and \"No/No\" and disagreement =\"No/Yes\" and \"Yes/No\"). \u2020 \u2020 The variables of place of residence and date of registration as a diabetic were omitted from the analyses because they were not significantly associated with agreement between the two sources of data at p>0.05 and did not contribute to the overall model. * Reference category: clinic location in the South, female gender, educational level >12 years \u2020 Hosmer and Lemeshow Test were not significant for all testing. \u2020 \u2020 Agreement /disagreement includes all responses from self-report and medical records data (e.g., agreement =\"Yes/ Yes\" and \"No/No\" and disagreement =\"No/Yes\" and \"Yes/No\"). \u2020 \u2020 The variables of place of residence and date of registration as a diabetic were omitted from the analyses because they were not significantly associated with agreement between the two sources of data at p>0.05 and did not contribute to the overall model.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 7,
+                        "end": 8,
+                        "text": "4",
+                        "ref_id": "FIGREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Results",
+                "sec_num": null
+            },
+            {
+                "text": "There is growing interest globally in measuring the performance and quality of care for non-communicable diseases using data collected from medical records. However, this source of information may have a certain level of bias. Therefore, the American Diabetes Association, in its Education Recognition Program (ERP), added patient surveys as another source of health information that can support the primary source of medical records [28] . This study is the first of its kind in Palestine. It evaluates the quality of care of diabetes treatment using patient's medical records, in addition to their own reports of certain indicators used for evaluation. The results of this research demonstrated substantial differences between information obtained by self-reporting and that obtained by a review of patient's medical records.",
+                "cite_spans": [
+                    {
+                        "start": 434,
+                        "end": 438,
+                        "text": "[28]",
+                        "ref_id": "BIBREF27"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "In this study, a questionnaire-based survey showed low agreement between patients self-reports and what was stated in their medical records for the \"proper time of testing\" of microalbuminuria and lipid profiling, but was moderate for HbA1c, kidney function testing and ECG examination. Agreement was higher for self-reports of the diabetes comorbids of heart failure, hypertension and hypoglycemia, and was moderate for retinopathy, nephropathy, and diabetic foot. There was very low agreement for neuropathy. Despite these agreement coefficients, the limits of agreement remained considerable for all reported measures and illustrated that agreement between self-reporting and medical records is substantially low.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "Overall, the reliability of diabetes follow-up indicators in this study varied from that seen in Western countries. In a Swiss community based survey, reported HbA1c measurement in the previous year was highly consistent with physicians reports (Cohen's kappa was 0.94) [21] . This difference could be due to the fact that, according to the Palestinian diabetes guidelines, HbA1c is recommended to be measured every three months. More than half of our study patients had been advised to measure HbA1c test in the previous year, but of those who remembered the last time they had undergone this test, 98% (452 patients) had undergone it in the previous year and 52% in the previous three months.",
+                "cite_spans": [
+                    {
+                        "start": 270,
+                        "end": 274,
+                        "text": "[21]",
+                        "ref_id": "BIBREF20"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "Non-response in following the physicians referral for this test may explain low reliability of the HbA1c test. Also, several patients may lack the information or knowledge to recognize if HbA1c had been performed or not. Patients attending the PHC clinics in the south region of the West Bank were shown to have the lowest agreement between self-report and medical records. This might suggest differences in health education for patients attending PHC in the various areas of the West Bank, or variations in the process of treatment for diabetic patients in these areas.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "The overall annual self-report of eye examination and medical records in the TRIAD USA study was fair (Cohen's kappa k=0.25) [19] . However, agreement was moderate (k=0.37) in the Minnesota-USA study [20] , in which findings demonstrated more over-reporting than underreporting of eye examinations by patients. This study found similar findings when comparing self-reports of an eye examination during the previous year with reported referral for eye examination (k=0.20). Also, moderate agreement was found when comparing self-reports of eye problems with a diagnosis of retinopathy in patient's medical records (k=0.34). Referral for an eye examination was more under-reported (37%), but was over-reported (30.5%) in relation to eye problems when compared with records of retinopathy diagnosis. This might indicate that patients were referred, but did not undergo the eye examination since it is not covered by their health insurance; or patients may be examined by an ophthalmologist, but their examination results are not in their records. Another possible explanation is the physician factor, where a physician obtains an eye examination report without telling the patient their results. Older age groups reported more eye examinations and those followed up in NGOs clinics had much fewer eye examinations than those registered in UNRWA and MoH clinics, which suggests better health services. Agreement was shown to be strongest in the north compared to other regions.",
+                "cite_spans": [
+                    {
+                        "start": 125,
+                        "end": 129,
+                        "text": "[19]",
+                        "ref_id": "BIBREF18"
+                    },
+                    {
+                        "start": 200,
+                        "end": 204,
+                        "text": "[20]",
+                        "ref_id": "BIBREF19"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "High agreement was apparent between self-reports and medical records for heart failure, hypertension and hypoglycemia (Cohen's kappa >0.60). This could be justified by good recall and understanding of the nature and effect of these illnesses. Patient age was a significant factor in determining the comparison between self-reports records data of these comorbids. Also, such comorbids are very significant for those patients and are followed up thoroughly by physicians due to their ongoing effects on patient health. This may also be true for the moderate agreement morbidities: kidney problems and foot ulcers. Kidney function testing was over-reported by 14% of patients and was of low kappa (0.28) and microalbuminurea was over-reported by 61% of them (k=0.06). Also, 19% of patients reported having an ECG test, but the results were not present in their records; this also applied to lipid profiling. Therefore, these findings indicate that those patients might lack information about these tests, or the results of these tests are not recorded in their records. These results are consistent with the Swiss study that showed low Cohen's kappa (k \u2264 0.50) for foot examination, but high for blood pressure (k=0.94). Collet and colleagues justified this by the possible physician factors that affect the presence of reports in patients' medical records and lead to bias such as under-reporting [21] . This may be a serious problem in poorly developed health systems, such as in Palestine where no electronic recording exists. In addition, we emphasize that physicians in PHC centers see a high number of patients daily, both in the UNRWA and MoH clinics. Such problems are of low priority in health systems where electronic records are in operation.",
+                "cite_spans": [
+                    {
+                        "start": 1396,
+                        "end": 1400,
+                        "text": "[21]",
+                        "ref_id": "BIBREF20"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "In this study, many patients may have more than one type of health insurance. For example, registered refugees have free UNRWA health insurance and public sector employees have governmental health insurance. This indicates that some patients in this study may have two types of insurance and can undergo examinations and consult physicians in two locations, leading to possible fragmentation in the follow up and treatment of these patients. Therefore, we asked interviewees about this possibility prior to interviewing them and verified if we had interviewed them previously. Examination reports may not be present in the patient file in the location where we collected the medical records data. This could apply to all tests and examination results in this study, leaving considerable potential for under-reporting of these examinations. As a result, health care providers should attempt to limit any duplication in the use of services and ensure that only one physician is responsible per patient in the treatment of diabetes.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "Another important issue raised by data collectors in this survey is that medical records were found to be inaccurate and discrepant in several clinics. This by itself may limit the use of medical records as a source for any decision regarding treatment or patient monitoring.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "This study provides a context for the measurement of the quality of care of patients with diabetes. Questionnaire based surveys are an importance tool in epidemiology and public health research. Although there may be a certain degree of bias in this quality of care assessment tool since some of these measurements may be misleading, it remains an inexpensive tool for such assessments.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "In this study we used the concept of reproducibility, i.e., reliability and agreement, as suggested by de Vet et al. [29] . However, there was an apparent discrepancy between agreement and the reliability measures of most tests and comorbids. The reasons for these discrepancies were discussed previously in detail [20, 21] .",
+                "cite_spans": [
+                    {
+                        "start": 117,
+                        "end": 121,
+                        "text": "[29]",
+                        "ref_id": "BIBREF28"
+                    },
+                    {
+                        "start": 315,
+                        "end": 319,
+                        "text": "[20,",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 320,
+                        "end": 323,
+                        "text": "21]",
+                        "ref_id": "BIBREF20"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "In conclusion, an evaluation of the quality of care in Palestine should be made with caution when using self-report measures and when extracting information from medical records that have been collated manually. Our findings may raise the awareness of health care professionals of which selfreported measurements they may rely on. However, both sources of information are useful for defining tools to monitor decision making. Depending solely on medical records as a source of information for monitoring, as shown in this study, may not give decision makers the full picture of the treatment process for diabetes. Therefore, development of an electronic health information system is required to monitor the treatment process, in parallel with the systematic involvement of patients in the evaluation process.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "Vol.11 No.5:526 2017",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "This article is available from: www.hsj.gr/archive.php",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "Vol.11 No.5:526 2017 \u00a9 Copyright iMedPub",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [
+            {
+                "text": "We would like to thank all the patients who participated in the study. We also thank the study team, Mrs. Ibtisam Titi and Mrs. Adan Awaratni from the Ministry of Health and Mrs. Maha Nahal from the Faculty of Health professions of Al Quds University for their professional management of the field work. We would like to thank Mrs. Karen Mann for the English editing of this articles.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Acknowledgment",
+                "sec_num": null
+            },
+            {
+                "text": "This work was supported by a grant from the Insulin Dependent Diabetes Trust (IDDT), Northampton, United Kingdom.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Funding",
+                "sec_num": null
+            },
+            {
+                "text": "None of the authors have any conflict of interest to declare.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conflict of Interest",
+                "sec_num": null
+            }
+        ],
+        "bib_entries": {
+            "BIBREF0": {
+                "ref_id": "b0",
+                "title": "Agreement between self-report questionnaires and medical record data was substantial for diabetes, hypertension, myocardial infarction and stroke but not for heart failure",
+                "authors": [
+                    {
+                        "first": "Y",
+                        "middle": [],
+                        "last": "Okura",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "L",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Urban",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Mahoney",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Jacobsen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Rodeheffer",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2004,
+                "venue": "J Clin Epidemiol",
+                "volume": "57",
+                "issue": "",
+                "pages": "1096--1103",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Okura Y, Urban LH, Mahoney DW, Jacobsen SJ, Rodeheffer RJ (2004) Agreement between self-report questionnaires and medical record data was substantial for diabetes, hypertension, myocardial infarction and stroke but not for heart failure. J Clin Epidemiol 57: 1096-1103.",
+                "links": null
+            },
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "Accuracy of self-reported diabetes, hypertension and hyperlipidemia in the adult Spanish population. DINO study findings",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Huerta",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Tormo",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Egea-Caparros",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Ortola-Devesa",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Navarro",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2009,
+                "venue": "Rev Esp Cardiol",
+                "volume": "62",
+                "issue": "",
+                "pages": "143--152",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Huerta JM, Tormo MJ, Egea-Caparros JM, Ortola-Devesa JB, Navarro C (2009) Accuracy of self-reported diabetes, hypertension and hyperlipidemia in the adult Spanish population. DINO study findings. Rev Esp Cardiol 62: 143-152.",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "Agreement between selfreported and routinely collected health-care utilization data among seniors",
+                "authors": [
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Raina",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "V",
+                        "middle": [],
+                        "last": "Torrance-Rynard",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Wong",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Woodward",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2002,
+                "venue": "Health Serv Res",
+                "volume": "37",
+                "issue": "",
+                "pages": "751--774",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Raina P, Torrance-Rynard V, Wong M, Woodward C (2002) Agreement between selfreported and routinely collected health-care utilization data among seniors. Health Serv Res 37: 751-774.",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "Ascertainment of chronic diseases using population health data: a comparison of health administrative data and patient selfreport",
+                "authors": [
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "Muggah",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "Graves",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Bennett",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Manuel",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2013,
+                "venue": "BMC Pub Health",
+                "volume": "13",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Muggah E, Graves E, Bennett C, Manuel DG (2013) Ascertainment of chronic diseases using population health data: a comparison of health administrative data and patient self- report. BMC Pub Health 13: 16.",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "Hypertension: Development of a prediction model to adjust self-reported hypertension prevalence at the community level",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Mentz",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Schulz",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Mukherjee",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Ragunathan",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Perkins",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2012,
+                "venue": "BMC Health Serv Res",
+                "volume": "12",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Mentz G, Schulz AJ, Mukherjee B, Ragunathan TE, Perkins DW, et al. (2012) Hypertension: Development of a prediction model to adjust self-reported hypertension prevalence at the community level. BMC Health Serv Res 12: 312.",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Validation of self-reported chronic conditions and health services in a managed care population",
+                "authors": [
+                    {
+                        "first": "L",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Martin",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Leff",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [],
+                        "last": "Calonge",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Garrett",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Nelson",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "Am J Prev Med",
+                "volume": "18",
+                "issue": "",
+                "pages": "215--218",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Martin LM, Leff M, Calonge N, Garrett C, Nelson DE (2000) Validation of self-reported chronic conditions and health services in a managed care population. Am J Prev Med 18: 215-218.",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "Medical records as sources of data on cardiovascular disease events in persons with diabetes",
+                "authors": [
+                    {
+                        "first": "B",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Klein",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Klein",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Mcbride",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "O"
+                        ],
+                        "last": "Reinke",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Knudtson",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2006,
+                "venue": "J Diabetes Complications",
+                "volume": "20",
+                "issue": "",
+                "pages": "224--227",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Klein BE, Klein R, McBride PE, Reinke JO, Knudtson MD (2006) Medical records as sources of data on cardiovascular disease events in persons with diabetes. J Diabetes Complications 20: 224-227.",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "Is patient self-report an adequate tool for monitoring cardiovascular conditions in patients with hypercholesterolemia?",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [],
+                        "last": "Englert",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Muller-Nordhorn",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Seewald",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [],
+                        "last": "Sonntag",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [],
+                        "last": "Voller",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2010,
+                "venue": "J Public Health",
+                "volume": "32",
+                "issue": "",
+                "pages": "387--394",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Englert H, Muller-Nordhorn J, Seewald S, Sonntag F, Voller H, et al. (2010) Is patient self-report an adequate tool for monitoring cardiovascular conditions in patients with hypercholesterolemia? J Public Health 32: 387-394.",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "Validity of selfreported cardiovascular disease events in comparison to medical record adjudication and a statewide hospital morbidity database: The AusDiab study",
+                "authors": [
+                    {
+                        "first": "E",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Barr",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Tonkin",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Welborn",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Shaw",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2009,
+                "venue": "Intern Med J",
+                "volume": "39",
+                "issue": "",
+                "pages": "49--53",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Barr EL, Tonkin AM, Welborn TA, Shaw JE (2009) Validity of self- reported cardiovascular disease events in comparison to medical record adjudication and a statewide hospital morbidity database: The AusDiab study. Intern Med J 39: 49-53.",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "Agreement of self-reported comorbid conditions with medical and physician reports varied by disease among endstage renal disease patients",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Merkin",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [],
+                        "last": "Cavanaugh",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Longenecker",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Fink",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Levey",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2007,
+                "venue": "J Clin Epidemiol",
+                "volume": "60",
+                "issue": "",
+                "pages": "634--642",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Merkin SS, Cavanaugh K, Longenecker JC, Fink NE, Levey AS, et al. (2007) Agreement of self-reported comorbid conditions with medical and physician reports varied by disease among end- stage renal disease patients. J Clin Epidemiol 60: 634-642.",
+                "links": null
+            },
+            "BIBREF10": {
+                "ref_id": "b10",
+                "title": "Recall bias in epidemiologic studies",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Coughlin",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1990,
+                "venue": "J Clin Epidemiol",
+                "volume": "43",
+                "issue": "",
+                "pages": "87--91",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Coughlin SS (1990) Recall bias in epidemiologic studies. J Clin Epidemiol 43: 87-91.",
+                "links": null
+            },
+            "BIBREF11": {
+                "ref_id": "b11",
+                "title": "Agreement between questionnaire data and medical records of chronic diseases in middle-aged and elderly Finnish men and women",
+                "authors": [
+                    {
+                        "first": "N",
+                        "middle": [],
+                        "last": "Haapanen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Miilunpalo",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Pasanen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Oja",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Vuori",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1997,
+                "venue": "Am J Epidemiol",
+                "volume": "145",
+                "issue": "",
+                "pages": "762--769",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Haapanen N, Miilunpalo S, Pasanen M, Oja P, Vuori I (1997) Agreement between questionnaire data and medical records of chronic diseases in middle-aged and elderly Finnish men and women. Am J Epidemiol 145: 762-769.",
+                "links": null
+            },
+            "BIBREF12": {
+                "ref_id": "b12",
+                "title": "Diabetic foot care: Self-reported knowledge and practice among patients attending three tertiary hospital in Nigeria",
+                "authors": [
+                    {
+                        "first": "O",
+                        "middle": [
+                            "O"
+                        ],
+                        "last": "Desalu",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [
+                            "K"
+                        ],
+                        "last": "Salawu",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "K"
+                        ],
+                        "last": "Jimoh",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "O"
+                        ],
+                        "last": "Adekoya",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "O",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Busari",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2011,
+                "venue": "Ghana Med J",
+                "volume": "45",
+                "issue": "",
+                "pages": "60--65",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Desalu OO, Salawu FK, Jimoh AK, Adekoya AO, Busari OA, et al. (2011) Diabetic foot care: Self-reported knowledge and practice among patients attending three tertiary hospital in Nigeria. Ghana Med J 45: 60-65.",
+                "links": null
+            },
+            "BIBREF13": {
+                "ref_id": "b13",
+                "title": "Diabetes mellitus and its correlates in an Iranian adult population",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Golozar",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [],
+                        "last": "Khademi",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [],
+                        "last": "Kamangar",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [],
+                        "last": "Poutschi",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [],
+                        "last": "Islami",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2011,
+                "venue": "PLoS One",
+                "volume": "6",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Golozar A, Khademi H, Kamangar F, Poutschi H, Islami F, et al. (2011) Diabetes mellitus and its correlates in an Iranian adult population. PLoS One 6: e26725.",
+                "links": null
+            },
+            "BIBREF14": {
+                "ref_id": "b14",
+                "title": "Chronic diseases in elderly men: underreporting and underdiagnosis",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Frost",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [],
+                        "last": "Wraae",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Gudex",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Nielsen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [],
+                        "last": "Brixen",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2012,
+                "venue": "Age Ageing",
+                "volume": "41",
+                "issue": "",
+                "pages": "177--183",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Frost M, Wraae K, Gudex C, Nielsen T, Brixen K, et al. (2012) Chronic diseases in elderly men: underreporting and underdiagnosis. Age Ageing 41: 177-183.",
+                "links": null
+            },
+            "BIBREF15": {
+                "ref_id": "b15",
+                "title": "How often do we ask about erectile dysfunction in the diabetes review clinic? Development of a neuropathy screening tool",
+                "authors": [
+                    {
+                        "first": "P",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Grant",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Lipscomb",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2009,
+                "venue": "Acta Diabetol",
+                "volume": "46",
+                "issue": "",
+                "pages": "285--290",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Grant PS, Lipscomb D (2009) How often do we ask about erectile dysfunction in the diabetes review clinic? Development of a neuropathy screening tool. Acta Diabetol 46: 285-290.",
+                "links": null
+            },
+            "BIBREF16": {
+                "ref_id": "b16",
+                "title": "Self-reported diabetic complications and 7-year mortality in Mexican American elders. Findings from community-based study of five Southwestern states",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Otiniano",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Markides",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [],
+                        "last": "Ottenbacher",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "L",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Ray",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "X",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Du",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2003,
+                "venue": "J Diabetes Complications",
+                "volume": "17",
+                "issue": "",
+                "pages": "243--248",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Otiniano ME, Markides KS, Ottenbacher K, Ray LA, Du XL (2003) Self-reported diabetic complications and 7-year mortality in Mexican American elders. Findings from community-based study of five Southwestern states. J Diabetes Complications 17: 243-248.",
+                "links": null
+            },
+            "BIBREF17": {
+                "ref_id": "b17",
+                "title": "Measuring clinical performance: comparison and validity of telephone survey and administrative data",
+                "authors": [
+                    {
+                        "first": "B",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Thompson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "O'",
+                        "middle": [],
+                        "last": "Connor",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Boyle",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Hindmarsh",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Salem",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [],
+                        "last": "",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2001,
+                "venue": "Health Serv Res",
+                "volume": "36",
+                "issue": "",
+                "pages": "813--825",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Thompson BL, O'Connor P, Boyle R, Hindmarsh M, Salem N, et al. (2001) Measuring clinical performance: comparison and validity of telephone survey and administrative data. Health Serv Res 36: 813-825.",
+                "links": null
+            },
+            "BIBREF18": {
+                "ref_id": "b18",
+                "title": "Agreement between self-reports and medical records was only fair in a cross-sectional study of performance of annual eye examinations among adults with diabetes in managed care",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Beckles",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "F"
+                        ],
+                        "last": "Williamson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "F"
+                        ],
+                        "last": "Brown",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Gregg",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Karter",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2007,
+                "venue": "Med Care",
+                "volume": "45",
+                "issue": "",
+                "pages": "876--883",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Beckles GL, Williamson DF, Brown AF, Gregg EW, Karter AJ, et al. (2007) Agreement between self-reports and medical records was only fair in a cross-sectional study of performance of annual eye examinations among adults with diabetes in managed care. Med Care 45: 876-883.",
+                "links": null
+            },
+            "BIBREF19": {
+                "ref_id": "b19",
+                "title": "The validity of self-reported diabetes quality of care measures",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Fowles",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [],
+                        "last": "Rosheim",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Fowler",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Craft",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "L",
+                        "middle": [],
+                        "last": "Arrichiello",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1999,
+                "venue": "Int J Qual Health Care",
+                "volume": "11",
+                "issue": "",
+                "pages": "407--412",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Fowles JB, Rosheim K, Fowler EJ, Craft C, Arrichiello L (1999) The validity of self-reported diabetes quality of care measures. Int J Qual Health Care 11: 407-412.",
+                "links": null
+            },
+            "BIBREF20": {
+                "ref_id": "b20",
+                "title": "Reproducibility of diabetes quality of care indicators as reported by patients and physicians",
+                "authors": [
+                    {
+                        "first": "T",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Collet",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Taff",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Bordet",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Burnand",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Peytremann-Bridevaux",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2014,
+                "venue": "The European J Pub Health",
+                "volume": "24",
+                "issue": "",
+                "pages": "1004--1009",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Collet TH, Taff P, Bordet J, Burnand B, Peytremann-Bridevaux I (2014) Reproducibility of diabetes quality of care indicators as reported by patients and physicians. The European J Pub Health 24: 1004-1009.",
+                "links": null
+            },
+            "BIBREF21": {
+                "ref_id": "b21",
+                "title": "Diabetes mellitus in an urban Palestinian population: prevalence and associated factors",
+                "authors": [
+                    {
+                        "first": "Abdul-Rahim",
+                        "middle": [],
+                        "last": "Hf",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Husseini",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Giacaman",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Jervell",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "Bjertness",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2001,
+                "venue": "East Mediterr Health J",
+                "volume": "7",
+                "issue": "",
+                "pages": "67--78",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Abdul-Rahim HF, Husseini A, Giacaman R, Jervell J, Bjertness E (2001) Diabetes mellitus in an urban Palestinian population: prevalence and associated factors. East Mediterr Health J 7: 67-78.",
+                "links": null
+            },
+            "BIBREF22": {
+                "ref_id": "b22",
+                "title": "Prevalence of diabetes mellitus and impaired glucose tolerance in a rural Palestinian population",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Husseini",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [],
+                        "last": "Abdul-Rahim",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [],
+                        "last": "Awartani",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Jervell",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "Bjertness",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "East Mediterr Health J",
+                "volume": "6",
+                "issue": "",
+                "pages": "1039--1045",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Husseini A, Abdul-Rahim H, Awartani F, Jervell J, Bjertness E (2000) Prevalence of diabetes mellitus and impaired glucose tolerance in a rural Palestinian population. East Mediterr Health J 6: 1039-1045.",
+                "links": null
+            },
+            "BIBREF23": {
+                "ref_id": "b23",
+                "title": "Compliance with and knowledge about diabetes guidelines among physicians and nurses in Palestine",
+                "authors": [
+                    {
+                        "first": "N",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Sharif",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Samara",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Titi",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Awartani",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2016,
+                "venue": "East Mediterr Health J",
+                "volume": "21",
+                "issue": "",
+                "pages": "791--802",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Sharif NE, Samara I, Titi I, Awartani A (2016) Compliance with and knowledge about diabetes guidelines among physicians and nurses in Palestine. East Mediterr Health J 21: 791-802.",
+                "links": null
+            },
+            "BIBREF24": {
+                "ref_id": "b24",
+                "title": "Patient and physician perspectives regarding treatment of diabetes: compliance with practice guidelines",
+                "authors": [
+                    {
+                        "first": "F",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Lawler",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [],
+                        "last": "Viviani",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1997,
+                "venue": "J Fam Pract",
+                "volume": "44",
+                "issue": "",
+                "pages": "369--373",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lawler FH, Viviani N (1997) Patient and physician perspectives regarding treatment of diabetes: compliance with practice guidelines. J Fam Pract 44: 369-373.",
+                "links": null
+            },
+            "BIBREF25": {
+                "ref_id": "b25",
+                "title": "Guidelines for type 2 diabetes in Estonia knowledge, attitudes and self-reported behaviors among general practitioners",
+                "authors": [
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Oja",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2005,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Oja I (2005) Guidelines for type 2 diabetes in Estonia knowledge, attitudes and self-reported behaviors among general practitioners. Master of Public Health dissertation. Nordic School of Public Health, Sweden.",
+                "links": null
+            },
+            "BIBREF26": {
+                "ref_id": "b26",
+                "title": "The measurement of observer agreement for categorical data",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Landis",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Koch",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1977,
+                "venue": "Biometrics",
+                "volume": "33",
+                "issue": "",
+                "pages": "159--174",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Landis JR, Koch GG (1977) The measurement of observer agreement for categorical data. Biometrics 33: 159-174.",
+                "links": null
+            },
+            "BIBREF27": {
+                "ref_id": "b27",
+                "title": "Standards of medical care in diabetes 2014",
+                "authors": [],
+                "year": 2014,
+                "venue": "Diabetes Care",
+                "volume": "37",
+                "issue": "",
+                "pages": "14--S80",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "American Diabetes Association (2014) Standards of medical care in diabetes 2014. Diabetes Care 37: S14-S80.",
+                "links": null
+            },
+            "BIBREF28": {
+                "ref_id": "b28",
+                "title": "When to use agreement versus reliability measures",
+                "authors": [
+                    {
+                        "first": "De",
+                        "middle": [],
+                        "last": "Vet",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Terwee",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Knol",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Bouter",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "L",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2016,
+                "venue": "J Clin Epidemiol",
+                "volume": "59",
+                "issue": "",
+                "pages": "1033--1039",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "De Vet HC, Terwee CB, Knol DL, Bouter LM (2016) When to use agreement versus reliability measures. J Clin Epidemiol 59: 1033-1039.",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "fig_num": "1",
+                "num": null,
+                "uris": null,
+                "text": "Figure 1 Cohort characteristics (N=882) attending a PHC in the West Bank.",
+                "type_str": "figure"
+            },
+            "FIGREF1": {
+                "fig_num": "2",
+                "num": null,
+                "uris": null,
+                "text": "Figure 2 Frequencies ** between survey responses versus data in patients records.",
+                "type_str": "figure"
+            },
+            "FIGREF2": {
+                "fig_num": "3",
+                "num": null,
+                "uris": null,
+                "text": "Figure 3 Proper timing of testing logistic regression results for agreement between the patients recorded data versus survey responses.",
+                "type_str": "figure"
+            },
+            "FIGREF3": {
+                "fig_num": "4",
+                "num": null,
+                "uris": null,
+                "text": "Figure 4 Comorbids logistic regression results for agreement/disagreement in comparing recorded data in patient's records versus survey responses.",
+                "type_str": "figure"
+            },
+            "TABREF0": {
+                "html": null,
+                "num": null,
+                "text": "Cohort diabetes characteristics (N=882) attending PHC clinics/centers in the West Bank.",
+                "content": "<table><tr><td/><td/><td>N</td><td>%</td></tr><tr><td/><td/><td/><td>29.50</td></tr><tr><td/><td>&lt;5</td><td>255</td><td>%</td></tr><tr><td/><td/><td/><td>37.90</td></tr><tr><td>Registered as diabetic</td><td>05-Sep</td><td>328</td><td>%</td></tr><tr><td/><td/><td/><td>23.20</td></tr><tr><td/><td>Oct-14</td><td>201</td><td>%</td></tr><tr><td/><td>\u2265 15</td><td>81</td><td>9.40%</td></tr><tr><td/><td/><td/><td>73.40</td></tr><tr><td/><td>Positive</td><td>636</td><td>%</td></tr><tr><td>Family history of diabetes</td><td/><td/><td>26.60</td></tr><tr><td/><td>Negative</td><td>231</td><td>%</td></tr><tr><td/><td/><td/><td>44.80</td></tr><tr><td/><td>Tablet</td><td>395</td><td>%</td></tr><tr><td/><td>Tablet</td><td>plus</td><td>18.00</td></tr><tr><td>Patient medical regime</td><td>insulin</td><td>159</td><td>%</td></tr><tr><td/><td/><td/><td>35.30</td></tr><tr><td/><td>Insulin</td><td>311</td><td>%</td></tr><tr><td/><td>Diet only</td><td>16</td><td>1.80%</td></tr></table>",
+                "type_str": "table"
+            },
+            "TABREF1": {
+                "html": null,
+                "num": null,
+                "text": "Summary of total agreement and disagreement of the \"Proper time of testing\".",
+                "content": "<table><tr><td/><td>Total</td><td>Over</td><td>Under</td></tr><tr><td/><td>Agreement</td><td>reporting</td><td>Reporting</td></tr><tr><td>HbA1c</td><td>73.30%</td><td>8.90%</td><td>17.90%</td></tr><tr><td>Lipid profile</td><td>78.10%</td><td>16.10%</td><td>5.80%</td></tr><tr><td>Kidney function test</td><td>76.40%</td><td>14.20%</td><td>9.40%</td></tr><tr><td>Microalbuminuria</td><td>36.60%</td><td>61%</td><td>2.40%</td></tr><tr><td>ECG</td><td>73.10%</td><td>18.90%</td><td>8.00%</td></tr><tr><td>Eye examination</td><td>59.50%</td><td>3.40%</td><td>37%</td></tr><tr><td>Retinopathy</td><td>68.40%</td><td>30.50%</td><td>1.20%</td></tr><tr><td>Neuropathy</td><td>52.00%</td><td>46.70%</td><td>1.40%</td></tr><tr><td>Nephropathy</td><td>91.50%</td><td>6.80%</td><td>4.00%</td></tr></table>",
+                "type_str": "table"
+            }
+        }
+    }
+}
