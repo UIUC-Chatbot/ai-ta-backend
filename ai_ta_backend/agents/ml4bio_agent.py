@@ -3,7 +3,7 @@ import os
 import platform
 
 from langchain import hub
-from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain_community.chat_models import AzureChatOpenAI, ChatOpenAI
 from langchain_experimental.plan_and_execute import (
     PlanAndExecute,
     load_agent_executor,
@@ -26,6 +26,7 @@ def get_user_info_string():
 class WorkflowAgent:
 
   def __init__(self, langsmith_run_id):
+    print("PlannerAndExecute agent initialized")
     self.langsmith_run_id = langsmith_run_id
     if os.environ['OPENAI_API_TYPE'] == 'azure':
       self.llm = AzureChatOpenAI(temperature=0,

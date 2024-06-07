@@ -99,6 +99,7 @@ async def handle_issue_opened(payload, langsmith_run_id):
   number = payload.get('issue').get('number')
   issue: Issue = repo.get_issue(number=number)
   print("JUST BEFORE TRY CATCH")
+  issue_description = format_issue(issue)
 
   # {"issue": str(issue), 'number': number, "repo_name": repo_name, "langsmith_run_id": langsmith_run_id}
   # logging.info(f"New issue created: #{number}", metadata)
@@ -127,13 +128,13 @@ async def handle_issue_opened(payload, langsmith_run_id):
     Solve the following github issue by following these steps: 
 Step 1: Access and Preparation
 Task: First use read_file to read any files in the repo {repo_name} https://github.com/KastanDay/ML4Bio-v2 that seem relevant. Read all data files.
-Action: Use the GitHub API to clone the necessary files into your workspace.
+Action: Use the GitHub API to read the files.
 Step 2: Environment Setup
 Task: Set up the R environment for DESeq2 analysis.
 Action: Install and load the DESeq2 package along with other necessary libraries like tidyverse. Use the command BiocManager::install("DESeq2") in R.
 Step 3: Data Loading and Preprocessing
-Task: Load the count data and the sample information (D.xlsx).
-Action: Ensure that the column names in the count data correspond to the sample names in D.xlsx.
+Task: Load the count data and the sample information (dseq_data.csv).
+Action: Ensure that the column names in the count data correspond to the sample names in dseq_data.csv.
 Step 4: DESeq2 Dataset Creation
 Task: Create a DESeq2 dataset.
 Action: Use DESeqDataSetFromMatrix, inputting the count data, sample information, and an appropriate design formula (e.g., ~ gender + infection + Time).
@@ -142,7 +143,7 @@ Task: Filter out low-count genes.
 Action: Apply a threshold to keep genes with a minimum count across a minimum number of samples.
 Step 6: Differential Expression Analysis
 Task: Run the DESeq2 analysis.
-Action: Perform the analysis using DESeq, which includes size factor estimation, dispersion estimation, model fitting, and the Wald test.
+Action: Install DESeq2 package from Bioconductor. Perform the analysis using DESeq, which includes size factor estimation, dispersion estimation, model fitting, and the Wald test.
 Step 7: Results Extraction and Visualization
 Task: Extract and visualize the results.
 Action:

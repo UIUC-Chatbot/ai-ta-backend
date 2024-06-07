@@ -65,7 +65,7 @@ def get_llm():
 class WorkflowAgent:
 
   def __init__(self, langsmith_run_id):
-    print("Langgraph v2 agent initialized")
+    print("Planner Replanner agent initialized")
     self.langsmith_run_id = langsmith_run_id
     self.llm = get_llm()
     self.tools = get_tools(langsmith_run_id)
