@@ -13,8 +13,8 @@ from langchain.tools import (ArxivQueryRun, PubmedQueryRun,
                              VectorStoreQATool, VectorStoreQAWithSourcesTool,
                              WikipediaQueryRun, WolframAlphaQueryRun)
 from langchain.tools.base import BaseTool
-from langchain.tools.playwright.utils import (create_async_playwright_browser,
-                                              create_sync_playwright_browser)
+# from langchain.tools.playwright.utils import (create_async_playwright_browser,
+#                                               create_sync_playwright_browser)
 from langchain.utilities.github import GitHubAPIWrapper
 
 from langchain.tools import BaseTool, StructuredTool
@@ -58,15 +58,15 @@ def get_tools(langsmith_run_id: str, sync=True):
   # ).get_tools()
 
   # WEB BROWSER
-  browser_toolkit = None
-  if sync:
-    sync_browser = create_sync_playwright_browser()
-    browser_toolkit = PlayWrightBrowserToolkit.from_browser(sync_browser=sync_browser)
-  else:
-    # TODO async is work in progress... not functional yet.
-    async_browser = create_async_playwright_browser()
-    browser_toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=async_browser)
-  browser_tools = browser_toolkit.get_tools()
+  # browser_toolkit = None
+  # if sync:
+  #   sync_browser = create_sync_playwright_browser()
+  #   browser_toolkit = PlayWrightBrowserToolkit.from_browser(sync_browser=sync_browser)
+  # else:
+  #   # TODO async is work in progress... not functional yet.
+  #   async_browser = create_async_playwright_browser()
+  #   browser_toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=async_browser)
+  # browser_tools = browser_toolkit.get_tools()
 
   # HUMAN
   if os.environ['OPENAI_API_TYPE'] == 'azure':
@@ -96,7 +96,8 @@ def get_tools(langsmith_run_id: str, sync=True):
   # arxiv_tool = ArxivQueryRun()
 
   
-  tools: list[BaseTool] = browser_tools + github_tools + search + docs_tools + [e2b_code_execution_tool, e2b_shell_tool]
+  # Broken: Have to update imports: browser_tools
+  tools: list[BaseTool] = github_tools + search + docs_tools + [e2b_code_execution_tool, e2b_shell_tool]
   return tools
 
 ############# HELPERS ################
