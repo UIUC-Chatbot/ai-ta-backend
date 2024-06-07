@@ -1111,7 +1111,7 @@ class Ingest():
           courseDoc = response.data[0]
           del courseDoc['contexts']
           courseDoc['doc_groups'] = groups
-          url = "https://www.uiuc.chat/api/documentGroups"
+          url = "http://www.uiuc.chat/api/documentGroups"
           payload = {
               "action": "addDocumentsToDocGroup",
               "courseName": course_name,
