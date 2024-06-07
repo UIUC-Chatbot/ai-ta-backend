@@ -91,7 +91,6 @@ def handle_issue_opened(payload, langsmith_run_id):
   installation = gi.get_installations()[0]
   g = installation.get_github_for_installation()
 
-  print("After get instillation")
   logging.info("After get instillation")
 
   issue = payload['issue']

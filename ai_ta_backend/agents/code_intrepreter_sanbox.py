@@ -4,7 +4,8 @@ import uuid
 import termcolor
 import io
 from typing import Any, Optional, Tuple
-from e2b import CodeInterpreter, EnvVars, Sandbox
+# from e2b import CodeInterpreter, EnvVars, Sandbox
+from e2b import EnvVars, Sandbox
 
 class E2B_class():
   def __init__(self, langsmith_run_id: str, env_vars: Optional[EnvVars] = None):
@@ -60,36 +61,36 @@ class E2B_class():
     self.curr_terminal_output+=str(data)
     print(termcolor.colored(data, 'yellow', attrs=['bold']))
 
-def EXPERIMENTAL_run_simple_notebook(code, cwd: str = "", timeout: Optional[int] = None, env_vars: Optional[EnvVars] = None) -> Tuple[str, str, list[Any]]:
-  """
+# def EXPERIMENTAL_run_simple_notebook(code, cwd: str = "", timeout: Optional[int] = None, env_vars: Optional[EnvVars] = None) -> Tuple[str, str, list[Any]]:
+#   """
 
-  TBD if this is helpful; the one thing it uniquely does is grab matplotlib outputs. Simply, plt.show() becomes an "artifact" that can be downloaded.
+#   TBD if this is helpful; the one thing it uniquely does is grab matplotlib outputs. Simply, plt.show() becomes an "artifact" that can be downloaded.
 
-  Args:
-      code (_type_): _description_
-      timeout (Optional[int], optional): _description_. Defaults to None.
-      cwd (Optional[str], optional): _description_. Defaults to "".
-      env_vars (Optional[EnvVars], optional): _description_. Defaults to None.
+#   Args:
+#       code (_type_): _description_
+#       timeout (Optional[int], optional): _description_. Defaults to None.
+#       cwd (Optional[str], optional): _description_. Defaults to "".
+#       env_vars (Optional[EnvVars], optional): _description_. Defaults to None.
 
-  Returns:
-      Tuple[str, str, list[Any]]: _description_
-  """
+#   Returns:
+#       Tuple[str, str, list[Any]]: _description_
+#   """
 
-  # Don't use code intrepreter -- super limited, no shell access.
-  # sandbox = Sandbox(env_vars={"FOO": "Hello"})
-  sandbox = CodeInterpreter(env_vars={"FOO": "Hello"})
+#   # Don't use code intrepreter -- super limited, no shell access.
+#   # sandbox = Sandbox(env_vars={"FOO": "Hello"})
+#   sandbox = CodeInterpreter(env_vars={"FOO": "Hello"})
 
-  # sandbox.install_python_packages('ffmpeg')
-  # sandbox.install_system_packages('ffmpeg')
-  # with open("path/to/local/file", "rb") as f:
-  #   remote_path = sandbox.upload_file(f)  
+#   # sandbox.install_python_packages('ffmpeg')
+#   # sandbox.install_system_packages('ffmpeg')
+#   # with open("path/to/local/file", "rb") as f:
+#   #   remote_path = sandbox.upload_file(f)  
 
-  stdout, stderr, artifacts = sandbox.run_python(code, timeout=timeout, cwd=cwd, env_vars=env_vars)
+#   stdout, stderr, artifacts = sandbox.run_python(code, timeout=timeout, cwd=cwd, env_vars=env_vars)
 
-  artifact_files = []
-  for artifact in artifacts:
-    # Now you can save this file, send it to frontend, or anything else
-    artifact_files.append(artifact.download())
+#   artifact_files = []
+#   for artifact in artifacts:
+#     # Now you can save this file, send it to frontend, or anything else
+#     artifact_files.append(artifact.download())
 
-  sandbox.close()
-  return stdout, stderr, artifact_files
+#   sandbox.close()
+#   return stdout, stderr, artifact_files
