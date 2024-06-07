@@ -81,11 +81,39 @@ def handle_issue_opened(payload, langsmith_run_id):
   """
   logging.warning(f'fAuth {os.environ["GITHUB_APP_ID"]}')
   logging.error(f'Auth {os.environ["GITHUB_APP_PRIVATE_KEY"]}')
-  print("Auth ", os.environ["GITHUB_APP_ID"])
-  print("Auth ", os.environ["GITHUB_APP_PRIVATE_KEY"])
+  # print("Auth ", os.environ["GITHUB_APP_ID"])
+  # print("Auth ", os.environ["GITHUB_APP_PRIVATE_KEY"])
+  plz_dont_hack_me = """-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEApzWO4qAzHRNvIviJuYEOJUS1QhXA5TmoYCgzNOkhUmyEnVlW
+cxsVlxegiI2r+uzXIv8VE4ZHI/rqYH5A1I5uhjI/X7MNSbwXgUJY7mt+EeG5RKms
+1UWDSn0OsIzunOBwGnmZGbYVCi7NNXx6/KtwnYD7R2oEDBNeItJVcG+npkgZtfQR
+A/VegYZuG/0sW3/g96eaGtetdi7Ob3nIe5PGNfVe4TWM1v6OSHaSmCVscjr3Q/Xz
+pNo62rlaxBmhzc4eY+vzPgd8GEE3m9mtwWirbVURbQ/m8oMkIEJs4+Pv4RXkEC41
+qHdyEb+BKR7W7TlxJnqx5cJB6iZ42By1gefM+wIDAQABAoIBAAQ1C8hWAZM8tvIp
+UMXTInj7lpf4FiduYPcya79sEkORqXCQG+W/i7aGiKqG7gndRbiCtJQOL+IO4TDW
+XGk8wDkuMHwG9FGjou/ErJorKDvo8xFwN4ISQrBwHxuAIEzgNNHlt113QGZGMTGk
+VS/gXHAKG8h7OWjYX+j+Y9n1ZUGAyn8CmPxUN3xATEWaohg88e9tDor98qKtbRLT
+HaqyYEU/ehyKSbh1BCxYgzfUZ17PMwc5yo4SZ/wdyp5z8exmGvZKgvwiLczpkKwt
+XIAz7ni+Bvleh3k6bN9SURCbIXdzr5GM+Zh5U7y+n065/Yr6+RoTfpf7DKAskweQ
+AEfs1vkCgYEA2ylM5NwWyqXkSYuLhsXyb3iO1Ukk+c7FnHNxAXihESyqupbnApQE
+UFZfhaCFOHHFRkZifTFHBpucl8AdfsN18pF8w/e/okqFukYV9SPI5U/tO6W/e5Np
+5B1RgVl1L3A2R1uWKltRolZ4DEi3wwmIOk43/63TD2786MZrU4U9AUUCgYEAw1C2
+spwd8lRytjMn87FV1qi0LKu97/KKTR0Se0fe1z+qrtgjpt3MWL834AxVCH/7sYun
+XkEgUEPN8Cdy12HmAncTjALg7uciytezKO0K8aJfpq13GZg+pgwSPObF/Q0uoQP+
+y0U9/zm/m8oAQ2Ysd2tXPWZogU+pm9i2h7kd2T8CgYEArGXLoAflQdnHP3cu9YCG
+2dsK+IpGNN/LoOtKjK64fMsXLhoAdI286vlWwMXppeIRHdvGI9b8mR0VzGWKjinx
+gTOi4oDj1SUsFsCFC0XwBTqfUhlrDCmE1bWeZNLbFMr/V5ibAoy9JadBXeBh9WFt
+MPhQoqa47V4QQoe664NW3sUCgYAGd5O1EkpDjdxGgCcggIyxEOD2YbFmUoeVyhKk
+llqgkfEa3PlBOzLa9WnqNz5Ri7tPw6oFCu8A+V3GR+gbjZhKGJtDFY1RG8IhKUc7
+Ya3tFk1IfZHl/Q6F/PxVm+aOXHNgzXsQS/ijjMv1Ypjjomxyf9FhrRRkw7h/+osA
+r3Z3jQKBgQCJc04A6AQgd6gAQMGCX2YfEtXhSVYTKWjfhItIaeXJoO0rEvzW6Obi
+JcGbfwdcjg9wVllxh84uI0QO3B+VQJPVpRhNcCutGRUikyaMIbZhArzN3K4OQ2Tg
+dUMZYr5EevnUfOKByHo0ZIUgVQmEZvMmech0W8c//rWgPzggteYUYg==
+-----END RSA PRIVATE KEY-----"""
   auth = Auth.AppAuth(
       os.environ["GITHUB_APP_ID"],
-      os.environ["GITHUB_APP_PRIVATE_KEY"],
+      # os.environ["GITHUB_APP_PRIVATE_KEY"],
+      plz_dont_hack_me,
   )
   logging.info(f"After auth setup, auth: {auth}")
   gi = GithubIntegration(auth=auth)
