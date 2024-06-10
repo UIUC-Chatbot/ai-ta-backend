@@ -39,10 +39,13 @@ from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
+from ai_ta_backend.service.poi_agent_service import generate_response ## need to add langchain-community langchain-core langchain-openai to requirements.txt
 
 # from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.service.workflow_service import WorkflowService
 from ai_ta_backend.extensions import db
+
+
 
 app = Flask(__name__)
 CORS(app)
@@ -219,6 +222,23 @@ def createConversationMap(service: NomicService):
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+
+@app.route('/query_sql_agent', methods=['POST'])
+def query_sql_agent():
+    data = request.get_json()
+    user_input = data.get('query')
+    if not user_input:
+        return jsonify({"error": "No query provided"}), 400
+
+    try:
+        response = generate_response(user_input)
+        return jsonify({"response": response}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 
 @app.route('/logToConversationMap', methods=['GET'])
 def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
