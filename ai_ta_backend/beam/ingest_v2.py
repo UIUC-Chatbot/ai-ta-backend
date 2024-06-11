@@ -95,7 +95,6 @@ app = App("ingest_v2",
 # MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
 
-
 def loader():
   """
   The loader function will run once for each worker that starts up. https://docs.beam.cloud/deployment/loaders
@@ -107,9 +106,9 @@ def loader():
       url=os.getenv('QDRANT_URL'),
       api_key=os.getenv('QDRANT_API_KEY'),
   )
-
+  print("KEY: ", os.environ)
   vectorstore = Qdrant(client=qdrant_client,
-                       collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+                       collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
                        embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE,
                                                    openai_api_key=os.getenv('VLADS_OPENAI_KEY')))
 
@@ -1045,9 +1044,11 @@ class Ingest():
         return "Success"
 
       # adding chunk index to metadata for parent doc retrieval
+      print("GROUPS: ", kwargs.get('groups', ''))
       for i, context in enumerate(contexts):
         context.metadata['chunk_index'] = i
-
+        context.metadata['doc_groups'] = kwargs.get('groups', [])
+      
       oai = OpenAIAPIProcessor(
           input_prompts_list=input_texts,
           request_url='https://api.openai.com/v1/embeddings',
@@ -1069,6 +1070,7 @@ class Ingest():
       vectors: list[PointStruct] = []
       for context in contexts:
         # !DONE: Updated the payload so each key is top level (no more payload.metadata.course_name. Instead, use payload.course_name), great for creating indexes.
+        print("context.metadata: ", context.metadata)
         upload_metadata = {**context.metadata, "page_content": context.page_content}
         vectors.append(
             PointStruct(id=str(uuid.uuid4()), vector=embeddings_dict[context.page_content], payload=upload_metadata))
@@ -1098,32 +1100,51 @@ class Ingest():
       response = self.supabase_client.table(
           os.getenv('SUPABASE_DOCUMENTS_TABLE')).insert(document).execute()  # type: ignore
       print("Supabase response: ", response.data[0]['id'])
-      # add to Nomic document map
+
+      # need to update Supabase tables with doc group info
       if len(response.data) > 0:
         # get groups from kwargs
         groups = kwargs.get('groups', '')
         if groups:
-          print("GROUPS: ", groups)
-          course_name = contexts[0].metadata.get('course_name')
-          #log_to_document_map(course_name)
+          # call the supabase function to add the document to the group
+          data, count = self.supabase_client.rpc('add_documents_to_doc_group', {
+            "p_course_name": contexts[0].metadata.get('course_name'),
+            "p_s3_path": contexts[0].metadata.get('s3_path'),
+            "p_url": contexts[0].metadata.get('url'),
+            "p_readable_filename": contexts[0].metadata.get('readable_filename'),
+            "p_doc_groups": groups,
+          }).execute()
 
-          # add to doc groups code here
-          courseDoc = response.data[0]
-          del courseDoc['contexts']
-          courseDoc['doc_groups'] = groups
-          url = "http://www.uiuc.chat/api/documentGroups"
-          payload = {
-              "action": "addDocumentsToDocGroup",
-              "courseName": course_name,
-              "doc": courseDoc,
-              "docGroup": groups
-          }
-          headers = {
-              'Content-Type': 'application/json'
-          }
-          response = requests.post(url, headers=headers, data=json.dumps(payload))
-          print(response.text)
-          print("Adding to doc groups: ", payload)
+          if len(data) == 0:
+            print("Error in adding to doc groups")
+            raise ValueError("Error in adding to doc groups")
+
+      # add to Nomic document map
+      # if len(response.data) > 0:
+        # get groups from kwargs
+        # groups = kwargs.get('groups', '')
+        # if groups:
+        #   print("GROUPS: ", groups)
+        #   course_name = contexts[0].metadata.get('course_name')
+        #   #log_to_document_map(course_name)
+
+        #   # add to doc groups code here
+        #   courseDoc = response.data[0]
+        #   del courseDoc['contexts']
+        #   courseDoc['doc_groups'] = groups
+        #   url = "http://www.uiuc.chat/api/documentGroups"
+        #   payload = {
+        #       "action": "addDocumentsToDocGroup",
+        #       "courseName": course_name,
+        #       "doc": courseDoc,
+        #       "docGroup": groups
+        #   }
+        #   headers = {
+        #       'Content-Type': 'application/json'
+        #   }
+        #   response = requests.post(url, headers=headers, data=json.dumps(payload))
+        #   print(response.text)
+        #   print("Adding to doc groups: ", payload)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',

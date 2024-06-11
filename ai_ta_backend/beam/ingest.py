@@ -106,9 +106,9 @@ def loader():
       url=os.getenv('QDRANT_URL'),
       api_key=os.getenv('QDRANT_API_KEY'),
   )
-
+  print("KEY: ", os.environ)
   vectorstore = Qdrant(client=qdrant_client,
-                       collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+                       collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
                        embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE,
                                                    openai_api_key=os.getenv('VLADS_OPENAI_KEY')))
 
