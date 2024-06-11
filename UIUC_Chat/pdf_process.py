@@ -183,7 +183,7 @@ def parse_and_group_by_section(filepath):
 
     for key in sorted(valid_keys):
         section_text = grouped_texts[key]
-        section_title = grouped_titles.get(key, "misc")
+        section_title = grouped_titles.get(key, None)
         # section_page = grouped_pages.get(key, "Unknown")
         tokens = len(encoding.encode(section_text))
 
