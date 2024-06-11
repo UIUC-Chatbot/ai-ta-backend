@@ -131,3 +131,6 @@ class SQLDatabase:
   def getConversation(self, course_name: str, key: str, value: str):
     return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name",
                                                                                          course_name).execute()
+  
+  def getDisabledDocGroups(self, course_name: str):
+    return self.supabase_client.table("doc_groups").select("name").eq("course_name", course_name).eq("enabled", False).execute()
