@@ -75,7 +75,6 @@ def initialize_database(db_path):
     else:
         print("Database already exists. No changes made.")
 
-# authors_str = ', '.join(metadata['authors'])
 
 def insert_data(metadata: Dict, total_tokens: int, grouped_data: List[Dict], db_path: str = 'articles.db'):
     """
@@ -103,43 +102,30 @@ def insert_data(metadata: Dict, total_tokens: int, grouped_data: List[Dict], db_
 
     article_id = cur.lastrowid
     for section in grouped_data:
-        # print(section["tokens"], section["sec_num"], section["sec_title"])
         cur.execute('''
             INSERT INTO sections (num_tokens, Section_Num, Section_Title)
             VALUES (?, ?, ?)
         ''', (section["tokens"], section["sec_num"], section["sec_title"]))
         section_id = cur.lastrowid
 
-        if section["tokens"] > 8192:
-            chunks = section["chunk_text"]
-            for i, chunk in enumerate(chunks):
-                context_id = cur.lastrowid
-                chunk_tokens = section["chunk_tokens"][i]
-                context_with_title = f'Section {section["sec_num"]}: {section["sec_title"]}\n{section["text"]}'
-                embedding = get_embeddings(context_with_title)
-                embedding_json = json.dumps(embedding)
-                # print("Chunk:", chunk)
-                # print("Embedding:", embedding)
+        if section["tokens"] > 7000:
+            for text, token in zip(section["chunk_text"], section["chunk_tokens"]):
                 cur.execute('''
                     INSERT INTO contexts (text, Section_Num, Section_Title, num_tokens, `Embedding_nomic_1.5`, stop_reason)
                     VALUES (?, ?, ?, ?, ?, ?)
-                ''', (chunk, section["sec_num"], section["sec_title"], chunk_tokens, embedding_json, "Token limit"))
+                ''', (text, section["sec_num"], section["sec_title"], token, section["embedding"], "Token limit"))
                 context_id = cur.lastrowid
 
                 cur.execute('''
                     INSERT INTO sections_contexts (Section_ID, Context_ID)
                     VALUES (?, ?)
                 ''', (section_id, context_id))
-        
+
         else: 
-            context_with_title = f'Section {section["sec_num"]}: {section["sec_title"]}\n{section["text"]}'
-            # print(context_with_title)
-            embedding = get_embeddings(context_with_title)
-            embedding_json = json.dumps(embedding)
             cur.execute('''
                 INSERT INTO contexts (text, Section_Num, Section_Title, num_tokens, `Embedding_nomic_1.5`, stop_reason)
                 VALUES (?, ?, ?, ?, ?, ?)
-            ''', (section["text"], section["sec_num"], section["sec_title"], section["tokens"], embedding_json, "Section"))
+            ''', (section["text"], section["sec_num"], section["sec_title"], section["tokens"], section["embedding"], "Section"))
             context_id = cur.lastrowid
             cur.execute('''
                         INSERT INTO sections_contexts (Section_ID, Context_ID)

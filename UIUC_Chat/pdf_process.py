@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import argparse
+from embedding import get_embeddings
 import json
 import os
 import time
@@ -173,7 +174,7 @@ def parse_and_group_by_section(filepath):
 
     text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
         model_name="gpt-4",
-        chunk_size=8192,
+        chunk_size=7000,
         chunk_overlap=400,
     )
 
@@ -194,15 +195,27 @@ def parse_and_group_by_section(filepath):
                 "tokens": tokens,
                 # "page_num": section_page,
                 "chunk_text": [],
-                "chunk_tokens": []
+                "chunk_tokens": [],
+                "embedding": ""
             })
 
-        if tokens > 8192:
+        if tokens > 40:
             chunks = text_splitter.split_text(section_text)
             for i, chunk in enumerate(chunks):
                 chunk_tokens = len(encoding.encode(chunk))
                 result[-1]["chunk_text"].append(chunk)
                 result[-1]["chunk_tokens"].append(chunk_tokens)
+        else:
+            result[-1]["chunk_text"].append(section_text)
+            result[-1]["chunk_tokens"].append(tokens)
+            
+        
+        # print("start embedding")
+        for i, chunk in enumerate(result[-1]["chunk_text"]):
+            context_with_title = f'Section {result[-1]["sec_num"]}: {result[-1]["sec_title"]}\n{chunk}'
+            embedding = get_embeddings(context_with_title)
+            embedding_json = json.dumps(embedding)
+            result[-1]["embedding"] = embedding_json
 
     total_tokens = sum([entry["tokens"] for entry in result])
     avg_tokens_per_section = total_tokens / max(len(result), 1)

@@ -43,15 +43,16 @@ print('process done.')
 
 #   filepath = Path("/Users/jackhuang/Desktop/UIUC_Chat/allenai/output/2303.14186.json")
 metadata, grouped_data, all_sections, total_tokens, avg_tokens_per_section, max_tokens_per_section = parse_and_group_by_section(output_file.name)
-print("Metadata:", metadata)
-print("Number of tokens per section:")
-for section in grouped_data:
-    print(f"Section {section['sec_num']} ({section['sec_title']}): {section['tokens']} tokens")
-# print(f"Page number: {section['page_num']}")
-print("All sections:", json.dumps(all_sections, indent=2))
-print("Total tokens:", total_tokens)
-print("Average tokens per section:", avg_tokens_per_section)
-print("Max tokens per section:", max_tokens_per_section)
+print('parse done.')
+# print("Metadata:", metadata)
+# print("Number of tokens per section:")
+# for section in grouped_data:
+#     print(f"Section {section['sec_num']} ({section['sec_title']}): {section['tokens']} tokens")
+# # print(f"Page number: {section['page_num']}")
+# print("All sections:", json.dumps(all_sections, indent=2))
+# print("Total tokens:", total_tokens)
+# print("Average tokens per section:", avg_tokens_per_section)
+# print("Max tokens per section:", max_tokens_per_section)
 
 db_path = 'articles.db'
 initialize_database(db_path)
