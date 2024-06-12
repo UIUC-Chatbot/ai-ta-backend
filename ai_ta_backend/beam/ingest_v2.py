@@ -106,7 +106,9 @@ def loader():
       url=os.getenv('QDRANT_URL'),
       api_key=os.getenv('QDRANT_API_KEY'),
   )
-  print("KEY: ", os.environ)
+  print("URL: ", os.getenv('QDRANT_URL'))
+  print("KEY: ", os.getenv('QDRANT_API_KEY'))
+
   vectorstore = Qdrant(client=qdrant_client,
                        collection_name=os.getenv('QDRANT_COLLECTION_NAME'),
                        embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE,
@@ -189,7 +191,7 @@ def ingest_v2(**inputs: Dict[str, Any]):
 
   # First try
   success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-
+  
   # retries
   num_retires = 5
   for retry_num in range(1, num_retires):
@@ -1100,51 +1102,33 @@ class Ingest():
       response = self.supabase_client.table(
           os.getenv('SUPABASE_DOCUMENTS_TABLE')).insert(document).execute()  # type: ignore
       print("Supabase response: ", response.data[0]['id'])
-
+      
       # need to update Supabase tables with doc group info
       if len(response.data) > 0:
         # get groups from kwargs
         groups = kwargs.get('groups', '')
         if groups:
           # call the supabase function to add the document to the group
-          data, count = self.supabase_client.rpc('add_documents_to_doc_group', {
-            "p_course_name": contexts[0].metadata.get('course_name'),
-            "p_s3_path": contexts[0].metadata.get('s3_path'),
-            "p_url": contexts[0].metadata.get('url'),
-            "p_readable_filename": contexts[0].metadata.get('readable_filename'),
-            "p_doc_groups": groups,
-          }).execute()
+          if contexts[0].metadata.get('url'):
+            data, count = self.supabase_client.rpc('add_document_to_group', {
+              "p_course_name": contexts[0].metadata.get('course_name'),
+              "p_s3_path": contexts[0].metadata.get('s3_path'),
+              "p_url": contexts[0].metadata.get('url'),
+              "p_readable_filename": contexts[0].metadata.get('readable_filename'),
+              "p_doc_groups": groups,
+            }).execute()
+          else:
+            data, count = self.supabase_client.rpc('add_document_to_group_url', {
+              "p_course_name": contexts[0].metadata.get('course_name'),
+              "p_s3_path": contexts[0].metadata.get('s3_path'),
+              "p_url": contexts[0].metadata.get('url'),
+              "p_readable_filename": contexts[0].metadata.get('readable_filename'),
+              "p_doc_groups": groups,
+            }).execute()
 
           if len(data) == 0:
             print("Error in adding to doc groups")
             raise ValueError("Error in adding to doc groups")
-
-      # add to Nomic document map
-      # if len(response.data) > 0:
-        # get groups from kwargs
-        # groups = kwargs.get('groups', '')
-        # if groups:
-        #   print("GROUPS: ", groups)
-        #   course_name = contexts[0].metadata.get('course_name')
-        #   #log_to_document_map(course_name)
-
-        #   # add to doc groups code here
-        #   courseDoc = response.data[0]
-        #   del courseDoc['contexts']
-        #   courseDoc['doc_groups'] = groups
-        #   url = "http://www.uiuc.chat/api/documentGroups"
-        #   payload = {
-        #       "action": "addDocumentsToDocGroup",
-        #       "courseName": course_name,
-        #       "doc": courseDoc,
-        #       "docGroup": groups
-        #   }
-        #   headers = {
-        #       'Content-Type': 'application/json'
-        #   }
-        #   response = requests.post(url, headers=headers, data=json.dumps(payload))
-        #   print(response.text)
-        #   print("Adding to doc groups: ", payload)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
