@@ -1,11 +1,16 @@
 import requests
 import json
+from retry import retry
 
+@retry(tries=10, delay=.25)
 def get_embeddings(prompt, model="nomic-embed-text:v1.5", base_url="https://ollama.ncsa.ai/api/embeddings"):
-    # Define the payload
+
     payload = {
         "model": model,
-        "prompt": prompt
+        "prompt": prompt,
+        "options": {
+            "num_ctx": 8192
+        }
     }
 
     headers = {
@@ -16,6 +21,7 @@ def get_embeddings(prompt, model="nomic-embed-text:v1.5", base_url="https://olla
 
     if response.status_code == 200:
         return response.json()
+    # if response.status_code == 500:
     else:
         # Handle errors
         print(f"Error: {response.status_code}, {response.text}")

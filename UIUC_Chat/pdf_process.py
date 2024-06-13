@@ -199,7 +199,7 @@ def parse_and_group_by_section(filepath):
                 "embedding": ""
             })
 
-        if tokens > 40:
+        if tokens > 7000:
             chunks = text_splitter.split_text(section_text)
             for i, chunk in enumerate(chunks):
                 chunk_tokens = len(encoding.encode(chunk))
