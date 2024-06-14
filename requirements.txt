@@ -17,7 +17,7 @@ python-dotenv==1.0.0
 flask-cors==4.0.0
 qdrant-client==1.6.4
 mkdocs==1.5.3
-openai==0.28.1
+# openai==0.28.1
 supabase==2.0.2
 SQLAlchemy==2.0.22
 boto3==1.28.79
