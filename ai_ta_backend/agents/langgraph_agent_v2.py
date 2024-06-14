@@ -69,21 +69,33 @@ class WorkflowAgent:
     self.langsmith_run_id = langsmith_run_id
     self.llm = get_llm()
     self.tools = get_tools(langsmith_run_id)
+    self.reflection_prompt = ChatPromptTemplate.from_template(
+            """You are a reflection expert. Your job is to analyze the output from the execution step and identify any mistakes or areas for improvement. \
+Reflect on the output, suggest corrections if necessary, and ensure the plan aligns with the desired outcome. \
+[Execution Output]: {execution_output}\
+[Plan]: {plan}\
+[Chat history]: {chat_history}\
+[User Info]: {user_info}"""
+        )
     self.planner_prompt = ChatPromptTemplate.from_template(
-        """For the given objective, come up with a simple step by step plan. \
+        """You are a planner expert. Your colleague has come to you with a problem. \
+They have an objective they need to solve, but they are not sure how to solve it. \
+Your job is to come up with a plan to solve the problem. \
+        For the given objective, come up with a simple step by step plan. \
 This plan should involve individual tasks, that if executed correctly will yield the correct answer. Do not add any superfluous steps. \
 The result of the final step should be the final answer. Make sure that each step has all the information needed - do not skip steps.
 
 {objective}""")
     self.replanner_prompt = ChatPromptTemplate.from_template(
-        """For the given objective, come up with a simple step by step plan. \
-This plan should involve individual tasks, that if executed correctly will yield the correct answer. Do not add any superfluous steps. \
+        """You are a replanner expert. Your colleague has come to you with a problem. They have a plan to solve the problem, but they are not sure if it is correct. \
+Your job is to review the plan and make sure it is correct. If it is not correct, you need to update the plan to make sure it is correct. \
+For the plan to be correct, it must be a step by step plan that if executed correctly will yield the correct answer. Do not add any superfluous steps. \
 The result of the final step should be the final answer. Make sure that each step has all the information needed - do not skip steps.
 
 Your objective was this:
 {input}
 
-Your original plan was this:
+The original plan was this:
 {plan}
 
 You have currently done the follow steps:
@@ -131,6 +143,20 @@ Update your plan accordingly. If no more steps are needed and you can return to 
         return {"response": output.response}
       else:
         return {"plan": output.steps}
+      
+    async def reflection_step(state: State):
+      reflection = create_structured_output_runnable(Plan, self.llm, self.reflection_prompt)
+      reflection_input = {
+          "execution_output": state["past_steps"][-1][1],  # Last execution output
+          "plan": state["plan"],
+          "chat_history": state["chat_history"],
+          "user_info": get_user_info_string()
+      }
+      corrected_plan = await reflection.ainvoke(reflection_input)
+      return {"plan": corrected_plan.steps, "need_correction": corrected_plan.need_correction}
+
+    def should_execute_again(state: State):
+      return state.get("need_correction", False)
 
     def should_end(state: State):
       if state["response"]:
@@ -140,10 +166,13 @@ Update your plan accordingly. If no more steps are needed and you can return to 
 
     workflow.add_node("planner", plan_step)
     workflow.add_node("agent", execute_step)
+    workflow.add_node("reflection", reflection_step)
     workflow.add_node("replan", replan_step)
     workflow.set_entry_point("planner")
     workflow.add_edge("planner", "agent")
-    workflow.add_edge("agent", "replan")
+    workflow.add_edge("agent", "reflection")
+    workflow.add_conditional_edges("reflection", should_execute_again, {True: "agent", False: "replan"})
+    # workflow.add_edge("agent", "replan")
     workflow.add_conditional_edges("replan", should_end, {True: END, False: "agent"})  #type: ignore
 
     return workflow.compile().with_config({"recursion_limit": 100})
