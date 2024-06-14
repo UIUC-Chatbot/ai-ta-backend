@@ -11,7 +11,7 @@ itsdangerous==2.1.2
 wheel==0.41.3
 Flask==3.0.0
 gunicorn==21.2.0
-tiktoken==0.5.1
+tiktoken==0.5.2
 Jinja2==3.1.2
 python-dotenv==1.0.0
 flask-cors==4.0.0
