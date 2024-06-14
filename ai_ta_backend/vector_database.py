@@ -1,46 +1,42 @@
 import asyncio
 import inspect
 import mimetypes
-
 # import json
 import os
+from pathlib import Path
 import shutil
 import subprocess
+from tempfile import NamedTemporaryFile  # TemporaryFile
 import time
 import traceback
-from pathlib import Path
-from tempfile import NamedTemporaryFile  # TemporaryFile
 from typing import Any, Dict, List, Union  # Literal
 
 import boto3
-
+from bs4 import BeautifulSoup
 # import requests
 import fitz
-import openai
-import supabase
-from bs4 import BeautifulSoup
 from git import Repo
-
 # from arize.api import Client
 # from arize.pandas.embeddings import EmbeddingGenerator, UseCases
 # from arize.utils import ModelTypes
 # from arize.utils.ModelTypes import GENERATIVE_LLM
 # # from arize.utils.types import (Embedding, EmbeddingColumnNames, Environments,
 # #                                Metrics, ModelTypes, Schema)
-from langchain.document_loaders import (
-    Docx2txtLoader,
-    GitLoader,
-    PythonLoader,
-    SRTLoader,
-    TextLoader,
-    UnstructuredPowerPointLoader,
-)
+from langchain.document_loaders import Docx2txtLoader
+from langchain.document_loaders import GitLoader
+from langchain.document_loaders import PythonLoader
+from langchain.document_loaders import SRTLoader
+from langchain.document_loaders import TextLoader
+from langchain.document_loaders import UnstructuredPowerPointLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
+import openai
 from pydub import AudioSegment
-from qdrant_client import QdrantClient, models
+from qdrant_client import models
+from qdrant_client import QdrantClient
+import supabase
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.extreme_context_stuffing import OpenAIAPIProcessor
@@ -351,8 +347,7 @@ Now please respond to my question: {user_question}"""
           base_url = kwargs['kwargs']['base_url']
         else:
           base_url = ''
-      title = str(object=time.localtime()[1]) + "/" + str(time.localtime()[2]) + "/" + str(
-          time.localtime()[0])[2:] + ' ' + str(title)
+      title = str(object=time.localtime()[1]) + "/" + str(time.localtime()[2]) + "/" + str(time.localtime()[0])[2:] + ' ' + str(title)
 
       text = [soup.get_text()]
       metadata: List[Dict[str, Any]] = [{
@@ -786,8 +781,7 @@ Now please respond to my question: {user_question}"""
     print(f"Deleting entire course: {course_name}")
     try:
       # Delete file from S3
-      objects_to_delete = self.s3_client.list_objects(Bucket=os.getenv('S3_BUCKET_NAME'),
-                                                      Prefix=f'courses/{course_name}/')
+      objects_to_delete = self.s3_client.list_objects(Bucket=os.getenv('S3_BUCKET_NAME'), Prefix=f'courses/{course_name}/')
       for object in objects_to_delete['Contents']:
         self.s3_client.delete_object(Bucket=os.getenv('S3_BUCKET_NAME'), Key=object['Key'])
 
@@ -805,8 +799,8 @@ Now please respond to my question: {user_question}"""
       )
 
       # Delete from Supabase
-      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq(
-          'metadata->>course_name', course_name).execute()
+      response = self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>course_name',
+                                                                                               course_name).execute()
       print("supabase response: ", response)
       return "Success"
     except Exception as e:
@@ -837,8 +831,9 @@ Now please respond to my question: {user_question}"""
       )
 
       # Delete from Supabase
-      self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>s3_path', s3_path).eq(
-          'metadata->>course_name', course_name).execute()
+      self.supabase_client.from_(os.getenv('MATERIALS_SUPABASE_TABLE')).delete().eq('metadata->>s3_path',
+                                                                                    s3_path).eq('metadata->>course_name',
+                                                                                                course_name).execute()
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore

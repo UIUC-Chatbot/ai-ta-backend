@@ -96,12 +96,13 @@ The script is structured as follows:
 # import tempfile
 # from langchain.llms import OpenAI
 import asyncio
+from dataclasses import \
+    dataclass  # for storing API inputs, outputs, and metadata
+from dataclasses import field
 import json
 import logging
 import re
 import time
-from dataclasses import (  # for storing API inputs, outputs, and metadata
-    dataclass, field)
 from typing import Any, List
 
 import aiohttp  # for making API calls concurrently
@@ -110,8 +111,8 @@ import tiktoken  # for counting tokens
 
 class OpenAIAPIProcessor:
 
-  def __init__(self, input_prompts_list, request_url, api_key, max_requests_per_minute, max_tokens_per_minute,
-               token_encoding_name, max_attempts, logging_level):
+  def __init__(self, input_prompts_list, request_url, api_key, max_requests_per_minute, max_tokens_per_minute, token_encoding_name,
+               max_attempts, logging_level):
     self.request_url = request_url
     self.api_key = api_key
     self.max_requests_per_minute = max_requests_per_minute
@@ -172,8 +173,8 @@ class OpenAIAPIProcessor:
 
             next_request = APIRequest(task_id=next(task_id_generator),
                                       request_json=request_json,
-                                      token_consumption=num_tokens_consumed_from_request(
-                                          request_json, api_endpoint, self.token_encoding_name),
+                                      token_consumption=num_tokens_consumed_from_request(request_json, api_endpoint,
+                                                                                         self.token_encoding_name),
                                       attempts_left=self.max_attempts,
                                       metadata=request_json.pop("metadata", None))
             status_tracker.num_tasks_started += 1
@@ -244,8 +245,7 @@ class OpenAIAPIProcessor:
     if status_tracker.num_tasks_failed > 0:
       logging.warning(f"{status_tracker.num_tasks_failed} / {status_tracker.num_tasks_started} requests failed.")
     if status_tracker.num_rate_limit_errors > 0:
-      logging.warning(
-          f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
+      logging.warning(f"{status_tracker.num_rate_limit_errors} rate limit errors received. Consider running at a lower rate.")
 
     # asyncio wait for task_list
     await asyncio.wait(task_list)
@@ -276,12 +276,12 @@ def extract_context_from_results(results: List[Any]) -> List[str]:
   print("Total Prompt Tokens:", total_prompt_tokens)
   print("Total Completion Tokens:", total_completion_tokens)
   turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
-  print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ",
-        (total_completion_tokens * 0.002), " = ", turbo_total_cost)
+  print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ",
+        turbo_total_cost)
 
   gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
-  print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ",
-        (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
+  print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ",
+        gpt4_total_cost)
   print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
   return assistant_contents  #, total_prompt_tokens, total_completion_tokens
 
@@ -354,8 +354,7 @@ class APIRequest:
         status_tracker.num_tasks_failed += 1
         return data
     else:
-      data = ([self.request_json, response, self.metadata] if self.metadata else [self.request_json, response]
-             )  # type: ignore
+      data = ([self.request_json, response, self.metadata] if self.metadata else [self.request_json, response])  # type: ignore
       #append_to_jsonl(data, save_filepath)
       status_tracker.num_tasks_in_progress -= 1
       status_tracker.num_tasks_succeeded += 1

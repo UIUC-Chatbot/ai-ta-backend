@@ -3,12 +3,11 @@ import os
 import platform
 
 from langchain import hub
-from langchain_community.chat_models import AzureChatOpenAI, ChatOpenAI
-from langchain_experimental.plan_and_execute import (
-    PlanAndExecute,
-    load_agent_executor,
-    load_chat_planner,
-)
+from langchain_community.chat_models import AzureChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
+from langchain_experimental.plan_and_execute import load_agent_executor
+from langchain_experimental.plan_and_execute import load_chat_planner
+from langchain_experimental.plan_and_execute import PlanAndExecute
 
 from ai_ta_backend.agents.tools import get_tools
 from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
@@ -35,8 +34,7 @@ class WorkflowAgent:
                                  request_timeout=60 * 3,
                                  deployment_name=os.environ['AZURE_OPENAI_ENGINE'])  # type: ignore
     else:
-      self.llm: ChatOpenAI = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=500,
-                                        request_timeout=60 * 3)  # type: ignore
+      self.llm: ChatOpenAI = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=500, request_timeout=60 * 3)  # type: ignore
     self.agent = self.make_agent()
 
   def run(self, input):
@@ -54,8 +52,7 @@ class WorkflowAgent:
     tools = get_tools(langsmith_run_id=self.langsmith_run_id)
 
     # PLANNER
-    planner = load_chat_planner(
-        self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
+    planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
 
     # EXECUTOR
     executor = load_agent_executor(self.llm,

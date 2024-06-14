@@ -19,7 +19,7 @@ runtimes:
 # - osv-scanner@1.5.0  # too sensitive, causing failures that make devs skip checks.
 lint:
   enabled:
-    - black@24.4.2
+    # - black@24.4.2
     - isort@5.13.2
     - osv-scanner@1.7.4
     - trufflehog@3.78.1

@@ -5,10 +5,10 @@ import time
 import traceback
 from typing import List, Tuple
 
-import langsmith
-import tiktoken
 from langchain.schema import AgentAction
+import langsmith
 from langsmith import Client
+import tiktoken
 
 
 def fancier_trim_intermediate_steps(steps: List[Tuple[AgentAction, str]]) -> List[Tuple[AgentAction, str]]:
@@ -148,10 +148,9 @@ def get_langsmith_trace_sharable_url(run_id_in_metadata, project_name='', time_d
   return sharable_url
 
 
-def count_tokens_and_cost(
-    prompt: str,
-    completion: str = '',
-    openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
+def count_tokens_and_cost(prompt: str,
+                          completion: str = '',
+                          openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
   """
   Returns the number of tokens in a text string.
 
@@ -199,9 +198,7 @@ def count_tokens_and_cost(
     completion_token_cost = 0.0001 / 1_000
   else:
     # no idea of cost
-    print(
-        f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`. (Defaulting to GPT-4 pricing...)"
-    )
+    print(f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`. (Defaulting to GPT-4 pricing...)")
     prompt_token_cost = 0.03 / 1_000
     completion_token_cost = 0.06 / 1_000
 

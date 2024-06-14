@@ -5,10 +5,9 @@ import supabase
 import tiktoken
 
 
-def count_tokens_and_cost(
-    prompt: str,
-    completion: str = '',
-    openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
+def count_tokens_and_cost(prompt: str,
+                          completion: str = '',
+                          openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
   """
   Returns the number of tokens in a text string.
 
@@ -56,9 +55,7 @@ def count_tokens_and_cost(
     completion_token_cost = 0.0001 / 1_000
   else:
     # no idea of cost
-    print(
-        f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`. (Defaulting to GPT-4 pricing...)"
-    )
+    print(f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`. (Defaulting to GPT-4 pricing...)")
     prompt_token_cost = 0.03 / 1_000
     completion_token_cost = 0.06 / 1_000
 
@@ -125,9 +122,7 @@ def analyze_conversations(supabase_client: Any = None):
 
       # If the message is from the assistant, it's a completion
       elif role == 'assistant':
-        num_tokens_completion, cost_completion = count_tokens_and_cost(prompt='',
-                                                                       completion=content,
-                                                                       openai_model_name=model_name)
+        num_tokens_completion, cost_completion = count_tokens_and_cost(prompt='', completion=content, openai_model_name=model_name)
         total_completion_cost += cost_completion
         print(f'Assistant Completion: {content}\nTokens: {num_tokens_completion}, cost: {cost_completion}')
   return total_convos, total_messages, total_prompt_cost, total_completion_cost

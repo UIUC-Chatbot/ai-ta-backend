@@ -1,7 +1,8 @@
 from typing import Any, Sequence, Union
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.runnables import RunnableBinding, RunnableLambda
+from langchain_core.runnables import RunnableBinding
+from langchain_core.runnables import RunnableLambda
 from langchain_core.tools import BaseTool
 
 INVALID_TOOL_MSG_TEMPLATE = ("{requested_tool_name} is not a valid tool, "

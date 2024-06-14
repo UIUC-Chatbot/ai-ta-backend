@@ -1,6 +1,7 @@
-import os
-from multiprocessing import Lock, cpu_count
+from multiprocessing import cpu_count
+from multiprocessing import Lock
 from multiprocessing.pool import ThreadPool
+import os
 from typing import List, Optional
 
 import boto3

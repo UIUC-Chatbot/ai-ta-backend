@@ -1,25 +1,26 @@
 import getpass
+import operator
 import os
 import platform
-import operator
-from typing import TypedDict, Annotated, Union
+from typing import Annotated, TypedDict, Union
 
 from dotenv import load_dotenv
 from langchain import hub
-# from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
-from langchain_openai import ChatOpenAI, AzureChatOpenAI
-
-from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.agents import AgentAction
+from langchain_core.agents import AgentFinish
 from langchain_core.messages import BaseMessage
-from langchain_experimental.plan_and_execute import (
-    PlanAndExecute,
-    load_agent_executor,
-    load_chat_planner,
-)
-from langgraph.graph import END, StateGraph
+from langchain_experimental.plan_and_execute import load_agent_executor
+from langchain_experimental.plan_and_execute import load_chat_planner
+from langchain_experimental.plan_and_execute import PlanAndExecute
+# from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain_openai import AzureChatOpenAI
+from langchain_openai import ChatOpenAI
+from langgraph.graph import END
+from langgraph.graph import StateGraph
 from langgraph.prebuilt import ToolExecutor
 
 from ai_ta_backend.agents.tools import get_tools
+
 # from ai_ta_backend.agents.utils import fancier_trim_intermediate_steps
 
 load_dotenv(override=True)
@@ -73,8 +74,7 @@ class WorkflowAgent:
 
   def make_agent(self):
     # PLANNER
-    planner = load_chat_planner(
-        self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
+    planner = load_chat_planner(self.llm, system_prompt=hub.pull("kastanday/ml4bio-rnaseq-planner").format(user_info=get_user_info_string))
 
     # EXECUTOR
     executor = load_agent_executor(self.llm, self.tools, trim_intermediate_steps=1, handle_parsing_errors=True)

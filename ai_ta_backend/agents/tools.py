@@ -1,19 +1,20 @@
 import os
 from typing import List
 
-import langchain
-
 from dotenv import load_dotenv
+import langchain
 from langchain.agents import load_tools
 from langchain.agents.agent_toolkits.github.toolkit import GitHubToolkit
-from langchain_openai import ChatOpenAI, AzureChatOpenAI
+from langchain.tools import BaseTool
+from langchain.tools import StructuredTool
 from langchain_community.tools import VectorStoreQATool
-from langchain.tools import (BaseTool, StructuredTool)
 # from langchain.tools.playwright.utils import (
 #     create_async_playwright_browser,
 #     create_sync_playwright_browser,
 # )
 from langchain_community.utilities.github import GitHubAPIWrapper
+from langchain_openai import AzureChatOpenAI
+from langchain_openai import ChatOpenAI
 
 from ai_ta_backend.agents.code_intrepreter_sanbox import E2B_class
 from ai_ta_backend.agents.vector_db import get_vectorstore_retriever_tool
@@ -93,14 +94,11 @@ def get_tools(langsmith_run_id: str, sync=True):
       get_vectorstore_retriever_tool(
           course_name='langchain-docs',
           name='Langchain-docs',
-          description=
-          "Build context-aware, reasoning applications with LangChain's flexible abstractions and AI-first toolkit."),
+          description="Build context-aware, reasoning applications with LangChain's flexible abstractions and AI-first toolkit."),
       get_vectorstore_retriever_tool(
           course_name='ml4bio-star',
           name='STAR-docs',
-          description=
-          'Basic STAR workflow consists of 2 steps: (1) Generating genome indexes files and (2) Mapping reads to the genome'
-      ),
+          description='Basic STAR workflow consists of 2 steps: (1) Generating genome indexes files and (2) Mapping reads to the genome'),
       get_vectorstore_retriever_tool(
           course_name='ml4bio-fastqc',
           name='FastQC-docs',
@@ -125,7 +123,8 @@ def get_tools(langsmith_run_id: str, sync=True):
   # Probably unnecessary: WikipediaQueryRun, WolframAlphaQueryRun, PubmedQueryRun, ArxivQueryRun
   # arxiv_tool = ArxivQueryRun()
 
-  tools: list[BaseTool] = github_tools + search + docs_tools + [e2b_python_execution_tool, e2b_r_execution_tool, e2b_shell_tool]   # browser_tools +
+  tools: list[BaseTool] = github_tools + search + docs_tools + [e2b_python_execution_tool, e2b_r_execution_tool, e2b_shell_tool
+                                                               ]  # browser_tools +
   return tools
 
 

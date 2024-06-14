@@ -1,11 +1,13 @@
 import io
 import time
+from typing import Optional
 import uuid
-from typing import Any, Optional, Tuple
 
-import termcolor
-from e2b import EnvVars, Sandbox, ProcessMessage
+from e2b import EnvVars
+from e2b import ProcessMessage
+from e2b import Sandbox
 from e2b.api.v1.client.exceptions import ForbiddenException
+import termcolor
 
 
 class E2B_class:

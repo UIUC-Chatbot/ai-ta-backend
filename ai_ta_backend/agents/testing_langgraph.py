@@ -5,10 +5,11 @@ python -m ai_ta_backend.agents.testing_langgraph
 
 import uuid
 
-import langchain
-from ai_ta_backend.agents.langrgraph_agent_v2 import PlanExecute, WorkflowAgent
-from langchain import hub
 from dotenv import load_dotenv
+from langchain import hub
+
+from ai_ta_backend.agents.langrgraph_agent_v2 import PlanExecute
+from ai_ta_backend.agents.langrgraph_agent_v2 import WorkflowAgent
 
 load_dotenv(override=True)
 
@@ -46,6 +47,5 @@ def stateToPrompt(state: PlanExecute, token_limit: int = 8_000):
       input=state['input'],
       chat_history='\n'.join([f"User: {message.content}" for message in state['chat_history']]),
       agent_outcome=state['response'],
-      intermediate_steps='\n'.join([f"{action}: {observation}" for action, observation in state['past_steps']
-                                   ]),  # type: ignore
+      intermediate_steps='\n'.join([f"{action}: {observation}" for action, observation in state['past_steps']]),  # type: ignore
   )

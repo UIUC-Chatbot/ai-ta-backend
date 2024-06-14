@@ -2,14 +2,19 @@ import inspect
 import os
 import traceback
 
-import langchain
 from dotenv import load_dotenv
-from langchain.agents import AgentType, Tool, initialize_agent
+import langchain
+from langchain.agents import AgentType
+from langchain.agents import initialize_agent
+from langchain.agents import Tool
 from langchain.agents.react.base import DocstoreExplorer
-from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings, ChatOpenAI, OpenAIEmbeddings
 from langchain.docstore.base import Docstore
 from langchain_community.tools import VectorStoreQATool
 from langchain_community.vectorstores import Qdrant
+from langchain_openai import AzureChatOpenAI
+from langchain_openai import AzureOpenAIEmbeddings
+from langchain_openai import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
 from qdrant_client import QdrantClient
 
 load_dotenv(override=True)
@@ -48,13 +53,11 @@ def get_vectorstore_retriever_tool(course_name: str,
         embeddings=AzureOpenAIEmbeddings() if os.environ['OPENAI_API_TYPE'] == 'azure' else OpenAIEmbeddings())
 
     if os.environ['OPENAI_API_TYPE'] == 'azure':
-      llm = AzureChatOpenAI(
-          temperature=0,
-          model="gpt-4-0613",
-          max_retries=3,
-          request_timeout=60 * 3,
-          deployment_name=os.environ['AZURE_OPENAI_ENGINE']
-      )
+      llm = AzureChatOpenAI(temperature=0,
+                            model="gpt-4-0613",
+                            max_retries=3,
+                            request_timeout=60 * 3,
+                            deployment_name=os.environ['AZURE_OPENAI_ENGINE'])
     else:
       llm: ChatOpenAI = ChatOpenAI(
           temperature=0,

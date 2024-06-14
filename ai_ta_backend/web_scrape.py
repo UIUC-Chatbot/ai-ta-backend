@@ -1,20 +1,20 @@
 import os
 import re
 import shutil
-import time
 from tempfile import NamedTemporaryFile
+import time
 from zipfile import ZipFile
 
 import boto3  # type: ignore
-import requests
 from bs4 import BeautifulSoup
+import requests
 
 from ai_ta_backend.aws import upload_data_files_to_s3
 from ai_ta_backend.vector_database import Ingest
 
 
 def valid_url(url):
-  '''Returns the URL and it's content if it's good, otherwise returns false. Prints the status code.'''
+  """Returns the URL and it's content if it's good, otherwise returns false. Prints the status code."""
   try:
     response = requests.get(url, allow_redirects=True, timeout=20)
 
@@ -118,7 +118,7 @@ def crawler(url: str,
             _depth: int = 0,
             _soup: BeautifulSoup = None,
             _invalid_urls: list = []):
-  '''Function gets titles of urls and the urls themselves'''
+  """Function gets titles of urls and the urls themselves"""
   # Prints the depth of the current search
   print("depth: ", _depth)
   url_contents = []
@@ -236,12 +236,7 @@ def crawler(url: str,
   return url_contents
 
 
-def main_crawler(url: str,
-                 course_name: str,
-                 max_urls: int = 100,
-                 max_depth: int = 3,
-                 timeout: int = 1,
-                 base_url_on: str = None):
+def main_crawler(url: str, course_name: str, max_urls: int = 100, max_depth: int = 3, timeout: int = 1, base_url_on: str = None):
   """
   Crawl a site and scrape its content and PDFs, then upload the data to S3 and ingest it.
 

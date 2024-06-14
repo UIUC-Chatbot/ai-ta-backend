@@ -1,18 +1,23 @@
 import getpass
+import operator
 import os
 import platform
-from typing import List, Tuple, Union, Annotated, TypedDict
+from typing import Annotated, List, Tuple, TypedDict
+
 from dotenv import load_dotenv
 from langchain import hub
 from langchain.agents import create_openai_functions_agent
-from langchain_openai import AzureChatOpenAI, ChatOpenAI
-from langchain.chains.openai_functions import create_structured_output_runnable, create_openai_fn_runnable
+from langchain.chains.openai_functions import create_openai_fn_runnable
+from langchain.chains.openai_functions import create_structured_output_runnable
+from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langgraph.graph import StateGraph, END
+from langchain_core.pydantic_v1 import BaseModel
+from langchain_core.pydantic_v1 import Field
+from langchain_openai import AzureChatOpenAI
+from langchain_openai import ChatOpenAI
+from langgraph.graph import END
+from langgraph.graph import StateGraph
 from langgraph.prebuilt import create_agent_executor
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.messages import HumanMessage, BaseMessage
-import operator
 
 from ai_ta_backend.agents.tools import get_tools
 
@@ -69,14 +74,12 @@ class WorkflowAgent:
     self.langsmith_run_id = langsmith_run_id
     self.llm = get_llm()
     self.tools = get_tools(langsmith_run_id)
-    self.planner_prompt = ChatPromptTemplate.from_template(
-        """For the given objective, come up with a simple step by step plan. \
+    self.planner_prompt = ChatPromptTemplate.from_template("""For the given objective, come up with a simple step by step plan. \
 This plan should involve individual tasks, that if executed correctly will yield the correct answer. Do not add any superfluous steps. \
 The result of the final step should be the final answer. Make sure that each step has all the information needed - do not skip steps.
 
 {objective}""")
-    self.replanner_prompt = ChatPromptTemplate.from_template(
-        """For the given objective, come up with a simple step by step plan. \
+    self.replanner_prompt = ChatPromptTemplate.from_template("""For the given objective, come up with a simple step by step plan. \
 This plan should involve individual tasks, that if executed correctly will yield the correct answer. Do not add any superfluous steps. \
 The result of the final step should be the final answer. Make sure that each step has all the information needed - do not skip steps.
 
@@ -90,10 +93,10 @@ You have currently done the follow steps:
 {past_steps}
 
 Update your plan accordingly. If no more steps are needed and you can return to the user, then respond with that. Otherwise, fill out the plan. Only add steps to the plan that still NEED to be done. Do not return previously done steps as part of the plan."""
-    )
+                                                            )
 
     self.executor_prompt = ChatPromptTemplate.from_template(
-          """You are a world-class programmer and AI assistant capable of executing any goal related to software development, genAI, LLMs, and full-stack technologies.\
+        """You are a world-class programmer and AI assistant capable of executing any goal related to software development, genAI, LLMs, and full-stack technologies.\
            For the given task, execute the task and return the result.\
            When you send a message containing code, it will be executed in a Docker container. You have been granted full permission to execute any code necessary to complete the task within this Docker environment using PythonRepl and shell tools as required.\
            You have access to a variety of tools, including browser, github_tools for interacting with GitHub, and multiple vectorstore instances. Utilize the browser for internet searches and github_tools for all interactions with GitHub repositories. For code execution, rely on PythonRepl and shell tools available in the Docker environment.\
@@ -102,12 +105,10 @@ Update your plan accordingly. If no more steps are needed and you can return to 
            [Chat history]: {chat_history}\
            [Input]: {input}\
            [Agent scratchpad]: {agent_scratchpad}\
-           """
-    )
+           """)
     # hub.pull("hwchase17/openai-functions-agent")
 
-    self.agent_runnable = create_openai_functions_agent(self.llm, self.tools,
-                                                        hub.pull("hwchase17/openai-functions-agent"))
+    self.agent_runnable = create_openai_functions_agent(self.llm, self.tools, hub.pull("hwchase17/openai-functions-agent"))
     self.agent_executor = create_agent_executor(self.agent_runnable, self.tools)
     self.workflow = self.create_workflow()
 

@@ -6,19 +6,21 @@ import inspect
 import os
 import traceback
 
-import langchain
-import ray
 from dotenv import load_dotenv
-from langchain.agents import AgentExecutor, AgentType, initialize_agent
+import langchain
+from langchain.agents import AgentExecutor
+from langchain.agents import AgentType
+from langchain.agents import initialize_agent
 from langchain.callbacks.manager import tracing_v2_enabled
-from langchain.chat_models import AzureChatOpenAI, ChatOpenAI
+from langchain.chat_models import AzureChatOpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.memory import ConversationSummaryBufferMemory
 from langchain.prompts.chat import MessagesPlaceholder
 from langchain.utilities.github import GitHubAPIWrapper
-
 # from langchain_experimental.autonomous_agents.autogpt.agent import AutoGPT
 # from langchain_experimental.autonomous_agents.baby_agi import BabyAGI
 from langsmith import Client
+import ray
 from tools import get_tools
 from utils import fancier_trim_intermediate_steps
 
@@ -60,15 +62,11 @@ class GH_Agent():
     else:
       llm = ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
       ChatOpenAI(temperature=0, model="gpt-4-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
-      summarizer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3,
-                                  request_timeout=60 * 3)  # type: ignore
+      summarizer_llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-0613", max_retries=3, request_timeout=60 * 3)  # type: ignore
 
     # MEMORY
     chat_history = MessagesPlaceholder(variable_name="chat_history")
-    memory = ConversationSummaryBufferMemory(memory_key="chat_history",
-                                             return_messages=True,
-                                             llm=summarizer_llm,
-                                             max_token_limit=2_000)
+    memory = ConversationSummaryBufferMemory(memory_key="chat_history", return_messages=True, llm=summarizer_llm, max_token_limit=2_000)
 
     # TOOLS
     # toolkit: GitHubToolkit = GitHubToolkit.from_github_api_wrapper(self.github_api_wrapper)
@@ -115,10 +113,9 @@ class GH_Agent():
             warning_to_bot = f"Keep in mind {num_retries} previous bots have tried to solve this problem faced a runtime error. Please learn from their mistakes, focus on making sure you format your requests for tool use correctly. Here's a list of their previous runtime errors: {str(runtime_exceptions)}"
             result = bot.with_config({
                 "run_name": "ReAct ML4Bio Agent"
-            }).invoke({"input": f"{run_instruction}\n{warning_to_bot}"},
-                      {"metadata": {
-                          "run_id_in_metadata": str(run_id_in_metadata)
-                      }})
+            }).invoke({"input": f"{run_instruction}\n{warning_to_bot}"}, {"metadata": {
+                "run_id_in_metadata": str(run_id_in_metadata)
+            }})
           else:
             result = bot.with_config({
                 "run_name": "ReAct ML4Bio Agent"

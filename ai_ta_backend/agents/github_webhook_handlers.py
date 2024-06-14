@@ -6,20 +6,20 @@ import os
 import socket
 import time
 import traceback
-import uuid
 from typing import Any, Dict, Union
+import uuid
 
-import github
-import langchain
-import ray
 from dotenv import load_dotenv
-from github import Auth, GithubIntegration
+import github
+from github import Auth
+from github import GithubIntegration
 from github.Issue import Issue
 from github.PaginatedList import PaginatedList
 from github.PullRequest import PullRequest
 from github.Repository import Repository
 from github.TimelineEvent import TimelineEvent
-from langchain import hub
+import langchain
+import ray
 
 # from github_agent import GH_Agent
 from ai_ta_backend.agents.langgraph_agent_v2 import WorkflowAgent
@@ -180,8 +180,7 @@ Here's your latest assignment: {issue_description}"""
     ray.get(post_comment.remote(issue_or_pr=issue, text=str(result['output']), time_delay_s=0))
   except Exception as e:
     logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())
-    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(
-        traceback.format_exc()) + "\n```"
+    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
 
     if RUNNING_ON_LOCAL:
       print(err_str)
@@ -248,13 +247,11 @@ async def handle_pull_request_opened(payload: Dict[str, Any], langsmith_run_id: 
   except Exception as e:
     print(f"Error: {e}")
     logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())
-    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(
-        traceback.format_exc()) + "\n```"
+    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
     if RUNNING_ON_LOCAL:
       print(err_str)
     else:
-      issue.create_comment(
-          f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{err_str}")
+      issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError:{err_str}")
 
 
 async def handle_comment_opened(payload, langsmith_run_id):
@@ -352,13 +349,11 @@ async def handle_comment_opened(payload, langsmith_run_id):
       ray.get(post_comment.remote(issue_or_pr=pr, text=str(result['output']), time_delay_s=0))
   except Exception as e:
     logging.error(f"❌❌ Error in {inspect.currentframe().f_code.co_name}: {e}\nTraceback:\n", traceback.print_exc())
-    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(
-        traceback.format_exc()) + "\n```"
+    err_str = f"Error in {inspect.currentframe().f_code.co_name}: {e}" + "\nTraceback\n```\n" + str(traceback.format_exc()) + "\n```"
     if RUNNING_ON_LOCAL:
       print(err_str)
     else:
-      issue.create_comment(
-          f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {err_str}")
+      issue.create_comment(f"Bot hit a runtime exception during execution. TODO: have more bots debug this.\nError: {err_str}")
 
 
 @ray.remote
