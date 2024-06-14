@@ -9,7 +9,7 @@ mkdocstrings[python]==0.23.0
 mkdocs-material==9.4.7
 itsdangerous==2.1.2
 wheel==0.41.3
-Flask==3.0.0
+Flask[async]==3.0.0
 gunicorn==21.2.0
 tiktoken==0.5.2
 Jinja2==3.1.2
