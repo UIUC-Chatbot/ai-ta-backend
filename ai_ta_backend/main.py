@@ -341,6 +341,10 @@ async def webhook():
   print("Payload received...")
   print(payload)
 
+  with open('payload.json', 'w') as file:
+    json.dump(payload, file)
+    print("Saved payload to file.")
+
   # FOR LOCAL TESTING, USE THIS PAYLOAD:
   # payload = ''
   # with open('payload.json', 'r') as file:
