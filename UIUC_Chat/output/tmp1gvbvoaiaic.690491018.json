@@ -1,0 +1,1618 @@
+{
+    "paper_id": "tmpfmwb0_ejaic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:07:04.222237Z"
+    },
+    "title": "Similitude in Stirred-Tank Reactors: Laminar Feed",
+    "authors": [
+        {
+            "first": "L",
+            "middle": [
+                "J"
+            ],
+            "last": "Forney",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Georgia Institute of Technology",
+                "location": {
+                    "postCode": "30332",
+                    "settlement": "Atlanta",
+                    "region": "GA"
+                }
+            },
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "Similarity parameters are deri\u00aeed to correlate the selecti\u00aeity of mixing controlled parallel reactions within stirred-tank reactors. For the case of laminar reactant feed, the Kolmogoroff time is shown to correlate selecti\u00aeity in turbulent, semibatch reactors, pro-\u00aeided the reactor Reynolds number Re-Re . The upper limit Re for the reactor C C Reynolds number is shown to be constrained by the \u00aeolumetric flow ratio of reactant feed-to-pumping capacity. Moreo\u00aeer, for larger reactor Reynolds number Re) Re , the C inertial time scale defined in terms of a reactor feed length is shown to correlate selecti\u00aeity. Scaling laws are demonstrated from a\u00aeailable tank data taken at up to three reactant feed points in both aqueous and \u00aeiscous solutions, and for a range of \u00aeessel \u00aeolumes, feed tube diameters, and feed times.",
+    "pdf_parse": {
+        "paper_id": "tmpfmwb0_ejaic",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "Similarity parameters are deri\u00aeed to correlate the selecti\u00aeity of mixing controlled parallel reactions within stirred-tank reactors. For the case of laminar reactant feed, the Kolmogoroff time is shown to correlate selecti\u00aeity in turbulent, semibatch reactors, pro-\u00aeided the reactor Reynolds number Re-Re . The upper limit Re for the reactor C C Reynolds number is shown to be constrained by the \u00aeolumetric flow ratio of reactant feed-to-pumping capacity. Moreo\u00aeer, for larger reactor Reynolds number Re) Re , the C inertial time scale defined in terms of a reactor feed length is shown to correlate selecti\u00aeity. Scaling laws are demonstrated from a\u00aeailable tank data taken at up to three reactant feed points in both aqueous and \u00aeiscous solutions, and for a range of \u00aeessel \u00aeolumes, feed tube diameters, and feed times.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": "Batch operations currently dominate bulk chemical pro-\u017d . duction such as specialty organic chemicals Paul, 1988 . A common configuration is a semibatch, stirred-tank reactor \u017d with one or more laminar feedstreams Baldyga and Bourne, . 1992; Verschuren et al., 2000 . Although the level of turbulence in the latter is independently controlled by the stirring rate, control of the selectivity with mixing-sensitive reactions can be difficult because of the relative importance of a number of turbulent length and time scales and their relationship \u017d . to both the flow rate or size of the reactant feedstreams and the kinetic reaction times.",
+                "cite_spans": [
+                    {
+                        "start": 102,
+                        "end": 112,
+                        "text": "Paul, 1988",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 214,
+                        "end": 241,
+                        "text": "Baldyga and Bourne, . 1992;",
+                        "ref_id": "BIBREF2"
+                    },
+                    {
+                        "start": 242,
+                        "end": 267,
+                        "text": "Verschuren et al., 2000 .",
+                        "ref_id": "BIBREF23"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "When the impeller Reynolds number in a stirred-tank reactor is sufficiently large, macroscopic properties such as power number, velocity distribution, and blending time are essentially independent of Re. This is also true for some smaller-scale turbulent phenomena such as mixing on a time scale proportional to the eddy dissipation or breakup time t A N y1 where the latter represents the ratio of the turbud lent integral scale A L to the mean flow velocity A NL \u017d . Davies, 1972 . Here, N is the number of revolutions of the stirrer per unit time and L is the diameter of the stirrer blades. Mixing, however, over length scales on the order of the Kolmogoroff length l l does depend on the reactor k Reynolds number, and the effect of Re is important in the determination of the selectivity of fast multiple reactions.",
+                "cite_spans": [
+                    {
+                        "start": 469,
+                        "end": 483,
+                        "text": "Davies, 1972 .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "For the common case of laminar feed tubes the choice of \u017d . mixing times is either the viscous Kolmogoroff time scale or \u017d . an inertial scale proportional to the eddy dissipation time for small or large feed rates, respectively. This concept was useful in attempts to correlate the product distribution in \u017d . stirred tanks Baldyga et al., 1995 and other designs, such as \u017d plug-flow reactors Forney and Chang-Mateu, 1998; Forney . et al., 2001 . Comparison of the inertial and viscous time scales, however, requires the computation of each mixing time to determine the maximum or rate-limiting step. Unfortunately, accurate calculation of each time scale is difficult, and both require an estimate of a universal constant whose mag-\u017d . nitude may be disputed in the literature Baldyga et al., 1997 . Moreover, the relationship between the inertial and viscous time scales and the important operating parameters such as tank size, Reynolds number, and reactant feed rate may not be obvious.",
+                "cite_spans": [
+                    {
+                        "start": 325,
+                        "end": 369,
+                        "text": "Baldyga et al., 1995 and other designs, such",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 394,
+                        "end": 423,
+                        "text": "Forney and Chang-Mateu, 1998;",
+                        "ref_id": "BIBREF13"
+                    },
+                    {
+                        "start": 424,
+                        "end": 447,
+                        "text": "Forney . et al., 2001 .",
+                        "ref_id": "BIBREF15"
+                    },
+                    {
+                        "start": 779,
+                        "end": 801,
+                        "text": "Baldyga et al., 1997 .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "In the present article, which considers laminar feed rates, a simple physical interpretation is provided for the choice of time scale. In fact, the form of the time scale is shown to depend only on the magnitude of a critical reactor Reynolds number, as done in a previous study of plug-flow reactors by \u017d . Forney et al. 2001 .",
+                "cite_spans": [
+                    {
+                        "start": 308,
+                        "end": 326,
+                        "text": "Forney et al. 2001",
+                        "ref_id": "BIBREF15"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "Mixing and chemical reaction in fully turbulent liquids occurs within laminar shear layers of thickness l l , the Kol- Li and Toor 1986 . In contrast, the controlling physics of mixing when the reactant feed is laminar may be limited by an inertial mixing time that depends on the feed flow rate.",
+                "cite_spans": [
+                    {
+                        "start": 119,
+                        "end": 135,
+                        "text": "Li and Toor 1986",
+                        "ref_id": "BIBREF19"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Similarity",
+                "sec_num": null
+            },
+            {
+                "text": "Isotropic turbulence, although hypothetical, is a useful concept in practical flows, since many conditions more or less \u017d . approach the physics of isotropy Hinze, 1987 . Experimental evidence supports the conclusion that the fine scale structure of most nonisotropic but large Reynolds number, turbulent \u017d . flows is almost isotropic local isotropy . Thus, many practical problems in turbulent phenomena that are strongly influenced by the fine scale structure can be solved to some approximation by applying the features of isotropic turbulence.",
+                "cite_spans": [
+                    {
+                        "start": 157,
+                        "end": 168,
+                        "text": "Hinze, 1987",
+                        "ref_id": "BIBREF17"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "For example, the large eddies formed by the fluid motion of a mechanical impeller are not isotropic, but as the eddies decay, transferring energy to smaller fluid fragments, the smaller eddies formed become independent of the impeller \u017d . geometry Davies, 1972 . In the latter case, the eddy spectrum in the equilibrium range depends only on the local eddy dissipation rate and the kinematic viscosity. Further discus-\u017d . sion of local isotropy is provided by Brodkey 1995, p. 304 \u017d . and Kresta 1998 .",
+                "cite_spans": [
+                    {
+                        "start": 248,
+                        "end": 262,
+                        "text": "Davies, 1972 .",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 460,
+                        "end": 480,
+                        "text": "Brodkey 1995, p. 304",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "In the present section, the reactor Reynolds number is assumed to be sufficiently large such that the fine scale structure of the turbulence is locally isotropic. The turbulent ki-\u017d . netic energy thus can be written in the form Hinze, 1987 2 X A u , 1 \u017d . \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 229,
+                        "end": 240,
+                        "text": "Hinze, 1987",
+                        "ref_id": "BIBREF17"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . and the dissipation rate power input per unit mass is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "3 X \u2440 A u rl l , 2 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "e where l l is the average size of the energy containing eddies k Thus, the ratio",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "t d A Re 5 ' \u017d . l l t k X \u017d",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "where Re s u l l r is the local eddy Reynolds number For- l l e . ney and Nafia, 1998 .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "In the present article it is assumed that the large eddies generated by the impeller decay along the streamlines that emanate from the impeller tip. In this case, features of the turbulence are assumed to be locally isotropic and self-preserving. For example, from dimensional arguments u X Arl l , the flow boundary conditions such as impeller speed and size, in addition to the fluid kinematic viscosity.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Turbulence",
+                "sec_num": null
+            },
+            {
+                "text": "When the reactant feed is laminar and the feed time is \u017d . large small flow rate , experimental evidence demonstrates that the reaction rates are limited by the micromixing or Kol-\u017d . mogoroff time scale Gholap et al., 1994 . Experimental data suggest that the product u X l l A NL 2 as the eddies decay along e \u017d . a streamline from the injection point Davies, 1972 , or from Eq. 6 one obtains a constant ratio",
+                "cite_spans": [
+                    {
+                        "start": 204,
+                        "end": 243,
+                        "text": "Gholap et al., 1994 . Experimental data",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 354,
+                        "end": 366,
+                        "text": "Davies, 1972",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "t d ' A Re 7 \u017d . t k",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "To properly correlate selectivity data within stirred tanks, it is necessary to compare the Kolmogoroff time at different tank locations for fixed fluid properties and tank geometries. Since t A \u2440 y1r2 from Eq. 4, it is convenient to write the Kol- k mogoroff time at any location along a streamline in reference to its value at the maximum dissipation rate \u2440 near the im- where Res NL 2 r is the tank Reynolds number.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "1 \u017d . peller tip. Substituting \u2440 s \u2440 \u2440r\u2440 i 1 i 1 1r2 t s t \u2440 r\u2440 8 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "The ratio of Kolmogoroff-to-flow time t rt from Eq. 7 can",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "k d",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "be interpreted as the ratio of the reaction zone length-toreactor size since u t ru t A1r6Re<1, 10 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "x k x d",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "and is independent of streamline position where u is the x fluid velocity along a streamline at the feed point. Similar arguments for the fractional change in the turbulent dissipation rate \u2440 over the reaction zone length provide",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "1r\u2440 d\u2440rdx \u232c x A1r6Re, 1 1 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "k which is also independent of a streamline position where \u232c x k s u t .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Micromixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "From the preceding discussion, one concludes that the selectivity is at most a weak function of the local eddy dissipa- a\u00ae tion rate with changes in feed point along the streamline, provided the Kolmogoroff time, as defined by Eq. 9, is the rate-limiting time scale. Regarding scale-up to larger tanks, \u017d . Baldyga and Bourne 1988 derived an expression similar to Eq. 10 based on dimensional arguments for a fixed feed point in a stirred tank. The data in the latter work indicate a constant selectivity provided Re) 20,000 for both large and small tanks, as shown in Figure 1 . For additional information, see \u017d . the work of Bourne and Yu 1994 , who demonstrate similar selectivity profiles in stirred tanks for similar values of the Damkohler number when the tank volume was increased by a factor of 30, with the feed position fixed near the impeller discharge. Some scatter in their experimental data was evident, however, for a feed position in the suction region of the impeller. In the latter case, the principle of local isotropy along a streamline is likely to be disturbed by the action of the impeller.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 575,
+                        "end": 576,
+                        "text": "1",
+                        "ref_id": "FIGREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "k k",
+                "sec_num": null
+            },
+            {
+                "text": "When the reactant feed is laminar and the feed time is \u017d . small large flow rate , experimental evidence demonstrates that the reaction rates are limited by a somewhat larger iner-\u017d . tial or mesomixing time scale Baldyga et al., 1995 . Thus, we focus on the small feed tube in Figure 2 that is assumed to be laminar in the present study or the Reynolds number Re - \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 214,
+                        "end": 234,
+                        "text": "Baldyga et al., 1995",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 285,
+                        "end": 286,
+                        "text": "2",
+                        "ref_id": "FIGREF5"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "f f f",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "Here, n is the number of feed tubes and d is the diameter f of each feed tube. Thus, it is possible to define a reactor feed scale",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "1r2 l l A Q rnu 13 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "f \u017d as done earlier Baldyga and Bourne, 1992; Forney et al., .",
+                "cite_spans": [
+                    {
+                        "start": 20,
+                        "end": 45,
+                        "text": "Baldyga and Bourne, 1992;",
+                        "ref_id": "BIBREF2"
+                    },
+                    {
+                        "start": 46,
+                        "end": 60,
+                        "text": "Forney et al.,",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "2001 from conservation of mass at the feed nozzle, where l l ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "t s Q r nQ 1rN \u2440 r\u2440 . 1 5 \u017d . \u017d . \u017d . \u017d . mi f p 1 i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "The ratio of inertial-to-flow time, t rt , can be interpreted",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "m d",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "as the ratio of the reaction zone length-to-reactor size, since",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "EQUATION",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [
+                    {
+                        "start": 0,
+                        "end": 8,
+                        "text": "EQUATION",
+                        "ref_id": "EQREF",
+                        "raw_str": "1r3 u t ru t A Q r nQ <1,",
+                        "eq_num": "16"
+                    }
+                ],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "x m x d f p",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "and is independent of streamline position where u is the x fluid velocity along a streamline at the feed point. Thus, changes in the magnitude of the inertial time scale near the feed point defined by Eq. 15 are a weak function of the eddy dissipation rate along the streamline and are likely to be of secondary importance in the determination of the selectivity.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing time scale",
+                "sec_num": null
+            },
+            {
+                "text": "For a laminar reactant feed, the selectivity of a parallel reaction scheme is correlated with the largest of either the viscous or inertial time scale as defined earlier. The criterion for the choice of either scale is described below in terms of the reactor Reynolds number. One assumes that when the reactor feed length, l l , is smaller than the Kolmogoroff length, where the latter is defined by is the concentration of the reactant in the feed stream and a is the ratio of initial-to-added volume. Substituting for the tank Reynolds number in Eq. 9, one obtains where i refers to an arbitrary feed location. In the present study is1, 2, 3 are the feed positions near the impeller suction, fluid surface, and discharge point, respectively.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Influence of Reynolds number",
+                "sec_num": null
+            },
+            {
+                "text": "The stirred-tank data correlated in this section was taken \u017d . from the work of Bourne et al. 1995 Aq B\u2122 P k \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 80,
+                        "end": 98,
+                        "text": "Bourne et al. 1995",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Correlation of Data Micromixing",
+                "sec_num": null
+            },
+            {
+                "text": "1 22 \u017d . AqC \u2122 Q k .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Correlation of Data Micromixing",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . The product distribution or selectivity X is defined by the Q yield of Q relative to the limiting reagent A, that is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Correlation of Data Micromixing",
+                "sec_num": null
+            },
+            {
+                "text": "X s Qr Qq P 23 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Correlation of Data Micromixing",
+                "sec_num": null
+            },
+            {
+                "text": "The selectivity X was measured at three feed locations, Q as shown in Figure 4 , in a flat-bottomed stirred tank with four standard baffles and a six-bladed Rushton turbine whose diameter and off-bottom clearance were one-third of the tank \u017d . diameter D Gholap et al., 1994 . Rotational speeds N varied from 0.6 Hz to 5 Hz, giving a range of tank Reynolds numbers of 3,000 -Re-60,000 that ensured fully developed turbulence.",
+                "cite_spans": [
+                    {
+                        "start": 255,
+                        "end": 274,
+                        "text": "Gholap et al., 1994",
+                        "ref_id": "BIBREF16"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 77,
+                        "end": 78,
+                        "text": "4",
+                        "ref_id": "FIGREF9"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Q",
+                "sec_num": null
+            },
+            {
+                "text": "Reactions were conducted by slowly adding one part by volume of concentrated A solution to 50 parts by volume of an equimolar solution of B and C. A stoichiometric ratio of one mol B and C to one mol of A was also maintained during the feed time, t . Moreover, two solutions were used: visf \u017d . \u017d cous 6.2 mPa \u0612 s , with 0.5 wt % HEC and aqueous 1.0 mPa \u0612 . s .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Q",
+                "sec_num": null
+            },
+            {
+                "text": "Data at each feed point were chosen at sufficiently long \u017d . feed times t )1,500 s to ensure that X was independent size are correlated with the Kolmogoroff time defined by the Damkohler number from Eq. 20. As expected, the selectivity is lower in Figure 6 for the feed point near the turbine discharge compared to Figure 5 , because of increased turbulence in the former case. The effect of turbulent intensity and thus feed location is accounted for by the definition of the Damkohler number. \u017d . sexp y9.96\u232c rrD , where \u232c rrDs 0.045 represents the shift in the discharge feed point relative to the position of maxi-\u017d . mum \u2440 at rrDs 0.23 Bourne and Yu, 1994 . Evaluation of the critical Reynolds number requires knowledge of the universal constant c that appears in Eq. 19. This constant can be determined by observing the feed time t at f which the selectivity becomes horizontal on a plot of X vs. Although there is some variation in the estimate of c, it appears that a value of cs 50 is a reliable number and that was used in the present study to evaluate product distributions.",
+                "cite_spans": [
+                    {
+                        "start": 641,
+                        "end": 662,
+                        "text": "Bourne and Yu, 1994 .",
+                        "ref_id": "BIBREF7"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 255,
+                        "end": 256,
+                        "text": "6",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 322,
+                        "end": 323,
+                        "text": "5",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Q",
+                "sec_num": null
+            },
+            {
+                "text": "The stirred-tank data correlated in this section was taken \u017d . from the work of Verschuren et al. 2000 for three geometrically similar tank volumes of 6, 19, and 44 L equipped with a standard geometry of a six-bladed Rushton impeller with four baffles, as described in the previous section. These data were chosen since the diameters of the feed tubes were large at values of d s 5, 8, and 10 mm, respectively, for the indicated f tank volumes. Moreover, the feed times of sodium hydroxide \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 80,
+                        "end": 102,
+                        "text": "Verschuren et al. 2000",
+                        "ref_id": "BIBREF23"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing",
+                "sec_num": null
+            },
+            {
+                "text": "A were short t -500 s, and the feed volume was a relaf tively large 1r20 of the vessel volume for the same parallel reactions of Eq. 22.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing",
+                "sec_num": null
+            },
+            {
+                "text": "Under these conditions the ratio of reactant feed-to-pumping capacity, for example, was a relatively large Q rQ )1.53",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing",
+                "sec_num": null
+            },
+            {
+                "text": "f p y3 \u017d y5 =10",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing",
+                "sec_num": null
+            },
+            {
+                "text": "for the 19-L tank compared to Q rQ ) 4.4=10 Reynolds number, however, was Res 36,860, so that Re) Although the Damkohler number for mesomixing is expressed in terms of Q rQ , it is worth noting that substitu- ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mesomixing",
+                "sec_num": null
+            },
+            {
+                "text": "Mixing controlled parallel reactions in turbulent, stirredtank reactors with laminar feed streams are shown to be correlated with either a viscous or an inertial time scale. The choice between time scales is shown to depend on the magnitude of a transition reactor Reynolds number Re , that is c constrained by the volumetric flow ratio of reactant-to-pumping capacity.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "For a reactor Reynolds number Re-Re , the Damkohler c \u017d number defined in terms of the viscous time scale micromix-. ing is sufficient to scale selectivity. In contrast, if Re) Re , c \u017d . the inertial time mesomixing is the appropriate scale. The selectivity is shown to be insensitive to the Reynolds number, provided Re)10,000 to ensure fully developed turbulence. In general, the product distribution does not depend explicitly on either the Schmidt number Sc or Reynolds number Re. Moreover, similitude with constant energy dissipation rate \u017d . power per unit mass was only applicable for constant viscosity fluids in the micromixing regime.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "The forms of the Damkohler number that include a local eddy dissipation rate are shown to be useful to characterize reactant feed locations along major fluid streamlines emanating from the impeller tip and in the scale-up to larger tank volumes. Properties of locally isotropic, decaying turbulence along such streamlines demonstrates that the reaction length is small relative to the tank dimension and that the use of a local eddy dissipation rate at the feed discharge point is justified. That is, eddy decay in which the turbulent length and time scales change with position as the reactant is convected away from the injection point is normally of secondary importance and should not complicate scale-up.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "Although the correlations provided are for a particular Rushton impeller and tank geometry, similar correlations of product distribution vs. Damkohler number would result, but be of somewhat different shapes for other tank geometries. ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "isfeed location in stirred tank 1,2,3simpeller suction, liquid surface, and impeller discharge, respectively",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Subscripts",
+                "sec_num": null
+            },
+            {
+                "text": "October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "Manuscript recei\u00aeedOct. 1, 2002, and re\u00aeision recei\u00aeed Mar. 4, 2003. October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [],
+        "bib_entries": {
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "Calculation of Micromixing in Inhomogeneous Stirred-Tank Reactors",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Baldyga",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Bourne",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1988,
+                "venue": "Chem. Eng. Res. Des",
+                "volume": "66",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Baldyga, J., and J. R. Bourne, ''Calculation of Micromixing in Inho- mogeneous Stirred-Tank Reactors,'' Chem. Eng. Res. Des., 66, 33 \u017d . 1988 .",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "Interactions Between Mixing on Various Scales in Stirred Tank Reactors",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Baldyga",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Bourne",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1992,
+                "venue": "Chem. Eng. Sci",
+                "volume": "47",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Baldyga, J., and J. R. Bourne, ''Interactions Between Mixing on Var- ious Scales in Stirred Tank Reactors,'' Chem. Eng. Sci., 47, 1839 \u017d . 1992 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "Jet Reactor Scale-Up for Mixing Con",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Baldyga",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Bourne",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Dubuis",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Etchells",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "V"
+                        ],
+                        "last": "Gholop",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Zimmermann",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1995,
+                "venue": "Trans. Inst. Chem. Eng",
+                "volume": "73",
+                "issue": "5",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Baldyga, J., J. R. Bourne, B. Dubuis, A. W. Etchells, R. V. Gholop, and B. Zimmermann, ''Jet Reactor Scale-Up for Mixing Con- \u017d . \u017d . trolled Reactions,'' Trans. Inst. Chem. Eng., 73 A5 , 497 1995 .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "Interaction Between Chemical Reactions and Mixing on Various Scales",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Baldyga",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Bourne",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Hearn",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. \u017d . Sci",
+                "volume": "52",
+                "issue": "",
+                "pages": "457--1997",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Baldyga, J., J. R. Bourne, and S. J. Hearn, ''Interaction Between Chemical Reactions and Mixing on Various Scales,'' Chem. Eng. \u017d . Sci., 52, 457 1997 .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Micromixing and Fast Reactions in the Core of Turbulent Pipe Flow",
+                "authors": [
+                    {
+                        "first": "O",
+                        "middle": [],
+                        "last": "Bolzern",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Bourne",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Tovstiga",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. Com-\u017d . mun",
+                "volume": "38",
+                "issue": "",
+                "pages": "1--1985",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bolzern, O., J. R. Bourne, and G. Tovstiga, ''Micromixing and Fast Reactions in the Core of Turbulent Pipe Flow,'' Chem. Eng. Com- \u017d . mun., 38, 1 1985 .",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "The Productivity of Micromixing-Controlled Reactions: Effect of Feed Distribution in Stirred \u017d . Tanks",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Bourne",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Hilber",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1990,
+                "venue": "Chem. Eng. Des",
+                "volume": "68",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bourne, J. R., and C. P. Hilber, ''The Productivity of Micromixing- Controlled Reactions: Effect of Feed Distribution in Stirred \u017d . Tanks,'' Chem. Eng. Des., 68, 51 1990 .",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "Investigations of Micromixing in Stirred Tank Reactors Using Parallel Reactions",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Bourne",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Yu",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1994,
+                "venue": "Ind. Eng. Chem. Res",
+                "volume": "33",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bourne, J. R., and S. Yu, ''Investigations of Micromixing in Stirred Tank Reactors Using Parallel Reactions,'' Ind. Eng. Chem. Res., 33, \u017d . 41 1994 .",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "The Influence on the Product Distribution of Fast Parallel Reactions",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Bourne",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "V",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Gholap",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "V",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Rewatkar",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. \u017d . J",
+                "volume": "58",
+                "issue": "",
+                "pages": "15--1995",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bourne, J. R., V. B. Gholap, and V. B. Rewatkar, ''The Influence on the Product Distribution of Fast Parallel Reactions,'' Chem. Eng. \u017d . J., 58, 15 1995 .",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "The Phenomena of Fluid Motions",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Brodkey",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1995,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Brodkey, R. S., The Phenomena of Fluid Motions, Dover, New York \u017d . 1995 .",
+                "links": null
+            },
+            "BIBREF10": {
+                "ref_id": "b10",
+                "title": "The Isotropic Turbulent Mixer 2. Arbitrary Schmidt \u017d . Number",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Corrsin",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "AIChE J",
+                "volume": "10",
+                "issue": "",
+                "pages": "870--1964",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Corrsin, S., ''The Isotropic Turbulent Mixer 2. Arbitrary Schmidt \u017d . Number,'' AIChE J., 10, 870 1964 .",
+                "links": null
+            },
+            "BIBREF11": {
+                "ref_id": "b11",
+                "title": "Turbulence Phenomena",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Davies",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "49--1972",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Davies, J. T., Turbulence Phenomena, Academic Press, New York, p. \u017d . 49 1972 .",
+                "links": null
+            },
+            "BIBREF12": {
+                "ref_id": "b12",
+                "title": "Turbulent Jet Reactors: Mixing Time \u017d . Scales",
+                "authors": [
+                    {
+                        "first": "L",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Forney",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [],
+                        "last": "Nafia",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Trans. Inst. Chem. Eng",
+                "volume": "76",
+                "issue": "",
+                "pages": "728--1998",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Forney, L. J., and N. Nafia, ''Turbulent Jet Reactors: Mixing Time \u017d . Scales,'' Trans. Inst. Chem. Eng., 76, 728 1998 .",
+                "links": null
+            },
+            "BIBREF13": {
+                "ref_id": "b13",
+                "title": "Scale-Up for Micromixing in \u017d . Plug Flow Reactors",
+                "authors": [
+                    {
+                        "first": "L",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Forney",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Chang-Mateu",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Forney, L. J., and M. Chang-Mateu, ''Scale-Up for Micromixing in \u017d . Plug Flow Reactors,'' AIChE Meeting, Miami, FL 1998 .",
+                "links": null
+            },
+            "BIBREF14": {
+                "ref_id": "b14",
+                "title": "Eddy Contact Model: CFD Simulations of Liquid Reactions in Nearly Homogeneous Turbulence",
+                "authors": [
+                    {
+                        "first": "L",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Forney",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [],
+                        "last": "Nafia",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "Chem. \u017d . Eng. Sci",
+                "volume": "55",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Forney, L. J., and N. Nafia, ''Eddy Contact Model: CFD Simulations of Liquid Reactions in Nearly Homogeneous Turbulence,'' Chem. \u017d . Eng. Sci., 55, 6049 2000 .",
+                "links": null
+            },
+            "BIBREF15": {
+                "ref_id": "b15",
+                "title": "Scale-Up in Plug Flow \u017d . Reactors: Laminar Feed",
+                "authors": [
+                    {
+                        "first": "L",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Forney",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "W",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Penney",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [
+                            "X"
+                        ],
+                        "last": "Vo",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2001,
+                "venue": "AIChE J",
+                "volume": "47",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Forney, L. J., W. R. Penney, and H. X. Vo, ''Scale-Up in Plug Flow \u017d . Reactors: Laminar Feed,'' AIChE J., 47, 31 2001 .",
+                "links": null
+            },
+            "BIBREF16": {
+                "ref_id": "b16",
+                "title": "Influence of Viscosity on Product Distribution of Fast Competitive Chemical Reactions",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "V"
+                        ],
+                        "last": "Gholap",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Petrozzi",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Bourne",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1994,
+                "venue": "Chem. Eng. Technol",
+                "volume": "17",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Gholap, R. V., S. Petrozzi, and J. R. Bourne, ''Influence of Viscosity on Product Distribution of Fast Competitive Chemical Reactions,'' \u017d . Chem. Eng. Technol., 17, 102 1994 .",
+                "links": null
+            },
+            "BIBREF17": {
+                "ref_id": "b17",
+                "title": "Turbulence, 2nd",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "O"
+                        ],
+                        "last": "Hinze",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1987,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hinze, J. O., Turbulence, 2nd, McGraw-Hill, New York 1987 .",
+                "links": null
+            },
+            "BIBREF18": {
+                "ref_id": "b18",
+                "title": "Turbulence in Stirred Tanks: Anisotropy, Approximate \u017d . and Applied",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Kreska",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Can. J. Chem. Eng",
+                "volume": "76",
+                "issue": "",
+                "pages": "563--1998",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Kreska, S., ''Turbulence in Stirred Tanks: Anisotropy, Approximate \u017d . and Applied,'' Can. J. Chem. Eng., 76, 563 1998 .",
+                "links": null
+            },
+            "BIBREF19": {
+                "ref_id": "b19",
+                "title": "Turbulent Reactive Mixing with a Series-Parallel Reaction: Effect of Mixing on Yield",
+                "authors": [
+                    {
+                        "first": "K",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Li",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Toor",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1986,
+                "venue": "AIChE J",
+                "volume": "32",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Li, K. T., and H. L. Toor, ''Turbulent Reactive Mixing with a Series- Parallel Reaction: Effect of Mixing on Yield,'' AIChE J., 32, 1312 \u017d . 1986 .",
+                "links": null
+            },
+            "BIBREF20": {
+                "ref_id": "b20",
+                "title": "Proc. Eur. Conf. on Mixing",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Laufhuette",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Mersmann",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1985,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Laufhuette, H. D., and A. B. Mersmann, Proc. Eur. Conf. on Mixing, \u017d . BHRA, Bedford, England 1985 .",
+                "links": null
+            },
+            "BIBREF21": {
+                "ref_id": "b21",
+                "title": "Design of Reaction Systems for Specialty Organic",
+                "authors": [
+                    {
+                        "first": "E",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Paul",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. Sci",
+                "volume": "43",
+                "issue": "",
+                "pages": "1773--1988",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Paul, E. L., ''Design of Reaction Systems for Specialty Organic \u017d . Chemicals,'' Chem. Eng. Sci., 43, 1773 1988 .",
+                "links": null
+            },
+            "BIBREF22": {
+                "ref_id": "b22",
+                "title": "An Experimental Investigation to Determine a Scale-Up Method for Fast Competitive Parallel Reactions in Agitated Vessels",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [
+                            "K"
+                        ],
+                        "last": "Tipnis",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "W",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Penney",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Fasano",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "AIChE Symp. Series",
+                "volume": "90",
+                "issue": "299",
+                "pages": "78--1994",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Tipnis, S. K., W. R. Penney, and J. B. Fasano, ''An Experimental Investigation to Determine a Scale-Up Method for Fast Competi- tive Parallel Reactions in Agitated Vessels,'' AIChE Symp. Series \u017d . 90, No. 299, p. 78 1994 .",
+                "links": null
+            },
+            "BIBREF23": {
+                "ref_id": "b23",
+                "title": "The Effect of Mixing on the Product Quality in Semi-Batch Stirred Tank \u017d . Reactors",
+                "authors": [
+                    {
+                        "first": "I",
+                        "middle": [
+                            "L M"
+                        ],
+                        "last": "Verschuren",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Wijers",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "T F"
+                        ],
+                        "last": "Keurentjes",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Verschuren, I. L. M., J. G. Wijers, and J. T. F. Keurentjes, ''The Effect of Mixing on the Product Quality in Semi-Batch Stirred Tank \u017d . Reactors,'' AIChE Meeting, Los Angeles, CA 2000 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "text": "and u X is the root-mean-square turbulent velocity fluctuation. \u017d . It is now convenient to write the eddy dissipation time A r\u2440 in terms of local turbulent properties",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "FIGREF1": {
+                "text": ". Here, the magnitude of Re depends on l l",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "FIGREF3": {
+                "text": "Figure 1. Selectivity vs. tank Reynolds number. Feed position is fixed above impeller approximately half the distance to surface. Das 0.02 is constant based on average w \u017d .x \u2440 . Data are taken from Baldyga and Bourne 1988 .",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": "1",
+                "num": null
+            },
+            "FIGREF5": {
+                "text": "Figure 2. A laminar feed tube and length scale.",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": "2",
+                "num": null
+            },
+            "FIGREF6": {
+                "text": "-l l , then the appropriate time scale for mixing is the k viscous or Kolmogoroff time. In this case, the reactor feed stream is entrained between ambient turbulent eddies. However, if l l ) l l , we assume that the time scale for mixing is k the inertial scale. The choice of the mixing time is therefore determined by the magnitude of the ratio l lrl l , as described k Chang-Mateu 1998 and Forney et al. 2001 . It should be noted that the latter concept is consistent with \u017d . 2r3 the ordering of the time scales, since t rt A l lrl l . m k kSubstituting from Eqs. 13 and 17, one obtains a ratio of the feed-to-Kolmogoroff lengths of the form Since the reactor Reynolds number ReA NL 2 r , setting l lrl l k s1 in Eq. 18 provides a transition reactor Reynolds number that is constrained by the flow ratio of reactant-to-pumping capacity in constant c must be established from experimental data. The choice of time scale is therefore determined by the magnitude of the reactor Reynolds number. For Re-Re the scale is the viscous or Kolmogoroff time defined c by Eq. 9, while for Re) Re , the mixing time is the inertial c value defined in Eq. 15.A comparison of both scales is demonstrated in Figure3for a tank reactor. The values of the flow ratio of pumping capacity-to-reactant feed indicate that an increase in impeller \u017d speed shifts the mixing scale from the Kolmogoroff micro-. \u017d . mixing to the inertial mesomixing value at the transition Reynolds number Re s 45,000. One wishes to remain, therec fore, on either the left or right of the transition value Re for c accurate scale-up, since the physics of mixing changes at Re . Similitude is assured with the micromixing time scale if the tank Re-Re , the critical value defined by Eq. 19. Equal c selectivity and scale-up are therefore possible for equal kinetics and stoichiometry with constant Damkohler number DaA kA t for the feed tubes in Figure 2, where k is a rate cono k stant. Here, A is defined as moles of added reactant to total o that A s A r 1q a , where A o f f",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "FIGREF7": {
+                "text": "Figure 3. Mixing time vs. tube Reynolds number in stirred-tank reactor: Re s 45,000.c",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": "3",
+                "num": null
+            },
+            "FIGREF8": {
+                "text": "for a medium-size tank \u017d . of volume V s19 L, and Bourne and Yu 1994 for both a o small tank of volume V s 2.3 L and a large tank of volume o \u017d . 70 L. In these experiments sodium hydroxide A was slowly added through a small feed tube of diameter 2 mm to a mix-\u017d . ture of hydrochloric acid B and ethyl monochloroacetate \u017d . C in the two competitive reactions below, where k 4 k 1 2",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "FIGREF9": {
+                "text": "Figure 4. A 19-L stirred-tank reactor. Ds H s 0.29 m, LrD s 1r3, r rD s 0.27, h s 0.27 m, h s 3 1 2 0.03 m. Feed positions: 1\u138f impeller suction; 2\u138f surface; 3 \u138fimpeller discharge.",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": "4",
+                "num": null
+            },
+            "FIGREF10": {
+                "text": "Figures 5 and 6 the data for either different viscosity or tank",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "FIGREF11": {
+                "text": "Figure 6. Selectivity vs. Kolmogoroff time for feed in [ impeller discharge. Data from Bourne and Yu ( )] 1994 .",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": "7",
+                "num": null
+            },
+            "FIGREF12": {
+                "text": "Figure 7. Selectivity vs. Damkohler number for a stirred [ tank with Re-Re . Data from Bourne and Yu c ( ) ( )] 1994 and Bourne et al. 1995 .",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "FIGREF13": {
+                "text": "such as the aqueous curve in Figure2ofBourne et al.",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "FIGREF14": {
+                "text": "for the data ofBourne et al., 1995 . Calculation of the critical Reynolds, Re , at an impeller speed of Ns 4 Hz and a feed c time t s 250 s gives a value of Re s14,400. The tank f c",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "FIGREF15": {
+                "text": "Figure 8. Selectivity vs. Damkohler number for a stirred tank defined by the inertial time scale with Re [ ) Re . Data in feed position 2 from Verc ( ) schuren et al. 2000 ; data in feed position 1 ( ) from Bourne et al. 1995 and Gholap et al. ( )] 1994 .",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": "8",
+                "num": null
+            },
+            "FIGREF16": {
+                "text": "impeller diameter L and the speed N at fixed feed Under these circumstances the product distribution would depend only on the impeller speed N at fixed feed time t , as f \u017d . determined in a previous study byTipnis et al. 1994  and not the power input per unit volume \u2440 A N 3 L 2 . Moreover, if a\u00ae one scales a reactor up at constant \u2440 , the feed time for a\u00ae constant product distribution would vary as t A L 8r3 , as de-",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "FIGREF17": {
+                "text": "dsvertical width of impeller blade, m Dstank diameter, m DasDamkohler number d sfeed-tube diameter, m f H sliquid depth in tank, m h simpeller depth, m 1 h sdepth of surface feed, m 2 k srate constant, m 3 mol y1 s y1 Lsimpeller diameter, m l l sreactant feed length scale, m l l sintegral length scale, m e l l sKolmogoroff length, m k Nsimpeller speed, s y1 nsnumber of feed tubes Q svolume flow rate of limiting reactant, m 3 \u0612 s y1 f Q sstirred-tank pumping capacity s 0.7NL 3 , m 3 \u0612 s y1 p Restank Reynolds number s NL 2 r Re sfeed-tube Reynolds number fluid velocity, m \u0612 s y1 u X sroot-mean-square turbulent velocity fluctuation, m \u0612 s y1 u sfluid velocity in feed tube, m \u0612 s y1 f u slocal fluid velocity along streamline x x sdistance along a streamline, m X sselectivity or product distribution Q Greek letters \u2440 sturbulent energy dissipation, m 2 \u0612 s y3 sturbulent kinetic energy, m 2 \u0612 s y2 skinematic viscosity, m 2 \u0612 s y1 sfluid density kg \u0612 m y3",
+                "uris": null,
+                "type_str": "figure",
+                "fig_num": null,
+                "num": null
+            },
+            "TABREF0": {
+                "text": "feed flows from the work ofBolzern et al. 1985  was plotted \u017d as a universal curve of selectivity vs. Kolmogoroff time For-. ney et al., 2001 . The latter data demonstrate that the reac-\u017d tion rates are independent of Schmidt number Sc or molecu-",
+                "content": "<table><tr><td>. lar diffusion times as shown by</td><td>\u017d</td><td>.</td></tr></table>",
+                "type_str": "table",
+                "html": null,
+                "num": null
+            }
+        }
+    }
+}

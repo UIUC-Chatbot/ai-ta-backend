@@ -1,0 +1,1701 @@
+{
+    "paper_id": "tmpimmntpi4aic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:07:06.377942Z"
+    },
+    "title": "PROCESS SYSTEMS ENGINEERING Multivariable Terrain Methods",
+    "authors": [
+        {
+            "first": "Angelo",
+            "middle": [],
+            "last": "Lucia",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "University of Rhode Island",
+                "location": {
+                    "postCode": "02881",
+                    "settlement": "Kingston",
+                    "region": "RI"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "Yang",
+            "middle": [],
+            "last": "Feng",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "University of Rhode Island",
+                "location": {
+                    "postCode": "02881",
+                    "settlement": "Kingston",
+                    "region": "RI"
+                }
+            },
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "A no\u00aeel geometric terrain methodology was recently presented for finding all physically rele\u00aeant solutions and singular points to chemical process simulation problems based on intelligently mo\u00aeing along special integral cur\u00aees of the gradient \u00aeector field to guide both uphill and downhill mo\u00aeement. The terrain methodology is extended here to include multi\u00aeariable problems and integral cur\u00aee bifurcations. The integral cur\u00aees of interest are those associated with \u00aealleys and ridges and characterized as a collection of extrema in the norm of the gradient o\u00aeer a set of le\u00aeel cur\u00aees. It is shown that integral cur\u00aees can undergo tangent, pitchfork, and other types of bifurcations and that terrain methods are clearly superior to differential arc homotopy-continuation methods on problems that exhibit parametric disconnectedness. Se\u00aeeral examples, including a pair of CSTR problems, a retrograde flash calculation, and the task of finding all azeotropes for a heterogeneous ternary mixture, are used to show that terrain methods represent a reliable, efficient, and global way of sol\u00aeing multi\u00aeariable process engineering simulation and optimization problems. Geometric illustrations are used whene\u00aeer possible to clarify underlying ideas.",
+    "pdf_parse": {
+        "paper_id": "tmpimmntpi4aic",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "A no\u00aeel geometric terrain methodology was recently presented for finding all physically rele\u00aeant solutions and singular points to chemical process simulation problems based on intelligently mo\u00aeing along special integral cur\u00aees of the gradient \u00aeector field to guide both uphill and downhill mo\u00aeement. The terrain methodology is extended here to include multi\u00aeariable problems and integral cur\u00aee bifurcations. The integral cur\u00aees of interest are those associated with \u00aealleys and ridges and characterized as a collection of extrema in the norm of the gradient o\u00aeer a set of le\u00aeel cur\u00aees. It is shown that integral cur\u00aees can undergo tangent, pitchfork, and other types of bifurcations and that terrain methods are clearly superior to differential arc homotopy-continuation methods on problems that exhibit parametric disconnectedness. Se\u00aeeral examples, including a pair of CSTR problems, a retrograde flash calculation, and the task of finding all azeotropes for a heterogeneous ternary mixture, are used to show that terrain methods represent a reliable, efficient, and global way of sol\u00aeing multi\u00aeariable process engineering simulation and optimization problems. Geometric illustrations are used whene\u00aeer possible to clarify underlying ideas.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": ". In a recent article, Lucia and Feng 2002 introduced a completely different, novel, and general approach to finding all physically meaningful solutions and singular points to mathematical models of physical systems by intelligently moving up and down the landscape of the least-squares function. The theoretical foundation for these global terrain methods rests on the fundamental geometric observations that:",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "1 Solutions and singular points are smoothly connected when model functions are smooth;",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "2 Valleys, ridges, ledges, and so on provide a natural characterization of this connectedness;",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "3 Valleys and ridges can, in turn, be characterized as a collection of constrained extrema over a set of level curves;",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . 4 There is an equivalent characterization of valleys and ridges as solutions to generalized, constrained eigenvalueeigenvector problems; and \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "5 The natural flow of the Newton-like vector field tends to be along these distinct features of the landscape.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The overall algorithmic framework is based on the reliable and efficient computation of solutions and singular points, a terrain-following algorithm to efficiently move from one stationary point to another or to a boundary of the feasible re-Correspondence concerning this article should be addressed to A. Lucia. gion, and the concept of limited connectedness to decide when the method has finished. The resulting terrain meth-\u017d . ods were tested on a variety of two-dimensional 2-D chemical process examples. These examples included a melt transition temperature calculation for a polymer blend, the determination of various minimum energy states in disk to vesicle transitions, finding the roots to the SAFT equation of state, and determining the conversion and temperature in an adiabatic CSTR. The associated numerical results clearly show that terrain methods are a reliable and efficient means of finding all physically relevant solutions and singular points for small dimensional problems. Figure 1 illustrates the connectedness of stationary points, and the path generated by our terrain-following algorithm, for the nonlinear CSTR ex-\u017d . ample given in Shacham 1985 .",
+                "cite_spans": [
+                    {
+                        "start": 307,
+                        "end": 313,
+                        "text": "Lucia.",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1163,
+                        "end": 1175,
+                        "text": "Shacham 1985",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 1005,
+                        "end": 1006,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . The main objectives of this article are: 1 to extend the geometric theory of Lucia and Feng to include multivariable \u017d . problems and integral path bifurcations; 2 to demonstrate that terrain methods provide a high degree of problem-solving reliability and efficiency when used to solve larger dimensional problems. Also, a simple illustration is given that clearly shows that, unlike continuation methods, terrain methods can solve problems that are disconnected in parameter space.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The fundamental geometric theory associated with terrain methods is briefly reviewed. Extensions of this theory to in- tegral curve bifurcations are then presented along with geometric and computational illustrations for the 3-D steady-\u017d . state Lorenz 1963 equations. The theoretical material is followed by numerical results for several multivariable chemical process examples, including a nonlinear CSTR, a retrograde flash calculation for a binary mixture, the task of finding all azeotropes for a heterogeneous ternary mixture, and a reactor model with solutions that lie on an isola. Finally, conclusions regarding the reliability, efficiency, and robustness of terrain methods are made.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "Terrain methods are founded on two straightforward geo-\u017d . metric concepts: 1 all stationary points are connected along \u017d . \u017d . curved valleys and ridges; 2 this connectedness is limited to neighboring stationary points.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Mathematical Background",
+                "sec_num": null
+            },
+            {
+                "text": "Valleys, ridges, ledge, and so on of the least-squares landscape are specific integral curves of the gradient vector field and can be defined as a collection of solutions, say V V , to a set of general nonlinearly, constrained optimization problems",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "V V s opt g T g such that F T F s L, for all L\u2440 L L 1 \u00c4 4 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "where F is a twice continuously differentiable vector function of the unknown variables Z, defined on R n or C n , g s 2 J T F, \u017d . J is the Jacobian matrix of F, L is any given value or level of the least-squares objective function F T F, and L L is some collection of level curves. Equation 1 forms the backbone for our terrain methodology and is interpreted as follows. For any given level curve, we find the point on L that corresponds to a local optimum in the gradient norm. The collec-\u017d . tion of these optima for all levels gives all or part of a valley, ridge, or ledge. We note here that it is not necessary to know the set of level curves L L a priori. L L is actually a computational byproduct of the terrain-following approach.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "Multiplying g T g by one-quarter and the level constraint by one-half does not change the stationary points of the constrained optimization problems in Eq. 1, but allows us to conveniently write the associated necessary conditions for optimality in the form",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "F T F y Ls 0 2 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "H H g y g s 0 3",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "where H H is the second derivative matrix of the least-squares function H H s J T J q \u233aF H , and where H is the second",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "i i i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "derivative matrix of the component function F , and is a i Lagrange multiplier associated with the level constraint. Note \u017d that Eq. 3 clearly shows that each point in V V that is, point . in a valley, on a ridge, and so on represents a solution to a constrained eigenvalue-eigenvector problem and that the associated Lagrange multiplier is, in fact, the eigenvalue associated with the eigenvector g.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "Connectedness between stationary points is generally finite. That is, any given stationary point is usually connected to a small set of neighboring stationary points. In fact, Lucia \u017d . and Feng 2002 present heuristic arguments and numerical examples that clearly support the idea that stationary points are really only connected to neighboring stationary points along specific eigendirections. These heuristics are based on the ''attraction'' that exists between neighboring stationary points and the resulting distortion of the level curves that give rise to valleys, ridges, as well as the general curvature of the least-squares landscape. For example, the direction of the attraction between the local minimum, saddle point, and solution shown in Figure 1 correspond to the eigenvectors associated with the smallest positive eigenvalue at either the local minimum or solution and the largest negative eigenvalue at the saddle point. Additional details of this will be presented in the section on Numerical Examples. Knowledge of this connectedness makes it possible to systematically move from one stationary point to another in an organized manner and determine when the terrain methodology has finished.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 758,
+                        "end": 759,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Limited Connectedness",
+                "sec_num": null
+            },
+            {
+                "text": "The foregoing ideas are readily implemented either in an algebraic or differential equations setting as described in Lu-\u017d . cia and Feng 2002 . In particular, Lucia and Feng provide considerable details for an algebraic implementation of a terrain method in which downhill movement takes place using an algebraic equation solver like a trust region method and uphill exploration is conducted using a predictor-corrector method. Predictor steps can be uphill Newton or approximate second-order Newton steps, while corrector steps, which return iterates to a valley or ridge if they have wandered too far, result from the intermittent solution of the optimization problem defined in Eq. 1 using successive quadratic programming. Rapid convergence to singular or saddle points is accomplished using quadratic acceleration. Both uphill and downhill movement results in the determination of a stationary point or a collision with a boundary of the feasible region. Because stationary points are really only connected to neigh-boring stationary points along specific eigendirections, only a few eigenvalues and eigenvectors are needed to initiate movement to find the next stationary point. Moreover, this limited connectedness is easily implemented using linked-list concepts and can be used to determine when the algorithm has finished. See Appendix A for a brief description of the \u017d . terrain methodology or Lucia and Feng 2002 for all of the associated details of this section.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Basic Algorithmic Implementations",
+                "sec_num": null
+            },
+            {
+                "text": "Integral curves can exhibit the same rich bifurcation structure as other types of nonlinear problems and are important because they can occur in chemical process engineering examples such as the task of finding all azeotropes.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Integral Curve Bifurcations",
+                "sec_num": null
+            },
+            {
+                "text": "Tangent, pitchfork, and other bifurcations in integral curves can occur at points where g T g is simultaneously a local minimum and a local maximum on some level curve of F T F. These bifurcation points can be characterized by the singularity of the projected Hessian matrix of the Lagrangian function associated with Eq. 1, where the Hessian matrix of the Lagrangian function is given by",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Integral Curve Bifurcations",
+                "sec_num": null
+            },
+            {
+                "text": "M M s H H T H H q \u233a g G y H H 4 \u017d . i i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Integral Curve Bifurcations",
+                "sec_num": null
+            },
+            {
+                "text": "where G is the second derivative matrix of the ith gradient i function, g .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Integral Curve Bifurcations",
+                "sec_num": null
+            },
+            {
+                "text": "i Tangent bifurcations in integral curves are similar to the more familiar bifurcations that occur in parametric S-shaped solution curves and characterized by the merging or splitting of a single minimum and single maximum on some level curve of F T F. This type of bifurcation is easily identified in a numerical setting and corresponds to points where the integral curve becomes tangent to a level curve\u138fsomething that is very easy to measure numerically. These bifurcations can also exhibit hysteresis. The relevance of tangent bifurcations in integral curves will be illustrated in the Numerical Results section using the problem of finding all azeotropes for isopropyl alcohol and water at 6.66612=10 4 Pa.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Integral Curve Bifurcations",
+                "sec_num": null
+            },
+            {
+                "text": "Pitchfork bifurcations can also occur in integral curves. This type of bifurcation is usually the result of competition between neighboring stationary points and corresponds to a point where two minima and one maximum in g T g occur simultaneously on some level curve of F T F. Pitchfork bifurcations are also easily determined in a numerical setting since they correspond to a point where the projection of M M onto the tangent subspace of the level constraint has a zero eigenvalue.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Integral Curve Bifurcations",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . The Lorenz 1963 equations are a system of three firstorder, ordinary differential equations, two of which contain quadratic nonlinearity, that have been studied extensively from a dynamical perspective to illustrate such things as chaotic dynamics, homoclinic explosions, Poincare return maps, and so on. A good overview and easily readable ex-\u017d . pose on the Lorenz equations can be found in Sparrow 1982 .",
+                "cite_spans": [
+                    {
+                        "start": 397,
+                        "end": 409,
+                        "text": "Sparrow 1982",
+                        "ref_id": "BIBREF8"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "Here, we study the steady-state form of the Lorenz equations because:",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "1 Like many chemical engineering examples, they contain a subset of linear equations; \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "2 There is a pitchfork bifurcation in the integral curve connecting one of the solutions and a pair of saddle points; and \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "3 They provide a clear 3-D illustration of the geometrical ideas that lie at the heart of the terrain methods.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "The Lorenz equations are dxrdt s y y x 5 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "dyrdt s rx y y y xz 6 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "dzrdt s xyy bz 7",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "where , r, and b are parameters. The parameter r is usually used as a bifurcation parameter and typical values for all parameters used in many dynamical studies are s10, bs \u017d . 8r3 and r\u2440 1, 30 .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "Figure 2 shows the level curves for the least-squares function for the 3-D vector function F, given by the steady-state form of Eqs. 5 through 7 for s10, bs8r3, and r s13. The corresponding solutions and saddle points are given in Table 1 . Before proceeding any further, it is important to explain how to interpret Figure 2 . First, it is important to understand that Figure 2 is a solid object, where the outer cage-like surface represents the largest level of F T F which, for the given parameter set, has a value of F T F s150. Thus, as one moves inward and orthogonal to the surface, the value of the level decreases. That is, each specific level encloses all lower levels. Second, the darker circular or elliptical regions of Figure 2 simply represent the intersection of the level surfaces with boundaries of the feasible region, which were set to y7F x, y F 7 and 0 F z F15 for this illustration. Third, the two upper lobes of the figure are twisted about the torso. The lobe on the right comes out of the page, while the lobe on the left goes into the page. Finally, note that all solutions and saddle points are contained within this cage-like structure.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 7,
+                        "end": 8,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    },
+                    {
+                        "start": 237,
+                        "end": 238,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    },
+                    {
+                        "start": 323,
+                        "end": 324,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    },
+                    {
+                        "start": 376,
+                        "end": 377,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    },
+                    {
+                        "start": 739,
+                        "end": 740,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "Unfortunately, it is difficult to see the smooth connectedness that exists between the solutions and saddle points in Figure 2 , even though we have indicated this connectedness by the red integral curves generated by the terrain algorithm. It is equally difficult to see that these integral curves actually connect extrema in g T g. Therefore, to provide a more convincing illustration of connectedness we show a 3-D relief map of the level curves of F T F in Figure 3 . This relief map is simply a cut-away and clearly shows the connectedness of the stationary point of the steady-state Lorenz equations. Note that the integral curves connecting the solutions and saddle points pass directly through the collection of minima of g T g on the set of level curves shown in Figure 3 . Also, note that Figures 2 and 3 both show that a pitchfork bifurcation in the integral curve occurs just a short distance from the solution \u017d . \u017d at zero. The actual bifurcation point is Z s x, y, z s 0, 0, b .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 125,
+                        "end": 126,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    },
+                    {
+                        "start": 468,
+                        "end": 469,
+                        "text": "3",
+                        "ref_id": "FIGREF2"
+                    },
+                    {
+                        "start": 779,
+                        "end": 780,
+                        "text": "3",
+                        "ref_id": "FIGREF2"
+                    },
+                    {
+                        "start": 807,
+                        "end": 808,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    },
+                    {
+                        "start": 813,
+                        "end": 814,
+                        "text": "3",
+                        "ref_id": "FIGREF2"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "3.287 represents a point of transition between a pair of local minima and a local maximum in g T g and corresponds to a singularity of the projected Hessian matrix of the Lagrangian function defined in Eq. 4. The value of F T F at this bifurcation point is 19.207. This bifurcation is a pitchfork bifurcation because the extension of the vertical portion of the integral curve in the z-direction is a collection of maxima in g T g on the appropriate levels of F T F.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simple Illustrative Example",
+                "sec_num": null
+            },
+            {
+                "text": "In this section, we present four multivariable examples from chemical engineering to illustrate the reliability and efficiency of our terrain methodology. These examples include: \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Numerical Examples",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . 1 a nonlinear CSTR; 2 a retrograde flash calculation for a \u017d . binary mixture; 3 the task of finding all azeotropes for a \u017d . heterogeneous ternary mixture; 4 a nonadiabatic reactor with some solutions that lie on an isola. All calculations described in this section were performed in double precision arithmetic on a PC equipped with a Pentium III processor using a Lahey F77r90L-EM32 compiler. In all examples, the initial trust region radius R was 10. Convergence to a solu-5 5 5 5 tion or stationary point was assumed when either F or g F10 y8 , quadratic acceleration was invoked when the param-y6 \u017d . eter F10 see Eq. A2 , and corrector steps were used whenever Eq. A4 was satisfied for G 5. and the energy balance",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Numerical Examples",
+                "sec_num": null
+            },
+            {
+                "text": "F x, T s x 873yT y11 T y300 9 \u017d . \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Numerical Examples",
+                "sec_num": null
+            },
+            {
+                "text": "2 where x denotes the conversion, T is the reactor temperature in degrees Kelvin and k, the reaction rate constant, is w \u017d .\u017d . x given by k s 0.12 exp 12581 T y298 r 298T . The bounds w on conversion and temperature for this example were x 0, x w x 1 and T 298, 450 .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Numerical Examples",
+                "sec_num": null
+            },
+            {
+                "text": "There are three stationary points for this problem, a local minimum at low conversion and low temperature, a saddle point and a steady-state solution at high temperature and high conversion. These stationary points are given in Table 2 . The corresponding eigenvalues and eigenvectors of the Hessian matrix of the least-squares function for all stationary points are listed in Table 3 . Clearly, the negative eigenvalue at the saddle point indicates unstable reactor operation.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 234,
+                        "end": 235,
+                        "text": "2",
+                        "ref_id": "TABREF1"
+                    },
+                    {
+                        "start": 383,
+                        "end": 384,
+                        "text": "3",
+                        "ref_id": "TABREF2"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Numerical Examples",
+                "sec_num": null
+            },
+            {
+                "text": "The numerical calculations for this example proceeded in \u017d . \u017d the following way. From a starting point of x , T s 0. \u017d . the point Zs 0.964280, 346.264 . Most of this effort was used in calculating corrector steps because the constrained optimization problems defined in Eq. 1 become extremely poorly scaled as iterates climb out of the valley toward the upper righthand side corner of the feasible region. Thus, line searching and between 10 and 20 iterations are required to solve the associated constrained optimization problems. In all, 273 function and gradient calls were required to find all stationary points for this example.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Numerical Examples",
+                "sec_num": null
+            },
+            {
+                "text": "Consider a fixed vapor flow rate-temperature VT flash for a binary mixture of carbon dioxide and n-butane where the vapor to feed ratio is VrF s 0.90 and the flash temperature is T s 344.26 K. See Figure 4 for an illustration. For \u017d .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 204,
+                        "end": 205,
+                        "text": "4",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "i i i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "and the specification equation",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "\u233a\u00ae r \u233a f yVrF s 0 1 2 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "j j",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "where f , l , and \u00ae are the feed, liquid and vapor molar flows, i i i respectively. The component equilibrium ratios K are dei fined by the rule K s L r V , where L and V are the fu-",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "i i i i i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "gacity coefficients for the ith component in the liquid and vapor phases, respectively. The fugacity coefficients are generally nonlinear functions of temperature, pressure, and composition and defined through the compressibility factor using \u017d . \u017d . an equation of state EOS . The Soave-Redlich-Kwong SRK EOS with classical mixing and combining rules with a binary interaction parameter k s 0.135 was used to model both 12 phases. The SRK equation, classical mixing rules, and critical properties data we used can be found in Table 1 .11 and Ap-\u017d . pendix D, respectively, in Walas 1985 . The ten unknown variables in this problem are the complex-valued l 's, \u00ae 's, and i i w the pressure p, and the bounds on the variables were l , \u00ae \u2440 0, i i",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 533,
+                        "end": 534,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "x w 6 7 x f and p\u2440 5.=10 , 1.=10 .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "i Table 4 gives the stationary points for one mole of feed containing 75 mol. % carbon dioxide and 25 mol. % n-butane for specifications of VrF s 0.9 and T s 344.26 K. In this table, the isolated stationary points are reported using the mole fraction of carbon dioxide in each phase and the pres- 5 . \u017d . \u017d From a starting point of Z s x , y , p s 0.8, 0.5, 5.= 0 1 1 6 . 10 , our complex domain trust region method finds the solu-\u017d 6 . tion s s 0.49944, 0.77784, 6.31084=10 in 5 iterations. 1 \u00c4 4 Thus, the set of solutions is set to S S s s . From Table 5 , it 1 is easily seen that the proper eigen-connection for locating the next stationary point using uphill movement is the eigenvector associated with the smallest eigenvalue s6.2543= \u017d . y0.00105, y0.00105, y0.00946, 0.00946, y0.99991 is the eigenvector associated with the negative eigenvalue s y0.9462=10 y5 . Downhill movement from the saddle point in the q c direction is not attempted since that is the ap-2 proximate direction connecting s and s . Downhill move-1 2 ment from the saddle in the direction y c quickly locates 2 \u017d the high pressure solution s s 0.69735, 0.75585, 7.94380= 3 6 . 10 in 9 iterations using a complex domain trust region \u00c4 4 method. Thus, S S s s , s , s , c is deleted from the set of ",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 8,
+                        "end": 9,
+                        "text": "4",
+                        "ref_id": "TABREF3"
+                    },
+                    {
+                        "start": 297,
+                        "end": 298,
+                        "text": "5",
+                        "ref_id": "TABREF4"
+                    },
+                    {
+                        "start": 556,
+                        "end": 557,
+                        "text": "5",
+                        "ref_id": "TABREF4"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "Azeotropes can place limits on the separation of components in a mixture. Thus, knowledge of all azeotropes of homogeneous and heterogeneous multicomponent mixtures is useful in the analysis and design of separation and reactive separation processes. For a mixture of n components, the c relevant model equations are the n phase equilibrium equa-",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "c tions K y1s\u2425 f 0 r py1s 0 1 3 \u017d . i ii i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "and the summation equation",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "\u233a x y1s 0 1 4 \u017d . i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "where \u2425 , f 0 , and are the liquid-phase activity coefficient,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "i i i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "standard state fugacity, and the vapor phase fugacity coefficient, respectively, for the ith component. Since we implic-\u017d . itly use the condition that x s y , it follows that \u2425 s\u2425 x, T ,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "i i i i 0 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . f T and s x, T , and, therefore, K s K x, T , where",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "i i i i i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "x denotes composition and T is the temperature. Thus, there \u017d are n q1 equations and n q1 unknowns the x 's and the",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "c c i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": ". azeotropic temperature T in the homogeneous case. For so-called type I heterogeneous mixtures, the overall liquid composition satisfies Eqs. 13 and 14, but also splits into two or more liquid phases and, therefore, must satisfy additional equilibrium and summation equations.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Consider a mixture of n-propyl bromide NPB , isopropyl \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finding All Azeotropes",
+                "sec_num": null
+            },
+            {
+                "text": "alcohol IPA , and water H O at 6.66612=10 Pa where it 2 is assumed that the vapor phase behaves as an ideal gas and the liquid phase is nonideal. Using the Riedel vapor pres-\u017d . sure constants and NonRandom Two Liquid NRTL binary interaction parameters given in Appendix B, this mixture exhibits two homogeneous and two heterogeneous azeotropes, as shown in Table 6 . Note there are three binary and one minimum boiling ternary azeotropes. The form of the NRTL \u017d . equation that we used is given on p. 183 in Walas 1985 . This example is interesting because there are a relatively large number of stationary points for the least-squares function despite the fact that there are only four equations. There are seven solutions\u138fthe three pure component vertices and the four azeotropes shown in Table 6 . There are also a num- 2 ber of saddle points that lie between these solutions. Moreover, the valleys connecting these stationary points are quite curved and some contain tangent bifurcations.",
+                "cite_spans": [
+                    {
+                        "start": 509,
+                        "end": 521,
+                        "text": "Walas 1985 .",
+                        "ref_id": "BIBREF9"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 364,
+                        "end": 365,
+                        "text": "6",
+                        "ref_id": "TABREF5"
+                    },
+                    {
+                        "start": 798,
+                        "end": 799,
+                        "text": "6",
+                        "ref_id": "TABREF5"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "4",
+                "sec_num": null
+            },
+            {
+                "text": "To clearly illustrate that tangent bifurcations can occur in integral curves, consider the homogeneous binary mixture IPA and H O at 6.66612=10 4 Pa, which lies in a subspace of 2 the equations defining all azeotropes for the ternary mixture. Figure 5 shows the path connecting the pure IPA vertex, the pure water vertex, the IPA-H O azeotropic solution, and the 2 two saddle points between the pure component vertices and the binary azeotropic solution that was generated by our terrain method. Note that there is a pair of tangent bifurcations in the integral curves near the pure water vertex and hysteresis in the path, as indicated by the small set of level curves common to both branches of the path. the values of F T F are 0.18086 and 0.14514, respectively. However, it is important to note that these tangent bifurcations do not affect the connectedness between the stationary points in this problem and our terrain method easily finds all stationary points irrespective of which stationary point is found first! Figure 6 gives a complete summary of the numerical results of our terrain methodology applied to the problem of finding all azeotropes for the ternary heterogeneous mixture of NPBrIPArH O at 6.66612=10 4 Pa. Note that 13 station-2 ary points were located. More importantly, the integral curves that connect all azeotropes were correctly determined and all four azeotropes shown in Table 6 were successfully calculated using 472 function and gradient calls and 2.58 s of computer time.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 250,
+                        "end": 251,
+                        "text": "5",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1029,
+                        "end": 1030,
+                        "text": "6",
+                        "ref_id": "FIGREF9"
+                    },
+                    {
+                        "start": 1409,
+                        "end": 1410,
+                        "text": "6",
+                        "ref_id": "TABREF5"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "4",
+                "sec_num": null
+            },
+            {
+                "text": "Consider the nonadiabatic CSTR studied by Balakotaiah \u017d . and Luss 1981, 1983 and one mathematical model given by the mass and energy balance equations",
+                "cite_spans": [
+                    {
+                        "start": 42,
+                        "end": 61,
+                        "text": "Balakotaiah \u017d . and",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 62,
+                        "end": 77,
+                        "text": "Luss 1981, 1983",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Nonadiabatic CSTR with Isola",
+                "sec_num": null
+            },
+            {
+                "text": "F x,T s x 1q k y k s 0 1 5 \u017d . \u017d . \u017d . 1 F x,T s C TyT q UArF T yT r \u017d . \u017d . \u017d . \u017d . 2 p 0 c C y x\u232c H s 0 16 \u017d . A0 R",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Nonadiabatic CSTR with Isola",
+                "sec_num": null
+            },
+            {
+                "text": "where x denotes the unknown conversion of species A, the residence time is given by sVrF, V is the reactor volume, and F is the volumetric flow rate through the reactor. \u017d . The rate constant k is defined by k s k exp y ErRT where 0 k is the pre-exponential factor, E is the activation energy, R 0 is the gas constant, and T is the unknown temperature of the reactor. Also, is the fluid density, C is the specific heat, U p is an overall heat-transfer coefficient, A is the heat-transfer area, and \u232c H is the heat of reaction. C is the feed con- feed and cooling water temperatures, respectively. Note that the second term in the middle portion of Eq. 16 allows for both adiabatic and nonadiabatic operation of the reactor and it is nonadiabatic operation that gives rise to isola. The bounds w x on conversion and reactor temperature were x 0, 1 and w x T 298, 450 . The data for this problem is given in Table 7 .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 912,
+                        "end": 913,
+                        "text": "7",
+                        "ref_id": "TABREF7"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Nonadiabatic CSTR with Isola",
+                "sec_num": null
+            },
+            {
+                "text": "The parametric behavior of conversion as a function of the Damkohler number Das k is shown in Figure 7 This starting point is particularly poor because it is a combination of low conversion and high temperature. Figure 8 shows a complete summary of the numerical results for this example in the form of a computational tree. Several points are worth noting. First, only 104 total function and gradient calls were required to find all five stationary points shown in Table 8 from the given starting point. Uphill and downhill movement exactly follows the terrain methodology in that eigen-initiation corresponding to the smallest positive and largest negative eigenvalue, which correctly identifies the connectedness between solutions and saddle points. Moreover, the small associated computational overhead is quite encouraging. Secondly, our algorithm used no corrector steps throughout the computations because it correctly determined that the valley that connects the stationary points is essen- ",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 101,
+                        "end": 102,
+                        "text": "7",
+                        "ref_id": "FIGREF10"
+                    },
+                    {
+                        "start": 219,
+                        "end": 220,
+                        "text": "8",
+                        "ref_id": "FIGREF11"
+                    },
+                    {
+                        "start": 472,
+                        "end": 473,
+                        "text": "8",
+                        "ref_id": "TABREF8"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Nonadiabatic CSTR with Isola",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . molrm 1 =10 \u017d . C Jrmol K 4.18399 p y1 6 \u017d . k s 4.48=10 0 4 \u017d . E Jrmol 6.275386=10 5 \u017d . \u232c H Jrmol y1.763841=10 R 3 3 \u017d . C molrm 3 =10 A0 \u017d . T K 298. 0 \u017d . R Jrmol K 8.313598 11 \u017d . UA Jrs K 2.24580=10 \u017d . T K 298.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Nonadiabatic CSTR with Isola",
+                "sec_num": null
+            },
+            {
+                "text": "c tially a straight line in this example. This is easily seen since the principal, normalized eigenvector shown in Table 8 remains unchanged from stationary point to stationary point. Finally, it is rather easy to see from Figure 7 that simple arclength homotopy-continuation methods cannot find all solutions to this problem from a single starting point. To further support this last comment, we performed a continuation of the complex domain solutions that exist to the left and right of the isola in Figure 7 . For example, for Das 0.0117710, \u017d . there are complex-valued solutions given by X, T s \u017d . 0.77378qry0.03375i, 383.748qry3.73976i and, as Da is decreased, the imaginary parts of the conversion and temperature increase in magnitude. Similarly, for Das 0.0771207, ",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 121,
+                        "end": 122,
+                        "text": "8",
+                        "ref_id": "TABREF8"
+                    },
+                    {
+                        "start": 230,
+                        "end": 231,
+                        "text": "7",
+                        "ref_id": "FIGREF10"
+                    },
+                    {
+                        "start": 510,
+                        "end": 511,
+                        "text": "7",
+                        "ref_id": "FIGREF10"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Nonadiabatic CSTR with Isola",
+                "sec_num": null
+            },
+            {
+                "text": ". \u017d there are complex-valued solutions X, T s 0.63446qry . 0.04297i, 339.674qry2.82290i , and, as Da increases, the imaginary parts of the solutions only grow in magnitude. These results clearly show that the complex-valued solutions are not parametrically connected to the unique real solutions at any values of Da and, thus, that continuation cannot find all solutions to this problem from a single starting point.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The terrain methodology of Lucia and Feng was used to solve a nontrivial set of multivariable, chemical process engineering examples, some of which exhibit integral curve bifurcations. The numerical results for the examples studied are summarized in Table 9 . In our opinion, these results are extremely encouraging because they show that terrain methods make it possible to reliably find all solutions and singular points using only a modest number of total function and gradient evaluations, and a small amount of computer time. It is important for the reader to understand that the examples discussed at length in this article were chosen because they \u017d illustrate specific numerical characteristics such as local min-. ima, tangent and pitchfork bifurcations, isola, and so on relevant to terrain methods and global equation solving. We \u017d have solved many other physical problems such as distilla-tion problems, phase split calculations, Gibbs energy minimization, potential energy minimization in molecular model-. ing , as well as many of the problems available through the \u017d . Web Shacham et al., 2002 . These additional results, many of which will appear in future publication commitments of the principal author, only reinforce the general conclusion that terrain methods are a very reliable, robust, and efficient global equation-solving methodology.",
+                "cite_spans": [
+                    {
+                        "start": 1088,
+                        "end": 1108,
+                        "text": "Shacham et al., 2002",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 256,
+                        "end": 257,
+                        "text": "9",
+                        "ref_id": "TABREF9"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d We remark that the first example discussed in detail that . is, the nonlinear CSTR is actually problem 31 from the Web \u017d . library and is considered by Shacham et al. 2002 to be of a higher degree of difficulty. However, our terrain methodology has absolutely no difficulties whatsoever in finding the local minimum, saddle, and global minimum shown in Table terrain method finds all three stationary points in 213, 183, 188, and 178 total function and gradient evaluations, respec-\u017d . tively. Shacham et al. 2002 state that ''most methods won't converge from initial guesses 2 and 3 because of singularities.'' However, it is precisely because terrain methods correctly handle, and, in fact, exploit, singularities that our methodology easily finds all stationary points. All stationary points to other problems from this Web site are also easily found by our terrain methodology. Some of these numerical results are summarized in Table 10 .",
+                "cite_spans": [
+                    {
+                        "start": 154,
+                        "end": 173,
+                        "text": "Shacham et al. 2002",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 496,
+                        "end": 515,
+                        "text": "Shacham et al. 2002",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 940,
+                        "end": 942,
+                        "text": "10",
+                        "ref_id": "TABREF10"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "Finally, it is important to comment on the numerical characteristics of the optimization problems used to define valleys and ridges. The nonlinear optimization problems defined in Eq. 1 can be quite difficult to solve because they are inherently poorly scaled. We have tried a number of readily available, off-the-shelf optimization codes, including the succes-\u017d . sive quadratic programming SQP routine VF13AD from the Harwell Subroutine Library, and found them to be unsatisfactory. Sometimes, these codes converge and sometimes they do not converge. However, they often show quite erratic behavior during early iterations, which is a clear sign of potential numerical difficulties, and typically take 50 or more function and gradient calls when they do converge. We presently \u017d . use our own in-house SQP methodology Lucia and Xu, 1990 for solving the problems defined by Eq. 1, which always converges smoothly and usually in less than 20 function and gradient calls.",
+                "cite_spans": [
+                    {
+                        "start": 820,
+                        "end": 838,
+                        "text": "Lucia and Xu, 1990",
+                        "ref_id": "BIBREF5"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "where \u232c and g are the Newton and gradient directions, g G R, then \u2424 s 0. Otherwise, \u2424 is the unique value in Eq. w x 5 5 A1 on 0,1 that satisfies \u232c sR. Furthermore, if during 5 5 5 5 downhill movement, g r \u232c F , then the equation",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "N \u232c sy H H y1 g A2 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "is used to calculate the step \u232c, where H H is the second derivative matrix of the least-squares function, H H s J T J q \u233aF H , and where H is the second derivative matrix of the i i i component function F . Note that Eq. A2 defines a secondi \u017d . order Newton or quadratic acceleration step. Downhill 5 5 5 5 movement is terminated when either F F \u2440 or g F \u2440 , where \u2440 is a convergence tolerance and can result in convergence to either a minimum or saddle point of F T F. Except for the initial starting point, which is arbitrary, downhill movement is always initiated in the eigen-direction associated with the largest negative eigenvalues of the Hessian matrix of the objective function.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "Uphill movement is always initiated in the eigen-direction associated with the smallest positive eigenvalues of the Hessian matrix of the objective function followed by predictor-\u017d . corrector calculations to get ''near'' a saddle or singular point. Predictor steps are simply controlled uphill Newton steps \u232c s \u2423 J y1 F A3 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "N \u017d x where the step size \u2423 0,1 . These uphill Newton steps tend to follow valleys reasonably well, but do drift some. Therefore, corrector steps are used intermittently to return iterates to the current valley and are invoked when \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "N N",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "where c is the current estimate of the eigenvector associated with the smallest positive eigenvalue of H H and \u2330 is 5\u040a. Corrector steps are defined by solving the optimality conditions associated with the definition of valleys and ridges method given by Eq. 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "F T F y Ls 0 A 5",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "H H g y g s 0 A 6",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "where L is the value of the level set at the last predictor iterate. There are many ways of solving Eqs. A5 and A6. We \u017d . use the Successive Quadratic Programming SQP method \u017d . given in Lucia and Xu 1990 . Note that the solution to Eqs. A5 and A6 gives new estimates of both the eigenvalue and eigenvector of H H that define the current valley. Uphill movement using predictor-corrector calculations continues until the objective function goes through a maximum value, or successive uphill Newton steps reverse direction or 5 5 5 5 g r \u232c F . Once near a saddle point, quadratic accelera-N \u017d . \u017d tion Eq. A2 is used to converge to the saddle or next sta-. tionary point .",
+                "cite_spans": [
+                    {
+                        "start": 188,
+                        "end": 205,
+                        "text": "Lucia and Xu 1990",
+                        "ref_id": "BIBREF5"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "It is important for the reader to understand that the initial starting point does not matter. Irrespective of the stationary \u017d point found first that is, saddle point, local minimum, or . global minimum , movement from one stationary point to the next or to a boundary of the feasible region follows this same logic and the same set of stationary points will be located.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "Termination of the terrain methodology is based on the concept of limited connectedness or that stationary points are really only connected to neighboring stationary points along specific eigendirections. We assume that the number of important connections between stationary points along valleys and ridges is limited to four or less and is related to domi-\u017d nant geometric distortions that is, qry the smallest positive eigendirection and qry the most negative eigendirec-. tion caused by the strongest ''attractions'' between neighboring stationary points. This makes it possible to dynamically catalog connections in a set C C and to conclude that all connections have been explored for all stationary points when C C is empty. The Riedel vapor pressure equation for component j is given by ln P sat sC qC r T qC qC TqC lnT qC T C7j \u017d . j 1 j 2 j 3 j 4 j 5 j 6 j",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "B1",
+                "sec_num": null
+            },
+            {
+                "text": "where T is in K and is P sat in Pa. See Table B1 for Riedel The NRTL binary interaction parameters and G are i, j i , j defined by",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 46,
+                        "end": 48,
+                        "text": "B1",
+                        "ref_id": "TABREF11"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "B1",
+                "sec_num": null
+            },
+            {
+                "text": "s a q b rRT B2 \u017d . i , j i , j i , j G sexp \u2423 B3 \u017d . \u017d . i , j i , j i, j",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "B1",
+                "sec_num": null
+            },
+            {
+                "text": "where T is K.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "B1",
+                "sec_num": null
+            },
+            {
+                "text": "In this work all a s 0, all \u2423 s 0.3 and the b 's were i, j i , j i , j generated using the UNIFAC group contribution method available in Apsen Plus version 10.2. The values of the b s i j are given in Table B2 . ",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 207,
+                        "end": 209,
+                        "text": "B2",
+                        "ref_id": "TABREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "B1",
+                "sec_num": null
+            },
+            {
+                "text": "October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "Manuscript recei\u00aeedSept. 11, 2002, and re\u00aeision recei\u00aeed Mar. 20, 2003. October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [
+            {
+                "text": "The authors would like to thank the National Science Foundation for support of this work under Grant No. CTS-0113091.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Acknowledgment",
+                "sec_num": null
+            },
+            {
+                "text": "Terrain methods assume that the stationary points of any objective function are connected along valleys and ridges. Successful movement from one stationary point to another proceeds by following an appropriate valley or ridge in the landscape of the objective function, either uphill or downhill, using predictor-corrector calculations and equation solving, respectively. Valleys and ridges are defined using principal eigenvalues and eigenvectors and termination occurs once all of the important eigen-directions have been exhausted. Downhill movement is calculated using a trust region strategy in conjunction with a quadratic acceleration technique. Downhill steps are defined by \u232c s \u2424\u232c q \u2424 y1 g A1 \u017d .\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix A: A Brief Description of the Terrain Methodology",
+                "sec_num": null
+            }
+        ],
+        "bib_entries": {
+            "BIBREF0": {
+                "ref_id": "b0",
+                "title": "Analysis of Multiplicity Patterns of a \u017d . CSTR",
+                "authors": [
+                    {
+                        "first": "V",
+                        "middle": [],
+                        "last": "Balakotaiah",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Luss",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. Commun",
+                "volume": "13",
+                "issue": "",
+                "pages": "111--1981",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Balakotaiah, V., and D. Luss, ''Analysis of Multiplicity Patterns of a \u017d . CSTR,'' Chem. Eng. Commun., 13, 111 1981 .",
+                "links": null
+            },
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "Multiplicity Features of Reacting Sys-tems\u138fDependence of the Steady-States of a CSTR on the Resi-\u017d . dence Time",
+                "authors": [
+                    {
+                        "first": "V",
+                        "middle": [],
+                        "last": "Balakotaiah",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Luss",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. Sci",
+                "volume": "38",
+                "issue": "",
+                "pages": "1709--1983",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Balakotaiah, V., and D. Luss, ''Multiplicity Features of Reacting Sys- tems\u138fDependence of the Steady-States of a CSTR on the Resi- \u017d . dence Time,'' Chem. Eng. Sci., 38, 1709 1983 .",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "Deterministic Nonperiodic Flows",
+                "authors": [
+                    {
+                        "first": "E",
+                        "middle": [
+                            "N"
+                        ],
+                        "last": "Lorenz",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1963,
+                "venue": "J. Atmos. Sci",
+                "volume": "20",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lorenz, E. N., ''Deterministic Nonperiodic Flows,'' J. Atmos. Sci., 20, \u017d . 130 1963 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "Complex Domain Chemical Process Simulation in The-\u017d . ory and in Practice",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Lucia",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "I & EC Res",
+                "volume": "39",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lucia, A., ''Complex Domain Chemical Process Simulation in The- \u017d . ory and in Practice,'' I & EC Res., 39, 1713 2000 .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "Global Terrain Methods",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Lucia",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Y",
+                        "middle": [],
+                        "last": "Feng",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Comput. & Chem. \u017d . Eng",
+                "volume": "26",
+                "issue": "",
+                "pages": "529--2002",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lucia, A., and Y. Feng, ''Global Terrain Methods,'' Comput. & Chem. \u017d . Eng., 26, 529 2002 .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Chemical Process Optimization Using New-\u017d . ton-like Methods",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Lucia",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Xu",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1990,
+                "venue": "Comput. Chem. Eng",
+                "volume": "14",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lucia, A., and J. Xu, ''Chemical Process Optimization Using New- \u017d . ton-like Methods,'' Comput. Chem. Eng., 14, 119 1990 .",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "Comparing Software for the Solution of Systems of Nonlinear Algebraic Equations Arising in Chemical Engineering",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Shacham",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Comput. & Chem. Eng",
+                "volume": "9",
+                "issue": "",
+                "pages": "103--1985",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Shacham, M., ''Comparing Software for the Solution of Systems of Nonlinear Algebraic Equations Arising in Chemical Engineering,'' \u017d . Comput. & Chem. Eng., 9, 103 1985 .",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "A Web-Based Library for Testing Performance of Numerical Software for Solving Non-\u017d . linear Algebraic Equations",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Shacham",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [],
+                        "last": "Brauner",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Cutlip",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Comput. & Chem. Eng",
+                "volume": "26",
+                "issue": "",
+                "pages": "547--2002",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Shacham, M., N. Brauner, and M. B. Cutlip, ''A Web-Based Library for Testing Performance of Numerical Software for Solving Non- \u017d . linear Algebraic Equations,'' Comput. & Chem. Eng., 26, 547 2002 .",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "The Lorenz Equations: Bifurcations, Chaos, and Strange",
+                "authors": [
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Sparrow",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1982,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Sparrow, C., The Lorenz Equations: Bifurcations, Chaos, and Strange \u017d . Attractors, Springer-Verlag, New York 1982 .",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "Phase Equilibria in Chemical Engineering",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Walas",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1985,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Walas, S. M., Phase Equilibria in Chemical Engineering, Butterworth, \u017d . Stoneham, MA 1985 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 1. Connectedness of stationary points for a nonlinear CSTR.",
+                "fig_num": "1"
+            },
+            "FIGREF1": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 2. Level sets of F T F for steady-state Lorenz equations.",
+                "fig_num": "2"
+            },
+            "FIGREF2": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 3. Relief map for the level curves for the Lorenz equations.",
+                "fig_num": "3"
+            },
+            "FIGREF3": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "the lower bound in reactor tempera-\u00c4 4 \u00c4 4 ture in two iterations. Thus, S S s s , s and C C s c where 1 2 2 \u017d . c s y0.026170, y0.999657 . 2 Downhill movement from the saddle point s takes place 2 in the y c direction, only because the saddle was ap-2 proached from the q c direction. Eigen-perturbation gives 2 \u017d . the point Zs 0.883151, 335.655 and subsequent use of our \u017d trust region strategy finds the solution s s 0in 12 iterations to an accuracy of F s1=10 . \u00c4 4 At this point, S S s s , s , s , c is deleted from the set . Uphill movement from the solution s which 3 takes place in the direction y c because the solution was 3 approached from the q c direction, encounters an upper 3 bound in conversion in 184 function and gradient calls from",
+                "fig_num": null
+            },
+            "FIGREF4": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 4. Isothermal VLE for CO -n-C H at 344.26 K 2 4 1 0",
+                "fig_num": null
+            },
+            "FIGREF5": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": ", 0.99996 and C C s c . Uphill movement in the q c 1 1 direction encounters a bound while uphill movement in the \u017d y c direction finds the saddle point, s s 0.54923, 0.77246, in 35 iterations. Thus, S S s s , s , from the set of connections and C C s c , where c s 2 2",
+                "fig_num": null
+            },
+            "FIGREF6": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "y0.03225, 0.99895 is the eigenvector associated with the smallest eigenvalue of H H at the high-pressure solution. Since the direction y c connects solutions s and s , high pressure solution proceeds in the q c direction and encounters an upper bound in pressure in 3 10 iterations. Since c is deleted from C C and C C is null, our 3 \u00c4 4 terrain method terminates with S S s s , s , s . A total of 1 2 3191 function and gradient calls and 3.41 s of computer time were required to solve this problem.",
+                "fig_num": null
+            },
+            "FIGREF7": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "A and T and T represent the 0 c",
+                "fig_num": null
+            },
+            "FIGREF8": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 5. Terrain-following paths for the IPA-H O all azeotropes function.",
+                "fig_num": null
+            },
+            "FIGREF9": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 6. Computational tree for all azeotropes calculation.",
+                "fig_num": "6"
+            },
+            "FIGREF10": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 7. Nonadiabatic CSTR.",
+                "fig_num": "7"
+            },
+            "FIGREF11": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 8. Computational tree for nonadiabatic CSTR.",
+                "fig_num": "8"
+            },
+            "FIGREF12": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "where \u2424 0,1 is determined from the fol-5 5 lowing simple rules. If \u232c F R, then \u2424 s1, where R is the N 5 5 trust region radius. If, on the other hand, \u232c ) R and N 5 5",
+                "fig_num": null
+            },
+            "FIGREF16": {
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "2",
+                "fig_num": null
+            },
+            "TABREF0": {
+                "content": "<table><tr><td>Stationary Point</td><td colspan=\"4\">Numerical Value</td></tr><tr><td>Solution</td><td>\u017d 0, 0, 0 .</td><td/><td/></tr><tr><td>Saddle point</td><td colspan=\"4\">\u017d 2.49217, 2.89654, 6.963891 .</td></tr><tr><td>Solution</td><td>1r2 .x b ry1 \u017dw \u017d</td><td colspan=\"2\">1 r2 .x , b ry1 w \u017d</td><td>. , r y1</td></tr><tr><td>Saddle point</td><td colspan=\"4\">\u017d y2.49217, y2.89654, 6.963891 .</td></tr><tr><td>Solution</td><td colspan=\"2\">1r2 .x y b ry1 \u017d w \u017d</td><td colspan=\"2\">1 r2 .x ,y b ry1 w \u017d</td><td>. , r y1</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF1": {
+                "content": "<table><tr><td>0</td><td>0</td><td>6,</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF2": {
+                "content": "<table><tr><td>Stationary Point</td><td>Eigenvalues</td><td/><td>Eigenvectors</td></tr><tr><td>Local minimum</td><td>2.10713</td><td/><td>\u017d 0.019607, 0.999807 .</td></tr><tr><td/><td>3.43486=10</td><td>5</td><td>\u017d y0.999807, 0.019607 .</td></tr><tr><td>Saddle point</td><td>y92.7333</td><td/><td>\u017d y0.026170, y0.999657 .</td></tr><tr><td/><td>8.74274=10</td><td>5</td><td>\u017d y0.999657, 0.026170 .</td></tr><tr><td>Solution</td><td>98.27692</td><td/><td>\u017d y0.004124, y0.999991 .</td></tr><tr><td/><td>1.13078=10</td><td>7</td><td>\u017d y0.999991, 0.004124 .</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF3": {
+                "content": "<table><tr><td>Stationary Point</td><td>\u017d Numerical Value x</td><td>CO</td><td>2</td><td>, y</td><td>CO</td><td>2</td><td colspan=\"3\">, p</td><td>.</td></tr><tr><td>Solution 1</td><td colspan=\"7\">\u017d 0.49944, 0.77784, 6.31084=10</td><td>6</td><td>.</td></tr><tr><td>Saddle point</td><td colspan=\"7\">\u017d 0.54923, 0.77246, 6.93661=10</td><td>6</td><td>.</td></tr><tr><td>Solution 2</td><td colspan=\"7\">\u017d 0.69735, 0.75585, 7.94380=10</td><td>6</td><td>.</td></tr><tr><td colspan=\"10\">sure in units of Pa. All eigenvalues and eigenvectors of H H at</td></tr><tr><td colspan=\"6\">the stationary points in Table 4 are shown in Table</td><td/><td/><td/></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF4": {
+                "content": "<table><tr><td>Stationary Point</td><td colspan=\"2\">Eigenvalues</td><td>Eigenvectors</td></tr><tr><td>Solution 1</td><td colspan=\"2\">y5 6.2543=10</td><td colspan=\"2\">\u017d 0.00069,y0.00064,y0.00668,0.00536,0.99996</td><td>.</td></tr><tr><td/><td>2.8114=10</td><td>2</td><td colspan=\"2\">\u017d 0.01974,y0.03203,y0.52978,0.84727,0.00818</td><td>.</td></tr><tr><td/><td>9.2902=10</td><td>3</td><td colspan=\"2\">\u017d y0.72131,0.64885,y0.22184,y0.09738,0.00004</td><td>.</td></tr><tr><td/><td>1.8643=10</td><td>4</td><td colspan=\"2\">\u017d 0.37270,0.65601,0.54912,0.35947,y0.001906</td><td>.</td></tr><tr><td/><td>8.4727=10</td><td>4</td><td colspan=\"2\">\u017d 0.58345,0.38421,y0.60709,y0.37869,0.00218</td><td>.</td></tr><tr><td>Saddle point</td><td colspan=\"2\">y5 y0.9462=10</td><td colspan=\"2\">\u017d y0.00105,y0.00105,y0.00946,0.00946,y0.99991 .</td></tr><tr><td/><td>2.4181=10</td><td>2</td><td colspan=\"2\">\u017d 0.29021,y0.05988,y0.56715,0.82082,0.01323</td><td>.</td></tr><tr><td/><td>8.7124=10</td><td>3</td><td>\u017d 0.69863,y0.69602,0.16174,0.36272,0.00028</td><td>.</td></tr><tr><td/><td>1.5775=10</td><td>4</td><td colspan=\"2\">\u017d y0.37610,y0.54153,y0.60604,y0.44498,0.00016 .</td></tr><tr><td/><td>9.4447=10</td><td>4</td><td colspan=\"2\">\u017d y0.60797,y0.46767,0.53368,0.35615,y0.00183</td><td>.</td></tr><tr><td>Solution 2</td><td colspan=\"2\">y7 5.3846=10</td><td colspan=\"2\">\u017d y0.00357,0.00357,0.03212,y0.03225,0.99895</td><td>.</td></tr><tr><td/><td>3.6238</td><td/><td colspan=\"2\">\u017d 0.07589, y0.07928,y0.69023,0.71375,0.04579</td><td>.</td></tr><tr><td/><td>8.2036=10</td><td>3</td><td colspan=\"2\">\u017d 0.70568,y0.69951,0.09463,y0.06122,0.00001</td><td>.</td></tr><tr><td/><td>1.4348=10</td><td>4</td><td colspan=\"2\">\u017d y0.43998,y0.47105,y0.54681,y0.53435,0.00044 .</td></tr><tr><td/><td>1.6161=10</td><td>5</td><td colspan=\"2\">\u017d 0.55015,0.53151,y0.46325,y0.44748,0.00052</td><td>.</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF5": {
+                "content": "<table><tr><td colspan=\"4\">. Azeotropic Compositionsr r r r rTemperatures for</td></tr><tr><td colspan=\"4\">NPBr r r r rIPAr r r r rH O at 6.66612=10 4 Pa U 2</td></tr><tr><td colspan=\"2\">Composition</td><td>\u017d . Temperature K</td><td>Type</td></tr><tr><td colspan=\"2\">\u017d 0.8008, 0., 0.1992 .</td><td>318.630</td><td>heterogeneous</td></tr><tr><td>\u017d 0.8506, 0.1494, 0.</td><td>.</td><td>320.316</td><td>homogeneous</td></tr><tr><td colspan=\"2\">\u017d 0., 0.6262, 0.3738 .</td><td>345.628</td><td>homogeneous</td></tr><tr><td colspan=\"2\">\u017d 0.7842, 0.0403, 0.1755 .</td><td>318.520</td><td>heterogeneous</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF6": {
+                "content": "<table><tr><td>b</td><td>IPA</td></tr><tr><td colspan=\"2\">. 348.155 K and Z s x , T s 0.0321, 351.487 K at which \u017d . \u017d .</td></tr></table>",
+                "num": null,
+                "text": "The numerical values \u017d . \u017d of the bifurcation points are Z s x , T s 0.01126,",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF7": {
+                "content": "<table><tr><td>Quantity</td><td>Numerical Value</td></tr><tr><td>3</td><td>6</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF8": {
+                "content": "<table><tr><td>\u017d</td><td>.</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF9": {
+                "content": "<table><tr><td>Problem</td><td colspan=\"2\">U \u017d . Function &amp; Gradient Calls Computer Time s</td></tr><tr><td>Nonlinear CSTR</td><td>273</td><td>0.06</td></tr><tr><td>Retrograde flash</td><td>191</td><td>3.41</td></tr><tr><td>All azeotropes</td><td>472</td><td>2.58</td></tr><tr><td>Reactor with isola</td><td>104</td><td>0.05</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF10": {
+                "content": "<table><tr><td/><td>Stationary</td><td>Function &amp;</td><td/><td colspan=\"2\">Computer</td></tr><tr><td>\u2020 Problem</td><td>Points</td><td>Gradient Calls</td><td>\u2021</td><td>\u017d . Time s</td><td>\u2021</td></tr><tr><td>31</td><td>5</td><td>190</td><td/><td>0.06</td><td/></tr><tr><td>32</td><td>2</td><td>71</td><td/><td>0.01</td><td/></tr><tr><td>41</td><td>3</td><td>55</td><td/><td>0.01</td><td/></tr><tr><td>44</td><td>5</td><td>402</td><td/><td>0.06</td><td/></tr><tr><td>49</td><td>9</td><td>461</td><td/><td>0.11</td><td/></tr><tr><td>53</td><td>1</td><td>19</td><td/><td>0.01</td><td/></tr><tr><td colspan=\"4\">U www.polymath-software.comrlibrary.  \u2020 Problem No. from Web library.  \u2021 Averaged over all starting points given in Web library.</td><td/><td/></tr><tr><td colspan=\"6\">2. In particular, for the four initial guesses given in Shacham</td></tr><tr><td colspan=\"6\">\u017d et al., x , T s 1, 400 , 0, 300 , 0.5, 320 , 0, 350 , our . \u00c4\u017d . \u017d . \u017d . \u017d .4 0 0</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF11": {
+                "content": "<table><tr><td/><td/><td/><td colspan=\"2\">r r r rIPAr r r r rH O 2</td></tr><tr><td colspan=\"2\">Constant</td><td>NPB</td><td>IPA</td><td>H O 2</td></tr><tr><td>C</td><td>1</td><td>56.1709</td><td>82.9941</td><td>y31.3974</td></tr><tr><td>C</td><td>2</td><td>y5395.438</td><td>y7718.572</td><td>y2046.366</td></tr><tr><td>C</td><td>3</td><td>0.0</td><td>0.0</td><td>y75.40224</td></tr><tr><td>C</td><td>4</td><td>0.0</td><td>0.0</td><td>y0.01205428</td></tr><tr><td>C C</td><td>5 6</td><td>y4.90746 1.462525=10 y15</td><td>y8.50595 1.933595=10 y15</td><td>9.165751 4.879195=10 y16</td></tr><tr><td>C</td><td>7</td><td>6.0</td><td>6.0</td><td>6.0</td></tr><tr><td colspan=\"5\">Table B2. NRTL Binary Interaction Parameters for</td></tr><tr><td/><td/><td colspan=\"2\">NPBr r r r rIPAr r r r rH O 2</td><td/></tr><tr><td colspan=\"2\">\u017d . b K i, j</td><td>NPB</td><td>IPA</td><td>H O 2</td></tr><tr><td colspan=\"2\">NPB</td><td>0</td><td>737.657</td><td>763.178</td></tr><tr><td colspan=\"2\">IPA</td><td>y2.443</td><td>0</td><td>13.035</td></tr><tr><td colspan=\"2\">H O</td><td>2042.147</td><td>725.646</td><td>0</td></tr></table>",
+                "num": null,
+                "text": "",
+                "type_str": "table",
+                "html": null
+            }
+        }
+    }
+}

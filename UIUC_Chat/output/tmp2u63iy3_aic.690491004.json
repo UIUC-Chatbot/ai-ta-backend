@@ -1,0 +1,3650 @@
+{
+    "paper_id": "tmp613t_hk9aic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:06:54.198437Z"
+    },
+    "title": "Nonequilibrium Capillary Pressure and Relative Permeability Curves of Porous Media",
+    "authors": [
+        {
+            "first": "C",
+            "middle": [
+                "D"
+            ],
+            "last": "Tsakiroglou",
+            "suffix": "",
+            "affiliation": {},
+            "email": ""
+        },
+        {
+            "first": "M",
+            "middle": [
+                "A"
+            ],
+            "last": "Theodoropoulou",
+            "suffix": "",
+            "affiliation": {},
+            "email": ""
+        },
+        {
+            "first": "V",
+            "middle": [],
+            "last": "Karoutsos",
+            "suffix": "",
+            "affiliation": {},
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "History matching of unsteady immiscible displacement experiments performed on model porous media re\u00aeeals that nonequilibrium capillary pressure and relati\u00aee permeability functions are sensiti\u00aee to the dominating flow pattern. As the capillary number increases, the network displacement pattern changes gradually from in\u00aeasion percolation cluster to stable displacement. For primary drainage, the capillary pressure and relati\u00aee permeability cur\u00aees are increasing functions of the capillary number. The dependence of the rele\u00aeant macroscopic parameters on the capillary number is consistent with power laws deri\u00aeed from scaling arguments of gradient percolation theory, which describes the growth of the displacement front. The material coefficient of the thermodynamic theory of capillary pressure changes mildly with fluid saturation and is a decreasing function of the capillary number.",
+    "pdf_parse": {
+        "paper_id": "tmp613t_hk9aic",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "History matching of unsteady immiscible displacement experiments performed on model porous media re\u00aeeals that nonequilibrium capillary pressure and relati\u00aee permeability functions are sensiti\u00aee to the dominating flow pattern. As the capillary number increases, the network displacement pattern changes gradually from in\u00aeasion percolation cluster to stable displacement. For primary drainage, the capillary pressure and relati\u00aee permeability cur\u00aees are increasing functions of the capillary number. The dependence of the rele\u00aeant macroscopic parameters on the capillary number is consistent with power laws deri\u00aeed from scaling arguments of gradient percolation theory, which describes the growth of the displacement front. The material coefficient of the thermodynamic theory of capillary pressure changes mildly with fluid saturation and is a decreasing function of the capillary number.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": "Two-phase flow in porous media is of key importance for a \u017d variety of industrial such as oil and gas recovery from under-. \u017d ground reservoirs and environmental such as remediation of contaminated soils and aquifers, CO storage in sub-sea 2 . aquifers, and so on processes. At the macroscopic scale, the multifluid flow in porous media is commonly described by the Darcy equation and the continuity equation for each phase \u017d . Bear, 1972; Sahimi, 1995 . The capillary pressure and relative permeability curves incorporate implicitly microscopic characteristics of the porous medium and pore-scale dynamics into the macroscopic description of the flow, and are commonly expressed as functions of the local fluid saturation \u017d . Scheidegger, 1974 .",
+                "cite_spans": [
+                    {
+                        "start": 428,
+                        "end": 439,
+                        "text": "Bear, 1972;",
+                        "ref_id": "BIBREF6"
+                    },
+                    {
+                        "start": 440,
+                        "end": 454,
+                        "text": "Sahimi, 1995 .",
+                        "ref_id": "BIBREF38"
+                    },
+                    {
+                        "start": 727,
+                        "end": 744,
+                        "text": "Scheidegger, 1974",
+                        "ref_id": "BIBREF40"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d Experiments performed on artificial porous media Lenormand et al., 1988; Vizika and Payatakes, 1989; Fourar et al., 1993; Avraam and Payatakes, 1995a; Persoff and Pruess, . \u017d 1995 , as well as pore network simulations Blunt and King, 1991; Goode and Ramakrishnan, 1993; Vizika et al., 1994; Constantinides and Payatakes, 1996; Aker et al., 1998; Hughes and Blunt, 2000; Knackstedt et al., 2001; Singh and Mohanty, . 2003 , have revealed that the transient and steady-state twophase flow patterns depend not only on the specific characteristics of the pore space morphology, but also on a variety Correspondence concerning this article should be addressed to C. D. Tsakiroglou. of dimensionless parameters such as the capillary number, viscosity ratio, wettability, and so on. The relative permeability functions of porous media are strongly correlated with the flow regimes and are strongly dependent on the capillary \u017d number and viscosity ratio, not only over the inertial Fourar . \u017d et al., 1993 , but also over the creeping flow regime Avraam . and Payatakes, 1995a; Singh et al., 2001 . The extension of Darcy law to two-phase flows is based on the assumption that each phase flows along its own pathway without any momen-\u017d tum interchange between phases at interfaces Whitaker, . 1986 . The viscous coupling effects are accounted for the two-phase flow by substituting the conventional Darcy equations with the generalized ones along with four relative per-\u017d meability coefficients Kalaydjian, 1990; Bentsen and Manai, . 1993; Avraam and Payatakes, 1995b; Dullien and Dong, 1996 . At vanishing flow rates, the displacement is driven by capillary forces, the relative permeability and capillary pressure curves are governed by the microstructural properties and wettability of the porous medium and various numerical models have been suggested for their calculation by using either invasion percolation or effective medium approximation \u017dBlunt et al., 1992; Kantzas and Chatzis, 1988; Levine and . Cuthiel, 1986 . For drainage or imbibition in a disordered pore network, at increasing values of the capillary number, \u017d . the correlation length Stauffer and Aharony, 1992 de-creases and viscous effects on the growth pattern of the displacement become discernible in progressively smaller regions of the network. Near the percolation threshold of any fluid, this picture is analogous with the substitution of an infinite network by smaller finite networks. Then, finite-size scaling of the various percolation quantities at the vicinity of the percolation threshold allows the estimation of the shift of the network accessibility properties and effective conductivities \u017d with respect to the capillary number Wilkinson, 1986; Blunt . et al., 1992; Xu et al., 1998 . From the analysis of literature experiments and simulated results of pore network models with the aid of the thermody-\u017d namic theory of the two-phase flow in porous media Has-. sanizadeh and Gray, 1993a,b; Hassanizadeh et al., 2002 , it was found out that the functional form of the capillary pressure curve should be generalized to include a dynamic term \u017d . material coefficient , which may be of crucial importance for obtaining reliable numerical predictions at the field scale. Specifically, drainage experiments indicate that the dynamic capillary pressure is almost always higher than the static one, and comparative analysis of experimental data allows the es-\u017d timation of the material coefficient Hassanizadeh et al., . 2002 .",
+                "cite_spans": [
+                    {
+                        "start": 51,
+                        "end": 74,
+                        "text": "Lenormand et al., 1988;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 75,
+                        "end": 102,
+                        "text": "Vizika and Payatakes, 1989;",
+                        "ref_id": "BIBREF53"
+                    },
+                    {
+                        "start": 103,
+                        "end": 123,
+                        "text": "Fourar et al., 1993;",
+                        "ref_id": "BIBREF16"
+                    },
+                    {
+                        "start": 124,
+                        "end": 152,
+                        "text": "Avraam and Payatakes, 1995a;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 153,
+                        "end": 172,
+                        "text": "Persoff and Pruess,",
+                        "ref_id": "BIBREF37"
+                    },
+                    {
+                        "start": 220,
+                        "end": 241,
+                        "text": "Blunt and King, 1991;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 242,
+                        "end": 271,
+                        "text": "Goode and Ramakrishnan, 1993;",
+                        "ref_id": "BIBREF17"
+                    },
+                    {
+                        "start": 272,
+                        "end": 292,
+                        "text": "Vizika et al., 1994;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 293,
+                        "end": 328,
+                        "text": "Constantinides and Payatakes, 1996;",
+                        "ref_id": "BIBREF14"
+                    },
+                    {
+                        "start": 329,
+                        "end": 347,
+                        "text": "Aker et al., 1998;",
+                        "ref_id": "BIBREF0"
+                    },
+                    {
+                        "start": 348,
+                        "end": 371,
+                        "text": "Hughes and Blunt, 2000;",
+                        "ref_id": "BIBREF23"
+                    },
+                    {
+                        "start": 372,
+                        "end": 396,
+                        "text": "Knackstedt et al., 2001;",
+                        "ref_id": "BIBREF31"
+                    },
+                    {
+                        "start": 397,
+                        "end": 422,
+                        "text": "Singh and Mohanty, . 2003",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 666,
+                        "end": 678,
+                        "text": "Tsakiroglou.",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 977,
+                        "end": 1000,
+                        "text": "Fourar . \u017d et al., 1993",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1042,
+                        "end": 1072,
+                        "text": "Avraam . and Payatakes, 1995a;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1073,
+                        "end": 1091,
+                        "text": "Singh et al., 2001",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1490,
+                        "end": 1507,
+                        "text": "Kalaydjian, 1990;",
+                        "ref_id": "BIBREF29"
+                    },
+                    {
+                        "start": 1508,
+                        "end": 1534,
+                        "text": "Bentsen and Manai, . 1993;",
+                        "ref_id": "BIBREF8"
+                    },
+                    {
+                        "start": 1535,
+                        "end": 1563,
+                        "text": "Avraam and Payatakes, 1995b;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1564,
+                        "end": 1588,
+                        "text": "Dullien and Dong, 1996 .",
+                        "ref_id": "BIBREF15"
+                    },
+                    {
+                        "start": 1944,
+                        "end": 1964,
+                        "text": "\u017dBlunt et al., 1992;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1965,
+                        "end": 1991,
+                        "text": "Kantzas and Chatzis, 1988;",
+                        "ref_id": "BIBREF30"
+                    },
+                    {
+                        "start": 1992,
+                        "end": 2018,
+                        "text": "Levine and . Cuthiel, 1986",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 2715,
+                        "end": 2731,
+                        "text": "Wilkinson, 1986;",
+                        "ref_id": "BIBREF57"
+                    },
+                    {
+                        "start": 2732,
+                        "end": 2753,
+                        "text": "Blunt . et al., 1992;",
+                        "ref_id": "BIBREF11"
+                    },
+                    {
+                        "start": 2754,
+                        "end": 2771,
+                        "text": "Xu et al., 1998 .",
+                        "ref_id": "BIBREF59"
+                    },
+                    {
+                        "start": 2963,
+                        "end": 2977,
+                        "text": "Gray, 1993a,b;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 2978,
+                        "end": 3008,
+                        "text": "Hassanizadeh et al., 2002 , it",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 3479,
+                        "end": 3506,
+                        "text": "Hassanizadeh et al., . 2002",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "The estimation of relative permeability and capillary pressure functions from laboratory measurements may be based on steady-state experiments of the simultaneous flow of two phases through the porous medium or unsteady-state experiments of the immiscible displacement of the one fluid by the \u017d . other Heaviside, 1991 . Although accurate and explicit, the steady-state methods are time consuming and expensive. On the other hand, in the unsteady-state methods, the effective transport coefficients are estimated either explicitly from \u017d . measured data Johnson et al., 1959 or implicitly from the history-matching of the temporal evolution of the pressure \u017d droprfluid productionrfluid saturation profile Sigmund and McCaffrey, 1979; Jennings et al., 1988; Chardaire-Riviere et al., 1992; Mejia et al., 1995; Kulkarni et al., 1998; Mitlin et . al., 1999; Akin, 2001 . The accuracy of the explicit unsteadystate methods is limited by errors arising from the calculation \u017d . of derivatives Tao and Watson, 1984 . In implicit methods, the capillary pressure and relative permeability functions are so chosen that simulated results match the experimental data \u017d . Watson et al., 1986 . Common difficulties embedded in history-matching procedures are associated with the adequacy of the numerical model of the displacement process, as well as with the selection of an optimization scheme that will be capable of finding a global minimum of parameter estimates \u017d . Savioli and Bidner, 1994 . Except for the classical nonlinear \u017d . parameter estimation methods Bard, 1974 , simulated annealing and genetic algorithms have also been used as opti-\u017d mization tools in reservoir engineering Johnson and Rogers, . 2001; Akin and Demiral, 1998 . Although it is well known that the transient displacement patterns in a porous medium are strongly correlated with the capillary number, the dependence of the implicitly estimated \u017d . multiphase flow coefficients history matching on the flow rates has been overlooked. However, the introduction of incorrect parameters into the macroscopic numerical simulators is reflected in inaccurate predictions of the multifluid transport at the scale of an oil reservoir or an underground aquifer. In this manner, the financial risk of decisions con- cerning the management of oil and gas reservoirs or the remediation of oil-contaminated aquifers increases. On the other hand, the performance of displacement tests on cores, at several flow rates, increases the cost of laboratory analyses. Therefore, there is a need for methods that will enable the engineer to select the most suitable parameters for capillary pressure and relative permeability functions based on the flow conditions prevailing in the investigated problem, and a representative number of displacement core tests.",
+                "cite_spans": [
+                    {
+                        "start": 303,
+                        "end": 318,
+                        "text": "Heaviside, 1991",
+                        "ref_id": "BIBREF21"
+                    },
+                    {
+                        "start": 554,
+                        "end": 574,
+                        "text": "Johnson et al., 1959",
+                        "ref_id": "BIBREF27"
+                    },
+                    {
+                        "start": 706,
+                        "end": 734,
+                        "text": "Sigmund and McCaffrey, 1979;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 735,
+                        "end": 757,
+                        "text": "Jennings et al., 1988;",
+                        "ref_id": "BIBREF26"
+                    },
+                    {
+                        "start": 758,
+                        "end": 789,
+                        "text": "Chardaire-Riviere et al., 1992;",
+                        "ref_id": "BIBREF13"
+                    },
+                    {
+                        "start": 790,
+                        "end": 809,
+                        "text": "Mejia et al., 1995;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 810,
+                        "end": 832,
+                        "text": "Kulkarni et al., 1998;",
+                        "ref_id": "BIBREF32"
+                    },
+                    {
+                        "start": 833,
+                        "end": 855,
+                        "text": "Mitlin et . al., 1999;",
+                        "ref_id": "BIBREF36"
+                    },
+                    {
+                        "start": 856,
+                        "end": 866,
+                        "text": "Akin, 2001",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 989,
+                        "end": 1011,
+                        "text": "Tao and Watson, 1984 .",
+                        "ref_id": "BIBREF46"
+                    },
+                    {
+                        "start": 1161,
+                        "end": 1182,
+                        "text": "Watson et al., 1986 .",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1460,
+                        "end": 1484,
+                        "text": "Savioli and Bidner, 1994",
+                        "ref_id": "BIBREF39"
+                    },
+                    {
+                        "start": 1555,
+                        "end": 1565,
+                        "text": "Bard, 1974",
+                        "ref_id": "BIBREF5"
+                    },
+                    {
+                        "start": 1681,
+                        "end": 1708,
+                        "text": "Johnson and Rogers, . 2001;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1709,
+                        "end": 1733,
+                        "text": "Akin and Demiral, 1998 .",
+                        "ref_id": "BIBREF2"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "In the present work, unsteady displacement experiments, performed on a transparent glass-etched planar pore network at varying values of the capillary number, are utilized to estimate the relative permeability and capillary pressure functions in dependence on the capillary number. The experimentally measured transient changes of the NWP saturation, distribution of NWP saturation along the porous medium and total pressure drop across it are introduced into an appropriate nonlinear parameter estimation numerical scheme developed in the environment of the commercial software package ATHENA. Scaling arguments of the gradient percolation theory are used to correlate the estimated macroscopic parameters with capillary number. Finally, experimental data and estimated parameter values of capillary pressure are used for the determination of the material coefficient of the macroscopic thermodynamic theory. First, the network becomes completely saturated with the WP, and then, the NWP is injected in the network through its inlet ports at a pre-selected flow rate, \u017d . using an infusion-withdrawal pump Figure 1a . Successive short-cuts of the displacement are captured from a central \u017d . region of the network Figure 1b with a CCD video-camera and are recorded on the hard-disk through an image grabber \u017d . installed in the host computer Figure 1a .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 1114,
+                        "end": 1116,
+                        "text": "1a",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1222,
+                        "end": 1224,
+                        "text": "1b",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1350,
+                        "end": 1352,
+                        "text": "1a",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . The pressure drop along the central region viewed area of the pore network is measured with a differential pressure transducer and is transmitted to a data acquisition card in-\u017d . stalled in the host PC Figure 1a , where it is recorded at constant time intervals ranging from ;1 s for the fastest to ;1 min for the slowest experiment. At the end of experiments, the transient response of the pressure drop is smoothed out by fitting a 10th-order polynomial to the mea-\u017d . surements Figure 2 . Note that the time t s 0 s corresponds to the instant that the NWP enters the central region of the network, while negative times refer to the earlier period dur- ",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 214,
+                        "end": 216,
+                        "text": "1a",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 493,
+                        "end": 494,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "\u0468 S \u0468 u i i q s0 1 \u017d . \u0468 t \u0468 x kk \u0468 P r i i u sy 2 \u017d . i \u0468x i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "In the foregoing equations, the index i refers either to the \u017d . \u017d . wetting is w or to the nonwetting is nw fluid, , u , P , ity of phase i at saturation S , and k are the porosity and i absolute permeability of the medium, t is the time, and x is the axial coordinate. Moreover, the capillary pressure is defined as the difference between the local pressures of the two fluids and is written as \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "P s P y P 3 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "L L Equations 1\u13904 result in \u0468 S \u0468 F nw nw q s0 7 \u017d . \u0468 \u0468 U k u \u0468 P r nw c c F s 1y k 8 \u017d . nw r w k q k u \u0468 r w r nw 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "where is the viscosity ratio given by nw s 9",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . the vector of unknown parameters. By substituting, Eq. 8 to Eq. 7 and, after some manipulation, we get",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "2 \u0468 S \u0468 S \u0468 S nw nw nw q A y A A q B q B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Likewise, the NWP saturation of a slice of finite thickness extending from to is calculated by",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "1 1 2 1 2 \u017e / \u0468 \u0468 \u0468 \u0468 2 S nw y B s 0 12 \u017d . 3 2 \u0468 where \u0468 k \u0468 k r nw r w k y k r w r nw \u017e / \u0468 S \u0468 S nw nw A s 13 \u017d . 1 2 k q k \u017d . r w r nw u \u0468 P U c c A s k 14 \u017d . 2 r w \u017e / u \u0468 S 0 nw u k \u0468 k \u0468 P U c r n w r w c B s 15 \u017d . 1 \u017e / u k q k \u0468 S \u0468 S 0 r w r nw nw nw u k k \u0468 2 P U c r n w r w c B s 16 \u017d . 2 2 \u017e / u k q k \u0468 S 0 r w r nw nw u k k \u0468 P U c r n w r w c B s 17 \u017d . 3 \u017e / u k q k \u0468 S 0 r w r",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 2 S , s S , d 22 \u017d . \u017d . \u017d . H nws m nw 1 where s q r2 2 3 \u017d . \u017d . m 1 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "For the numerical solution of Eq. 12, coupled with the system of algebraic Eqs. 13\u139017, the PDAPLUS solver of the \u017d commercial software package ATHENA Stewart and Associ-. ates, Inc., Madison, WI was used, by selecting a finite difference discretization scheme for the space coordinate. The code uses the method of lines to solve mixed systems of nonlinear \u017d PDEs and algebraic equations Caracotsios and Stewart, . 1995 . Dimensionless fluid pressures are defined by the relations",
+                "cite_spans": [
+                    {
+                        "start": 387,
+                        "end": 420,
+                        "text": "Caracotsios and Stewart, . 1995 .",
+                        "ref_id": "BIBREF12"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "P w U P s 24a \u017d . w 0 \u232c P nw P nw U P s 24b \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "nw 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Materials and Methods",
+                "sec_num": null
+            },
+            {
+                "text": "The local pressure gradient along each phase depends solely \u017d . on the local NWP saturation S , and can be obtained nw by introducing the numerical solution of Eq. 12 into the following relationships",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u232c P nw",
+                "sec_num": null
+            },
+            {
+                "text": "U U \u0468 P u \u0468 P nw 0 c y s yk 25a \u017d . r w \u017e / \u0468 k q k u \u0468 r w r nw c U U \u0468 P u k \u0468 P w 0 r nw c y s q 25b \u017d . \u017e / \u0468 k q k u \u0468 r w r nw c",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u232c P nw",
+                "sec_num": null
+            },
+            {
+                "text": "Before the breakthrough of the NWP, the dimensionless total pressure drop across the porous medium \u232c P U is equal to t the sum of the pressure drop across the NWP, the pressure drop across the WP and the macroscopic capillary pressure at the front, namely",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u232c P nw",
+                "sec_num": null
+            },
+            {
+                "text": "1 cr U U \u232c P \u0468 P \u0468 P t n w w U U \u232c P s s y d q y d q P 0 \u017d . H H t c 0 \u017e / \u017e / \u0468 \u0468 \u232c P nw 0 cr 26 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u232c P nw",
+                "sec_num": null
+            },
+            {
+                "text": "where the critical axial distance results from the solution cr of Eq. 12 as the smallest distance satisfying the condition S , F10 y4 27 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u232c P nw",
+                "sec_num": null
+            },
+            {
+                "text": "For the determination of the NWP breakthrough, it is assumed that a network spanning cluster of the NWP is established, when the NWP saturation at the exit of the porous medium satisfies the condition S ,1 G10 y4 28 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "nw cr",
+                "sec_num": null
+            },
+            {
+                "text": "nw After the breakthrough of NWP, the pressure drop across the porous medium coincides to the pressure drop across the NWP and is given by",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "nw cr",
+                "sec_num": null
+            },
+            {
+                "text": "1 U \u232c P \u0468 P t n w U \u232c P s s y d 29",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "nw cr",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "nw cr",
+                "sec_num": null
+            },
+            {
+                "text": "Estimates of the vector were obtained by matching the numerically calculated total NWP saturation, NWP saturation in each of the seven slices, and total pressure drop to corresponding experimental values. For multiresponse data, GREGPLUS computes modal and interval estimates of the parameters using a user-provided matrix of multiresponse observations by using the objective function '",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Parameter estimation",
+                "sec_num": null
+            },
+            {
+                "text": "B \u233d s n q m q1 ln \u00a9 35 \u017d . \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Parameter estimation",
+                "sec_num": null
+            },
+            {
+                "text": "\u00dd bik i j k j i j i j k j k j js 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Parameter estimation",
+                "sec_num": null
+            },
+            {
+                "text": "where n is the number of events in the data set, has a positive determinant over the investigated range of , as Eq. 35 requires. Note that the dependent variable y or f repre-",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Parameter estimation",
+                "sec_num": null
+            },
+            {
+                "text": "i i \u017d . \u017d . U \u017d . sents S , , S , \u232c P for the index values is nws m nwt t",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Parameter estimation",
+                "sec_num": null
+            },
+            {
+                "text": "1, 2, 3, respectively. The objective function is expanded as a quadratic function of the parameters, around the initial guesses of the current \u017d . iteration Bard, 1974; Stewart et al., 1992 . The parametric sensitivities needed for this step can be generated by GREG-PLUS with optimized divided-difference steps; alternatively, some or all of them can be provided by the user's subroutine. The resulting minimization problem is solved with successive quadratic programming, starting from the user's guesses for the parameters and using a modified Gauss-Jordan algorithm \u017d . Bard, 1974 , within a user-defined feasible region; then, a weak line search is conducted to establish an improved objective value and initial parameter vector for the next iteration. Ill-conditioned solutions are avoided by using a threshold value for acceptance of pivotal divisors in the quadratic minimization calculations. Termination of the iteration is controlled by the current quadratic programming predictions of the correction vector. Interval estimates for the individual estimated parameters are then calculated from the final quadratic expansion of the objective functions. Both codes PDAPLUS and GREGPLUS are written in Fortran and are properly incorporated as subroutines in a user-defined code \u017d . which is written in Athena Visual Workbench AVW language and translated automatically to Fortran by ATHENA.",
+                "cite_spans": [
+                    {
+                        "start": 157,
+                        "end": 168,
+                        "text": "Bard, 1974;",
+                        "ref_id": "BIBREF5"
+                    },
+                    {
+                        "start": 169,
+                        "end": 189,
+                        "text": "Stewart et al., 1992",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 574,
+                        "end": 584,
+                        "text": "Bard, 1974",
+                        "ref_id": "BIBREF5"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Parameter estimation",
+                "sec_num": null
+            },
+            {
+                "text": "At vanishing flow rates, an immiscible displacement process is controlled by capillary forces, and can be modeled as \u017d an invasion percolation process Willemsen, 1984; Wilkinson, . 1986 . Near the percolation threshold, a percolation quantity \u017d . X such as conductivity, percolation probability, and so on \u017d . obeys the scaling laws Stauffer and Aharony, 1992",
+                "cite_spans": [
+                    {
+                        "start": 151,
+                        "end": 167,
+                        "text": "Willemsen, 1984;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 168,
+                        "end": 185,
+                        "text": "Wilkinson, . 1986",
+                        "ref_id": "BIBREF57"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "X A \u2426 \u2423r 37a",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "X A w \u2423r 37b",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d for an infinite lattice and finite lattice of size w w is dimensionless and coincides to the number of pore lengths per each . side of the lattice , respectively, where \u2426 is the correlation length of the system with universal exponent , and \u2423 is the universal exponent of X. In other words, in finite systems, as the percolation threshold is approached, \u2426 eventually exceeds the lattice size w; thus w becomes the dominant length scale of the system. The percolation probability p defined by wi wi respectively, where \u2424 is the universal exponent of the acces-\u017d . sibility function Sahimi, 1995 . Viscous forces introduce an additional finite correlation length \u2426 so that viewed on scales less than \u2426 the displace-",
+                "cite_spans": [
+                    {
+                        "start": 583,
+                        "end": 597,
+                        "text": "Sahimi, 1995 .",
+                        "ref_id": "BIBREF38"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "\u00ae \u00ae",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "ment resembles an infinitesimal flow rate, while the effects of \u017d viscous forces are evident at scales greater than \u2426 Wilkin- 1994 , 1986; Blunt et al., 1992 . An effective correlation length \u2426 can then be defined by \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 126,
+                        "end": 130,
+                        "text": "1994",
+                        "ref_id": "BIBREF39"
+                    },
+                    {
+                        "start": 131,
+                        "end": 138,
+                        "text": ", 1986;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 139,
+                        "end": 159,
+                        "text": "Blunt et al., 1992 .",
+                        "ref_id": "BIBREF11"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "\u00a9 . son,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "\u2426 \u2426 w eff V",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "For drainage processes, it has been found that the maximum correlation length that can be developed at a given capillary \u017d . number Wilkinson, 1986 , \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 132,
+                        "end": 149,
+                        "text": "Wilkinson, 1986 ,",
+                        "ref_id": "BIBREF57"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Finite-size and \u00a9iscous effects on displacement patterns",
+                "sec_num": null
+            },
+            {
+                "text": "The NWP saturation within the compact region varies over a y1 ' length scale A k Ca , and its profile across it can be obc tained from the numerical or analytical solution of the averaged macroscopic mass and momentum balances, Eqs. 1 and 2. However, in the frontal region, the NWP saturation profile \u017d . varies over a length scale Eqs. 44 and 45 , and gradient invasion percolation models have been suggested as simula-\u017d tion tools Hulin et al., 1988; Gouyet et al., 1988; Birovljev et . al., 1991; Xu et al., 1988 .",
+                "cite_spans": [
+                    {
+                        "start": 433,
+                        "end": 452,
+                        "text": "Hulin et al., 1988;",
+                        "ref_id": "BIBREF24"
+                    },
+                    {
+                        "start": 453,
+                        "end": 473,
+                        "text": "Gouyet et al., 1988;",
+                        "ref_id": "BIBREF25"
+                    },
+                    {
+                        "start": 474,
+                        "end": 499,
+                        "text": "Birovljev et . al., 1991;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 500,
+                        "end": 515,
+                        "text": "Xu et al., 1988",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "r nw",
+                "sec_num": null
+            },
+            {
+                "text": "In our approach, the macroscopic two-phase flow equations are used to describe displacements over the compact and frontal regions. In this manner, the aforementioned small-scale viscous effects on the displacement pattern are implicitly introduced into the parameters of capillary pressure and relative permeability curves. By differentiating the \u017d . macroscopic capillary pressure curve Eq. 30 , we get the asymptotic derivative \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Viscous effects on macroscopic parameters",
+                "sec_num": null
+            },
+            {
+                "text": "dP",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Viscous effects on macroscopic parameters",
+                "sec_num": null
+            },
+            {
+                "text": "The parameter values estimated with history matching can be used to evaluate the validity of the foregoing scaling relations, Eqs. 51, 52 and 55.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "r nw",
+                "sec_num": null
+            },
+            {
+                "text": "According to the linear thermodynamic theory for the \u017d two-phase flow in porous media Hassanizadeh and Gray, 1993a; Beliaev and Hassanizadeh, 2001; Hassanizadeh et ",
+                "cite_spans": [
+                    {
+                        "start": 86,
+                        "end": 115,
+                        "text": "Hassanizadeh and Gray, 1993a;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 116,
+                        "end": 147,
+                        "text": "Beliaev and Hassanizadeh, 2001;",
+                        "ref_id": "BIBREF7"
+                    },
+                    {
+                        "start": 148,
+                        "end": 163,
+                        "text": "Hassanizadeh et",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Macroscopic Theory for the Nonequilibrium Capillary Pressure",
+                "sec_num": null
+            },
+            {
+                "text": "Successive shortcuts of displacements for various values of Ca are shown in Figure 4 . From the data of Table 2 , it has \u00b2 : been found that r s 44.6 m and r s 45.4 m 4 , and, hence, at the pore level, the dis-Ll placement is controlled by capillary forces for the full range of Ca values. This means that scaling concepts of the perco-\u017d lation theory Wilkinson, 1986; Blunt et al., 1992; Xu et al., . 1998 could be used to describe fluid transport over a small \u017d . length scale depending on Ca see also below . On the other \u017d . hand, the network displacement patterns Figure 4 are controlled by the macroscopic capillary number Ca . The vis-",
+                "cite_spans": [
+                    {
+                        "start": 352,
+                        "end": 368,
+                        "text": "Wilkinson, 1986;",
+                        "ref_id": "BIBREF57"
+                    },
+                    {
+                        "start": 369,
+                        "end": 388,
+                        "text": "Blunt et al., 1992;",
+                        "ref_id": "BIBREF11"
+                    },
+                    {
+                        "start": 389,
+                        "end": 406,
+                        "text": "Xu et al., . 1998",
+                        "ref_id": "BIBREF59"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 83,
+                        "end": 84,
+                        "text": "4",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 110,
+                        "end": 111,
+                        "text": "2",
+                        "ref_id": "TABREF2"
+                    },
+                    {
+                        "start": 167,
+                        "end": 168,
+                        "text": "4",
+                        "ref_id": "TABREF9"
+                    },
+                    {
+                        "start": 576,
+                        "end": 577,
+                        "text": "4",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Visualization experiments",
+                "sec_num": null
+            },
+            {
+                "text": ". cosity ratio is sufficiently high s 26 41 so that, when \u017d . Ca )1 Table 4 , the macroscopic capillary pressure and LN pressure drop across the displaced WP are negligible compared to the macroscopic pressure drop across the displacing NWP, the displacement is dominated by the frontal drive \u017d . pattern Lenormand et al., 1988 , and a small amount of WP \u017d . is trapped in the form of small ganglia Figures 4a and 4b .",
+                "cite_spans": [
+                    {
+                        "start": 305,
+                        "end": 327,
+                        "text": "Lenormand et al., 1988",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 74,
+                        "end": 75,
+                        "text": "4",
+                        "ref_id": "TABREF9"
+                    },
+                    {
+                        "start": 407,
+                        "end": 409,
+                        "text": "4a",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 414,
+                        "end": 416,
+                        "text": "4b",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . When Ca <1 Table 4 , the macroscopic pressure drop LN across each phase is negligible compared to the macroscopic capillary pressure, capillarity dominates at the network scale, \u017d and a ramified fractal structure appears this pattern is de-. fined as capillary fingering in Lenormand et al., 1988 , whereas a large amount of WP is trapped in the form of gan-\u017d . glia with sizes changing in a broad range Figures 4d and 4e Huang and Honarpour, 1998; Toth . et al., 2002 , arising \u017d . for the fastest experimental Figure 4a , which is a stable displacement with uniform lateral distribution of NWP saturation. These values are introduced then as initial guesses into the parameter estimation problem of the next slower experiment and so on. Modal estimates and intervals of parameters are given in Table 5 , whereas the capillary pressure and relative permeability curves are shown in Figures 5 and 6 1.3=10 553.1\"0.25 0.248\"2.4 10 2.20\"1.5 10 0.91\"6.0 10 y6 y5 y3 y4",
+                "cite_spans": [
+                    {
+                        "start": 278,
+                        "end": 300,
+                        "text": "Lenormand et al., 1988",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 426,
+                        "end": 452,
+                        "text": "Huang and Honarpour, 1998;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 453,
+                        "end": 482,
+                        "text": "Toth . et al., 2002 , arising",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 21,
+                        "end": 22,
+                        "text": "4",
+                        "ref_id": "TABREF9"
+                    },
+                    {
+                        "start": 416,
+                        "end": 418,
+                        "text": "4d",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 423,
+                        "end": 425,
+                        "text": "4e",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 523,
+                        "end": 525,
+                        "text": "4a",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 806,
+                        "end": 807,
+                        "text": "5",
+                        "ref_id": "TABREF10"
+                    },
+                    {
+                        "start": 895,
+                        "end": 896,
+                        "text": "5",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 901,
+                        "end": 902,
+                        "text": "6",
+                        "ref_id": "FIGREF14"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "6.5=10 664.1\"0.22 0.181\"6.8 10 3.02\"2.3 10 1.20\"8.1 10 y6 y4 y4",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "1.3=10 571.2\"0.78 0.142 3.38\"2.9 10 1.47\"2.9 10 y7 y4 y4 y4",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "1.3=10 474.6\"0.18 0.112\"1.7 10 3.45\"7.8 10 1.51\"3.5 10 y8 y3 y2 y4",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "6.5=10 371.0\"13.5 0.114\"7.2 10 4.13\"9.3 10 1.43\"2.6=10 . \u017d . 8a , where, at the network scale Table 4 , the capillary forces are weak compared to viscous ones, the front width is rela-\u017d tively small, and the resulting frontal drive pattern Figures . 4a and 4b can successfully be simulated by using the conventional macroscopic equations. In progressively lower Ca val-\u017d ues, the capillary forces may exceed the viscous ones Table . 4 , the front width becomes large compared to the network \u017d . size Figures 4c, 4d, and 4e , and the network displacement pattern is gradually dominated by the invasion percolation \u017d . cluster Figure 4e . Then, the pattern of the displacement front could be simulated by using a gradient percolation \u017d . model Xu et al., 1998 , rather than the macroscopic approach adopted here. Subsequently, at low Ca values, the discrepancy observed between experimental measurements and numerical predictions of the NWP saturation distribu-\u017d . tion in the frontal region is reasonable Figures 10a and 11a . Evidently, changes caused on the displacement pattern by Ca and finite network size are implicitly incorporated into the macroscopic parameters of the resulting nonequilibrium capillary pressure and relative permeability curves. The values of certain universal scaling exponents for 2-D and 3-D systems are given in Table 6 . For 2-D systems, the approximate scaling relations expressed by Eqs. 51, 52, and 55 take the form The discrepancy observed between the exponents of Eqs. 58\u139060 and those shown in Figure 12 might be attributed to \u017d . two reasons: a lattice finite-size effects on parameter val-\u017d . ues; b asymptotic nature of Eqs. 58\u139060. It is worthwhile to note that the foregoing analysis and its results with respect to correlations of the macroscopic parameters with Ca are valid, 5 .",
+                "cite_spans": [
+                    {
+                        "start": 742,
+                        "end": 757,
+                        "text": "Xu et al., 1998",
+                        "ref_id": "BIBREF59"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 100,
+                        "end": 101,
+                        "text": "4",
+                        "ref_id": "TABREF9"
+                    },
+                    {
+                        "start": 508,
+                        "end": 515,
+                        "text": "4c, 4d,",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 520,
+                        "end": 522,
+                        "text": "4e",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 632,
+                        "end": 634,
+                        "text": "4e",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1012,
+                        "end": 1015,
+                        "text": "10a",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1020,
+                        "end": 1023,
+                        "text": "11a",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1348,
+                        "end": 1349,
+                        "text": "6",
+                        "ref_id": "TABREF11"
+                    },
+                    {
+                        "start": 1537,
+                        "end": 1539,
+                        "text": "12",
+                        "ref_id": "FIGREF1"
+                    },
+                    {
+                        "start": 1818,
+                        "end": 1819,
+                        "text": "5",
+                        "ref_id": "TABREF10"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "presuming that the displacement is capillary-driven at the \u017d . pore-scale Ca <1 . L1 2-D pore networks could be representative models of the \u017d . structure of single fractures Tsakiroglou, 2002 . However, the majority of porous media, as, for instance cores of reservoir rocks, should be regarded as large 3-D pore networks with a \u017d . broad variety in pore sizes Sahimi, 1995 , and unavoidably deviation from the above described behavior is expected. The theoretical analysis must be done carefully so that capillary end effects, arising from the discontinuity of capillarity in the WP at the outlet end of the core, are accounted for. Because of the longer linear dimension L, the length scale of the fully \u017d . developed flow compact region increases significantly, so that the displacement pattern may be dominated by frontal drive even over low Ca values, and finite-size effects on parameter values weaken. On the other hand, the percolation front may also increase substantially because of the high pore \u017d . size variability Eq. 45 , so that the slope of the capillary pressure curve is expected to increase, and finite-size effects on parameter values strengthen. By replacing the 3-D values 13 . A \u00b2 : mean material coefficient was estimated for each pair of \u017d . Ca values with linear fit to Eq. 57 Figure 13 . The material coefficient is a capillary damping coefficient and can be regarded as a measure of the speed at which capillary equi-\u017d . librium is established Hassanizadeh et al., 2002 . Therefore, \u00b2 : the higher the capillary number, the smaller the value, \u017d . and the faster the system returns to equilibrium Figure 13 . The calculated values of the material coefficient agree, at least in the order of magnitude, with corresponding ones re-\u017d . ported in literature Hassanizadeh et al., 2002 . Concerning the uniqueness of capillary pressure and relative permeability curves, it is evident that someone can find numerous sets of P , k , k that may fit to the experimen- work, the capillary pressure and relative permeability functions depend on the global rather than the local flow rates. Likewise, at the core scale, the dependence of the relative permeability and capillary pressure curves on the local capil-\u017d lary number which changes with time and spatial coordinate . from 0 to Ca may be ignored so that the classical fractional flow equations are used. However, at the reservoir scale, the \u017d Ca dependent P , k , k curves determined as described In this manner, additional nonlinearities are introduced into the fractional flow Eqs. 7 and 8, and elaborate computational methods are required for their numerical solution. A two-scale approach of this type enables us to account for small-\u017d . scale core-scale viscous effects on the simulated saturation profiles at the reservoir scale.",
+                "cite_spans": [
+                    {
+                        "start": 175,
+                        "end": 192,
+                        "text": "Tsakiroglou, 2002",
+                        "ref_id": "BIBREF50"
+                    },
+                    {
+                        "start": 362,
+                        "end": 380,
+                        "text": "Sahimi, 1995 , and",
+                        "ref_id": "BIBREF38"
+                    },
+                    {
+                        "start": 1474,
+                        "end": 1499,
+                        "text": "Hassanizadeh et al., 2002",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1783,
+                        "end": 1810,
+                        "text": "Hassanizadeh et al., 2002 .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 1197,
+                        "end": 1199,
+                        "text": "13",
+                        "ref_id": "FIGREF24"
+                    },
+                    {
+                        "start": 1312,
+                        "end": 1314,
+                        "text": "13",
+                        "ref_id": "FIGREF24"
+                    },
+                    {
+                        "start": 1633,
+                        "end": 1635,
+                        "text": "13",
+                        "ref_id": "FIGREF24"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "Drainage experiments of the immiscible displacement of \u017d . an aqueous wetting phase water by an oleic nonwetting \u017d . phase paraffin oil are performed on a planar glass-etched pore network, under constant viscosity ratio, and varying values of the capillary number. The measured transient changes of the axial NWP saturation distribution, total NWP saturation, and total pressure drop are used for the parameter estimation of the Corey type capillary pressure and relative permeability functions with history matching. The mathematical model consists of the conventional equations describing the 1-D macroscopic flow of two fluids in an isotropic and homogeneous porous medium. In history matching, the ATHENA software package is utilized, where the mixed system of nonlinear partial differential and algebraic equations is solved with the PDAPLUS solver and the optimal parameter values are estimated by using the Bayesian estimator of the GREG-PLUS solver. Gradient percolation theory allows the derivation of approximate scaling laws describing the variation of macroscopic parameters with the capillary number in terms of universal scaling exponents. The estimated capillary pressure curves at varying values of the capillary number are used to determine the material coefficient of the thermodynamic \u017d . theory of capillary pressure Hassanizadeh et al., 2002 . The most important conclusions are outlined below.",
+                "cite_spans": [
+                    {
+                        "start": 1337,
+                        "end": 1364,
+                        "text": "Hassanizadeh et al., 2002 .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 At the pore scale, the displacement is capillary-driven, while, at the network scale, the displacement may be governed by capillary or viscous forces depending on capillary number and pore network size. \u2177 The estimated capillary pressure and relative permeability functions are sensitive to the dominant transient displacement pattern, which, at the network-scale, changes gradually fron the invasion percolation cluster to the frontal drive, as the capillary number increases.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 The displacement pattern consists of a compact region, where the macroscopic equations are applicable, and a ramified frontal region that can be described by a viscous gradient percolation model; the width of the frontal region is an increasing function of the capillary number and may be comparable to the pore network size at low Ca values.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 Scaling laws arising from the gradient percolation theory fit satisfactorily to parameter values estimated by matching experimental data with the macroscopic two-phase flow equations; such relationships can be used as a guide to evalu-\u017d . ate estimated macroscopic parameters of P S , with Ca, differences between 2-D and 3-D porous media are associated with universal scaling exponents depending exclusively on dimensionality, lattice size, and pore-size variability.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "c",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 The material coefficient is a decreasing function of the capillary number, and such a behavior should be taken into account in applying the macroscopic thermodynamic theory \u017d . Hassanizadeh and Gray, 1993a mated from core experiments can be coupled with the macroscopic two-phase flow equations in order to account for small-scale viscous effects on simulations at the reservoir scale.",
+                "cite_spans": [
+                    {
+                        "start": 179,
+                        "end": 207,
+                        "text": "Hassanizadeh and Gray, 1993a",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "where E is an elliptical integral of second kind, defined by . s q rA , where A is an apparent cross-section area 0 P P A sW L A4",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "The capillary pressure at equilibrium is given by \u2425 cos P s A5",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "P T P",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "P T P",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . where is the static receding contact angle for the investi-\u017d . gated fluidrsolid system. Given that cos s O 1 , this factor can be neglected and Ca is written \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "C1 r Hm",
+                "sec_num": null
+            },
+            {
+                "text": "The pressure drop in the NWP, across a network length Ls NL is given by P u NL nw nw P \u232c P s A8",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425",
+                "sec_num": null
+            },
+            {
+                "text": "V N kk r nw",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425",
+                "sec_num": null
+            },
+            {
+                "text": "The corresponding macroscopic capillary pressure at equilibrium P can be obtained by averaging the interfacial curva-CN tures over the total interfacial area of the pore network \u017d . Whitaker, 1986 . However, for \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 182,
+                        "end": 211,
+                        "text": "Whitaker, 1986 . However, for",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425",
+                "sec_num": null
+            },
+            {
+                "text": "Note that the number of pore lengths N along one dimension L of the pore network is approximated by the relation L Ns A11",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "LN L1",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "LN L1",
+                "sec_num": null
+            },
+            {
+                "text": "L cos P where is the angle formed between the main flow direction and the pore axis.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "LN L1",
+                "sec_num": null
+            },
+            {
+                "text": "October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "U For a 2-D porous medium it is defined as the fraction of the total area occupied by pores. October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "i i i October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "Manuscript recei\u00aeedSept. 11, 2002, re\u00aeision recei\u00aeed Feb. 11, 2003, and final re\u00aeision recei\u00aeed May 16, 2003. October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [
+            {
+                "text": "This work was performed under Energy Environment and Sustain-\u017d . able Development EESD contract number EVK1-CT1999-00013 \u017d . project acronym: TRACe-Fracture supported by the European Commission.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Acknowledgments",
+                "sec_num": null
+            },
+            {
+                "text": "In order to relate the pore structure characteristics with the macroscopic flow pattern, we define the pore-scale capillary number Ca , as the ratio of the pressure drop across a L1 single pore \u232c P to the capillary pressure P , required forthe filling of a pore with NWP. The equivalent hydraulic radius r is defined as the ratio of the area to the perimeter of H the cross-section, and the pore aspect ratio is defined as the ratio of the pore depth to width. An effective hydraulic radius r can be calculated by considering a mean aspect \u017d .V 1 2 2 k 4 E r",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix",
+                "sec_num": null
+            }
+        ],
+        "bib_entries": {
+            "BIBREF0": {
+                "ref_id": "b0",
+                "title": "A Two-Dimensional Network Simulator for Two-Phase Flow in Porous Me",
+                "authors": [
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "Aker",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Maloy",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Hansen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Batrouni",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "Transp. Porous Media",
+                "volume": "32",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Aker, E., K. J. Maloy, A. Hansen, and G. G. Batrouni, ''A Two-Di- mensional Network Simulator for Two-Phase Flow in Porous Me- \u017d . dia,'' Transp. Porous Media, 32, 163 1998 .",
+                "links": null
+            },
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "Estimation of Fracture Relative Permeabilities from Un-\u017d . steady State Corefloods",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Akin",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Pet. Sci. Eng",
+                "volume": "30",
+                "issue": "",
+                "pages": "1--2001",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Akin, S., ''Estimation of Fracture Relative Permeabilities from Un- \u017d . steady State Corefloods,'' J. Pet. Sci. Eng., 30, 1 2001 .",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "Genetic Algorithm for Estimating Multiphase Flow Functions from Unsteady-State Displacement Experi-\u017d . ments",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Akin",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Demiral",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "Comput. & Geosciences",
+                "volume": "24",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Akin, S., and B. Demiral, ''Genetic Algorithm for Estimating Multi- phase Flow Functions from Unsteady-State Displacement Experi- \u017d . ments,'' Comput. & Geosciences, 24, 251 1998 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "Flow Regimes and Relative Permeabilities during Steady-State Two-Phase Flow in Porous Me",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Avraam",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Payatakes",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Fluid Mech",
+                "volume": "293",
+                "issue": "",
+                "pages": "207--1995",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Avraam, D. G., and A. C. Payatakes, ''Flow Regimes and Relative Permeabilities during Steady-State Two-Phase Flow in Porous Me- \u017d . dia,'' J. Fluid Mech., 293, 207 1995a .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "Generalized Relative Permeability Coefficients during Steady-State Two-Phase Flow in Porous Media and Correlation with the Flow Mechanisms",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Avraam",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Payatakes",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Transp. Porous \u017d . Media",
+                "volume": "20",
+                "issue": "",
+                "pages": "135--1995",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Avraam, D. G., and A. C. Payatakes, ''Generalized Relative Perme- ability Coefficients during Steady-State Two-Phase Flow in Porous Media and Correlation with the Flow Mechanisms,'' Transp. Porous \u017d . Media, 20, 135 1995b .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Nonlinear Parameter Estimation",
+                "authors": [
+                    {
+                        "first": "Y",
+                        "middle": [],
+                        "last": "Bard",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1974,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bard, Y., Nonlinear Parameter Estimation, Academic Press, London \u017d . 1974 .",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "Dynamics of Fluids in Porous Media",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Bear",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1972,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bear, J., Dynamics of Fluids in Porous Media, Elsevier, New York \u017d . 1972 .",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "A Theoretical Model of Hysteresis and Dynamic Effects in the Capillary Relation for Two-Phase Flow in Porous Media",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [
+                            "Y"
+                        ],
+                        "last": "Beliaev",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Hassanizadeh",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2001,
+                "venue": "Transp. Porous Media",
+                "volume": "43",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Beliaev, A. Y., and S. M. Hassanizadeh, ''A Theoretical Model of Hysteresis and Dynamic Effects in the Capillary Relation for Two-Phase Flow in Porous Media,'' Transp. Porous Media, 43, 487 \u017d . 2001 .",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "On the Use of Conventional Cocurrent and Countercurrent Effective Permeabilities to Estimate the Four Generalized Permeability Coefficients which Arise \u017d . in Coupled, Two-Phase Flow",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Bentsen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Manai",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1993,
+                "venue": "Transp. Porous Media",
+                "volume": "11",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bentsen, R. G., and A. A. Manai, ''On the Use of Conventional Cocurrent and Countercurrent Effective Permeabilities to Esti- mate the Four Generalized Permeability Coefficients which Arise \u017d . in Coupled, Two-Phase Flow,''Transp. Porous Media, 11, 243 1993 .",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "Gravity Invasion Percolation in Two Dimensions: Ex-\u017d . periment and Simulation",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Birovljev",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "L",
+                        "middle": [],
+                        "last": "Furuberg",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Feder",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Jossang",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Maloy",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Aharony",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Phys. Re\u00ae. Lett",
+                "volume": "67",
+                "issue": "",
+                "pages": "584--1991",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Birovljev, A., L. Furuberg, J. Feder, T. Jossang, K. J. Maloy, and A. Aharony, ''Gravity Invasion Percolation in Two Dimensions: Ex- \u017d . periment and Simulation,'' Phys. Re\u00ae. Lett., 67, 584 1991 .",
+                "links": null
+            },
+            "BIBREF10": {
+                "ref_id": "b10",
+                "title": "Relative Permeabilities from Two-and Three-Dimensional Pore-Scale Network Modeling",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Blunt",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "King",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Transp. Porous \u017d . Media",
+                "volume": "6",
+                "issue": "",
+                "pages": "407--1991",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Blunt, M., and P. King, ''Relative Permeabilities from Two-and Three-Dimensional Pore-Scale Network Modeling,'' Transp. Porous \u017d . Media, 6, 407 1991 .",
+                "links": null
+            },
+            "BIBREF11": {
+                "ref_id": "b11",
+                "title": "Simulation and Theory of \u017d . Two-Phase Flow in Porous Media",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Blunt",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "King",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [],
+                        "last": "Scher",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1992,
+                "venue": "Phys. Re\u00ae. A",
+                "volume": "46",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Blunt, M., M. J. King, and H. Scher, ''Simulation and Theory of \u017d . Two-Phase Flow in Porous Media,'' Phys. Re\u00ae. A, 46, 7680 1992 .",
+                "links": null
+            },
+            "BIBREF12": {
+                "ref_id": "b12",
+                "title": "Sensitivity Analysis of Initial-Boundary-Value Problems with Mixed PDEs and Algebraic Equation; Applications to Chemical and Biochemical Systems",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Caracotsios",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "W",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Stewart",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1995,
+                "venue": "Comput. \u017d . Chem. Eng",
+                "volume": "19",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Caracotsios, M., and W. E. Stewart, ''Sensitivity Analysis of Initial- Boundary-Value Problems with Mixed PDEs and Algebraic Equa- tion; Applications to Chemical and Biochemical Systems,'' Comput. \u017d . Chem. Eng., 19, 1019 1995 .",
+                "links": null
+            },
+            "BIBREF13": {
+                "ref_id": "b13",
+                "title": "Simultaneous Estimation of Relative Permeabilities and \u017d . Capillary Pressure",
+                "authors": [
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Chardaire-Riviere",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Chavent",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Jaffre",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Liu",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Bourbiaux",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1992,
+                "venue": "SPE Form. E\u00aeal",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Chardaire-Riviere, C., G. Chavent, J. Jaffre, J. Liu, and B. J. Bour- biaux, ''Simultaneous Estimation of Relative Permeabilities and \u017d . Capillary Pressure,'' SPE Form. E\u00aeal., 283 Dec. 1992 .",
+                "links": null
+            },
+            "BIBREF14": {
+                "ref_id": "b14",
+                "title": "Network Simulation of Steady-State Two-Phase Flow in Consolidated Porous Media",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [
+                            "N"
+                        ],
+                        "last": "Constantinides",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Payatakes",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1996,
+                "venue": "AIChE J",
+                "volume": "42",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Constantinides, G. N., and A. C. Payatakes, ''Network Simulation of Steady-State Two-Phase Flow in Consolidated Porous Media,'' \u017d . AIChE J., 42, 369 1996 .",
+                "links": null
+            },
+            "BIBREF15": {
+                "ref_id": "b15",
+                "title": "Experimental Determination of the Flow Transport Coefficients in the Coupled Equations of Two-\u017d . Phase Flow in Porous Media",
+                "authors": [
+                    {
+                        "first": "F",
+                        "middle": [
+                            "A L"
+                        ],
+                        "last": "Dullien",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Dong",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1996,
+                "venue": "Transp. Porous Media",
+                "volume": "25",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Dullien, F. A. L., and M. Dong, ''Experimental Determination of the Flow Transport Coefficients in the Coupled Equations of Two- \u017d . Phase Flow in Porous Media,'' Transp. Porous Media, 25, 97 1996 .",
+                "links": null
+            },
+            "BIBREF16": {
+                "ref_id": "b16",
+                "title": "Two-Phase Flow in Smooth and Rough Fractures: Measurement and Correlation by Porous-Medium and Pipe Flow Models",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Fourar",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Bories",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Lenormand",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Persoff",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1993,
+                "venue": "Water Resour. Res",
+                "volume": "29",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Fourar, M., S. Bories, R. Lenormand, and P. Persoff, ''Two-Phase Flow in Smooth and Rough Fractures: Measurement and Correla- tion by Porous-Medium and Pipe Flow Models,'' Water Resour. Res., \u017d . 29, 3699 1993 .",
+                "links": null
+            },
+            "BIBREF17": {
+                "ref_id": "b17",
+                "title": "Momentum Transfer across Fluid-Fluid Interfaces in Porous Media: a Network Model",
+                "authors": [
+                    {
+                        "first": "P",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Goode",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Ramakrishnan",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1993,
+                "venue": "AIChE \u017d . J",
+                "volume": "39",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Goode, P. A., and T. S. Ramakrishnan, ''Momentum Transfer across Fluid-Fluid Interfaces in Porous Media: a Network Model,'' AIChE \u017d . J., 39, 1124 1993 .",
+                "links": null
+            },
+            "BIBREF18": {
+                "ref_id": "b18",
+                "title": "Thermodynamic Basis of Capillary Pressure in Porous Media",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Hassanizadeh",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "W",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Gray",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1993,
+                "venue": "Water Resour. Res",
+                "volume": "29",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hassanizadeh, S. M., and W. G. Gray, ''Thermodynamic Basis of Capillary Pressure in Porous Media,'' Water Resour. Res., 29, 3389- \u017d . 3405 1993a .",
+                "links": null
+            },
+            "BIBREF19": {
+                "ref_id": "b19",
+                "title": "Toward an Improved Description of the Physics of Two-Phase Flow",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Hassanizadeh",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "W",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Gray",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1993,
+                "venue": "Ad\u00ae. Water Resour",
+                "volume": "16",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hassanizadeh, S. M., and W. G. Gray, ''Toward an Improved De- scription of the Physics of Two-Phase Flow,'' Ad\u00ae. Water Resour., \u017d . 16, 53 1993b .",
+                "links": null
+            },
+            "BIBREF20": {
+                "ref_id": "b20",
+                "title": "Dynamic Effect in the Capillary Pressure-Saturation Relationship and its Impacts \u017d . on Unsaturated Flow",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Hassanizadeh",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Celia",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [
+                            "K"
+                        ],
+                        "last": "Dahle",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Vadoze Zone J",
+                "volume": "1",
+                "issue": "",
+                "pages": "38--2002",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hassanizadeh, S. M., M. A. Celia, and H. K. Dahle, ''Dynamic Effect in the Capillary Pressure-Saturation Relationship and its Impacts \u017d . on Unsaturated Flow,'' Vadoze Zone J., 1, 38 2002 .",
+                "links": null
+            },
+            "BIBREF21": {
+                "ref_id": "b21",
+                "title": "Measurement of Relative Permeability",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Heaviside",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1991,
+                "venue": "Interfacial Phenomena in Petroleum Reco\u00aeery",
+                "volume": "",
+                "issue": "",
+                "pages": "377--411",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Heaviside, J., ''Measurement of Relative Permeability,'' Interfacial Phenomena in Petroleum Reco\u00aeery, N. R. Morrow, ed., pp. 377\u1390411, \u017d . Marcel-Dekker, New York 1991 .",
+                "links": null
+            },
+            "BIBREF22": {
+                "ref_id": "b22",
+                "title": "Capillary End Effects in \u017d . Coreflood Calculations",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Huang",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Honarpour",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Pet. Sci. Eng",
+                "volume": "19",
+                "issue": "",
+                "pages": "103--1998",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Huang, D. D., and M. M. Honarpour, ''Capillary End Effects in \u017d . Coreflood Calculations,'' J. Pet. Sci. Eng., 19, 103 1998 .",
+                "links": null
+            },
+            "BIBREF23": {
+                "ref_id": "b23",
+                "title": "Pore Scale Modeling of Rate Ef-\u017d . fects in Imbibition",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Hughes",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Blunt",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "Transp. Porous Media",
+                "volume": "40",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hughes, R. G., and M. J. Blunt, ''Pore Scale Modeling of Rate Ef- \u017d . fects in Imbibition,'' Transp. Porous Media, 40, 295 2000 .",
+                "links": null
+            },
+            "BIBREF24": {
+                "ref_id": "b24",
+                "title": "Quantitative Analysis of an Invading-Fluid Invasion Front under Gravity",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Hulin",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "Clement",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Baudet",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1988,
+                "venue": "Phys. Re\u00ae. Lett",
+                "volume": "61",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hulin, J. P., E. Clement, and C. Baudet, ''Quantitative Analysis of an Invading-Fluid Invasion Front under Gravity,'' Phys. Re\u00ae. Lett., 61, \u017d . 333 1988 .",
+                "links": null
+            },
+            "BIBREF25": {
+                "ref_id": "b25",
+                "title": "Fractal Structure of Diffusion and Invasion Fronts in Three-Dimensional Lattices through \u017d . the Gradient Percolation Approach",
+                "authors": [
+                    {
+                        "first": "J.-F",
+                        "middle": [],
+                        "last": "Gouyet",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Rosso",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Sapoval",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1988,
+                "venue": "Phys. Re\u00ae. B",
+                "volume": "37",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Gouyet, J.-F., M. Rosso, and B. Sapoval, ''Fractal Structure of Diffu- sion and Invasion Fronts in Three-Dimensional Lattices through \u017d . the Gradient Percolation Approach,'' Phys. Re\u00ae. B, 37, 1832 1988 .",
+                "links": null
+            },
+            "BIBREF26": {
+                "ref_id": "b26",
+                "title": "Simultaneous Determination of Capillary Pressure and Relative Permeability by \u017d . Automatic History Matching",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Jennings",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Mcgregor",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Morso",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1988,
+                "venue": "SPE Form. E\u00aeal",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Jennings, J. W., D. S. McGregor, and R. A. Morso, ''Simultaneous Determination of Capillary Pressure and Relative Permeability by \u017d . Automatic History Matching,'' SPE Form. E\u00aeal., 322 June 1988 .",
+                "links": null
+            },
+            "BIBREF27": {
+                "ref_id": "b27",
+                "title": "Calculation of Relative Permeability from Displacement Experiments",
+                "authors": [
+                    {
+                        "first": "E",
+                        "middle": [
+                            "F"
+                        ],
+                        "last": "Johnson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Bossler",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "V",
+                        "middle": [
+                            "O"
+                        ],
+                        "last": "Naumann",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1959,
+                "venue": "J. Pet. \u017d . Tech",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Johnson, E. F., D. P. Bossler, and V. O. Naumann, ''Calculation of Relative Permeability from Displacement Experiments,'' J. Pet. \u017d . Tech., 61 June 1959 .",
+                "links": null
+            },
+            "BIBREF28": {
+                "ref_id": "b28",
+                "title": "Applying Soft Computing Methods to Improve the Computational Tractability of a Subsurface \u017d . Simulation\u1390Optimization Problem",
+                "authors": [
+                    {
+                        "first": "V",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Johnson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "L",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Rogers",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Pet. Sci. Eng",
+                "volume": "29",
+                "issue": "",
+                "pages": "153--2001",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Johnson, V. M., and L. L. Rogers, ''Applying Soft Computing Meth- ods to Improve the Computational Tractability of a Subsurface \u017d . Simulation\u1390Optimization Problem,'' J. Pet. Sci. Eng., 29, 153 2001 .",
+                "links": null
+            },
+            "BIBREF29": {
+                "ref_id": "b29",
+                "title": "Origin and Quantification of Coupling between Relative Permeabilities for Two-Phase Flow in Porous Media",
+                "authors": [
+                    {
+                        "first": "F",
+                        "middle": [],
+                        "last": "Kalaydjian",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1990,
+                "venue": "Transp. \u017d . Porous Media",
+                "volume": "5",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Kalaydjian, F., ''Origin and Quantification of Coupling between Rel- ative Permeabilities for Two-Phase Flow in Porous Media,'' Transp. \u017d . Porous Media, 5, 215 1990 .",
+                "links": null
+            },
+            "BIBREF30": {
+                "ref_id": "b30",
+                "title": "Network Simulation of Relative Permeability Curves using a Bond Correlated-Site Percolation Model of \u017d . Pore Structure",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Kantzas",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Chatzis",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1988,
+                "venue": "Chem. Eng. Commun",
+                "volume": "69",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Kantzas, A., and I. Chatzis, ''Network Simulation of Relative Perme- ability Curves using a Bond Correlated-Site Percolation Model of \u017d . Pore Structure,'' Chem. Eng. Commun., 69, 191 1988 .",
+                "links": null
+            },
+            "BIBREF31": {
+                "ref_id": "b31",
+                "title": "Pore Network Modelling of Two-Phase Flow in Porous Rock: the Effect of Cor-\u017d . related Heterogeneity",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Knackstedt",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Sheppard",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Sahimi",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2001,
+                "venue": "Ad\u00ae. Water Resour",
+                "volume": "24",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Knackstedt, M. A., A. P. Sheppard, and M. Sahimi, ''Pore Network Modelling of Two-Phase Flow in Porous Rock: the Effect of Cor- \u017d . related Heterogeneity,'' Ad\u00ae. Water Resour., 24, 257 2001 .",
+                "links": null
+            },
+            "BIBREF32": {
+                "ref_id": "b32",
+                "title": "Two-Phase Flow in Porous Media: Property Identification and Model Valida-\u017d . tion",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Kulkarni",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Watson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J.-E",
+                        "middle": [],
+                        "last": "Norttvedt",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Sylte",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "AIChE J",
+                "volume": "44",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Kulkarni, R., A. T. Watson, J.-E. Norttvedt, and A. Sylte, ''Two-Phase Flow in Porous Media: Property Identification and Model Valida- \u017d . tion,'' AIChE J., 44, 2337 1998 .",
+                "links": null
+            },
+            "BIBREF33": {
+                "ref_id": "b33",
+                "title": "Numerical Models and Experiments on Immiscible Displacement in Porous Media",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Lenormand",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "Touboul",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Zarcone",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Fluid Mech",
+                "volume": "189",
+                "issue": "",
+                "pages": "165--1988",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lenormand, R., E. Touboul, and C. Zarcone, ''Numerical Models and Experiments on Immiscible Displacement in Porous Media,'' \u017d . J. Fluid Mech., 189, 165 1988 .",
+                "links": null
+            },
+            "BIBREF34": {
+                "ref_id": "b34",
+                "title": "Relative Permeabilities in Two-Phase Flow through Porous Media: an Application of Effective Medium",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Levine",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Cuthiel",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Can. Pet. Tech",
+                "volume": "25",
+                "issue": "",
+                "pages": "74--1986",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Levine, S., and D. L. Cuthiel, ''Relative Permeabilities in Two-Phase Flow through Porous Media: an Application of Effective Medium \u017d . Theory,'' J. Can. Pet. Tech., 25, 74 1986 .",
+                "links": null
+            },
+            "BIBREF35": {
+                "ref_id": "b35",
+                "title": "Use of in situ Situation Data in Estimation of Two-Phase Flow Functions in \u017d . Porous Media",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Mejia",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [
+                            "K"
+                        ],
+                        "last": "Mohanty",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Watson",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Pet. Sci. Eng",
+                "volume": "12",
+                "issue": "",
+                "pages": "233--1995",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Mejia, G. M., K. K. Mohanty, and A. T. Watson, ''Use of in situ Situation Data in Estimation of Two-Phase Flow Functions in \u017d . Porous Media,'' J. Pet. Sci. Eng., 12, 233 1995 .",
+                "links": null
+            },
+            "BIBREF36": {
+                "ref_id": "b36",
+                "title": "A Semi-analytical Procedure for Estimating Relative Permeability from Displacement Experiments: Account for Pre-Breakthrough Data",
+                "authors": [
+                    {
+                        "first": "V",
+                        "middle": [],
+                        "last": "Mitlin",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Lawton",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "L",
+                        "middle": [],
+                        "last": "Owen",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1999,
+                "venue": "Int. J. Eng. Sci",
+                "volume": "37",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Mitlin, V., B. Lawton, and L. Owen, ''A Semi-analytical Procedure for Estimating Relative Permeability from Displacement Experi- ments: Account for Pre-Breakthrough Data,'' Int. J. Eng. Sci., 37, \u017d . 1051 1999 .",
+                "links": null
+            },
+            "BIBREF37": {
+                "ref_id": "b37",
+                "title": "Two-Phase Flow Visualization and Relative Permeability Measurement in Natural Rough-Walled Rock \u017d . Fractures",
+                "authors": [
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Persoff",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [],
+                        "last": "Pruess",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1995,
+                "venue": "Water Resour. Res",
+                "volume": "31",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Persoff, P., and K. Pruess, ''Two-Phase Flow Visualization and Rela- tive Permeability Measurement in Natural Rough-Walled Rock \u017d . Fractures,'' Water Resour. Res., 31, 1175 1995 .",
+                "links": null
+            },
+            "BIBREF38": {
+                "ref_id": "b38",
+                "title": "Flow and Transport in Porous Media and Fractured Rock: From Classical Methods to Modern Approaches",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Sahimi",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1995,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Sahimi, M., Flow and Transport in Porous Media and Fractured Rock: From Classical Methods to Modern Approaches, VCH, Weinheim, \u017d . Germany 1995 .",
+                "links": null
+            },
+            "BIBREF39": {
+                "ref_id": "b39",
+                "title": "Comparison of Optimization Techniques for Automatic History Matching",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Savioli",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Bidner",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1994,
+                "venue": "J. Pet. Sci. Eng",
+                "volume": "12",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Savioli, G. B., and M. S. Bidner, ''Comparison of Optimization Tech- niques for Automatic History Matching,'' J. Pet. Sci. Eng., 12, 25 \u017d . 1994 .",
+                "links": null
+            },
+            "BIBREF40": {
+                "ref_id": "b40",
+                "title": "The Physics of Flow through Porous Media",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Scheidegger",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1974,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Scheidegger, A. E., The Physics of Flow through Porous Media, Univ. \u017d . of Toronto, Toronto 1974 .",
+                "links": null
+            },
+            "BIBREF41": {
+                "ref_id": "b41",
+                "title": "An Improved Unsteady-State Procedure for Determining the Relative Permeability Characteristics \u017d . of Heterogeneous Media",
+                "authors": [
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Sigmund",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [],
+                        "last": "Mccaffery",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "SPE J",
+                "volume": "169",
+                "issue": "",
+                "pages": "15--1979",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Sigmund, P., and F. McCaffery, ''An Improved Unsteady-State Pro- cedure for Determining the Relative Permeability Characteristics \u017d . of Heterogeneous Media,'' SPE J., 169, 15 1979 .",
+                "links": null
+            },
+            "BIBREF42": {
+                "ref_id": "b42",
+                "title": "Comparison of Viscous and Gravity Dominated Gas-Oil Relative Per-\u017d . meabilities",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Singh",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "V",
+                        "middle": [],
+                        "last": "Mani",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Honarpour",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [
+                            "K"
+                        ],
+                        "last": "Mohanty",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Pet. Sci. Eng",
+                "volume": "30",
+                "issue": "",
+                "pages": "67--2001",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Singh, M., V. Mani, M. M. Honarpour, and K. K. Mohanty, ''Com- parison of Viscous and Gravity Dominated Gas-Oil Relative Per- \u017d . meabilities,'' J. Pet. Sci. Eng., 30, 67 2001 .",
+                "links": null
+            },
+            "BIBREF43": {
+                "ref_id": "b43",
+                "title": "Dynamic Modelling of Drainage through Three-Dimensional Porous Materials",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Singh",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [
+                            "K"
+                        ],
+                        "last": "Mohanty",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. Sci",
+                "volume": "58",
+                "issue": "",
+                "pages": "1--2003",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Singh, M., and K. K. Mohanty, ''Dynamic Modelling of Drainage through Three-Dimensional Porous Materials,'' Chem. Eng. Sci., \u017d . 58, 1 2003 .",
+                "links": null
+            },
+            "BIBREF44": {
+                "ref_id": "b44",
+                "title": "Introduction to Percolation Theory",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Stauffer",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Aharony",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1992,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Stauffer, D., and A. Aharony, Introduction to Percolation Theory, Tay- \u017d . lor & Francis, London 1992 .",
+                "links": null
+            },
+            "BIBREF45": {
+                "ref_id": "b45",
+                "title": "Parameter Esti-\u017d . mation from Multiresponse Data",
+                "authors": [
+                    {
+                        "first": "W",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Stewart",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Caracotsios",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Sorensen",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "AIChE J",
+                "volume": "38",
+                "issue": "",
+                "pages": "641--1992",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Stewart, W. E., M. Caracotsios, and J. P. Sorensen, ''Parameter Esti- \u017d . mation from Multiresponse Data,'' AIChE J., 38, 641 1992 .",
+                "links": null
+            },
+            "BIBREF46": {
+                "ref_id": "b46",
+                "title": "Accuracy of JBN Estimates of Relative Permeability: Part 1\u138fError Analysis",
+                "authors": [
+                    {
+                        "first": "T",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Tao",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Watson",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1984,
+                "venue": "Soc. Pet. Eng. J",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Tao, T. M., and A. T. Watson, ''Accuracy of JBN Estimates of Rela- tive Permeability: Part 1\u138fError Analysis,'' Soc. Pet. Eng. J., 209 \u017d . Apr. 1984 .",
+                "links": null
+            },
+            "BIBREF47": {
+                "ref_id": "b47",
+                "title": "Investigation of the Contamination of Fractured Formations by Non-New",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Theodoropoulou",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "V",
+                        "middle": [],
+                        "last": "Karoutsos",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Tsakiroglou",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Theodoropoulou, M., V. Karoutsos, and C. Tsakiroglou, ''Investiga- tion of the Contamination of Fractured Formations by Non-New- \u017d .",
+                "links": null
+            },
+            "BIBREF48": {
+                "ref_id": "b48",
+                "title": "tonian Oil Pollutants",
+                "authors": [],
+                "year": null,
+                "venue": "J. En\u00aeironm. Forensics",
+                "volume": "2",
+                "issue": "",
+                "pages": "321--2001",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "tonian Oil Pollutants,'' J. En\u00aeironm. Forensics, 2, 321 2001 .",
+                "links": null
+            },
+            "BIBREF49": {
+                "ref_id": "b49",
+                "title": "Convenient Formulae for Determination of Relative Permeability from Unsteady-State Fluid \u017d . Displacements in Core Plugs",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Toth",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Bodi",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Szucs",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [],
+                        "last": "Civan",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Pet. Sci. Eng",
+                "volume": "36",
+                "issue": "",
+                "pages": "33--2002",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Toth, J., T. Bodi, P. Szucs, and F. Civan, ''Convenient Formulae for Determination of Relative Permeability from Unsteady-State Fluid \u017d . Displacements in Core Plugs,'' J. Pet. Sci. Eng., 36, 33 2002 .",
+                "links": null
+            },
+            "BIBREF50": {
+                "ref_id": "b50",
+                "title": "A Methodology for the Derivation of non-Darcian Models for the Flow of Generalized Newtonian Fluids in",
+                "authors": [
+                    {
+                        "first": "C",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Tsakiroglou",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2002,
+                "venue": "J. Non-Newtonian Fluid Mech",
+                "volume": "105",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Tsakiroglou, C. D., ''A Methodology for the Derivation of non-Dar- cian Models for the Flow of Generalized Newtonian Fluids in \u017d . Porous Media,'' J. Non-Newtonian Fluid Mech., 105, 79 2002 .",
+                "links": null
+            },
+            "BIBREF51": {
+                "ref_id": "b51",
+                "title": "Improved Macroscopic Equations of Two-Phase Flow in Porous Media Based on New Models of the Capillary Pressure and Relative Permeability",
+                "authors": [
+                    {
+                        "first": "C",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Tsakiroglou",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Avraam",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Payatakes",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "Proc. of the XII Int. Conf. on Computational Methods in Water Resources",
+                "volume": "2",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Tsakiroglou, C. D., D. G. Avraam, and A. C. Payatakes, ''Improved Macroscopic Equations of Two-Phase Flow in Porous Media Based on New Models of the Capillary Pressure and Relative Permeabil- ity,'' Proc. of the XII Int. Conf. on Computational Methods in Water Resources, Crete, V. N. Burganos et al., eds., 2, Computational \u017d Mechanics Publications, Southampton, U.K., 27 June 15\u139019, . 1998 .",
+                "links": null
+            },
+            "BIBREF52": {
+                "ref_id": "b52",
+                "title": "On the Role of the Viscosity Ratio during Low-Capillary Number Forced Imbibition \u017d . in Porous Media",
+                "authors": [
+                    {
+                        "first": "O",
+                        "middle": [],
+                        "last": "Vizika",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Avraam",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Payatakes",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Colloid Interface Sci",
+                "volume": "165",
+                "issue": "",
+                "pages": "386--1994",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Vizika, O., D. G. Avraam, and A. C. Payatakes, ''On the Role of the Viscosity Ratio during Low-Capillary Number Forced Imbibition \u017d . in Porous Media,'' J. Colloid Interface Sci., 165, 386 1994 .",
+                "links": null
+            },
+            "BIBREF53": {
+                "ref_id": "b53",
+                "title": "Parametric Experimental Study of Forced Imbibition in Porous Media",
+                "authors": [
+                    {
+                        "first": "O",
+                        "middle": [],
+                        "last": "Vizika",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Payatakes",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1989,
+                "venue": "PhysicoChem. Hydrodyn",
+                "volume": "11",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Vizika, O., and A. C. Payatakes, ''Parametric Experimental Study of Forced Imbibition in Porous Media,'' PhysicoChem. Hydrodyn., 11, \u017d . 187 1989 .",
+                "links": null
+            },
+            "BIBREF54": {
+                "ref_id": "b54",
+                "title": "An Improved Method for Estimating Relative Permeabilities from Displacement Experiments",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Watson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Kerig",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Richmond",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Tao",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Proc. of the 56th California Regional Meeting of the SPE, Paper SPE 15064",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Watson, A. T., P. D. Kerig, P. C. Richmond, and T. M. Tao, ''An Improved Method for Estimating Relative Permeabilities from Displacement Experiments,'' Proc. of the 56th California Regional Meeting of the SPE, Paper SPE 15064, Oakland, CA, Society of \u017d .",
+                "links": null
+            },
+            "BIBREF55": {
+                "ref_id": "b55",
+                "title": "Flow in Porous Media II: The Governing Equations for Immiscible, Two-Phase Flow",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Whitaker",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1986,
+                "venue": "Transp. Porous Media",
+                "volume": "1",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Whitaker, S., ''Flow in Porous Media II: The Governing Equations for Immiscible, Two-Phase Flow,'' Transp. Porous Media, 1, 105 \u017d . 1986 .",
+                "links": null
+            },
+            "BIBREF56": {
+                "ref_id": "b56",
+                "title": "Percolation Model of Immiscible Displacement in \u017d . the Presence of Buoyancy Forces",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Wilkinson",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1984,
+                "venue": "Phys. Re\u00ae. A",
+                "volume": "30",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Wilkinson, D., ''Percolation Model of Immiscible Displacement in \u017d . the Presence of Buoyancy Forces,'' Phys. Re\u00ae. A, 30, 520 1984 .",
+                "links": null
+            },
+            "BIBREF57": {
+                "ref_id": "b57",
+                "title": "Percolation Effects in Immiscible Displacement",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Wilkinson",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1986,
+                "venue": "Phys. Re\u00ae. A",
+                "volume": "34",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Wilkinson, D., ''Percolation Effects in Immiscible Displacement,'' \u017d . Phys. Re\u00ae. A, 34, 1380 1986 .",
+                "links": null
+            },
+            "BIBREF58": {
+                "ref_id": "b58",
+                "title": "Investigations on Scaling and Hyperscaling for In-\u017d . vasion Percolation",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "F"
+                        ],
+                        "last": "Willemsen",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Phys. Re\u00ae. Lett",
+                "volume": "52",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Willemsen, J. F., ''Investigations on Scaling and Hyperscaling for In- \u017d . vasion Percolation,'' Phys. Re\u00ae. Lett., 52, 2197 1984 .",
+                "links": null
+            },
+            "BIBREF59": {
+                "ref_id": "b59",
+                "title": "Invasion Percolation with Vis-\u017d . cous Forces",
+                "authors": [
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Xu",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Y",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Yortsos",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Salin",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "Phys. Re\u00ae. E",
+                "volume": "57",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Xu, B., Y. C. Yortsos, and D. Salin, ''Invasion Percolation with Vis- \u017d . cous Forces,'' Phys. Re\u00ae. E., 57, 739 1998 .",
+                "links": null
+            },
+            "BIBREF60": {
+                "ref_id": "b60",
+                "title": "Phase Drainage of Fully Developed \u017d . Drainage in Porous Media",
+                "authors": [
+                    {
+                        "first": "Y",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Yortsos",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Xu",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1997,
+                "venue": "Phys. Re\u00ae. Lett",
+                "volume": "79",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Yortsos, Y. C., and B. Xu, ''Phase Drainage of Fully Developed \u017d . Drainage in Porous Media,'' Phys. Re\u00ae. Lett., 79, 4581 1997 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "text": "Syringe pump; 2 s light source; 3 s glass micromodel; 4 s waste storage tank; 5 s differential pressure transducer; 6 s pressure display; 7 s video-camera with \u017d . zoom-lens; 8 s host computer. b : 1 s inlet ports; 2 s pressure taps; 3s outlet ports; the dotted lines indicate the bounds of the central region of the network.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF1": {
+                "text": "Figure 2. Measured time response of the pressure drop along the central region of the pore network for Ca=6.5=10 -6 .",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": "2"
+            },
+            "FIGREF2": {
+                "text": "dynamic viscosity, average superficial velocity, i pressure, saturation of phase i, k is the relative permeabilr i",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF3": {
+                "text": "By defining the fractional flow F as the ratio of the local nw NWP velocity u to the total velocity u , namely",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF4": {
+                "text": "\u232c P 0 is the experimentally measured pressure drop along the nw \u017d . NWP at steady state t \u2122\u03f1 , u is a characteristic superficial c the length of the porous medium. The capillary pressure and relative permeabilities may be regarded as parametric functions of the NWP saturation, namely, P s",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF5": {
+                "text": "representation of capillary pressure and relative permeability curves, the following simplified Corey type functions were selected. For primary drainage, the WP end relative permeability k 0 s1, while the NWP end relative permeabilr w ity k 0 can be determined from experimental data and Darcy r nw law by introducing \u232c P 0 into the relation Therefore, the vector of unknown parameters has four components, namely s P 0 ,m,n,l 34\u017d .",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF6": {
+                "text": "on a user-selected arrangement of the responses into \u017d . one or more blocks bs1, . . . , B , where n and m are the b b number of events and working responses in block b, respec-\u017d . tively Stewart et al., 1992 , and \u00a9 is the determinant \u017d . b of the residual matrix defined below. From each block b, GREGPLUS selects m working responses whose weighted b w deviations from the current model, given by y y i j \u017d .x f w , are linearly independent over the events, where' , f and w are the observation, model prediction and i j i j i j user-provided weight for response i in event j, respectively. \u017d . Then, each block sub-matrix function \u00a9 with elements",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF7": {
+                "text": "of bonds pores that might be invaded by the NWP, if they were all accessible to it, and is equal to the percolation threshold p when a network spanning cluscn \u017d . ter of NWP appears for a first timeSahimi, 1995 . In drainage processes, the finite size of a pore network causes shifts in \u017d . the percolation thresholdStauffer and Aharony, 1992 and \u017d . irreducible wetting phase S Blunt et al., 1992 described by wi p \u03f1 y p w A w y1r 39",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF9": {
+                "text": ". The number of pore lengths along the \u017d . axial dimension of the viewed network Figure3was found \u017d . N( 70 Eq. A11 . The microscopic capillary number Ca and L1 the macroscopic capillary number Ca were calculated by LN \u017d . using Eqs. A6 and A11, respectively Table 4 . Evidently, \u017d . Ca <1 Table",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF10": {
+                "text": ". \u017d . Finally, when Ca f1 Table 4 , the displacement is domi-LN \u017d nated by a mixture of the aforementioned patterns Figure . 4c .",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF11": {
+                "text": "Figure 4. Successive shortcuts of the displacement of ( ) ( ) water dark by paraffin oil white for various values of the capillary number. \u017d . y5 \u017d . y6 \u017d . y6 \u017d . a Cas 1.3 10 ; b Cas 6.5 10 ; c Cas 1.3 10 ; d y7 \u017d . y8 \u017d Cas 1.3 10 ; e Cas 6.5=10 the flow direction is from . the left to the right .",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF12": {
+                "text": "from the discontinuity of capillary pressure in the wetting phase at the outlet end of the porous sample, may significantly affect the calculated end relative permeabilities and final saturations. In the model porous \u017d . medium used in experiments Figure 1b the fluids enter and expel from the porous medium through small holes con-\u017d nected directly with the pore network. All quantities pres-. sure drops, saturations are measured across a central area of the pore network located far from the inlet and outlet ends so that end effects are minimized. Capillary end effects al-\u017d . most vanish even at low Ca values Figures 4a\u13904d , and weak nonuniformities of the nonwetting phase saturation across the \u017d . pore network appear at very low Ca values Figure 4e . Estimated nonequilibrium functions \u017d . The PDE Eq. 12 is solved iteratively with the PDAPLUS \u017d . solver in the time interval 0, by using a grid refined to 200 \u017d discretization points and bounded between s 0 left bound-. \u017d ary condition, Eq. 19 and s10 right boundary condition, . Eq. 20 . The parameters of P , k , k are first estimated c rw rnw",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF13": {
+                "text": "Figure 5. Estimated capillary pressure curves for various values of the capillary number.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF14": {
+                "text": "Figure 6. Estimated relative permeability curves for various values of the capillary number.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": "6"
+            },
+            "FIGREF15": {
+                "text": "Figure 7. Comparison of experimentally measured with ( ) numerically predicted a NWP saturation pro-( ) ( ) file, b total NWP saturation, and c total pressure drop, for Cas1.3=10 I 5 and the parameters values of Table5.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF16": {
+                "text": "\u017d . The transient response of the total NWP saturation S nwt \u017d is predicted satisfactorily almost for all Ca values Figures . \u017d.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF17": {
+                "text": "7b, 8b, 9b, 10b, and 11b  given that S is measured indebalance is unavoidable. Before the NWP breakthrough, the total pressure drop \u017d across the viewed region of the pore network Figures 3 and .",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF18": {
+                "text": "Figure 8. Comparison of experimentally measured with ( ) numerically predicted a NWP saturation pro-( ) ( ) file, b total NWP saturation, and c total pressure drop, for Cas 6.5=10 I 6 and the parameters values of Table5.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF19": {
+                "text": "Figure 10. Comparison of experimentally measured with ( ) numerically predicted a NWP saturation ( ) ( ) profile, b total NWP saturation, and c total pressure drop, for Ca=1.3=10 I7 and the parameters values of Table5.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF20": {
+                "text": ".",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF21": {
+                "text": "The exponents calculated by fitting the estimated parameter values with power laws of the form y sCa \u2424 do not differ \u017d substantially from the aforementioned universal values Fig-. ures 12a, 12b, and 12c . Hence, the foregoing scaling relations enable us to estimate roughly the functional dependence of the macroscopic parameters of P and k on Ca",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF22": {
+                "text": "Figure 11. Comparison of experimentally measured with ( ) numerically predicted a NWP saturation ( ) ( ) profile, b total NWP saturation, and c total pressure drop, for Ca=6.5=10 I 8 and the parameter values of Table5.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF23": {
+                "text": "Figure 12. Estimated macroscopic parameters in de-( ) 0 ( ) ( ) 0 pendence on Ca, a P m/ / / / / 1I S , b k , c w i r nw",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF24": {
+                "text": "Figure 13. Material coefficient in dependence on the NWP saturation for various values of Ca.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": "13"
+            },
+            "FIGREF25": {
+                "text": "quality of data, b number of datasets, c adequacy of the two-phase flow equations and P , k , d efficiency of the computational technique. In \u017d . \u017d . \u017d . the present work, we attempt to maximize a , b and d by using conventional two-phase flow equations and P , k , c rw k models, and, assuming that at the scale of the pore netr nw",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF26": {
+                "text": "capillary number in agreement with earlier simulations with dynamic pore network simulators.",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF27": {
+                "text": "the average superficial flow velocity of NWP u 0 0",
+                "num": null,
+                "type_str": "figure",
+                "uris": null,
+                "fig_num": null
+            },
+            "TABREF0": {
+                "text": "",
+                "content": "<table><tr><td>\u017d Water viscosity, Pa \u0612 s w Paraffin oil viscosity, nw Waterroil interfacial tension, \u2425 Ntrm . \u017d . Pa \u0612 s \u017d .</td><td>0.001 0.026 3 5 1 0 y3</td></tr><tr><td>\u017d . Static contact angle, \u040a 41.</td><td/></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF1": {
+                "text": "",
+                "content": "<table><tr><td colspan=\"3\">Distilled water colored with methylene blue and paraffin</td></tr><tr><td colspan=\"3\">\u017d oil were selected as the wetting WP and nonwetting phase .</td></tr><tr><td colspan=\"3\">\u017d NWP , respectively Table 1 . A large planar pore network, . \u017d .</td></tr><tr><td colspan=\"3\">etched on glass with photo-lithographic techniques was used</td></tr><tr><td>as the model in detail in Appendix A.</td><td>\u017d</td><td>.</td></tr><tr><td colspan=\"3\">\u017d Details about the morphology of the artificial model Fig-</td></tr><tr><td colspan=\"3\">. ure 1b and the procedure followed for performing two-phase</td></tr><tr><td colspan=\"3\">\u017d flow experiments on it Figure 1a are reported in Theodor-.</td></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF2": {
+                "text": "",
+                "content": "<table><tr><td>Topology</td><td/><td>2-D square lattice</td></tr><tr><td colspan=\"2\">\u017d Length=Width, L =W cm = cm . T T U Areal porosity, A</td><td>13.4=10.3 0.35</td></tr><tr><td>Cross-sectional porosity,</td><td/><td>0.025</td></tr><tr><td colspan=\"2\">\u017d . Length of central region, L cm</td><td>6.85</td></tr><tr><td colspan=\"2\">Pore cross-sectional shape</td><td>Elliptical</td></tr><tr><td>\u00b2 :\u017d Mean pore depth, D P \u00b2 :\u017d Mean pore width, W P \u017d . Pore length, L m P</td><td>. m . m</td><td>126 470 1,365</td></tr><tr><td colspan=\"2\">\u017d . Absolute permeability, k Da</td><td>20.5</td></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF3": {
+                "text": "",
+                "content": "<table><tr><td>Capillary number, Ca</td><td>\u017d . Average retention time, t s r</td></tr><tr><td>y8 6.55=10</td><td>32130</td></tr><tr><td>y7 1.31=10</td><td>16110</td></tr><tr><td>y6 1.31=10</td><td>1611</td></tr><tr><td>y6 6.55=10</td><td>322</td></tr><tr><td>y5 1.31=10</td><td>161</td></tr><tr><td>\u017d opoulou et al. 2001 . .</td><td/></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF4": {
+                "text": "is assumed to be distributed uniformly across the porous medium. The foregoing boundary conditions are suitable for our problem, since all observations and measurements are restricted to a central region of the net-\u017d . work, which can be regarded as a piece '' window'' of an infinite porous medium.\u017d . The total NWP saturation in the porous medium S is",
+                "content": "<table><tr><td colspan=\"6\">Equation 12 is a nonlinear parabolic differential equation that</td></tr><tr><td colspan=\"4\">is subject to the initial condition</td><td/></tr><tr><td/><td/><td colspan=\"2\">S 0, s 0 \u017d . nw</td><td/><td>1 8 \u017d .</td></tr><tr><td colspan=\"3\">and boundary conditions</td><td/><td/></tr><tr><td/><td colspan=\"3\">S ,0 s1y S \u017d . nw</td><td>wi</td><td>19 \u017d .</td></tr><tr><td/><td/><td colspan=\"3\">\u0468 S nw ,\u03f1 s 0 \u017d .</td><td>2 0 \u017d .</td></tr><tr><td/><td/><td/><td/><td>nwt</td></tr><tr><td>calculated by</td><td/><td/><td/><td/></tr><tr><td>S</td><td>nwt</td><td>\u017d .</td><td colspan=\"2\">1 s S , d \u017d . H nw 0</td><td>21 \u017d .</td></tr><tr><td/><td/><td/><td/><td/><td>nw</td><td>nw</td></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF6": {
+                "text": "scales as \u2426 ACa yr\u017d y\u2424q1q . the universal exponent of conductivity. Microscopic effects such as the behavior implied by Eqs. 37 can be seen only up to the length scale \u2426 which accounts both for tern is dominated by a ramified fractal structure governed by \u017d finite-size effects on percolation quantities Eqs. 37b, 39, and . 40 . At high Ca values, \u2426 < w, and, hence, \u2426 s \u2426 , Ds dy \u2424r , \u00dd is a measure of the variance of the pore-size distribution, C is a constant, \u017d and capillary number Ca is based on the front velocity Ca",
+                "content": "<table><tr><td/><td/><td/><td>V</td><td/><td>eff</td><td>V</td></tr><tr><td colspan=\"6\">namely, the viscous effects become evident at scales smaller</td></tr><tr><td colspan=\"6\">than the network size, the network displacement pattern</td></tr><tr><td colspan=\"6\">changes, and the percolation pattern, restricted at scales -</td></tr><tr><td colspan=\"6\">\u2426 , is governed by Eqs. 42 and 43. V</td></tr><tr><td colspan=\"6\">A stabilized fully developed displacement consists of a</td></tr><tr><td colspan=\"6\">frontal region which moves linearly with time at a frontal ve-</td></tr><tr><td colspan=\"6\">locity u , and where the fractal properties of a percolation F</td></tr><tr><td colspan=\"6\">cluster are valid, and a compact region, where the conven-</td></tr><tr><td colspan=\"6\">\u017d tional continuum description is valid Xu et al., 1998 . With .</td></tr><tr><td colspan=\"6\">the aid of scaling arguments and gradient percolation theory</td></tr><tr><td colspan=\"6\">\u017d Yortsos and Xu, 1997; Xu et al., 1998 , the following rela-.</td></tr><tr><td colspan=\"4\">tionship has been found</td><td/></tr><tr><td>1r\u017d1q .</td><td colspan=\"2\">\u017d</td><td colspan=\"2\">Dydqr</td><td>2\u00dd . Ca C y br f</td><td>44 \u017d .</td></tr><tr><td>F</td><td/><td/><td/><td/></tr><tr><td colspan=\"2\">\u017d ship Xu et al., 1998 .</td><td/><td/><td/></tr><tr><td colspan=\"2\">A</td><td colspan=\"2\">Ca C F \u017e / 2\u00dd</td><td colspan=\"2\">\u017d y r 1q y \u2424 q</td><td>.</td><td>45 \u017d .</td></tr><tr><td colspan=\"6\">which is identical to Eq. 42. The variation of the capillary</td></tr><tr><td colspan=\"6\">\u017d pressure across the front scales as Xu et al., 1998 .</td></tr><tr><td colspan=\"6\">\u232c P A y1r ACa 1r\u017d1qy\u2424q .</td><td>46 \u017d .</td></tr><tr><td>cn</td><td/><td/><td/><td/></tr><tr><td>\u017d Wilkinson, 1986 .</td><td/><td/><td/><td/></tr><tr><td/><td/><td/><td colspan=\"3\">k A S r\u2424</td><td>47 \u017d .</td></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF9": {
+                "text": "",
+                "content": "<table><tr><td>Ca</td><td>Ca</td><td>L1</td><td>Ca</td><td>L N</td></tr><tr><td>y8 6.55=10</td><td colspan=\"2\">0.0002</td><td colspan=\"2\">0.0136</td></tr><tr><td>y7 1.31=10</td><td colspan=\"2\">0.0004</td><td colspan=\"2\">0.0278</td></tr><tr><td>y6 1.31=10</td><td colspan=\"2\">0.0040</td><td colspan=\"2\">0.278</td></tr><tr><td>y6 6.55=10</td><td colspan=\"2\">0.0200</td><td colspan=\"2\">1.405</td></tr><tr><td>y5 1.31=10</td><td colspan=\"2\">0.0400</td><td colspan=\"2\">2.802</td></tr><tr><td>Capillary end effects</td><td>\u017d</td><td/><td/><td/></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF10": {
+                "text": "",
+                "content": "<table><tr><td>Ca</td><td>0 \u017d . P Pa c</td><td>m</td><td>n</td><td>l</td></tr><tr><td>y5</td><td/><td>y4</td><td>y3</td><td>y4</td></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF11": {
+                "text": "",
+                "content": "<table><tr><td/><td colspan=\"2\">2-D Systems</td><td colspan=\"2\">3-D Systems</td></tr><tr><td>Exponent</td><td>\u017d</td><td>. ds 2</td><td>\u017d</td><td>. ds 3</td></tr><tr><td>\u2424</td><td/><td>5r36</td><td/><td>0.41</td></tr><tr><td/><td/><td>4r3</td><td/><td>0.88</td></tr><tr><td/><td/><td>1.3</td><td/><td>2.0</td></tr><tr><td>D</td><td colspan=\"2\">91r48</td><td/><td>2.53</td></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF12": {
+                "text": "Table 6 in Eqs. 51, 52, and 55, we get",
+                "content": "<table><tr><td/><td/><td/><td>mP 0 c 1y S wi</td><td>ACa</td><td>0.17</td><td/><td>61 \u017d .</td></tr><tr><td/><td/><td/><td colspan=\"3\">k 0 ACa 0.576 r nw</td><td/><td>62 \u017d .</td></tr><tr><td/><td/><td/><td colspan=\"3\">k 0 l ACa 0.45 r nw</td><td/><td>63 \u017d .</td></tr><tr><td colspan=\"8\">Equations 61\u139063 may give us an idea about the dependence</td></tr><tr><td colspan=\"8\">\u017d of the macroscopic parameters of P S , k . c nw</td><td>r nw</td><td>\u017d</td><td>S</td><td>nw</td><td>.</td><td>on Ca</td></tr><tr><td colspan=\"8\">for 3-D cores. Such relationships might be used to estimate</td></tr><tr><td colspan=\"8\">the capillary pressure and relative permeability curves at a</td></tr><tr><td colspan=\"8\">Ca value when measurements at 1\u13902 Ca values are available.</td></tr><tr><td colspan=\"8\">Moreover, the same relationships could be used to evaluate</td></tr><tr><td colspan=\"8\">the validity of parameter values estimated from unsteady-state</td></tr><tr><td colspan=\"5\">experiments at various Ca values.</td><td/><td/></tr><tr><td colspan=\"8\">Experimental data concerning the transient change of the</td></tr><tr><td colspan=\"8\">total NWP saturation were used for the determination of the</td></tr><tr><td colspan=\"8\">\u017d material coefficient Figure 13 . Experimental datasets and .</td></tr><tr><td>\u017d P S c</td><td>nwt</td><td>.</td><td colspan=\"5\">curves corresponding to the two nearest Ca values</td></tr><tr><td colspan=\"8\">were introduced into Eq. 57. Data points in the vicinity of the</td></tr><tr><td colspan=\"6\">irreducible wetting phase saturation S</td><td>wi</td><td>\u017d where the slope</td></tr><tr><td colspan=\"8\">dS rd approaches to zero, and the system tends to equili-nw</td></tr><tr><td colspan=\"8\">. brate, Figures 7b\u139011b were ignored. The material coeffi-</td></tr><tr><td colspan=\"8\">cient was found to change mildly with NWP saturation, and</td></tr><tr><td colspan=\"8\">\u017d depend strongly on the capillary number range Figure</td><td>.</td></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF15": {
+                "text": "to transient two-phase flow processes.",
+                "content": "<table><tr><td>\u2177</td><td>\u017d Rate-dependent P S , k c nw</td><td>r nw</td><td>\u017d</td><td>. S , k S \u017d nw r w</td><td>nw</td><td>.</td><td>curves esti-</td></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF16": {
+                "text": "an analysis of the order of magnitude, it can be approximated as P ( P . It is k By assuming that, k s O 1 , Eq. A9 is finally simplified to",
+                "content": "<table><tr><td colspan=\"6\">CN A S l , and, therefore, the macroscopic network-scale capil-C1 r nw nw</td></tr><tr><td>lary number is given by</td><td/><td/><td/><td/><td/></tr><tr><td>Ca s LN</td><td>\u232c P P CN V N</td><td>(</td><td>r L N Hm P k k r nw</td><td>Ca</td><td>A9 \u017d .</td></tr><tr><td>r nw</td><td>\u017d .</td><td/><td/><td/><td/></tr><tr><td colspan=\"4\">Ca f NCa</td><td/><td>A10</td></tr></table>",
+                "num": null,
+                "type_str": "table",
+                "html": null
+            }
+        }
+    }
+}

@@ -1,0 +1,1901 @@
+{
+    "paper_id": "tmp4h5wg7peaic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:26:03.890508Z"
+    },
+    "title": "Simultaneous Optimal Design and Operation of Multivessel Batch Distillation",
+    "authors": [
+        {
+            "first": "K",
+            "middle": [
+                "H"
+            ],
+            "last": "Low",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "Centre for Process Systems Engineering",
+                "institution": "University College London",
+                "location": {
+                    "addrLine": "Torrington Place",
+                    "postCode": "WC1E 7JE",
+                    "settlement": "London",
+                    "country": "U.K"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "E",
+            "middle": [],
+            "last": "S\u00f8rensen",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "Centre for Process Systems Engineering",
+                "institution": "University College London",
+                "location": {
+                    "addrLine": "Torrington Place",
+                    "postCode": "WC1E 7JE",
+                    "settlement": "London",
+                    "country": "U.K"
+                }
+            },
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "The multi\u00aeessel system is a no\u00aeel batch distillation configuration that offers impro\u00aeed separation performance compared to the con\u00aeentional single-column batch rectifier. The optimal design of this system based on an economics performance index is sol\u00aeed for the first time here by adopting an e\u00aeolutionary adapti\u00aee search technique. The utilization of an o\u00aeerall profitability index, and simultaneous consideration of key design and operation decision \u00aeariables, allow the true optimum of the system to be obtained. The optimal system configuration is dependent on the separation duty and can contribute significantly to achie\u00aeing a higher separation performance. The combined energy efficiency and production rate of the multi\u00aeessel system is found to be greater than that of the regular column, and the benefit is more prominent when separating mixtures with more components. Further theoretical case studies are also presented to highlight the effect of feed composition, relati\u00aee \u00aeolatility, and product specification on the optimal column section configuration and feed distribution of the multi\u00aeessel system.",
+    "pdf_parse": {
+        "paper_id": "tmp4h5wg7peaic",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "The multi\u00aeessel system is a no\u00aeel batch distillation configuration that offers impro\u00aeed separation performance compared to the con\u00aeentional single-column batch rectifier. The optimal design of this system based on an economics performance index is sol\u00aeed for the first time here by adopting an e\u00aeolutionary adapti\u00aee search technique. The utilization of an o\u00aeerall profitability index, and simultaneous consideration of key design and operation decision \u00aeariables, allow the true optimum of the system to be obtained. The optimal system configuration is dependent on the separation duty and can contribute significantly to achie\u00aeing a higher separation performance. The combined energy efficiency and production rate of the multi\u00aeessel system is found to be greater than that of the regular column, and the benefit is more prominent when separating mixtures with more components. Further theoretical case studies are also presented to highlight the effect of feed composition, relati\u00aee \u00aeolatility, and product specification on the optimal column section configuration and feed distribution of the multi\u00aeessel system.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": "Batch distillation is widely used in the fine and speciality chemical and pharmaceutical industries for the purification or recovery of high-value liquid mixtures. In industry, the batch distillation process is generally operated in the conventional rectification mode, which consists of a single column with the feed charged to the reboiler. Novel modification of the batch distillation configuration, such as the multivessel system, can offer a significant increase in the flexibility and efficiency of the process, and, thus, there has been increased industrial interest in the further study on the potential of this system.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "The multivessel system was first proposed by Hasebe et al.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": ". 1995 , whereby the concepts of the inverted column and \u017d . middle-vessel column Robinson and Gilliland, 1950 were extended to what they termed as the multi-effect or multivessel distillation system. Since then, the multivessel system has been shown, both via simulation and experimental studies, to offer a better performance than the conventional regular-col-\u017d umn system with the same number of stages for example, . Hasebe et al., 1995 Hasebe et al., , 1997;; Furlonge et al., 1999 . The perfor-Correspondence concerning this article should be addressed to E. So \u0580rensen. mance indexes used for the comparison included maximum production rate and minimum mean-energy consumption.",
+                "cite_spans": [
+                    {
+                        "start": 82,
+                        "end": 110,
+                        "text": "Robinson and Gilliland, 1950",
+                        "ref_id": "BIBREF10"
+                    },
+                    {
+                        "start": 421,
+                        "end": 440,
+                        "text": "Hasebe et al., 1995",
+                        "ref_id": "BIBREF4"
+                    },
+                    {
+                        "start": 441,
+                        "end": 464,
+                        "text": "Hasebe et al., , 1997;;",
+                        "ref_id": "BIBREF5"
+                    },
+                    {
+                        "start": 465,
+                        "end": 486,
+                        "text": "Furlonge et al., 1999",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Hasebe et al. 1999 attempted to compare the operation of the multivessel system with the continuous distillation system. They used different performance indexes for the multi-\u017d . vessel system production rate divided by vapor flow rate and \u017d the continuous system sum of product flow rates divided by . the sum of vapor flow rates , and found that the separation performance of the batch multivessel system is comparable to the continuous process from the viewpoint of energy consumption.",
+                "cite_spans": [
+                    {
+                        "start": 4,
+                        "end": 22,
+                        "text": "Hasebe et al. 1999",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "Recently, several control strategies for the multivessel system have also been proposed. Simple-level controllers can be \u017d . used to maintain constant vessel holdup Hasebe et al., 1995 . \u017d . \u017d . Wittgens et al. 1996 , Skogestad et al. 1997 , and Wittgens \u017d . and Skogestad 2000 proposed and demonstrated via a pilot plant, an on-line feedback-control strategy capable of compensating feed composition variation. The strategy involves maintaining the temperature at some location in the multivessel column section by manipulating the reflux flow rate out of the corresponding vessel above. Their simulation results indicate that the temperature controller achieved the same steady-state product compositions in the vessels that is independent of the initial feed composition, thus able to \u017d . tackle feed composition disturbances. Noda et al. 2000 later presented a more complex on-line feedback-control strategy to optimally operate the multivessel system. The on-line system consists of four subsystems, namely a composition measuring subsystem using a near-infrared analyzer, a composition estimation and model update subsystem, an optimization subsystem, and, finally, a control subsystem.",
+                "cite_spans": [
+                    {
+                        "start": 165,
+                        "end": 186,
+                        "text": "Hasebe et al., 1995 .",
+                        "ref_id": "BIBREF4"
+                    },
+                    {
+                        "start": 195,
+                        "end": 215,
+                        "text": "Wittgens et al. 1996",
+                        "ref_id": "BIBREF13"
+                    },
+                    {
+                        "start": 216,
+                        "end": 239,
+                        "text": ", Skogestad et al. 1997",
+                        "ref_id": "BIBREF12"
+                    },
+                    {
+                        "start": 240,
+                        "end": 277,
+                        "text": ", and Wittgens \u017d . and Skogestad 2000",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 830,
+                        "end": 846,
+                        "text": "Noda et al. 2000",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "So far, the analysis of the multivessel system has tended to focus exclusively on the operation of the system, that is, the different operating policies and their on-line control schemes implementation. Despite the fact that the column section length and configuration of the multivessel system itself has a major impact on the separation performance, no design study has been reported in the open literature, either in terms of the effect on the separation process or in terms of optimization, which takes into account this key design decision variable. The optimal design of the multivessel system should be considered, since the main drawback of the multivessel system is the high initial capital outlay associated with the larger number of column sections needed in the system. The total combined column section length can be several times that of a regular column. Thus, it is important to optimally design the multivessel system to include a trade-off in capital cost.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "This lack of studies on optimal multivessel design might be due to optimization difficulties associated with the inherent transient property of the batch process, the greater complexity supplied by the more complex configuration, as well as the problem of handling discrete design variables such as number of stages, in addition to the continuous operation variables. Furthermore, the batch-distillation optimization problem normally entails the solution of model and objective function with nonlinearities as well as a nonconvex solution space.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "In this work, an optimal design study of the multivessel system is presented. First, the influence of the column section length and configuration on the separation performance of the multivessel system is highlighted through simulation. Then, the optimal design of the multivessel system is presented. This includes a brief description of an adapted genetic algorithm framework successfully used to solve the mixed-integer dynamic optimization problem in our previous \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "work Low and So \u0580rensen, 2002 . The overall purpose of this work is to provide a better understanding of the optimal design of the multivessel system, specifically:",
+                "cite_spans": [
+                    {
+                        "start": 5,
+                        "end": 31,
+                        "text": "Low and So \u0580rensen, 2002 .",
+                        "ref_id": "BIBREF8"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 To show how optimal design and the use of a more general economics performance index affect the overall optimal performance of the system; \u2177 To compare the multivessel system with the regular column in a more comprehensive manner, whereby both key column section configuration and operation decision variables are taken into account simultaneously;",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 To highlight the effects of factors such as feed composition, relative volatility, and product specification on the optimal design and operation of the system.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The multivessel system configuration comprises a set of sequentially connected column sections and holdup vessels \u017d . total reflux configurations shown in Figure 1 . In the basic setup, only the vessels at both ends are served by utilities for reboiling and condensing purposes. Conceptually, this novel system can be viewed as either a partitioning of a batch rectifier into separate column sections, or alternatively, it can be viewed as an array of multiple batch rectifiers joined together in series. Likewise, the layout of this novel batch-distillation system can practically be implemented in either a horizontal \u017d . or vertical manner Figure 1 . In the horizontal format, the column sections are in series with the vessels at ground level. Reflux pumps are then needed to bring the liquid from the vessels to the column sections. In this case, one can easily put several column sections in series to meet the separation requirements for a given mixture. Alternatively, the column sections can be stacked on top of each other, where the liquid then flows by gravity and there is no need for pumps.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 162,
+                        "end": 163,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    },
+                    {
+                        "start": 650,
+                        "end": 651,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Degrees of Freedom of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "The main feature of the multivessel system is that it allows \u017d for the separation of all the components simultaneously N C . needing N y1 column sections . For the separation of a bi-C \u017d . nary feed mixture N s 2 , only a single column is needed C \u017d . N y1s1 , and, thus, the multivessel system reverts to the C regular column. Therefore, the usage and analysis of the multivessel system is conducted in the context of multicomponent separations. Potentially, the benefit of the multivessel system could be more prominent if used for separating mixtures with a higher number of components, as will be demonstrated in this article.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Degrees of Freedom of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "The multivessel system offers a larger number of degrees of freedom than a conventional regular-column system, both in terms of design variables and operation variables. For a regular column, the designer has only to decide on the length or number of stages for a single column section, N, while for the multivessel system, the length of each column sections, \u017d . N , and the initial feed distribution among the vessels, M 0 , i i has to be decided upon. The column section configuration, \u017d . N , and the initial feed distribution, M 0 , depend on the i i separation duty such as feed composition, relative volatilities, and product specifications.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Degrees of Freedom of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "In terms of the operation decision variables, the multivessel system also offers more degrees of freedom than a regular ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Degrees of Freedom of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . \u017d . \u017d . \u017d . \u017d . Product withdrawal N , M 0 , Q t or V t , M t , F t , t i i i i f variable holdup \u017d . \u017d . \u017d . \u017d . Total reflux variable N , M 0 , Q t or V t , M t , t i i i f holdup \u017d . \u017d . \u017d . \u017d . Total reflux constant N , M 0 s M t , Q t or V t , t i i i f f",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Degrees of Freedom of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "holdup column; however, it can either be more difficult or easier to operate, depending on the actual number of operation decision variables utilized. In this work, the optimization is focused on the total reflux constant holdup policy. It is the simplest operating policy in terms of theoretical analysis as well as practical implementation. The total reflux holdup policy is also desirable for its high product yield due to no offcut. From a design study point of view, the focus on the simplest operating policy allows for the benefit of the system design to be highlighted more clearly. In other words, the benefit of the multivessel system can be distinctly studied from the aspect of optimal alteration of the system configuration itself rather than from the extra operation degrees of freedom available.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Degrees of Freedom of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "Of course, vessel holdup and product withdrawal can also be optimized if needed later on and the various operating poli-\u017d . cies compared Hasebe et al., 1997 and Furlonge et al., 1999 , that is, especially when the degree of performance increment they afford is needed to decide whether a corresponding more complex operating policy and control system is justifiable.",
+                "cite_spans": [
+                    {
+                        "start": 138,
+                        "end": 161,
+                        "text": "Hasebe et al., 1997 and",
+                        "ref_id": "BIBREF5"
+                    },
+                    {
+                        "start": 162,
+                        "end": 183,
+                        "text": "Furlonge et al., 1999",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Degrees of Freedom of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "For the most complicated policy, that is, the product withdrawal \u00aeariable holdup policy Table 1 , the operation decision \u017d . w variables are the heat duty, Q t or condenser vapor load, \u017d .x \u017d . V t ; vessels holdup profiles, M t ; product withdrawal i W \u017d . flow-rate profiles, F t ; and batch processing time, t . In i f the total reflux policy, the products are not withdrawn during W \u017d . the process, that is, F t are set to zero. Within the total i \u017d . reflux policy, the vessel holdups, M t , can either be coni stant or allowed to vary. In this study, the most practical operating policy of having the vessel holdups constant through-\u017d \u017d . \u017d . out the duration of the process is considered M t s M 0 ,",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 94,
+                        "end": 95,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Degrees of Freedom of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "i i w x. \u1b59 t g 0,t . f",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Degrees of Freedom of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "The length of the multivessel column sections is an important design decision variable, the effect of which has, so far, not yet been investigated and included in any optimization studies in the open literature. Because the column section lengths are a trade-off between economics and operation performance, optimum values exist.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of Column Section Length and Configuration on Separation Performance",
+                "sec_num": null
+            },
+            {
+                "text": "Figure 2 illustrates what the trade-off may look like. A multivessel system consisting of four vessels and three column sections used to separate a quaternary and equimolar \u017d . mixture methanol, ethanol, n-propanol, and n-butanol is considered. Figure 2 shows the total reflux purity profiles of \u017d . \u017d . the lightest product methanol in the top vessel reflux drum for different column section length, that is, 15, 30, 45, 60, and \u017d 90 stages in total using an equilibrium model with 1,000-mol feedstock, 2.5-mol constant tray liquid holdup, and 1.6-molrs . condenser vapor load . If the desired purity of the product is specified as 95 mol %, it can be seen from Figure 2 that the system with 15 stages does not achieve the specification. The system with 30 stages achieves the specification at its steady state, which makes it the cheapest feasible system design in terms of capital cost. However, longer column sections, for example, the one with a total of 45 stages, can reduce the \u017d . batch processing time considerably by 600 s as shown in Figure 2 . As the total column section length increases fur-\u017d ther, the magnitude of the batch time saving reduces by 100 . s between the system with 45 stages and 60 stages . At the end of the scale, a further increase in total column sections' \u017d length barely affords any batch time saving at all see system . with 60 and 90 stages .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 7,
+                        "end": 8,
+                        "text": "2",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 252,
+                        "end": 253,
+                        "text": "2",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 670,
+                        "end": 671,
+                        "text": "2",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1053,
+                        "end": 1054,
+                        "text": "2",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of Column Section Length and Configuration on Separation Performance",
+                "sec_num": null
+            },
+            {
+                "text": "The example shown in Figure 2 demonstrates that the optimal column section's length is a function of the separation \u017d . duty that is, product specification , and that their values have \u017d an impact on capital cost and operating costs that is, batch . time and energy consumption . At one limit, systems with \u017d . short column sections such as F 30 stages were not able to satisfy the products specification, while, on the other limit, \u017d . systems with very long column sections such as G60 stages were redundant in terms of unnecessary capital-cost spend-\u017d . ing. In between such as 30\u139060 stages , the optimal column sizing is a trade-off between capital cost and operating cost; thus, this is where the optimum design lies.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 28,
+                        "end": 29,
+                        "text": "2",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of Column Section Length and Configuration on Separation Performance",
+                "sec_num": null
+            },
+            {
+                "text": "In addition to the total column sections' length, the config-\u017d uration that is, the individual column section's length in rela-. tion to each other of the multivessel system also influences the separation performance. To illustrate this, a quaternary multivessel system with different column section configura-\u017d \u017d . \u017d . \u017d . tions 5:10:10, 10:5:10, 10:10:5 for parts a , b , and c , re-. spectively , but an equal total number of stages was simulated and the results shown in Figure 3 . In each figure part, the product purity profiles in each of the four vessels are shown and contrasted against the configuration with equal \u017d . column section length of 10 each solid lines . The graphs indicate that the separation performance, or specifically, the product composition profiles are significantly affected by the system configuration. It also can be surmized that the final product purities achieved in a particular vessel are most significantly influenced by the column sections directly connected to it, for example, in the quaternary mixture separation example considered here, it is found that the lightest product purity is most directly affected by the top column section length, the second lightest product purity is most directly affected by the top and middle column sections' length, and so on.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 482,
+                        "end": 483,
+                        "text": "3",
+                        "ref_id": "FIGREF2"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of Column Section Length and Configuration on Separation Performance",
+                "sec_num": null
+            },
+            {
+                "text": "Figures 2 and 3 show that both the total length of the column sections as well as their configuration in relation to each other can significantly influence the separation performance of the multivessel distillation system, and, thus, there is a need to include the section lengths in an optimization study for a better understanding of the interaction between the system design and operation.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 8,
+                        "end": 9,
+                        "text": "2",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 14,
+                        "end": 15,
+                        "text": "3",
+                        "ref_id": "FIGREF2"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of Column Section Length and Configuration on Separation Performance",
+                "sec_num": null
+            },
+            {
+                "text": "A measurable performance index has to be defined in order to obtain the overall optimality of the design and that can be used conclusively to compare the novel multivessel system \u017d . against the regular column. Furlonge et al. 1999 utilized the mean rate of energy consumption as the performance index for their optimal operation study, defined as Mean energy consumption,",
+                "cite_spans": [
+                    {
+                        "start": 211,
+                        "end": 231,
+                        "text": "Furlonge et al. 1999",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Optimal Design Formulation",
+                "sec_num": null
+            },
+            {
+                "text": "Total batch time",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Total energy consumption per batch Es",
+                "sec_num": null
+            },
+            {
+                "text": "t f Q t dt \u017d . H 0 s 1 \u017d . t q t f s",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Total energy consumption per batch Es",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . where Q t is the instantaneous rate of energy consumption in the reboiler and t and t are the batch-processing and f s setup times, respectively. By restricting the performance measurement to a single quantifiable aspect of the operation, in this case, the energy consumption rate, the full optimal potential of the system could not be explored. In their article, in addition to the normal product purity specification, the mean production rate constraints for each product had to be specified. The operation then tends to steer toward the lower bound of the mean production rates specification, that is, a system operating at minimum troughputs that only just meets the market demand, so as to have the lowest energy consumption. Thus, it only applies for a scenario whereby the size of the market demand is fixed. This is not the case in most real industrial scenarios whereby, in addition to minimizing the energy consumption, there is a perpetual incentive to increase production yield and to minimize batch time, that is, to increase the number of batches. Thus, a more comprehensive performance index should take all three factors into account Amount of product per batchyTotal energy consumption per batch Index s 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Total energy consumption per batch Es",
+                "sec_num": null
+            },
+            {
+                "text": "Total batch time This performance index can be translated into an economics model of sales revenue and operating cost using monetary units based on a production time scale, for example, hourly or annually. For an optimal design study, whereby the optimum number of stages, N, is to be included, an additional capital cost term has to be included to account for the trade-off described in the previous section. Thus, the performance index used in this study then becomes an overall profit function given by Sales revenueyFeed costyOperating cost Profit, P s Total batch time yCapital cost 3",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "In this work, the economics models for the operating cost \u017d and capital cost are based on Guthrie's correlation Douglas, . 1988 . The main operating cost in batch distillation is the utilities cost, C , while the capital cost, C , includes the in- shell, exchangers and utilities costs, respectively, that can be calculated according to the base-case system, the profit function in Eq. 3 is given by",
+                "cite_spans": [
+                    {
+                        "start": 112,
+                        "end": 127,
+                        "text": "Douglas, . 1988",
+                        "ref_id": "BIBREF2"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "N C C H t yC H \u017d . \u00dd i i f f eed f eed is 1 P s y K V 3 t q t f s y K N 0.802 V 0.533 q K V 0.65 6 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "1 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "where C and C represent the unit costs of product i and \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "1 0.802 0.533 N V BC BC C e x, BC K s 8 \u017d . 2 0.65 V BC C ut y, BC K s 9 \u017d . 3 V BC",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "In this work, the same economics correlation function is used for both the regular column and the multivessel system, although it can be expected that the capital cost of a multivessel system might be marginally higher due to extra construction or pipework associated with additional column sections. In the multivessel system, the variable, N, is the total number of stages of all column sections, Ns \u233a N S N .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "The aim of the optimal design is then to maximize the profit performance index, P, subject to the set of system model equations and the product purity constraints. Hence, given the minimum product purity specification, x min , the price i structure of the feed and products, C and C , as well as",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "f eed i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "the economics correlation coefficients K , K , and K , the \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "u ,u",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "d o subject to f x, x,t ,u s 0 1 1 \u017d . \u017d . \u1e8b t G x min \u1b59 is1, . . . , N 12 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "i f i C u min F u F u max 13 \u017d . d d d u min F u F u max 14 \u017d . o o o",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "where Eq. 11 represents the mathematical model for the description of a batch-distillation process; x is the vector of state \u017d variables such as holdups, concentrations, temperatures, and . \u017d pressures ; u denotes the vector of control variables such as . number of stages or reflux ratio profile ; and t is the process time. Equation 12 represents the product purity constraints on all main cuts that must be satisfied for all the mixtures. Equations 13 and 14 represents the physical and optimization bounds of the design and operating control variables, respectively.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "Due to the setup time in between batches, larger batch sizes, H , will inevitably be favored, since a greater quanf eed tity per batch can be processed for a given production time, resulting in a smaller number of batches and a higher reduction in setup time. The longer the setup time, the stronger is the tendency toward larger batch sizes. Furthermore, at high production rates, the trade-off caused by higher capital costs becomes insignificant compared with the revenue component, as the capital costs typically increase with capacity by \u017d an exponent of less than 1 due to the economy of scale as in . the case of the design objective function defined in Eq. 6 . Hence, the design scenario whereby the batch size is specified a priori is considered in this study. From a practical point of view, this is an acceptable design scenario, as the design engineer would typically have the desired batch capacity suited to a particular plant inventory and short andror longterm scheduling. Therefore, the optimal batch size could be determined via optimal capacity and product portfolio planning, or based on a supply chain optimization study. The mathematical model of the dynamic batch distillation \u017d . system is a system of differential-algebraic equations DAE .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d The optimization framework used in this study see next sec-. tion can be utilized in conjunction with any level of model abstraction. Therefore, the choice of model is dependent on the level of detail or accuracy required at a particular design stage in addition to the computational cost available. In this article, two different batch-distillation models of different complexity were used, depending on the case studies requirement, as described in Table 2 .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 459,
+                        "end": 460,
+                        "text": "2",
+                        "ref_id": "TABREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "is1 i",
+                "sec_num": null
+            },
+            {
+                "text": "In mathematical terms, the need to consider design and \u017d operation simultaneously translate into both discrete such as . \u017d the number of stages and continuous variables such as re-. flux ratio profile . The optimization profit performance index \u017d . Eq. 6 is nonlinear, with a potential nonconvex search space. Coupled with a dynamic and nonlinear DAE model of the batch distillation column, this leads to a complicated mixed-\u017d . integer dynamic optimization problem MIDO . This type of problem is difficult to solve, and there is much ongoing re-\u017d search on developing practical solution algorithms Bansal et . al., 2003 . In this work, a stochastic algorithmic method based on a genetic algorithm is used to solve the optimal design \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 599,
+                        "end": 622,
+                        "text": "Bansal et . al., 2003 .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Stochastic Optimization Strategy",
+                "sec_num": null
+            },
+            {
+                "text": "MIDO problem Low and So \u0580rensen, 2002 . A steady-state genetic algorithm framework was used with a weighted penalty function to handle the optimization product purity constraints.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Stochastic Optimization Strategy",
+                "sec_num": null
+            },
+            {
+                "text": "There are several advantages to the use of genetic algorithm as a solution strategy compared to more traditional deterministic gradient search based MIDO methods:",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Stochastic Optimization Strategy",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 It offers greater stability and robustness, as it does not depend on derivative information. This is important for batch-distillation models that often experience integration difficulties due to either stiff models, sharp design and operation switches, or infeasible solutions. Thus, the method is able to handle a larger range of bounds on the decision variables. \u2177 The genetic algorithm framework offers the facility for parallel processing to reduce computational time.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Stochastic Optimization Strategy",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 Due to the fact that the algorithm operates on a population of solutions, and the average performance index value of each generation improves in line with the best solution, the final population may supply other viable alternative designs and operations that are near the optimum solution.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Stochastic Optimization Strategy",
+                "sec_num": null
+            },
+            {
+                "text": "The multivessel system separation scenario with three col-\u017d . umn sections as presented by Furlonge et al. 1999 for the separation of a quaternary mixture is considered here. They considered a laboratory-size distillation column with given column dia. and internal tray dimensions. The model used to describe the system was very rigorous and takes into account variable liquid and vapor holdups that are determined by tray \u017d . hydraulics and detailed pressure-drop equations Table 2 .",
+                "cite_spans": [
+                    {
+                        "start": 91,
+                        "end": 111,
+                        "text": "Furlonge et al. 1999",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 481,
+                        "end": 482,
+                        "text": "2",
+                        "ref_id": "TABREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Optimal Design of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "For fixed column section dia., the capital cost of the column shell is only directly proportional to the number of stages \u017d . C A N . The heat exchanger installed costs, C , can be sh e x",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Optimal Design of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "neglected for the existing reboiler and condenser. Assuming the same Guthrie's correlation coefficients as Eq. 6, the economics performance index for the detailed model of an existing column can be expressed from Eq. 3 as",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Optimal Design of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "N C C H t yC H \u017d . \u00dd i A,i f f eed f eed is 1 0.802 P s y K N y K V 15 \u017d . 1 3a\u00ae e t q t f s",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Optimal Design of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "where V is the average condenser vapor load over the pro-a\u00ae e cessing time, given by",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Optimal Design of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "t f V s V t dtrt 16 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Optimal Design of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "H a\u00ae e f 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Optimal Design of the Multivessel System",
+                "sec_num": null
+            },
+            {
+                "text": "The optimal operation of the multivessel system based on \u017d . the economics performance index Eq. 15 is determined and compared to the optimal operating policy based on the minimum mean rate of energy consumption, as described by Fur-\u017d . longe et al. 1999 . The multivessel system consists of 10 trays \u017d . in each of the three column sections 10:10:10 . Table 3 gives the column specifications and operating conditions. The batch feed is 100 mol of methanol, ethanol, n-propanol, and nbutanol with the desired minimum purities of 92.8, 85.4, 91.4, and 97.0 mol %, respectively.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 359,
+                        "end": 360,
+                        "text": "3",
+                        "ref_id": "TABREF2"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Optimal operation",
+                "sec_num": null
+            },
+            {
+                "text": "The feed is distributed equally among the reboiler, two side vessels, and reflux drum. All the holdups are kept constant throughout the operation, which takes place under total re-\u017d . flux total reflux constant holdup policy, Table 1 . The operating policy is divided into six control intervals of variable \u017d . duration bounded between 12 and 5,000 s Table 4 . In addi-\u017d . tion, the reboiler capacity, Q t , is in the range between 0.75 and 5.5 kW. K and K are assumed to be 0.0663 and 1.5, 1 3 \u017d . respectively, based on an hourly profit Sharif et al., 1998 . The optimal results are shown in Table 5 . The optimal op-\u017d . eration by Furlonge et al. 1999 gives a minimum mean energy-consumption rate of 1,478 W. Also, the optimal production rates were at the lower bounds of 0.209, 0.225, 0.221, and 0.213 molrmin, respectively. By considering the performance index given in Eq. 15, it is found that a better alternative to operating a column with the lowest energy-consump-\u017d . tion rate 1,478 W is to operate the column with a 40% in-\u017d . crease in energy-consumption rate 2,065 W with a reduc-\u017d . tion in operating time by 46% 5,115 to 2,774 s . Thus, for a production plant with unlimited demand, this would result in a larger number of batches and more than a 2.5-fold increase \u017d . in profitability 0.40 to 1.07 $rh . From the viewpoint of costs, \u017d . the significant rise in revenue 1.69 to 2.56 $rh can more \u017d . than compensate the rise in operating costs 0.28 to 0.47 $rh . The optimal production rates are also higher at 0.316, 0.340, 0.335, and 0.321 molrmin, respectively. The comparison highlights the disadvantage of using an objective function that focuses on a particular aspect of the batch distillation process, such as energy consumption, instead of an overall economics evaluation like profitability, which accounts for the optimal trade-off in production yield, batch time, and energy consumption.",
+                "cite_spans": [
+                    {
+                        "start": 539,
+                        "end": 560,
+                        "text": "Sharif et al., 1998 .",
+                        "ref_id": "BIBREF11"
+                    },
+                    {
+                        "start": 634,
+                        "end": 654,
+                        "text": "Furlonge et al. 1999",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 232,
+                        "end": 233,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    },
+                    {
+                        "start": 357,
+                        "end": 358,
+                        "text": "4",
+                        "ref_id": "TABREF3"
+                    },
+                    {
+                        "start": 600,
+                        "end": 601,
+                        "text": "5",
+                        "ref_id": "TABREF4"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Optimal operation",
+                "sec_num": null
+            },
+            {
+                "text": "The optimal number of trays for each column section, N s i 1, 2, and 3, was then optimized in order to investigate how an optimal design would affect the overall performance of the system. The number of trays is allowed to vary discretely between 2 and 20 for each column section, thus taking into consideration the capital investment cost trade-off.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simultaneous optimal design and operation",
+                "sec_num": null
+            },
+            {
+                "text": "The results to the right in Table 5 show that by investing in \u017d . just one more tray 31 instead of 30 , that is, a small increase in capital outlay, and by optimally distributing the trays in the \u017d column 11:11:9 configuration instead of 10:10:10 configura-. tion , the profitability can be increased an additional 22% from 1.07 $rh to 1.31 $rh. The optimal multivessel system \u017d design increases the revenue of the process 2.56 $rh to 2.89 . \u017d . $rh by reducing the batch time further 2,774 s to 2,255 s .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 34,
+                        "end": 35,
+                        "text": "5",
+                        "ref_id": "TABREF4"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Simultaneous optimal design and operation",
+                "sec_num": null
+            },
+            {
+                "text": "This comparison shows how economic insight can be gained by considering both design and operating parameters concurrently during the design stage and the benefits of doing so. In this case study, it is found that the performance of the multivessel system and its overall profitability can be significantly improved by optimizing the system configuration design. ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Simultaneous optimal design and operation",
+                "sec_num": null
+            },
+            {
+                "text": "There are several works available that compare the optimal operation of the novel multivessel system to that of the \u017d traditional regular column system Hasebe et al., 1995 Hasebe et al., , 1997;;  . Furlonge et al., 1999 . Here, the optimal design of the two systems is compared concurrently with the optimal operation. The column section lengths and configuration, as well as the operation decision variables are taken into account simultaneously to provide a more comprehensive and objective comparison.",
+                "cite_spans": [
+                    {
+                        "start": 152,
+                        "end": 171,
+                        "text": "Hasebe et al., 1995",
+                        "ref_id": "BIBREF4"
+                    },
+                    {
+                        "start": 172,
+                        "end": 195,
+                        "text": "Hasebe et al., , 1997;;",
+                        "ref_id": "BIBREF5"
+                    },
+                    {
+                        "start": 196,
+                        "end": 196,
+                        "text": "",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 199,
+                        "end": 222,
+                        "text": "Furlonge et al., 1999 .",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Comparison of a Multivessel System with a Regular Column",
+                "sec_num": null
+            },
+            {
+                "text": "The comparison in this article is based on the separation of 1,000-mol equimolar feed of hydrocarbon mixtures, as detailed in Table 6 . In the regular column, the feed is charged wholly into the reboiler while in the multivessel system, the feed is equally distributed among the reboiler, two side ves-\u017d . sels, and reflux drum. The detailed models Table 2 utilized here to describe the columns assumed negligible vapor holdup \u017d . and constant tray liquid holdup 2.5 mol per tray , that is, without prespecified column tray dimensions for tray hydraulics, and are, thus, suitable for design study purposes. The comparison is based on atmospheric operation.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 132,
+                        "end": 133,
+                        "text": "6",
+                        "ref_id": "TABREF5"
+                    },
+                    {
+                        "start": 355,
+                        "end": 356,
+                        "text": "2",
+                        "ref_id": "TABREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Comparison of a Multivessel System with a Regular Column",
+                "sec_num": null
+            },
+            {
+                "text": "To simplify the comparison, all feed mixtures are assumed to be of equal cost regardless of the type or number of com-\u017d . ponents 1 $rkmol . The purity constraints are set at 90 mol % for all products that also have the same selling price of 35 $rkmol. Both the regular-column and the multivessel systems are assumed to have the same setup time of 1,800 s and cost correlation coefficients of 1,500, 9,500, and 180 for K , K 1 2 \u017d . and K , respectively, in Eq. 6 Logsdon et al., 1990 . 3 For the multivessel system, the decision variables and bounds are the number of trays in each column sections, N i w x w x 2,20 ; the condenser vapor load, V 0.16,1.6 molrs ; and the w x total reflux time, t 100,3,000 s . In the regular column, the f first period of operation consists of total reflux until the purity of the most volatile component reaches the specification of 90 mol %. The decision variables optimized include the w x total number of trays, N 2,60 ; the piecewise-constant inter-\u017d . w x nal reflux ratio profile, R t 0.5,1.0 ; and the duration of i w each time interval after the total reflux period, t 100,2,000 i x s , whereby each of the two main product cuts is separated by w x a possible offcut period, t 0,1,000 s that is, for a separation c involving a mixture with N components, there are N y1",
+                "cite_spans": [
+                    {
+                        "start": 464,
+                        "end": 488,
+                        "text": "Logsdon et al., 1990 . 3",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Comparison of a Multivessel System with a Regular Column",
+                "sec_num": null
+            },
+            {
+                "text": "C C",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Comparison of a Multivessel System with a Regular Column",
+                "sec_num": null
+            },
+            {
+                "text": ". product withdrawal periods plus N y1 offcut periods .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Comparison of a Multivessel System with a Regular Column",
+                "sec_num": null
+            },
+            {
+                "text": "The results in Table 7 show that the use of a multivessel system is significantly more profitable than a regular column, \u017d . even for the simplest case of a ternary mixture case A . The multivessel system gave a 28% higher annual profit, that is, 277,672 compared to 217,229 $ryr for the regular column. The multivessel system requires two column sections of 8 and 9 trays each, and a lower total number of trays than the reguw \u017d lar column 17 compared to 20, respectively the optimal profit achieved for the regular column with 17 trays is 209,922 $ryr; the revenue, capital cost, and operating cost are 271,673, and .x 60,817, and 933 $ryr, respectively . Furthermore, the multivessel system is able to reduce the batch-processing time by \u017d . about a quarter that of a regular column 1,787 to 1,350 s , which, for a 24-h production plant, means a larger number of batches can be processed per year. The combination of lower \u017d capital investment incurred by the multivessel system 61,772 . compared to 64,400 $ryr and considerable increase in rev-\u017d . enue 340,403 compared to 282,536 $ryr resulted in a net increase in profitability.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 21,
+                        "end": 22,
+                        "text": "7",
+                        "ref_id": "TABREF6"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "C",
+                "sec_num": null
+            },
+            {
+                "text": "As expected, the number of trays required to separate an \u017d . easier separation case B is less than what would be required \u017d . for a harder separation case A . The regular column needs 15 fewer trays, while the multivessel system needs 6 fewer \u017d . configuration 5:6 instead of 8:9 in case A . Thus, both a regular column and multivessel system optimally designed for easier separation, incur lower capital costs. In terms of optimal operation, both systems have lower batch processing time and higher revenue.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "C",
+                "sec_num": null
+            },
+            {
+                "text": "The results in Table 7 also show that the economical benefit of adopting the multivessel system over the regular column becomes more apparent for separating mixtures with a \u017d larger number of components compare cases A with C and . D . In this case study, the multivessel system increasingly out performs the traditional regular column by about 30, 70, and 240% for the separation of a ternary, quaternary, and fivecomponent hydrocarbon mixture, respectively. Although the profitability of both systems would diminish when used to separate mixtures with a larger number of components, the performance index of the multivessel system decreases only 5 and 11% compared to the higher decrement of 29 and 56% \u017d . for the regular column Figure 4 . This can be explained by considering the contribution of the individual costs, as shown in Figure 5 . For the multivessel system, the number of column sections and the total number of trays increase with the \u017d number of components 17, 27, and 41 trays of 8:9, 6:11:10",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 21,
+                        "end": 22,
+                        "text": "7",
+                        "ref_id": "TABREF6"
+                    },
+                    {
+                        "start": 739,
+                        "end": 740,
+                        "text": "4",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 841,
+                        "end": 842,
+                        "text": "5",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "C",
+                "sec_num": null
+            },
+            {
+                "text": ". and 6:9:14:12 configurations, respectively . Conversely, the optimized regular column designs display an inverse trend w whereby the optimal number of trays decreases 20 to 12 trays \u017das the number of operation intervals increases, the economical impetus toward reducing capital cost rather than increas-\u017d ing the revenue since the higher number of offcut periods . would not contribute to a higher product yield becomes more .x prominent as the number of components to be separated increases. This translates into a higher capital investment for the multivessel system or, in other words, the multivessel system becomes relatively more expensive compared to the reg-\u017d . ular column Figure 5a . This economic aspect is, thus, the main drawback of the multivessel system. However, the main advantage of the multivessel system is its ability to maintain \u017d . its revenue Figure 5b compared to the revenue of the regu- lar column, which deteriorates significantly as the number of components increases. This highlights the advantageous feature of the multivessel system, which performs simultaneous separation regardless of the number of components in the \u017d mixture see similar batch times for the multivessel system in . Table 7 . In contrast, the operation in the batch rectifier be-\u017d . comes more time-consuming 1,787 to 3,783 s as the number of product and offcuts increases.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 691,
+                        "end": 693,
+                        "text": "5a",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 876,
+                        "end": 878,
+                        "text": "5b",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1225,
+                        "end": 1226,
+                        "text": "7",
+                        "ref_id": "TABREF6"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "C",
+                "sec_num": null
+            },
+            {
+                "text": "Note that both systems operate optimally at high condenser vapor load V. For a specified amount of distillate, the batch-processing time is inversely proportional to V. Since the capital and utility costs increase with V by an economic factor of less than 1, columns would tend to have high vapor loading to favor a higher production rate at the expense of capital and utility costs.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "C",
+                "sec_num": null
+            },
+            {
+                "text": "Also note that in all these cases, only the minimum product purity was achieved for at least one or more of the comw \u017d ponents on or close to the lower bounds due to the stochastic nature of the genetic algorithm, the accuracy of the final constraint values were dependent on the convergence setting; therefore, before decimal round-off, some of the purities achieved could be reasonably interpreted as being on-specifi-.x cation, rather than distinctly overpurified indicating the \u017d . governing task s for that particular optimal design and operation.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "C",
+                "sec_num": null
+            },
+            {
+                "text": "The effect of product purity specifications on the optimal design of the multivessel system is presented next. Table 8 \u017d . lists the different purity constraint scenarios cases A to F for the separation of a 1,000-mol quaternary and equimolar mixture of methanol, ethanol, n-propanol, and n-butanol. The multivessel system consists of three column sections attached to the reboiler, two side vessels, and a reflux drum where the four products are collected, respectively. The model specifications, products pricing, decision variable bounds, and cost correlation parameters are similar to those of the preceding case study. To simplify the comparison, all products are assumed to be of equal value for all purities specification. The optimal multivessel system design results for cases A to F are presented in Table 9 and Figure 6 . The figure clearly illustrates that the optimal multivessel configuration is highly influenced by different separation duties. The general trend confirms the intuition that the higher the purity specification, \u017d . the lower the profitability achieved Table 9 . This is due mainly to the longer batch-processing time needed to achieve the higher specifications. For example, the profit obtained for case A with low product purities is 321,542 $ryr, while the profit case D with higher purity requirements is considerably lower at 187,806 $ryr. The optimal total number of trays varies from 19 trays for case A to 44 trays for case D for the range \u017d of combination of purity specifications investigated between . 70 and 95 mol % .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 117,
+                        "end": 118,
+                        "text": "8",
+                        "ref_id": "TABREF7"
+                    },
+                    {
+                        "start": 816,
+                        "end": 817,
+                        "text": "9",
+                        "ref_id": "TABREF8"
+                    },
+                    {
+                        "start": 829,
+                        "end": 830,
+                        "text": "6",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1090,
+                        "end": 1091,
+                        "text": "9",
+                        "ref_id": "TABREF8"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of Purity Specifications on Optimal Design",
+                "sec_num": null
+            },
+            {
+                "text": "The optimal multivessel configuration for case A is 6:9:4 trays for the top, middle, and bottom column sections, respectively. The intermediate components of ethanol and npropanol are at their minimum specifications of 70 mol %, which suggests that they are the limiting components in this particular case study example. This is also shown in case B, wherein the products collected in the intermediate side vessels achieved only the minimum specifications of 90 mol %.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of Purity Specifications on Optimal Design",
+                "sec_num": null
+            },
+            {
+                "text": "When the minimum desired purities are increased from 70 \u017d . \u017d . mol % case A to 90 mol % case B for all four products, the optimal total number of trays needed increased by 16 trays from 19 to 35 trays. In terms of the individual column sections, all of them increased in length from a 6:9:4 configuration to a 14:12:9 configuration, which indicates that the de-\u017d . gree of increase 8, 3, and 5 trays, respectively are different despite the fact that the purity constraints were raised equally for all four products. The longest column section in case B is the top one compared to the middle one in case A. This shows that the optimal column section's length in relation to each \u017d other can change according to the purity specification even though all four purity constraints were increased by the same . magnitude . Nonetheless, both configurations displayed the Figure 6 . Optimal column section configuration of the multivessel system for different product purity ( specifications optimal results presented in ) Table 9 .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 871,
+                        "end": 872,
+                        "text": "6",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1021,
+                        "end": 1022,
+                        "text": "9",
+                        "ref_id": "TABREF8"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of Purity Specifications on Optimal Design",
+                "sec_num": null
+            },
+            {
+                "text": "same characteristic of satisfying the lower bounds of the product purities in the intermediate vessels. In the example, the overall profit for the process with the higher purity requirement in case B is 25% lower than the profit achieved for the less demanding separation in case A.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of Purity Specifications on Optimal Design",
+                "sec_num": null
+            },
+            {
+                "text": "In case C, the purity specifications are 90, 70, 70, and 90 mol % for methanol, ethanol, n-propanol, and n-butanol, respectively. Since the limiting components are the intermediates of ethanol and n-propanol, the middle column section, which most directly affect these products, was found to shorten by two-thirds from 12 trays in case B to only 4 trays. As a result, again only the minimum product purities are achieved in the intermediate vessels. The number of trays in the top and bottom column sections also pivoted accordingly to obtain the minimum purities at the reflux drum and reboiler, respectively.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of Purity Specifications on Optimal Design",
+                "sec_num": null
+            },
+            {
+                "text": "From another viewpoint, the optimal configuration in case C can also be contrasted with that of case A. When higher product purities are required in the reflux drum and reboiler \u017d . 90 mol % with the specifications for the intermediate ves-\u017d . sels the same as in case A 70 mol % , the optimal configura-\u017d . tion displays an intuitive change 6:9:4 to 10:4:7 where the trays in the middle column section are shifted to the top and bottom column sections to tackle the higher purity requirement in the reflux drum and reboiler. In total, only two extra trays are needed. All the products are separated to just their minimum purities, because there is no economical gain in wasting valuable batch processing time to achieve higher purities than required.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of Purity Specifications on Optimal Design",
+                "sec_num": null
+            },
+            {
+                "text": "In case D, the purity specifications are 90, 95, 95, and 90 mol % for methanol, ethanol, n-propanol, and n-butanol, respectively. With higher product purities now required in the intermediate vessels, the middle column-section length increased more than threefold from 4 trays in case C to 14 trays. Although both the top and bottom column sections also increased in length, their increment is to support the purities of ethanol and n-propanol, which again reached the lower limit of 95 mol % in the intermediate vessels. Since the top and bottom column sections also directly affect methanol and n-butanol, respectively, as a result, their purities increased \u017d . way above the specifications 98 and 99 mol % .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of Purity Specifications on Optimal Design",
+                "sec_num": null
+            },
+            {
+                "text": "The purity constraints in cases E and F are specified in such a way as to juxtapose how optimal design of the multivessel system configuration is strongly influenced by the sepa-\u017d ration duty 4:17:12 configuration for purity specifications of 70, 70, 95, and 95 mol % and 17:20:4 for 95, 95, 70, and 70 . mol % . In case E, the top column section is the shortest, while in case F, the bottom column section is the shortest. This highlights how each column section is affected by the products collected in vessels directly connected to it, thereby confirming the simulation results presented earlier.",
+                "cite_spans": [
+                    {
+                        "start": 243,
+                        "end": 302,
+                        "text": "70, 70, 95, and 95 mol % and 17:20:4 for 95, 95, 70, and 70",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of Purity Specifications on Optimal Design",
+                "sec_num": null
+            },
+            {
+                "text": "Unlike the regular column, where the feed is charged wholly into the reboiler, the novel configuration of the multivessel system allows the feed to be distributed among the reboiler, reflux drum, and the vessels in between that are attached to each column sections. In the previous cases, where equimolar mixtures were considered, the feed was equally distributed among the vessels. Here, the optimal initial \u017d . holdups of the vessels, M 0 , are treated as additional decii \u017d sion variables to be optimized total reflux variable holdup . policy in Table 1 . The same quaternary mixture of methanol, ethanol, n-propanol, and n-butanol is used here as an exam-\u017d . w x ple with the bounds for M 0 set at 50,500 mol and gov- assumed that the final holdups collected in all the vessels are desired products with equal selling prices for all purities specified.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 555,
+                        "end": 556,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Optimal Initial Feed Distribution for Different Separation Scenarios",
+                "sec_num": null
+            },
+            {
+                "text": "The base case in Table 10 considers an equimolar feed with the same purity specification of 90 mol % for each product. The feed is split into four equal portions of 250 mol, each \u017d charged into the reflux drum, intermediate vessels vessels 1 . and 2 , and reboiler. The optimized profit obtained is 242,721 \u017d . $ryr. When their holdups are optimized case I , in addition to the other decision variables, the performance index of the multivessel system increased by 3% to 249,464 $ryr. This is due to a slight redistribution of the holdups and a minor readjustment of the system configuration. Figure 7 illustrates how the holdups of vessel 1 and vessel 2, where the limiting intermediate components of ethanol and n-propanol are purified, have been reduced from 250 mol to 227 and 247 mol, respectively. Also, the total number of trays has been reduced by one from 35 to 34, and two trays in the top column section have been redistributed to the other two column sections. The combined effect causes the strain of separating the limiting intermediate components in the middle of the system to be reduced, and so the reduction in both batch-processing time and capital cost resulted in the slightly higher annual profit.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 23,
+                        "end": 25,
+                        "text": "10",
+                        "ref_id": "TABREF9"
+                    },
+                    {
+                        "start": 600,
+                        "end": 601,
+                        "text": "7",
+                        "ref_id": "FIGREF10"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Optimal Initial Feed Distribution for Different Separation Scenarios",
+                "sec_num": null
+            },
+            {
+                "text": "The results obtained in cases II and III highlight the fact that the distribution of the feed or product holdups must be 10 .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 121,
+                        "end": 123,
+                        "text": "10",
+                        "ref_id": "TABREF9"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Optimal Initial Feed Distribution for Different Separation Scenarios",
+                "sec_num": null
+            },
+            {
+                "text": "optimally determined for different separation scenarios in order to achieve the highest economical efficiency. Considering the influence of product specification, the optimal feed distribution adjusted itself accordingly, in addition to the optimal configuration as described in the previous section. In case II, it can be seen that the amount of product for a particular component is directly related to its specification, that is, 318 mol for ethanol and n-propanol, with their lower purity specifications of 60 mol % compared to 182 mol for methanol and n-butanol, which has a tougher requirement of 95 mol \u017d %. When a nonequimolar mixture 0.30, 0.10, 0.40, 0.20 mol . \u017d fraction is to be separated to a purity of 90 mol % each case . III , the optimal feed or product distribution also changes from the base case. Although this is fundamentally governed by the material balance that exists for a total reflux operation, the optimal distribution does not reflect the feed composition precisely, that is, only 45 mol of ethanol-rich product is collected compared to its initial 0.10 mol fraction in the \u017d . feed, while slightly more n-propanol is collected 423 mol \u017d . for the richest feed component 0.40 mol fraction in the feed . This observation is consistent with the result in case I, which is slightly different from the base case due to the characteristic of each component. In this case, ethanol is both limiting and exists in low purity in the feed, and, hence, has a lower recovery. Even though it is also a limiting component, for n-propanol, the higher recovery is due to the fact that it exists in the largest quantity in the feed.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Optimal Initial Feed Distribution for Different Separation Scenarios",
+                "sec_num": null
+            },
+            {
+                "text": "In this article the optimal design of the novel multivessel system for batch distillation is presented for the first time. Both the design and operation decision variables were considered simultaneously, and the resulting mixed-integer dynamic optimization problem has been successfully solved using a genetic algorithm framework. By considering a compre-hensive economics performance index that takes into account all design and operational cost trade-offs, instead of focusing on a specific performance criteria such as batch time or energy efficiency, the benefit of the multivessel system can be elicited and compared to the regular column system more conclusively. The annual profitability achievable by adopting a multivessel system can be more than twice that of the traditional batch rectifier, as shown in this study. When a mixture with many components is to be separated, the economical benefit of using the multivessel system becomes more apparent.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "The design of the multivessel-column section configuration, as well as the feed and product distribution, is strongly influenced by the separation duty, that is, feed composition, relative volatilities, and product specification. These decision variables should be optimized, and as a result of the optimization, significant enhancement in the system performance can be achieved. The case studies in this work demonstrated a significant reduction in batch time and energy consumption. This, in turn, means an increase in the number of batches per production period and a reduction in production cost per operation.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "As a further note, in terms of operation, the flexibility of the multivessel system allows additional degrees of freedom in terms of varying vessel holdups during the separation process. Several optimal control studies have indicated that the performance of the multivessel system can be improved by \u017d allowing the vessel holdups to be optimized 11 to 43% in production rate, 12% in batch time, and 21% in mean energy consumption have been claimed by Hasebe et al., 1997 , Noda . et al., 2000 , and Furlonge et al., 1999 , respectively . However, in practice, the implementation of the optimal holdup policy, although feasible, involved a much more complicated on-line w \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 451,
+                        "end": 470,
+                        "text": "Hasebe et al., 1997",
+                        "ref_id": "BIBREF5"
+                    },
+                    {
+                        "start": 471,
+                        "end": 492,
+                        "text": ", Noda . et al., 2000",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 493,
+                        "end": 520,
+                        "text": ", and Furlonge et al., 1999",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "x control system such as that proposed by Noda et al. 2000 than a simpler level controller needed for maintaining the holdup. This trade-off suggests that further comparative study should be conducted by the design engineer in order to evaluate whether a more complicated operating policy and its associated control system are indeed worthwhile, or, if the improvement is small, perhaps the constant holdup policy using a level controller or the temperature controller proposed by \u017d . Wittgens et al. 1996 ",
+                "cite_spans": [
+                    {
+                        "start": 42,
+                        "end": 58,
+                        "text": "Noda et al. 2000",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 485,
+                        "end": 505,
+                        "text": "Wittgens et al. 1996",
+                        "ref_id": "BIBREF13"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [],
+        "bib_entries": {
+            "BIBREF0": {
+                "ref_id": "b0",
+                "title": "New Algorithms for Mixed-Integer Dynamic Optimization",
+                "authors": [
+                    {
+                        "first": "V",
+                        "middle": [],
+                        "last": "Bansal",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "V",
+                        "middle": [],
+                        "last": "Sakizhis",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Ross",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Perkins",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [
+                            "N"
+                        ],
+                        "last": "Pistikopoulos",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Comput. Chem. Eng",
+                "volume": "27",
+                "issue": "",
+                "pages": "647--2003",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bansal, V., V. Sakizhis, R. Ross, J. D. Perkins, and E. N. Pistikopou- los, ''New Algorithms for Mixed-Integer Dynamic Optimization,'' \u017d . Comput. Chem. Eng., 27, 647 2003 .",
+                "links": null
+            },
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "An Introduction to Genetic Algorithms for Scientists and",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Coley",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1999,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Coley D. A., An Introduction to Genetic Algorithms for Scientists and \u017d . Engineers, World Scientific, Singapore 1999 .",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "Conceptual Design of Chemical Processes",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Douglas",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1988,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Douglas, J. M., Conceptual Design of Chemical Processes, McGraw- \u017d . Hill, New York 1988 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "Optimal Operation of Multivessel Batch Distillation Columns",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [
+                            "I"
+                        ],
+                        "last": "Furlonge",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Pantelides",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "So \u0550rensen",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1999,
+                "venue": "AIChE J",
+                "volume": "45",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Furlonge, H. I., C. C. Pantelides, and E. So \u0580rensen, ''Optimal Opera- tion of Multivessel Batch Distillation Columns,'' AIChE J., 45, 781 \u017d . 1999 .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "Comparison of the Separation Performances of a Multi-Effect Batch Distillation System and a Continuous System",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Hasebe",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Kurooka",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Hashimoto",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1995,
+                "venue": "Proc. DYCORD q'95",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hasebe, S., T. Kurooka, and I. Hashimoto, ''Comparison of the Sep- aration Performances of a Multi-Effect Batch Distillation System and a Continuous System,'' Proc. DYCORD q'95, \u017d . Helsingor, Denmark, p. 249 1995 .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Optimal Operation Policy for Multi-Effect Batch Distillation System",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Hasebe",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Noda",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Hashimoto",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1997,
+                "venue": "Comput. Chem. Eng",
+                "volume": "21",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hasebe, S., M. Noda, and I. Hashimoto, ''Optimal Operation Policy for Multi-Effect Batch Distillation System,'' Comput. Chem. Eng., \u017d . 21S, S1221 1997 .",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "Optimal Operation for Total Reflux and Multi-Effect Batch Distillation Systems",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Hasebe",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Noda",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Hashimoto",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Comput. \u017d . Chem. Eng",
+                "volume": "23",
+                "issue": "",
+                "pages": "523--1999",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hasebe, S., M. Noda, and I. Hashimoto, ''Optimal Operation for To- tal Reflux and Multi-Effect Batch Distillation Systems,'' Comput. \u017d . Chem. Eng., 23, 523 1999 .",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "On the Simultaneous Optimal Design and Operation of Batch Distillation",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Logsdon",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "U",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Diwekar",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "L",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Biegler",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1990,
+                "venue": "Trans. Inst. Chem. Eng",
+                "volume": "68",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Logsdon, J. S., U. M. Diwekar, and L. T. Biegler, ''On the Simulta- neous Optimal Design and Operation of Batch Distillation \u017d . Columns,'' Trans. Inst. Chem. Eng., 68A, 434 1990 .",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "Simultaneous Optimal Design and Operation of Multipurpose Batch Distillation Columns",
+                "authors": [
+                    {
+                        "first": "K",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Low",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "So \u0550rensen",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2002,
+                "venue": "Proc. Symp. Distillation and Absorption 2002",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Low, K. H., and E. So \u0580rensen, ''Simultaneous Optimal Design and Operation of Multipurpose Batch Distillation Columns,'' Proc. Symp. Distillation and Absorption 2002, Baden-Baden, Germany \u017d . 2002 .",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "On-Line Optimization System of Pilot Scale Multi-Effect Batch Distillation Sys-\u017d . tem",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Noda",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Chida",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Hasebe",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Hashimoto",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Comput. Chem. Eng",
+                "volume": "24",
+                "issue": "",
+                "pages": "1577--2000",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Noda, M., T. Chida, S. Hasebe, and I. Hashimoto, ''On-Line Opti- mization System of Pilot Scale Multi-Effect Batch Distillation Sys- \u017d . tem,'' Comput. Chem. Eng., 24, 1577 2000 .",
+                "links": null
+            },
+            "BIBREF10": {
+                "ref_id": "b10",
+                "title": "Elements of Fractional Distilla",
+                "authors": [
+                    {
+                        "first": "C",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Robinson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Gilliland",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1950,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Robinson, C. S., and E. R. Gilliland, Elements of Fractional Distilla- \u017d . tion, 4th ed., McGraw-Hill, New York 1950 .",
+                "links": null
+            },
+            "BIBREF11": {
+                "ref_id": "b11",
+                "title": "On the Design of Multicomponent Batch Distillation Columns",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Sharif",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [],
+                        "last": "Shah",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Pantelides",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "Comput. Chem. Eng",
+                "volume": "22",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Sharif, M., N. Shah, and C. C. Pantelides, ''On the Design of Multi- component Batch Distillation Columns,'' Comput. Chem. Eng., 22S, \u017d . S69 1998 .",
+                "links": null
+            },
+            "BIBREF12": {
+                "ref_id": "b12",
+                "title": "Multivessel \u017d . Batch Distillation",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Skogestad",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Wittgens",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Litto",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "So \u0550rensen",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1997,
+                "venue": "AIChE J",
+                "volume": "43",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Skogestad, S., B. Wittgens, R. Litto, and E. So \u0580rensen, ''Multivessel \u017d . Batch Distillation,'' AIChE J., 43, 971 1997 .",
+                "links": null
+            },
+            "BIBREF13": {
+                "ref_id": "b13",
+                "title": "Total Reflux Operation of Multivessel Batch Distillation",
+                "authors": [
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Wittgens",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Litto",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [],
+                        "last": "So \u0550rensen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Skogestad",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1996,
+                "venue": "Comput. Chem. Eng",
+                "volume": "20",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Wittgens, B., R. Litto, E. So \u0580rensen, and S. Skogestad, ''Total Reflux Operation of Multivessel Batch Distillation,'' Comput. Chem. Eng., \u017d . 20S, S1041 1996 .",
+                "links": null
+            },
+            "BIBREF14": {
+                "ref_id": "b14",
+                "title": "Closed Operation of Multivessel Batch Distillation: Experimental Verification",
+                "authors": [
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Wittgens",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Skogestad",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "AIChE J",
+                "volume": "46",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Wittgens, B., and S. Skogestad, ''Closed Operation of Multivessel Batch Distillation: Experimental Verification,'' AIChE J., 46, 1209 \u017d . 2000 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "num": null,
+                "uris": null,
+                "fig_num": "1",
+                "text": "Figure 1. Total reflux multivessel batch distillation sys-( tems left: vertical stack format, right: hori-) zontal ground-level format .",
+                "type_str": "figure"
+            },
+            "FIGREF2": {
+                "num": null,
+                "uris": null,
+                "fig_num": "3",
+                "text": "Figure 3. Product composition in each vessel for different column configurations. \u017d . 10:10:10 configuration; a \u1390 \u1390 \u1390 5:10:10 configuration; \u017d . \u017d . b \u1390 \u1390 \u1390 10:5:10 configuration; c \u1390 \u1390 \u1390 10:10:5 configura-. tion . `: reflux drum; \u1b5b: vessel 1; ^: vessel 2; I: reboiler.",
+                "type_str": "figure"
+            },
+            "FIGREF3": {
+                "num": null,
+                "uris": null,
+                "fig_num": null,
+                "text": ", C , and the installed heat exchangers, sh C , costs. The costs are correlated from values in a base case e x\u017d. BC distillation column, for example, from the predetermined costs associated with installing a carbon steel column of a certain size with hydrocarbon feedstock, and is given by 0Assuming the column dia., D, varies as the square root of ' \u017d . the column vapor loading, DAV Douglas, 1988  , and introducing correlation coefficients K , K , and K for the 1 2 3",
+                "type_str": "figure"
+            },
+            "FIGREF5": {
+                "num": null,
+                "uris": null,
+                "fig_num": null,
+                "text": "determine the optimum set of design variables, u d \u017d . such as, number of stages , and optimum operating control \u017d . variables, u such as, reflux ratio , so as to maximize the o objective function, P. In mathematical terms, the optimization problem is posed as follows max P 10",
+                "type_str": "figure"
+            },
+            "FIGREF6": {
+                "num": null,
+                "uris": null,
+                "fig_num": null,
+                "text": "It has a global optimization capability Coley, 1999 and eliminates the difficult task of selecting initial guesses for the decision variables.",
+                "type_str": "figure"
+            },
+            "FIGREF7": {
+                "num": null,
+                "uris": null,
+                "fig_num": null,
+                "text": "Figure 4. Profitability of regular and multivessel sys-( tems for different separation mixtures ) multivessel system; ---regular column .",
+                "type_str": "figure"
+            },
+            "FIGREF8": {
+                "num": null,
+                "uris": null,
+                "fig_num": null,
+                "text": "Figure 5. Cost index of regular and multivessel systems ( for different separation mixtures multi-) vessel system; ---regular column .",
+                "type_str": "figure"
+            },
+            "FIGREF10": {
+                "num": null,
+                "uris": null,
+                "fig_num": "7",
+                "text": "Figure 7. Optimal feed distribution for different separa-( tion scenarios optimal results presented in ) Table10.",
+                "type_str": "figure"
+            },
+            "TABREF0": {
+                "num": null,
+                "html": null,
+                "text": "",
+                "type_str": "table",
+                "content": "<table><tr><td>Operating Policies</td><td>Design and Operation Decision Variables</td></tr></table>"
+            },
+            "TABREF1": {
+                "num": null,
+                "html": null,
+                "text": "",
+                "type_str": "table",
+                "content": "<table><tr><td>Model</td><td>Detailed</td><td>Rigorous</td></tr><tr><td>Characteristics</td><td>Model</td><td>Model</td></tr><tr><td>Component balance</td><td>Dynamic</td><td>Dynamic</td></tr><tr><td>Energy balance</td><td>Fast</td><td>Dynamic</td></tr><tr><td>Trays liquid holdup</td><td>Constant</td><td>Variable</td></tr><tr><td>Vapor holdup</td><td>Negligible</td><td>Variable</td></tr><tr><td>Flow characteristics</td><td>MESH balance</td><td>Weir hydraulics</td></tr><tr><td/><td/><td>and pressure</td></tr><tr><td/><td/><td>flow relationships</td></tr><tr><td>Total condenser</td><td>\u07dc</td><td>\u07dc</td></tr><tr><td>Perfect mixing</td><td>\u07dc</td><td>\u07dc</td></tr><tr><td>Adiabatic trays</td><td>\u07dc</td><td>\u07dc</td></tr><tr><td>Phase equilibrium</td><td>\u07dc</td><td>\u07dc</td></tr><tr><td>Thermodynamics</td><td>SRK Equation</td><td>SRK Equation</td></tr><tr><td/><td>of State</td><td>of State</td></tr><tr><td>Model usage</td><td>Suitable for</td><td>Advanced design</td></tr><tr><td/><td>column design</td><td>stage or retrofit</td></tr><tr><td/><td/><td>of existing column</td></tr></table>"
+            },
+            "TABREF2": {
+                "num": null,
+                "html": null,
+                "text": "",
+                "type_str": "table",
+                "content": "<table><tr><td colspan=\"3\">Feed composition, x</td><td>i, f eed</td><td>\u017d mol fraction</td><td>.</td></tr><tr><td colspan=\"5\">Methanol, ethanol, n-propanol, n-butanol 0.25, 0.25, 0.25, 0.25</td></tr><tr><td colspan=\"2\">\u017d Batch size mol .</td><td/><td/><td>100</td></tr><tr><td colspan=\"5\">Reboiler, side vessels, and reflux drum</td><td>25 each</td></tr><tr><td colspan=\"2\">\u017d holdups mol .</td><td/><td/></tr><tr><td colspan=\"3\">\u017d Tray holdup mol .</td><td/><td>0.12</td></tr><tr><td colspan=\"5\">Column dimensions and flow coefficients</td><td>as in Furlonge</td></tr><tr><td/><td/><td/><td/><td>\u017d et al. 1999 .</td></tr><tr><td colspan=\"5\">\u017d . Operating pressure, P Pa</td><td>101,325</td></tr><tr><td colspan=\"4\">\u017d . Batch setup time, t s s</td><td>1,800</td></tr><tr><td colspan=\"5\">\u017d Product price, C $rmol . i</td><td>0.035 all</td></tr><tr><td>Feed cost, C</td><td>f eed</td><td colspan=\"2\">\u017d $rmol .</td><td>0.001</td></tr><tr><td colspan=\"5\">\u017d Product purity specifications, mol fraction</td><td>.</td></tr><tr><td colspan=\"4\">\u017d . Reflux drum, x t 1 f</td><td>0.928 of methanol</td></tr><tr><td colspan=\"3\">\u017d . Vessel 1, x t 2 f</td><td/><td>0.854 of ethanol</td></tr><tr><td colspan=\"3\">\u017d . Vessel 2, x t 3 f</td><td/><td>0.914 of n-propanol</td></tr><tr><td colspan=\"3\">\u017d . Reboiler, x t 4 f</td><td/><td>0.970 of n-butanol</td></tr></table>"
+            },
+            "TABREF3": {
+                "num": null,
+                "html": null,
+                "text": "",
+                "type_str": "table",
+                "content": "<table><tr><td colspan=\"2\">Decision Variables</td><td colspan=\"2\">Bounds</td></tr><tr><td colspan=\"2\">N , N , N 1 2 3</td><td>w 2,20</td><td>x</td></tr><tr><td colspan=\"2\">\u017d . Q t i</td><td colspan=\"2\">w 0.75,5.50</td><td>x</td></tr><tr><td>t</td><td>i</td><td colspan=\"2\">w 12,5000 x</td></tr></table>"
+            },
+            "TABREF4": {
+                "num": null,
+                "html": null,
+                "text": "",
+                "type_str": "table",
+                "content": "<table><tr><td colspan=\"4\">Performance Index</td><td/><td/><td colspan=\"2\">Mean Energy Consumption, E</td><td>U</td><td>Profit, P</td><td>Profit, P</td></tr><tr><td colspan=\"5\">Column section configuration</td><td/><td/><td/></tr><tr><td colspan=\"5\">\u017d top:middle:bottom sections</td><td>.</td><td>\u017d 10:10:10 fixed</td><td colspan=\"2\">.</td><td>\u017d 10:10:10 fixed</td><td>.</td><td>\u017d 11:11:9 optimal</td><td>.</td></tr><tr><td colspan=\"5\">Total number of stages</td><td/><td>30</td><td/><td>30</td><td>31</td></tr><tr><td colspan=\"6\">\u017d . Mean energy consumption, E W</td><td>1478</td><td/><td>2065</td><td>2148</td></tr><tr><td colspan=\"2\">\u017d Profit, P $rh</td><td>.</td><td/><td/><td/><td>0.40</td><td/><td>1.07</td><td>1.31</td></tr><tr><td colspan=\"4\">\u017d . Batch time, t s f</td><td/><td/><td>5115</td><td/><td>2774</td><td>2255</td></tr><tr><td>\u017d Revenue $rh</td><td colspan=\"2\">.</td><td/><td/><td/><td>1.69</td><td/><td>2.56</td><td>2.89</td></tr><tr><td colspan=\"4\">\u017d Operating cost $rh</td><td>.</td><td/><td>0.28</td><td/><td>0.47</td><td>0.54</td></tr><tr><td colspan=\"3\">\u017d Capital cost $rh</td><td>.</td><td/><td/><td>1.01</td><td/><td>1.01</td><td>1.04</td></tr><tr><td colspan=\"6\">Constraints \u017d Purity 1 mol fraction \u017d Purity 2 mol fraction \u017d Purity 3 mol fraction \u017d Purity 4 mol fraction \u017d Production rate 1 molrmin . . . . . \u017d . Production rate 2 molrmin \u017d . Production rate 3 molrmin \u017d . Production rate 4 molrmin</td><td>UU 0.928 UU 0.854 UU 0.914 UU 0.970 UU 0.209 UU 0.255 UU 0.221 UU 0.213</td><td/><td>UU 0.928 0.870 0.925 0.986 0.316 0.340 0.335 0.321</td><td>UU 0.928 0.876 UU 0.914 0.973 0.357 0.385 0.379 0.362</td></tr></table>"
+            },
+            "TABREF5": {
+                "num": null,
+                "html": null,
+                "text": "",
+                "type_str": "table",
+                "content": "<table><tr><td>Case</td><td>Hydrocarbon Feed Mixture</td><td>Feed Composition</td></tr><tr><td>A</td><td>Pentane, hexane, heptane</td><td>0.33, 0.33, 0.33</td></tr><tr><td>B</td><td>Pentane, heptane, nonane</td><td>0.33, 0.33, 0.33</td></tr><tr><td>C</td><td>Pentane, hexane, heptane,</td><td>0.25, 0.25, 0.25, 0.25</td></tr><tr><td/><td>octane</td><td/></tr><tr><td>D</td><td>Pentane, hexane, heptane,</td><td>0.20, 0.20, 0.20, 0.20, 0.20</td></tr><tr><td/><td>octane, nonane</td><td/></tr></table>"
+            },
+            "TABREF6": {
+                "num": null,
+                "html": null,
+                "text": "",
+                "type_str": "table",
+                "content": "<table><tr><td colspan=\"4\">Distillation System</td><td/><td/><td/><td colspan=\"2\">Regular System</td><td/><td>Multivessel System</td></tr><tr><td colspan=\"2\">Feed Mixtures</td><td/><td/><td/><td/><td>A</td><td>B</td><td>C</td><td>D</td><td>A</td><td>B</td><td>C</td><td>D</td></tr><tr><td colspan=\"6\">Column section configuration</td><td>\u138f</td><td>\u138f</td><td>\u138f</td><td>\u138f</td><td>8:9</td><td>5:6</td><td>6:11:10</td><td>6:9:14:12</td></tr><tr><td colspan=\"5\">Total number of stages</td><td/><td>20</td><td>5</td><td>15</td><td>12</td><td>17</td><td>11</td><td>27</td><td>41</td></tr><tr><td>\u017d Profit, P $ryr</td><td>.</td><td/><td/><td/><td/><td>217,229</td><td>293,347</td><td>154,552</td><td>68,526</td><td>277,672</td><td>318,617</td><td>264,596</td><td>235,044</td></tr><tr><td colspan=\"2\">\u017d . Batch time, t s f</td><td/><td/><td/><td/><td>1,787</td><td>1,274</td><td>2,584</td><td>3,783</td><td>1,350</td><td>1,100</td><td>1,300</td><td>1,400</td></tr><tr><td colspan=\"3\">\u017d Vapor load molrs</td><td>.</td><td/><td/><td>1.40</td><td>1.40</td><td>1.57</td><td>1.60</td><td>1.48</td><td>1.41</td><td>1.60</td><td>1.56</td></tr><tr><td>\u017d Revenue $ryr</td><td>.</td><td/><td/><td/><td/><td>282,536</td><td>333,681</td><td>215,919</td><td>125,623</td><td>340,403</td><td>369,748</td><td>345,893</td><td>335,084</td></tr><tr><td colspan=\"4\">\u017d Operating cost $ryr</td><td>.</td><td/><td>907</td><td>907</td><td>1,011</td><td>1,037</td><td>959</td><td>907</td><td>1,037</td><td>1,011</td></tr><tr><td colspan=\"2\">\u017d Capital cost $ryr</td><td>.</td><td/><td/><td/><td>64,400</td><td>39,426</td><td>60,355</td><td>56,061</td><td>61,772</td><td>50,224</td><td>80,260</td><td>99,029</td></tr><tr><td colspan=\"5\">\u017d Constraints mol fraction</td><td>.</td><td/><td/><td/><td/></tr><tr><td>Purity 1 Purity 2 Purity 3 Purity 4</td><td/><td/><td/><td/><td/><td>0.94 U 0.90 UU 0.91 \u138f</td><td>0.95 0.93 UU 0.91 \u138f</td><td>0.96 0.94 U 0.90 0.93</td><td>0.99 0.92 U 0.90 0.94</td><td>0.97 U 0.90 0.95 \u138f</td><td>0.98 U U 0.91 0.95 \u138f</td><td>0.97 U U 0.91 U 0.90 0.95</td><td>0.98 U U 0.91 UU 0.91 U 0.90</td></tr><tr><td>Purity 5</td><td/><td/><td/><td/><td/><td>\u138f</td><td>\u138f</td><td>\u138f</td><td>0.95</td><td>\u138f</td><td>\u138f</td><td>\u138f</td><td>0.96</td></tr><tr><td colspan=\"7\">\u017d Note: Purity constraints 0.90, 0.90, 0.90, 0.90 . .</td><td/><td/><td/></tr></table>"
+            },
+            "TABREF7": {
+                "num": null,
+                "html": null,
+                "text": "",
+                "type_str": "table",
+                "content": "<table><tr><td/><td>Purity Specification for</td><td/></tr><tr><td>Case</td><td>\u017d Each Products mol fraction</td><td>.</td></tr><tr><td>A</td><td>0.70, 0.70, 0.70, 0.70</td><td/></tr><tr><td>B</td><td>0.90, 0.90, 0.90, 0.90</td><td/></tr><tr><td>C</td><td>0.90, 0.70, 0.70, 0.90</td><td/></tr><tr><td>D</td><td>0.90, 0.95, 0.95, 0.90</td><td/></tr><tr><td>E</td><td>0.70, 0.70, 0.95, 0.95</td><td/></tr><tr><td>F</td><td>0.95, 0.95, 0.70, 0.70</td><td/></tr><tr><td colspan=\"3\">\u017d U Mixture of methanol, ethanol, n-propanol, and n-butanol optimal re-</td></tr><tr><td>. sults presented in Table 9 .</td><td/><td/></tr></table>"
+            },
+            "TABREF8": {
+                "num": null,
+                "html": null,
+                "text": "On or UU near the lower bounds.",
+                "type_str": "table",
+                "content": "<table><tr><td>Case</td><td/><td>A</td><td/><td>B</td><td/><td>C</td><td/><td>D</td><td>E</td><td>F</td></tr><tr><td>Column</td><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr><tr><td>configuration</td><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr><tr><td>Section 1</td><td/><td>6</td><td/><td>14</td><td/><td colspan=\"2\">10</td><td>18</td><td>4</td><td>17</td></tr><tr><td>Section 2</td><td/><td>9</td><td/><td>12</td><td/><td colspan=\"2\">4</td><td>14</td><td>17</td><td>20</td></tr><tr><td>Section 3</td><td/><td>4</td><td/><td>9</td><td/><td colspan=\"2\">7</td><td>12</td><td>12</td><td>4</td></tr><tr><td>Total number</td><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr><tr><td>of stages</td><td/><td>19</td><td/><td>35</td><td/><td colspan=\"2\">21</td><td>44</td><td>33</td><td>41</td></tr><tr><td>Constraints Purity 1</td><td/><td>0.81</td><td/><td>0.95</td><td/><td>0.90</td><td>U</td><td>0.98</td><td>0.78</td><td>0.98</td></tr><tr><td>\u017d mol fraction Purity 2</td><td>.</td><td>0.70</td><td>U</td><td>0.90</td><td>U</td><td>0.70</td><td>U</td><td>U 0.95</td><td>U U 0.71</td><td>U 0.95</td></tr><tr><td>\u017d mol fraction Purity 3</td><td>.</td><td>0.70</td><td>U</td><td>0.90</td><td>U</td><td colspan=\"2\">U U 0.71</td><td>U 0.95</td><td>U 0.95</td><td>0.80</td></tr><tr><td>\u017d mol fraction Purity 4</td><td>.</td><td colspan=\"2\">0.82</td><td>0.97</td><td/><td colspan=\"2\">UU 0.91</td><td>0.99</td><td>0.99</td><td>0.88</td></tr><tr><td>\u017d mol fraction</td><td>.</td><td/><td/><td/><td/><td/><td/><td/><td/><td/></tr><tr><td colspan=\"11\">\u017d Profit, P $ryr 321,542 242,721 279,645 187,806 209,609 201,305 .</td></tr></table>"
+            },
+            "TABREF9": {
+                "num": null,
+                "html": null,
+                "text": "",
+                "type_str": "table",
+                "content": "<table><tr><td>Case</td><td/><td/><td/><td>Base</td><td>I</td><td>II</td><td>III</td></tr><tr><td colspan=\"3\">Feed composition</td><td/><td colspan=\"3\">0.25, 0.25 0.25, 0.25 0.25, 0.25 0.30, 0.10,</td></tr><tr><td>\u017d mol fraction</td><td>.</td><td/><td/><td colspan=\"3\">0.25, 0.25 0.25, 0.25 0.25, 0.25 0.40, 0.20</td></tr><tr><td colspan=\"3\">Product specification</td><td/><td colspan=\"3\">0.90, 0.90, 0.90, 0.90, 0.95, 0.60, 0.90, 0.90,</td></tr><tr><td>\u017d mol fraction</td><td>.</td><td/><td/><td colspan=\"3\">0.90, 0.90 0.90, 0.90 0.60, 0.95 0.90, 0.90</td></tr><tr><td colspan=\"3\">Initial feed distribution</td><td/><td colspan=\"3\">\u017d specified optimal optimal optimal .\u017d . \u017d . \u017d</td><td>.</td></tr><tr><td colspan=\"3\">\u017d Vessel 1 mol .</td><td/><td>250</td><td>269</td><td>182</td><td>324</td></tr><tr><td colspan=\"3\">\u017d Vessel 2 mol .</td><td/><td>250</td><td>227</td><td>318</td><td>45</td></tr><tr><td colspan=\"3\">\u017d Vessel 3 mol .</td><td/><td>250</td><td>247</td><td>318</td><td>423</td></tr><tr><td colspan=\"3\">\u017d Vessel 4 mol .</td><td/><td>250</td><td>257</td><td>182</td><td>207</td></tr><tr><td colspan=\"3\">Column section</td><td/><td colspan=\"2\">14:12:9 11:13:10</td><td>13:5:6</td><td>11:10:9</td></tr><tr><td colspan=\"3\">configuration</td><td/><td/><td/></tr><tr><td colspan=\"2\">Total number</td><td/><td/><td>35</td><td>34</td><td>24</td><td>30</td></tr><tr><td>of stages</td><td/><td/><td/><td/><td/></tr><tr><td colspan=\"2\">\u017d Profit, P $ryr</td><td>.</td><td/><td>242,721</td><td colspan=\"2\">249,464 310,647 230,816</td></tr><tr><td colspan=\"3\">\u017d . Batch time, t s f</td><td/><td>1,400</td><td>1,350</td><td>1,000</td><td>1,600</td></tr><tr><td colspan=\"3\">Constraints \u017d Purity 1 mol fraction \u017d Purity 2 mol fraction \u017d Purity 3 mol fraction \u017d Purity 4 mol fraction</td><td>. . . .</td><td>0.96 U 0.90 U 0.90 0.97</td><td>UU 0.91 U U 0.91 U 0.90 0.95</td><td>0.96 0.62 U 0.60 0.96</td><td>0.93 0.92 U U 0.91 UU 0.91</td></tr></table>"
+            },
+            "TABREF10": {
+                "num": null,
+                "html": null,
+                "text": "would be more attractive. Q t sinstantaneous rate of reboiler heat transfer, W \u017d . R t sinternal reflux ratio for time interval i",
+                "type_str": "table",
+                "content": "<table><tr><td>i</td><td/><td/></tr><tr><td>t stime, s</td><td/><td/></tr><tr><td>t soffcut time, s c</td><td/><td/></tr><tr><td>t sfinal batch processing time, s f</td><td/><td/></tr><tr><td>t stime duration for interval i, s i</td><td/><td/></tr><tr><td>t sbatch setup time, s s</td><td/><td/></tr><tr><td>usvector of control variables</td><td/><td/></tr><tr><td>u svector of design variables d</td><td/><td/></tr><tr><td>u svector of operation variables o</td><td/><td/></tr><tr><td>V saverage condenser vapor load over t , molrs a\u00ae e f</td><td/><td/></tr><tr><td>\u017d . V t sinstantaneous condenser vapor load, molrs</td><td/><td/></tr><tr><td>x svector of state variables</td><td/><td/></tr><tr><td>x m in sminimum purity of product i, molrmol i</td><td/><td/></tr><tr><td>\u017d . x t sfinal purity of product i, molrmol i f</td><td/><td/></tr><tr><td>Literature Cited</td><td/><td/></tr><tr><td/><td colspan=\"2\">Notation</td></tr><tr><td/><td colspan=\"2\">BCsbase case</td></tr><tr><td colspan=\"3\">C scapital cost, $ c a p</td></tr><tr><td/><td colspan=\"2\">C sinstalled heat-exchanger's cost, $ e x</td></tr><tr><td>C</td><td>f eed</td><td>sunit cost of feed mol, $rmol</td></tr><tr><td/><td colspan=\"2\">C sselling price of product i, $rmol</td></tr><tr><td/><td>ut y</td><td/></tr><tr><td/><td colspan=\"2\">Esmean energy consumption rate, W</td></tr><tr><td colspan=\"3\">W \u017d . F t sinstantaneous product withdrawal flow rate from vessel i, molrs i</td></tr><tr><td colspan=\"3\">H samount of accumulated product i, mol A,i</td></tr><tr><td>H</td><td>f eed</td><td>samount of feed, mol</td></tr><tr><td/><td colspan=\"2\">K sGuthrie's correlation coefficient for shell cost 1</td></tr><tr><td/><td colspan=\"2\">K sGuthrie's correlation coefficient for exchanger's cost 2</td></tr><tr><td/><td colspan=\"2\">K sGuthrie's correlation coefficient for utilities' cost</td></tr></table>"
+            }
+        }
+    }
+}

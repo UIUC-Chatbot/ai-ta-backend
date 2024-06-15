@@ -24,7 +24,7 @@ client = Minio(
 grobid_server = os.getenv('GROBID_SERVER')
 LOG_FILE = 'successfully_parsed_files.log'
 ERR_LOG_FILE = f'ERRORS_parsed_files.log'
-BUCKET_NAME = 'small-science'
+BUCKET_NAME = 'science'
 DB_PATH = 'articles.db'
 
 
@@ -57,9 +57,9 @@ def db_worker(queue, db_path):  # EDIT: Added db_worker function
 
 def main_parallel_upload():
     initialize_database(DB_PATH)
-    folder_name = '83500000/10.21767/'
+    # folder_name = '83500000/10.21767/'
     processed_files = load_processed_files(LOG_FILE)
-    objects = client.list_objects(BUCKET_NAME, recursive=True, prefix=folder_name)
+    objects = client.list_objects(BUCKET_NAME, recursive=True)#, prefix=folder_name)
     
     start_time = time.monotonic()
     
@@ -68,8 +68,17 @@ def main_parallel_upload():
     db_proc = Process(target=db_worker, args=(queue, DB_PATH))
     db_proc.start()
 
+    processed_count = 0 
+
     with ProcessPoolExecutor(max_workers=20) as executor:
-        futures = {executor.submit(upload_single_pdf, obj, queue): obj for obj in objects if obj.object_name not in processed_files}
+        futures = {}
+        for obj in objects:
+            if obj.object_name not in processed_files:
+                futures[executor.submit(upload_single_pdf, obj, queue)] = obj
+                processed_count += 1
+                if processed_count >= 5000:
+                    break
+
         for future in as_completed(futures):
             obj = futures[future]
             try:

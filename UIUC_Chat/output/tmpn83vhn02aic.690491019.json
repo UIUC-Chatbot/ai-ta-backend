@@ -1,0 +1,1099 @@
+{
+    "paper_id": "tmpzfu6aghjaic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:07:09.423425Z"
+    },
+    "title": "THERMODYNAMICS ( ) Solubility of CO in H O+Piperazine and in 2 2 ( ) H O+MDEA+Piperazine 2",
+    "authors": [
+        {
+            "first": "\u00c1lvaro",
+            "middle": [],
+            "last": "Perez-Salado",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Universitat Kaiserslautern",
+                "location": {
+                    "postCode": "D-67653",
+                    "settlement": "Kaiserslautern",
+                    "country": "Germany"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "Jianzhong",
+            "middle": [],
+            "last": "Kamps",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Universitat Kaiserslautern",
+                "location": {
+                    "postCode": "D-67653",
+                    "settlement": "Kaiserslautern",
+                    "country": "Germany"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "Gerd",
+            "middle": [
+                "Maurer"
+            ],
+            "last": "Xia",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Universitat Kaiserslautern",
+                "location": {
+                    "postCode": "D-67653",
+                    "settlement": "Kaiserslautern",
+                    "country": "Germany"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "",
+            "middle": [],
+            "last": "\u0139ehrstuhl",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Universitat Kaiserslautern",
+                "location": {
+                    "postCode": "D-67653",
+                    "settlement": "Kaiserslautern",
+                    "country": "Germany"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "G",
+            "middle": [],
+            "last": "Maurer",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Shanghai Baosteel Chemical Co. Ltd",
+                "location": {
+                    "postCode": "200942",
+                    "settlement": "Shang-hai",
+                    "country": "PR China"
+                }
+            },
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "\u00a8\u00c4 thermodynamic model for describing the phase equilibrium for the system CO q 2 methyldiethanolamineq water has been extended, allowing for the presence of piperazine. Model parameters are estimated from new experimental results for the solubility of ( carbon dioxide in aqueous solutions of piperazine for piperazine molalities up to 4 mol per kilogram of water, temperatures between 313 and 393 K, and pressures up to about ) 9.6 MPa . The model is tested by comparing predicted and experimental carbon dioxide ( solubilities in aqueous mixtures of both amines 2 molal MDEAq 2 molal piperazine, ) at 353 K, and pressures up to about 6.4 MPa .",
+    "pdf_parse": {
+        "paper_id": "tmpzfu6aghjaic",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "\u00a8\u00c4 thermodynamic model for describing the phase equilibrium for the system CO q 2 methyldiethanolamineq water has been extended, allowing for the presence of piperazine. Model parameters are estimated from new experimental results for the solubility of ( carbon dioxide in aqueous solutions of piperazine for piperazine molalities up to 4 mol per kilogram of water, temperatures between 313 and 393 K, and pressures up to about ) 9.6 MPa . The model is tested by comparing predicted and experimental carbon dioxide ( solubilities in aqueous mixtures of both amines 2 molal MDEAq 2 molal piperazine, ) at 353 K, and pressures up to about 6.4 MPa .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": ". Aqueous solutions of N-methyldiethanolamine MDEA \u017d . and piperazine PIPH are widely used for selectively re-2 moving hydrogen sulfide from gaseous effluents containing \u017d . carbon dioxide such as natural gases . In such amine solu-\u017d . tions, the sour gases are physically and predominantly chemically absorbed. The selectivity is mainly due to large differences in chemical-reaction rates andror mass-transfer rates. In order to design the separation equipment, a model \u017d for describing the thermodynamic equilibrium that is, chemi-. cal and phase equilibrium is required, as deviation from equilibrium provides the driving force in a kinetically controlled process. \u017d In previous work Kuranov et al., 1996 ; Perez-Salado . Kamps et al., 2001 , a thermodynamic model is extended for describing the solubility of the single gases carbon dioxide and hydrogen sulfide in aqueous MDEA solutions was developed. The model parameters were based on experimental \u017d data on the protonation constant of MDEA Perez-Salado . Kamps and Maurer, 1996 , and on gas solubility data covering a temperature range from 313 K to 413 K. MDEA molality range is up to 8 mol per kilogram of water, and the pressure range is up to about 8 MPa. More recently, a model for describing the solubility of hydrogen sulfide in aqueous solutions of piperazine, based on experimental results at temperatures between 313 K and 393 K, piperazine molalities up to 4 mol per kilogram of water, and pressures up to about 9 \u017d . MPa has been developed Xia et al., 2003 . In the present contribution, the model is extended for describing the solubility of carbon dioxide in aqueous solutions of piperazine. The model is based, on the one hand, on recently published results for the chemical equilibrium constants for the formation of piperazine carbamate, piperazine \u017d dicarbamate, and protonated piperazine Ermatchkov et al., 2003 , and on the other hand, on new experimental solubility data at temperatures between 313 K and 393 K, piperazine molalities up to 4 mol per kilogram of water, and pressures up to about 9.6 MPa.",
+                "cite_spans": [
+                    {
+                        "start": 687,
+                        "end": 707,
+                        "text": "Kuranov et al., 1996",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 725,
+                        "end": 743,
+                        "text": "Kamps et al., 2001",
+                        "ref_id": "BIBREF5"
+                    },
+                    {
+                        "start": 1013,
+                        "end": 1035,
+                        "text": "Kamps and Maurer, 1996",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1510,
+                        "end": 1528,
+                        "text": "Xia et al., 2003 .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The thermodynamic models describing the solubility of a \u017d . single gas CO or H S in aqueous solutions of the single 2 2 \u017d . amines MDEA or piperazine can be combined in order to predict the phase equilibrium of the higher systems up to CO \u1390H S\u1390MDEA\u1390piperazine \u1390H O. Following this proce-2 2 2 \u017d . dure, Xia et al. 2003 were able to accurately predict some limited experimental VLE data of the H S\u1390MDEA\u1390pipera-2 zine\u1390H O system. The model is now further tested by com-2 paring some new experimental results for the solubility of \u017d carbon dioxide in aqueous mixtures of both amines 2 molal MDEAq2 molal piperazine, at 353 K, and pressures up to . about 6.4 MPa with predictions.",
+                "cite_spans": [
+                    {
+                        "start": 303,
+                        "end": 318,
+                        "text": "Xia et al. 2003",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "Figure 1 shows a scheme of the model applied to correlate \u017d . predict the solubility of carbon dioxide in aqueous solutions \u017d . of MDEA or and piperazine.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 7,
+                        "end": 8,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Modeling",
+                "sec_num": null
+            },
+            {
+                "text": "Due to chemical reactions in the liquid phase, carbon dioxide is dissolved predominantly in nonvolatile, ionic form. The following chemical reactions are considered in the liquid \u017d . phase: the autoprotolysis of water reaction R1 , the forma-\u017d . tion and dissociation of bicarbonate reactions R2, R3 , the \u017d . protonation of methyldiethanolamine reaction R4 , the pro-\u017d . tonation and diprotonation of piperazine reactions R5, R6 , and the formations of piperazine carbamate, piperazine di-\u017d carbamate, and protonated piperazine carbamate reactions . R7, R8, R9 .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Chemical equilibrium in the aqueous phase",
+                "sec_num": null
+            },
+            {
+                "text": "The condition for chemical equilibrium for a chemical reaction, R, results in",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Chemical equilibrium in the aqueous phase",
+                "sec_num": null
+            },
+            {
+                "text": "K T s a i , R 1 \u017d . \u017d . \u0141 R i i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Chemical equilibrium in the aqueous phase",
+                "sec_num": null
+            },
+            {
+                "text": "The balance equation for the number of moles of a species i in the liquid phase is 1 .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 83,
+                        "end": 84,
+                        "text": "1",
+                        "ref_id": "TABREF2"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Chemical equilibrium in the aqueous phase",
+                "sec_num": null
+            },
+            {
+                "text": "X n s n q 2 \u017d . \u00dd i i i , R R R",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Chemical equilibrium in the aqueous phase",
+                "sec_num": null
+            },
+            {
+                "text": "The extended Raoult's law is used to express the vapor\u1390liquid equilibrium for water",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Vapor -liquid equilibrium",
+                "sec_num": null
+            },
+            {
+                "text": "\u00ae py p s \u017d . H O H O Y 2 2 s s p exp a s y p , 3",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Vapor -liquid equilibrium",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Vapor -liquid equilibrium",
+                "sec_num": null
+            },
+            {
+                "text": "H O H O H O H O H O 2 2 2 2 2 \u017e /",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Vapor -liquid equilibrium",
+                "sec_num": null
+            },
+            {
+                "text": "RT while the extended Henry's law is applied for expressing that equilibrium for CO :",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Vapor -liquid equilibrium",
+                "sec_num": null
+            },
+            {
+                "text": "2 \u00ae \u03f1 py p s \u017d . CO ,H O H O 2 2 2 U \u017d m. s H T, p exp m \u2425 \u017d . CO ,H O H O CO CO 2 2 2 2 2 \u017e / RT s y p Y 4",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Vapor -liquid equilibrium",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Vapor -liquid equilibrium",
+                "sec_num": null
+            },
+            {
+                "text": "2 2 \u017d Throughout the article, molality that is, number of moles . per kilogram of water is used for describing the solute concentration. In principle, MDEA and piperazine might also be present in the vapor phase. However, because, on the one hand, the vapor pressure of both amines is very small in the w temperature range considered here see, for example, Xu et \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "CO CO",
+                "sec_num": null
+            },
+            {
+                "text": "x al. 1991, 1998 , and . information on the vapor phase nonideality were given re-\u017d . cently Perez-Salado Kamps et al., 2001 . ",
+                "cite_spans": [
+                    {
+                        "start": 2,
+                        "end": 22,
+                        "text": "al. 1991, 1998 , and",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 106,
+                        "end": 126,
+                        "text": "Kamps et al., 2001 .",
+                        "ref_id": "BIBREF5"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "CO CO",
+                "sec_num": null
+            },
+            {
+                "text": "Binary Aqueous Subsystems. When one of the single components, CO , MDEA, or piperazine, is dissolved in pure wa-2 ter, with the exception of very dilute solutions, chemical reactions can be neglected. Thus, from experimental results on the vapor\u1390liquid equilibrium of an aqueous solution of the mentioned components, only interaction parameters between \u017d . the single solutes either CO , MDEA, or piperazine can be 2 determined.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u00cdnteraction parameters in Pitzer's G E model",
+                "sec_num": null
+            },
+            {
+                "text": "CO q H O System. In the pressure range of interest in determine interaction parameters for this system, reliable experimental information is required on the solubility of carbon dioxide in aqueous solutions of piperazine. Only very limited experimental information on this solubility can be found \u017d . in the literature Bishnoi and Rochelle, 2000 . Therefore, experiments were performed to determine that solubility.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u00cdnteraction parameters in Pitzer's G E model",
+                "sec_num": null
+            },
+            {
+                "text": "A description of the experimental equipment and proce-\u017d dure, as well as details on the chemicals used manufacturers, . purities, pretreatment can be found in previous publications w \u017d . see, for example, Rumpf and Maurer 1993 ; Perez-Salado \u00b4\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "x Kamps et al. 2002 ; and Xia et al. 2003 . Therefore, only the basic experimental technique and experimental uncertainties are given here.",
+                "cite_spans": [
+                    {
+                        "start": 2,
+                        "end": 21,
+                        "text": "Kamps et al. 2002 ;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 22,
+                        "end": 41,
+                        "text": "and Xia et al. 2003",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "In an experiment, a thermostated high-pressure cell \u017d 3 . material s Hastelloy C4; volumesabout 30 cm with two sapphire windows is partially filled with a known amount of the aqueous solvent. A known amount of gas is added to the cell from a storage tank.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "Step by step, more solvent is added to the cell by a calibrated high-pressure displacer, until the gas is completely dissolved in the liquid phase. The amount of solvent charged to the cell is only slightly above the minimum amount needed to dissolve the gas completely. After equilibration, very small amounts of the liquid mixture are withdrawn stepwise from the cell until the first very small stable bubbles appear. That pressure is the equilibrium pressure to dissolve the charged amount of the gas in the charged amount of solvent at the fixed temperature.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "The aqueous solutions were prepared in a storage tank by dissolving known amounts of piperazine in pure water. The molality of piperazine in the aqueous solution was determined gravimetrically with a relative uncertainty smaller than \u017d . \"0.1%. The mass of the charged gas up to about 5 g is determined by weighing with an uncertainty of \"0.008 g. The volume of the aqueous solvent needed to dissolve the gas is determined in each experiment. The mass of the solvent is calculated \u138fwith a maximum relative uncertainty of \"0.7% \u017d \u138ffrom its volume and known density from separate mea-. surements with a vibrating tube densimeter . Two pressure \u017d . transducers WIKA GmbH, Klingenberg, Germany for pressures ranging to 4 MPa and to 10 MPa, respectively, were used to determine the solubility pressure. Before and after each series of measurements, the transducers were calibrated \u017d against a high precision pressure gauge Desgranges & Huot, . Aubervilliers, France . The maximum uncertainty in the pressure measurement is \"0.1% of each transducer's maximum reading. The temperature is determined with two calibrated platinum resistance thermometers placed in the heating jacket of the cell with an uncertainty below \"0.1 K. The solubility of carbon dioxide was measured in about 2 \u017d . molal and 4 molal aqueous piperazine solutions at temperatures from 313 K to 393 K, in 20 K intervals. The experimental results for the total pressure above those solutions given in Table 3 are plotted in Figure 2 vs. the stoichiometric molality of the gas.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 1469,
+                        "end": 1470,
+                        "text": "3",
+                        "ref_id": "TABREF5"
+                    },
+                    {
+                        "start": 1493,
+                        "end": 1494,
+                        "text": "2",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "The behavior of the CO qpiperazineqH O system is very 2 2 \u017d similar to that of the CO qMDEAqH O system see, for . example, Perez-Salado Kamps et al., 2001 . Adding a sour \u01f5as to a piperazine-containing aqueous solution at first only slightly increases the total pressure above the solution, as the gas is mostly dissolved in nonvolatile, ionic form. When the stoichiometric molality of the sour gas exceeds that of the base piperazine, the total pressure increases steeply, as piperazine has been spent by the chemical reactions and more sour gas can no longer be absorbed chemically, that is, in nonvolatile ionic form, but has to be dissolved physically.",
+                "cite_spans": [
+                    {
+                        "start": 136,
+                        "end": 154,
+                        "text": "Kamps et al., 2001",
+                        "ref_id": "BIBREF5"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d The precipitation of a salt probably piperazine bicarbon-. ate was observed at high carbon dioxide molalities in the aqueous 2-molal piperazine solution at 313 K. The experimental result, where this additional solid phase appeared, is characterized by a full symbol in Figure 2 . In principle, the formation of a solid phase might be taken into account by the \u017d . model by means of the solid\u1390liquid equilibrium condition . But, as precipitation was only observed in a single experiment, and as the precipitate could not be analyzed, no attempt was made to take precipitation into account.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 278,
+                        "end": 279,
+                        "text": "2",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "Figure 3 shows calculations for the speciation in an aqueous 4-molal piperazine solution at 353 K, when carbon diox-ide is added. As long as the stoichiometric molality of carbon dioxide is less than that of piperazine, the sour gas is almost completely dissolved chemically, that is, it is mainly converted to the three coexisting piperazine carbamate species \u017d on the one side, and to bicarbonate and carbonate, which is . present only in very small amounts on the other side. Simultaneously, piperazine is protonated. When the stoichiometric molality of the sour gas exceeds that of the base piperazine, the sour gas can no longer be absorbed chemically, but has to be dissolved physically, that is, as neutral carbon dioxide in an aqueous electrolyte solution. Therefore, as the aqueous solution becomes more and more acidic, the concentration of molecular carbon dioxide increases practically linearly, and only very small changes in the concentrations of all other \u017d species including the diprotonated piperazine, which is pre-. sent only in very small amounts are observed.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 7,
+                        "end": 8,
+                        "text": "3",
+                        "ref_id": "FIGREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "In the ''high'' pressurer''high'' amine loading region \u017d . m rm",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": ")1 , the liquid can be regarded as an aqueous x mate PIPH COO , which is a zwitterion are physically 2 dissolved. The high-pressure solubility data for this system might therefore be described with parameters for interactions that also occur in the binary subsystems CO qH O, ternary subsystems CO q PIPH HCO q H O, CO q",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "2 3 3 2 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "PIPH q COO y qH O, and PIPH q COO y qPIPH HCO 2 2 2 3 3 \u017d q H O. In the ''middle'' amine loading region 0.5 -2 . m rm -1 , the liquid can be regarded as an aqueous cover the middle and high amine loading regions, were therefore used to determine some of those parameters. The experimental point, where an additional solid phase appeared, was excluded from the fitting runs. Altogether, nine additional \u017d . interaction parameters had to be considered see Table 2 . The new experimental results are compared with correlations in the following section.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 460,
+                        "end": 461,
+                        "text": "2",
+                        "ref_id": "TABREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "In addition, the solubility of CO was measured in about 2 2 molal MDEAq2 molal piperazine aqueous solutions at 353 \u017d . K see Table 4 . The experimental results for the total pressure above those solutions are plotted in Figure 4 vs. the stoichiometric molality of the gas. Those experimental results are compared with predictions in the following section.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 131,
+                        "end": 132,
+                        "text": "4",
+                        "ref_id": "TABREF6"
+                    },
+                    {
+                        "start": 227,
+                        "end": 228,
+                        "text": "4",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Experimental Studies",
+                "sec_num": null
+            },
+            {
+                "text": "The experimental data for the total pressure above aque-\u017d ous solutions of piperazine and carbon dioxide disregarding data points at pressures below 0.1 MPa, where the experimental uncertainty can reach up to 10%, and disregarding . the data point where a precipitation of a salt was observed \u017d are correlated with an average relative deviation of 4% 4.3 . and 3.5%, at 2 and 4 molal piperazine, respectively . Figure 2 shows a comparison between experimental and calculated to-\u017d tal pressures for preset temperature and stoichiometric mo-. lality of piperazine and the sour gas above aqueous 2-and 4-molal solutions of piperazine.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 418,
+                        "end": 419,
+                        "text": "2",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "CO H Piperazine H H O System 2 2",
+                "sec_num": null
+            },
+            {
+                "text": "The model does not consider the precipitation of a salt. Therefore, in Figure 2 , the calculated carbon dioxide solubility pressure curve above the aqueous 2 molal piperazine solution at 313 K just gives an extrapolation for pressures above about 4 MPa, which is characterized by a dashed line. In reality, when the solubility limit of the salt is reached, a sudden change in the slope is to be expected in that curve.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 78,
+                        "end": 79,
+                        "text": "2",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "CO H Piperazine H H O System 2 2",
+                "sec_num": null
+            },
+            {
+                "text": "The solubility of carbon dioxide in aqueous solutions of both MDEA and piperazine can be predicted from the model described before when one assumes that only such parame- 4. Deviations amount to about 35%. But, for example, at a pressure of 5 MPa, this rather large deviation in the pressure corresponds to a deviation in the stoichiometric molality of \u017d \u017d . . carbon dioxide of only about 5% m f 4.1\"0.2 molrkg .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "CO H MDEAH Piperazine H H O System 2 2",
+                "sec_num": null
+            },
+            {
+                "text": "CO 2 Some parameters for obviously important interactions between species of MDEA on the one side and species of piperazine on the other side, or between the sour gas, MDEA, \u017d . and piperazine and their species , were neglected. These interactions seem to influence the chemical reaction equilib-\u017d . rium in such a way that the small amount of molecular carbon dioxide is overestimated. As shown in Figure 5 , at m CO 2 f 4.1 molrkg only about 15% of the dissolved carbon dioxide is present in molecular form. An error in predicting the chemically bound carbon dioxide by about 6% results in deviations in the total pressure of approximately 35%.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 406,
+                        "end": 407,
+                        "text": "5",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "CO H MDEAH Piperazine H H O System 2 2",
+                "sec_num": null
+            },
+            {
+                "text": "Apart from the experimental results given in the present work, little information can be found in the open literature on the solubility of carbon dioxide in mixtures of MDEA and \u017d piperazine Xu et al., 1998; Liu et al., 1999; and Bishnoi and . Rochelle, 2002 . Because the experimental phase-equilibrium database on this system is very limited, it is very difficult to identify and exclude inconsistent data, and it is not possible to reliably determine up-to-now neglected interaction parameters. Therefore, no attempt was made to correlate the experimental data on the phase equilibrium of this quaternary system. Nevertheless, the model predictions were used for comparison with those experimental data.",
+                "cite_spans": [
+                    {
+                        "start": 191,
+                        "end": 207,
+                        "text": "Xu et al., 1998;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 208,
+                        "end": 225,
+                        "text": "Liu et al., 1999;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 226,
+                        "end": 260,
+                        "text": "and Bishnoi and . Rochelle, 2002 .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "CO H MDEAH Piperazine H H O System 2 2",
+                "sec_num": null
+            },
+            {
+                "text": "Comparison with the data in the literature reveals another problem. Some authors used the molarity scale to give concentrations of MDEA and piperazine. However, they did not report the temperature at which the solutions were prepared. In such cases, it was assumed that the temperature was 293.15 K, and new experimental data for the density of aqueous solutions of MDEA and piperazine were used to convert molarities into molalities. In this concentration region molecular piperazine may have an essential influence on the very low vapor pressure of the mixture. Nevertheless, as can be seen from Figure 6 , model predictions for the partial pressure of carbon dioxide agree well with the experimental results by Bishnoi and Rochelle \u017d . 2000 . The average relative deviation between experiment and prediction amounts to 22%, but no systematic deviation is observed.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 605,
+                        "end": 606,
+                        "text": "6",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Comparison with Literature Data",
+                "sec_num": null
+            },
+            {
+                "text": "It may be worthwhile to mention, that, according to predictions from our model, the solubility of carbon dioxide is much higher in aqueous solutions of piperazine than it is in aque-\u017d ous solutions of MDEA at a given temperature and a given . stoichiometric amine molality \u138fespecially in the low and middle amine loading regions\u138fwhich on the one hand is due to the somewhat higher basic character of aqueous pipera- zine solutions, and on the other hand can be attributed to the formation of carbamate species in this system, that is, to the higher capability of dissolving the sour gas chemically pressure of carbon dioxide again in most cases fall below the \u017d . \u017d . experimental data on average by about 40% see Figure 7 . Those deviations increase with increasing stoichiometric concentrations of MDEA and piperazine, and with increasing \u017d stoichiometric mole ratios of piperazine to MDEA from about 15% above the aqueous 1.87 molal MDEAq0.21 molal piperazine solutions to about 78% above the aqueous 8.03 . molal MDEAq3.32 molal piperazine solutions .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 721,
+                        "end": 722,
+                        "text": "7",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "CO H Piperazine H H O System",
+                "sec_num": null
+            },
+            {
+                "text": "Finally, Figure 7 includes a comparison of the experimental results for the total pressure above aqueous 1.975 molal \u017d . MDEAq1.966 molal piperazine solutions T s 353 K pre-\u017d . sented in this work 10 experimental points with predictions from our model. The total pressure ranges from about 181 kPa to 6,400 kPa.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 16,
+                        "end": 17,
+                        "text": "7",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "CO H Piperazine H H O System",
+                "sec_num": null
+            },
+            {
+                "text": "Sour gas sweetening is often achieved by absorption in aqueous solutions of amines. The basic design of these absorption processes requires a thermodynamic model for the single and simultaneous solubility of sour gases, for example, carbon dioxide and hydrogen sulfide, in aqueous solutions of one or more amines, for example, methyldiethanolamine \u017d . MDEA and piperazine. The present work is an extension of previous work on the solubility of the single gases carbon dioxide and hydrogen sulfide in aqueous solutions of MDEA \u017d . Kuranov et al., 1996; Perez-Salado Kamps et al., 2001 , and ",
+                "cite_spans": [
+                    {
+                        "start": 530,
+                        "end": 551,
+                        "text": "Kuranov et al., 1996;",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 552,
+                        "end": 589,
+                        "text": "Perez-Salado Kamps et al., 2001 , and",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [
+            {
+                "text": "\u1e54erez-Salado Kamps, A., and G. Maurer, ''Dissociation Constant of \u00b4N-Methyldiethanolamine in Aqueous Solution at Temperatures \u017d . from 278 K to 368 K,'' J. Chem. Eng. Data, 41, 1505 1996 . '' Fluid Phase Equilib., 67, 197 1991 . ",
+                "cite_spans": [
+                    {
+                        "start": 13,
+                        "end": 65,
+                        "text": "Kamps, A., and G. Maurer, ''Dissociation Constant of",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 156,
+                        "end": 181,
+                        "text": "Chem. Eng. Data, 41, 1505",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 182,
+                        "end": 186,
+                        "text": "1996",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 189,
+                        "end": 228,
+                        "text": "'' Fluid Phase Equilib., 67, 197 1991 .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "annex",
+                "sec_num": null
+            }
+        ],
+        "bib_entries": {
+            "BIBREF0": {
+                "ref_id": "b0",
+                "title": "Dissociation Constants of Piperazinium Ion and Related Thermodynamic Quanti-\u017d . ties from 0 to 50\u040a",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Hetzer",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Robinson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Bates",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1968,
+                "venue": "J. Phys. Chem",
+                "volume": "72",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hetzer, H. B., R. A. Robinson, and R. G. Bates, ''Dissociation Con- stants of Piperazinium Ion and Related Thermodynamic Quanti- \u017d . ties from 0 to 50\u040a,'' J. Phys. Chem., 72, 2081 1968 .",
+                "links": null
+            },
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "Solubility of Single Gases Carbon Dioxide and Hydrogen Sulfide in Aqueous Solutions of N-Methyldiethanolamine in Temperature Range 313\u1390413 K at Pressures Up to 5 MPa",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Kuranov",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Rumpf",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Smirnova",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Maurer",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Ind. Eng. Chem. Res",
+                "volume": "35",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Kuranov, G., B. Rumpf, N. A. Smirnova, and G. Maurer, ''Solubility of Single Gases Carbon Dioxide and Hydrogen Sulfide in Aqueous Solutions of N-Methyldiethanolamine in Temperature Range 313\u1390413 K at Pressures Up to 5 MPa,'' Ind. Eng. Chem. Res., 35, \u017d . 1959 1996 .",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "A Study on Equilibrium Solubility for Carbon Dioxide in Methyldiethanolamine-Pipera-\u017d . zine-Water Solution",
+                "authors": [
+                    {
+                        "first": "H.-B",
+                        "middle": [],
+                        "last": "Liu",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C.-F",
+                        "middle": [],
+                        "last": "Zhang",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G.-W",
+                        "middle": [],
+                        "last": "Xu",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Ind. Eng. Chem. Res",
+                "volume": "38",
+                "issue": "",
+                "pages": "4032--1999",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Liu, H.-B., C.-F. Zhang, and G.-W. Xu, ''A Study on Equilibrium Solubility for Carbon Dioxide in Methyldiethanolamine-Pipera- \u017d . zine-Water Solution,'' Ind. Eng. Chem. Res., 38, 4032 1999 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "Carbonate Equilibria in Hydrothermal Systems: First Ionization of Carbonic Acid in NaCl Media to 300 \u040aC",
+                "authors": [
+                    {
+                        "first": "C",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Patterson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Slocum",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Busey",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Mesmer",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Geochim. Cosmochim. \u017d . Acta",
+                "volume": "46",
+                "issue": "",
+                "pages": "1653--1982",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Patterson, C. S., G. H. Slocum, R. H. Busey, and R. E. Mesmer, ''Carbonate Equilibria in Hydrothermal Systems: First Ionization of Carbonic Acid in NaCl Media to 300 \u040aC,'' Geochim. Cosmochim. \u017d . Acta, 46, 1653 1982 .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "Second Ionization of Carbonic Acid in NaCl Media to 250\u040aC",
+                "authors": [
+                    {
+                        "first": "C",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Patterson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Busey",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Mesmer",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1984,
+                "venue": "J. Solution Chem",
+                "volume": "13",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Patterson, C. S., R. H. Busey, and R. E. Mesmer, ''Second Ionization of Carbonic Acid in NaCl Media to 250\u040aC,'' J. Solution Chem., 13, . 647 1984 .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Solubility of Single Gases Carbon Dioxide and Hydrogen Sulfide in Aqueous Solutions of N-Methyldiethanolamine at Temperatures from 313 K to 393 K and Pressures up to 7.6 MPa: New Experimental Data and Model Exten-\u017d . sion",
+                "authors": [
+                    {
+                        "first": "\u1e54erez-Salado",
+                        "middle": [],
+                        "last": "Kamps",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Balaban",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Jodecke",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Kuranov",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Maurer",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2001,
+                "venue": "Ind. Eng. Chem. Res",
+                "volume": "40",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "\u1e54erez-Salado Kamps, A., A. Balaban, M. Jodecke, G. Kuranov, N. A. \u00b4Smirnova, and G. Maurer, ''Solubility of Single Gases Carbon Dioxide and Hydrogen Sulfide in Aqueous Solutions of N-Methyl- diethanolamine at Temperatures from 313 K to 393 K and Pres- sures up to 7.6 MPa: New Experimental Data and Model Exten- \u017d . sion,'' Ind. Eng. Chem. Res., 40, 696 2001 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "num": null,
+                "fig_num": "1",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 1. VLE and chemical reactions in the CO + 2"
+            },
+            "FIGREF1": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": ", b m f 4 molrkg: ^, `, I, \\, = exptl results, this work; correlation, this work; \u1390 \u1390 \u1390 extrapolation"
+            },
+            "FIGREF3": {
+                "num": null,
+                "fig_num": "3",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 3. Predicted species distribution in the CO + 2 ( piperazine+H O system at 353 K m =4 2 P I P H 2"
+            },
+            "FIGREF5": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "y qH O, and PIPH HCO qH O, and in"
+            },
+            "FIGREF6": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 4. Total pressure above aqueous solutions of ( ) CO +MDEA+piperazine . 2 T s 353.14 K; m s 1.975 molrkg; m s 1.966 MDEA PIPH 2 \u017d . \u017d . molrkg: I exptl results, this work; prediction, this \u017d work with interaction parameters from CO qMDEAq2"
+            },
+            "FIGREF7": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "essential influence that were required to describe the solubility of CO in the aqueous solutions of the single 2 \u017d amines. Predictions for the total pressure for given tempera-. ture and stoichiometric composition of the liquid phase are \u017d compared with the new experimental results at T s 353.14 . K, m s1.975 molrkg, m s1.966 molrkg in Figure MDEA PIPH 2"
+            },
+            "FIGREF8": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 5. Predicted species distribution in the CO + 2 MDEA+piperazine+H O system at 353 K 2 ( ) m = 2 mol/ / / / /kg; m = 2 mol/ / / / /kg . MDEA PIPH 2"
+            },
+            "FIGREF9": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "2000 measured the solubility of car-\u017d . bon dioxide in 0.6 M 0.63 molal piperazine solutions at 313 \u017d and 343 K at low and middle amine loading 0.16 F . m rm F 0.96 . In the low amine loading region"
+            },
+            "FIGREF10": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "2"
+            },
+            "FIGREF11": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 6. Carbon dioxide partial pressure above aque-( ) ous solutions of CO +piperazine . 2 \u017d . m s 0.63 molrkg: `, ^exptl results, Bishnoi and PIPH 2 \u017d . \u017d . Rochelle 2000 ; prediction, this work."
+            },
+            "FIGREF12": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "\u00f3n the solubility of hydrogen sulfide in aqueous solutions of \u017d . piperazine Xia et al., 2003 . New experimental results are presented for the solubility of carbon dioxide in aqueous solutions of piperazine. The previously presented thermodynamic model for describing phase equilibria for the CO q 2 MDEAqH O system has been extended, allowing for the 2 presence of piperazine. New VLE data on the CO qMDEA 2 qpiperazineqH O system are used to assess model predic-2tions. The existing experimental database on the phase equilibrium of this quaternary system is very limited. Additional information is required in order to develop a thermodynamic model with predictive character."
+            },
+            "FIGREF13": {
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "\u017d . H sHenry's constant on the molality scale \u017d K sequilibrium constant for chemical reaction R on the mo-R . lality scale m strue molality of component i i m sstoichiometric molality of component i i n strue number of moles of component i i n sstoichiometric number of moles of component i molar volume y svapor-phase mole fraction Greek letters \u2424 \u017d0. ,\u2424 \u017d1. sbinary interaction parameters in Pitzer's equation \u2425 U sactivity coefficient of component i normalized to infinite i \u017d . dilution in pure water on the molality scale sstoichiometric coefficient of component i in reaction R i, R sextent of reaction R R sthird virial coefficient in Pitzer's equation sfugacity coefficient"
+            },
+            "TABREF0": {
+                "num": null,
+                "html": null,
+                "type_str": "table",
+                "text": "Solving this set of equations for a given temperature, and given stoichiometric mole numbers n of mixed components",
+                "content": "<table><tr><td>\u017d that is, CO , MDEA, piperazine, and H O , results in the . 2 2</td></tr><tr><td>''true'' composition of the liquid phase, that is, the molalities</td></tr><tr><td>of all neutral and ionic species.</td></tr><tr><td>Activity coefficients of both molecular and ionic solute</td></tr><tr><td>species were calculated from a modified Pitzer's equation for</td></tr><tr><td>the excess Gibbs energy of aqueous electrolyte solutions</td></tr><tr><td>\u017d Pitzer, 1977 see, for example, Perez-Salado Kamps et al., .\u017d .</td></tr><tr><td>2001 . The activity of water was calculated from the Gibbs-</td></tr><tr><td>Duhem equation.</td></tr><tr><td>The calculation requires the knowledge of the tempera-</td></tr><tr><td>\u017d ture-dependent chemical equilibrium constants K \u1390 K on 1 9</td></tr><tr><td>. the molality scale . K was taken from Edwards et al. 1978 , \u017d . 1</td></tr><tr><td>\u017d K and K from Patterson et al. 1982, 1984 , K from . 2 3 4</td></tr><tr><td>\u017d Perez-Salado Kamps and Maurer 1996 , K and K from . \u00b45 6</td></tr><tr><td>\u017d Hetzer et al. 1968 , and K \u1390 K from Ermatchkov et al. . 7 9</td></tr><tr><td>\u017d 2003 . Details of the correlation equations for the chemical .</td></tr><tr><td>equilibrium constants are given in Table</td></tr><tr><td>i</td></tr></table>"
+            },
+            "TABREF1": {
+                "num": null,
+                "html": null,
+                "type_str": "table",
+                "text": "",
+                "content": "<table><tr><td/><td/><td colspan=\"8\">\u017d Details on all required thermodynamic properties Henry's</td></tr><tr><td/><td colspan=\"9\">\u017d m. CO ,H O constant H 2 2 \u017d on the molality scale ; the vapor pressure p \u017d S . T , p for carbon dioxide in pure water H O 2 . s and molar H O 2 volume \u00ae of pure water; the partial molar volume of car-H O 2</td></tr><tr><td>(</td><td>)</td><td>(</td><td>)</td><td>(</td><td>)</td><td>(</td><td>)</td><td>(</td><td>) 2</td></tr></table>"
+            },
+            "TABREF2": {
+                "num": null,
+                "html": null,
+                "type_str": "table",
+                "text": "",
+                "content": "<table><tr><td>R</td><td>r r r r Tr r r r rK H C \u0612 ln Tr r r r rK H D \u0612 Tr r r r rK H Er r r r r Tr r r r rK</td></tr><tr><td>2</td><td/></tr></table>"
+            },
+            "TABREF3": {
+                "num": null,
+                "html": null,
+                "type_str": "table",
+                "text": "",
+                "content": "<table><tr><td>1</td><td>r r r r Tr r r r rK 2</td></tr></table>"
+            },
+            "TABREF5": {
+                "num": null,
+                "html": null,
+                "type_str": "table",
+                "text": "",
+                "content": "<table><tr><td colspan=\"3\">CO mixture of the strong electrolytes PIPH PIPHCOO, PIPH 2 2 3</td></tr><tr><td colspan=\"3\">\u017d PIPH PIP COO , and PIPH HCO , where two neutral . \u017d . 3 2 2 3 3</td></tr><tr><td colspan=\"3\">w species molecular piperazine and protonated piperazine</td></tr><tr><td colspan=\"2\">\u017d carbamate PIPH COO q y .x 2</td><td>are physically dissolved. Be-</td></tr><tr><td colspan=\"3\">cause\u138fwithin this concentration region\u138fthe influence of</td></tr><tr><td colspan=\"3\">\u017d piperazine on the vapor pressure is negligible and was there-</td></tr><tr><td colspan=\"3\">. fore neglected by our model , solubility data might be de-</td></tr><tr><td colspan=\"3\">scribed with interaction parameters only from the binary sub-</td></tr><tr><td colspan=\"3\">systems PIPH q COO y qH O, PIPH PIPHCOOqH O, 2 2 3 2</td></tr><tr><td>\u017d</td><td colspan=\"2\">. PIPH PIP COO q H O, and PIPH HCO q H O. \u017d . 3 2 2 2 3 3 2</td></tr><tr><td colspan=\"3\">However, interaction parameters for the binary subsystems</td></tr><tr><td colspan=\"3\">P IP H q C O O y q H O , P IP H P IP H C O O q H O, 2 2 3 2</td></tr><tr><td colspan=\"3\">\u017d PIPH PIP COO qH O, and PIPH HCO qH O, as . \u017d . 3 2 2 2 3 3 2</td></tr></table>"
+            },
+            "TABREF6": {
+                "num": null,
+                "html": null,
+                "type_str": "table",
+                "text": "CO qPIPH q COO y qH O, and PIPH q COO y q",
+                "content": "<table><tr><td/><td/><td/><td colspan=\"2\">T s 353.14 K</td></tr><tr><td/><td>m</td><td colspan=\"2\">MD EA</td><td colspan=\"2\">s1.975 molrkg</td></tr><tr><td/><td colspan=\"2\">m</td><td>PI PH 2</td><td colspan=\"2\">s1.966 molrkg</td></tr><tr><td/><td colspan=\"4\">\u017d m r molrkg . CO 2</td><td>prMPa</td></tr><tr><td/><td colspan=\"3\">2.526</td><td/><td>0.1807</td></tr><tr><td/><td colspan=\"3\">2.826</td><td/><td>0.2896</td></tr><tr><td/><td colspan=\"3\">3.347</td><td/><td>0.7345</td></tr><tr><td/><td colspan=\"3\">3.817</td><td/><td>1.929</td></tr><tr><td/><td colspan=\"3\">3.977</td><td/><td>2.496</td></tr><tr><td/><td colspan=\"3\">4.054</td><td/><td>2.768</td></tr><tr><td/><td colspan=\"3\">4.198</td><td/><td>4.050</td></tr><tr><td/><td colspan=\"3\">4.347</td><td/><td>5.375</td></tr><tr><td/><td colspan=\"3\">4.399</td><td/><td>5.773</td></tr><tr><td/><td colspan=\"3\">4.478</td><td/><td>6.400</td></tr><tr><td colspan=\"6\">well as for the ternary subsystems CO qPIPH HCO q 2 3 3</td></tr><tr><td>H O, 2</td><td>2</td><td/><td colspan=\"2\">2</td><td>2</td><td>2</td></tr><tr><td colspan=\"6\">PIPH HCO qH O, are not available. The new experimen-3 3 2</td></tr><tr><td/><td/><td/><td/><td/><td>2</td><td>2</td><td>2</td></tr></table>"
+            },
+            "TABREF7": {
+                "num": null,
+                "html": null,
+                "type_str": "table",
+                "text": ". For example, dissolving 2 moles of carbon dioxide in an aqueous \u017d . 4 molal MDEA piperazine solution at 353 K results in a \u017d . carbon dioxide partial pressure of about 260 kPa 4 kPa . The partial pressure of carbon dioxide ranges from about 13 kPa to 935 kPa. In this region the predictions for the partial",
+                "content": "<table><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>CO H MDEAH Piperazine H H O System 2 2</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d In a more recent publication, Bishnoi and Rochelle 2002 .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>report experimental results for the partial pressure of carbon</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d dioxide 13 experimental points above aqueous 4 M 7.74 . \u017d</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>. molal MDEA and 0.6 M 1.16 molal piperazine solutions at \u017d .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>313 and 343 K in the low amine loading region. The partial</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>pressure of carbon dioxide ranges from 0.033 kPa to 7.48 kPa.</td></tr><tr><td colspan=\"7\">\u017d . `Bishnoi and Rochelle 2002; p \u017d</td><td>CO 2</td><td colspan=\"2\">. \u017d . ; ^Xu et al. 1998; \u017d</td><td>They estimated the uncertainty of the experimental data to</td></tr><tr><td>CO</td><td>2</td><td>. \u017d .</td><td>\u017d</td><td>CO</td><td>2</td><td colspan=\"3\">. \u017d .</td><td>\u017d .</td><td>\"30%. As can be seen from Figure 7, predictions for the</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d partial pressure of carbon dioxide are systematically lower by</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>. nearly one order of magnitude than the experimental data.</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d Xu et al. 1998 reported 11 experimental data points for .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>the partial pressures of carbon dioxide above aqueous 4.28 M</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>MDEA and 0.103, 0.257, and 0.515 M piperazine</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>solutions\u138fthat is, 8.14 molal MDEAq0.196 molal pipera-</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>zine, 8.34 molal MDEAq0.500 molal piperazine, and 8.69</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>molal MDEAq1.046 molal piperazine, respectively\u138fat 343</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>K. Those data cover only the low amine loading region. The</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>partial pressure of carbon dioxide ranges from about 3.8 kPa</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>to 76.8 kPa. In this region the predictions for the partial pres-</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>sure of carbon dioxide lie systematically below the experi-</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d mental data by about 60% see Figure 7 . .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d Liu et al. 1999 reported 80 experimental results for the .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>partial pressure of carbon dioxide above aqueous MDEA and</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>piperazine solutions\u138fcovering a temperature range from 303</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>K to 363 K\u138fat various concentrations of both amines: 1.53</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d M 1.87 molal MDEAq0.17 M 0.21 molal piperazine, 1.35 . \u017d .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d M 1.64 molal MDEAq0.35 M 0.43 molal piperazine, 3.15 . \u017d .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d M 5.00 molal MDEAq0.35 M 0.56 molal piperazine, 2.8 . \u017d .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d M 4.38 molal MDEAq0.7 M 1.09 molal piperazine, 4.77 . \u017d .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d M 10.93 molal MDEAq0.53 M 1.21 molal piperazine, and . \u017d .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>\u017d 3.75 M 8.03 molal MDEAq1.55 M 3.32 molal piperazine. . \u017d .</td></tr></table>"
+            },
+            "TABREF8": {
+                "num": null,
+                "html": null,
+                "type_str": "table",
+                "text": "Chem. Eng. Sci., 55, 5531 2000 .  Bishnoi, S., and  G . T. Rochelle, ''Thermodynamics of PiperazinerMethyldiethanolaminerWaterrCarbon Dioxide,'' Ind. \u017d . Eng. Chem. Res., 41, 604 2002 . Edwards, T. J., G. Maurer, J. Newman, and J. M. Prausnitz, ''Vapor-Liquid Equilibria in Multicomponent Aqueous Solutions \u017d . of Volatile Weak Electrolytes,'' AIChE J., 24, 966 1978 . ., A. Perez-Salado Kamps, and G. Maurer, ''Chemical\u00c9quilibriumConstants for the Formation of Carbamates in the System CO qPiperazineqWater from 1 H-NMR-Spectroscopy,'' J.",
+                "content": "<table><tr><td>Rsreaction R</td><td/><td/></tr><tr><td>expsexperimental</td><td/><td/></tr><tr><td>pred spredicted</td><td/><td/></tr><tr><td>sssaturation</td><td/><td/></tr><tr><td colspan=\"2\">\u03f1sinfinite dilution in pure water</td><td/></tr><tr><td>X sliquid phase</td><td/><td/></tr><tr><td>Y svapor phase</td><td/><td/></tr><tr><td>Literature Cited</td><td/><td/></tr><tr><td colspan=\"3\">Bishnoi, S., and G. T. Rochelle, ''Absorption of Carbon Dioxide into</td></tr><tr><td colspan=\"3\">Aqueous Piperazine: Reaction Kinetics, Mass Transfer and Solu-</td></tr><tr><td>bility,'' \u00c9rmatchkov,</td><td>\u017d</td><td>.</td></tr></table>"
+            }
+        }
+    }
+}

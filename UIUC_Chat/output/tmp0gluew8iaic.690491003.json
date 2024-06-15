@@ -1,0 +1,2043 @@
+{
+    "paper_id": "tmphlctaq55aic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:07:12.462833Z"
+    },
+    "title": "FLUID MECHANICS AND TRANSPORT PHENOMENA Single Drop Impaction on a Solid Surface",
+    "authors": [
+        {
+            "first": "Heungsup",
+            "middle": [],
+            "last": "Park",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Georgia Institute of Technology",
+                "location": {
+                    "postCode": "30332",
+                    "settlement": "Atlanta",
+                    "region": "GA"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "Wallace",
+            "middle": [
+                "W"
+            ],
+            "last": "Carr",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Georgia Institute of Technology",
+                "location": {
+                    "postCode": "30332",
+                    "settlement": "Atlanta",
+                    "region": "GA"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "Junyong",
+            "middle": [],
+            "last": "Zhu",
+            "suffix": "",
+            "affiliation": {},
+            "email": ""
+        },
+        {
+            "first": "Jeffrey",
+            "middle": [
+                "F"
+            ],
+            "last": "Morris",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Halliburton Energy Services",
+                "location": {
+                    "postCode": "73536",
+                    "settlement": "Duncan",
+                    "region": "OK"
+                }
+            },
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "An experimental and theoretical study is presented on spreading and retracting of a single drop impacting on a smooth surface at room temperature. The experimental study showed the influence of kinetic energy, liquid-solid interaction, and energy dissipation on the impact process. The results are reported for Reynolds number from 180 to 5,513, ( Weber number from 0.2 to 176, four different liquids distilled water, n-Octane, n-Te-) ( tradecane, and n-Hexadecane , and four different surfaces slide glass, uncoated silicon ) wafer, HMDS coated silicon wafer, and Teflon film . A theoretical model based on an energy balance was de\u00aeeloped to predict the maximum spreading ratio at low impact \u00aeelocity. The key no\u00aeel feature of this model is that the shape of the drop is assumed to be a spherical cap during the spreading process. When compared to models in the literature, the present model not only gi\u00aees better predictions for low drop impact \u00aeelocities, but also in most cases gi\u00aees predictions that are within 10% of the experimental data at high impact \u00aeelocities.",
+    "pdf_parse": {
+        "paper_id": "tmphlctaq55aic",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "An experimental and theoretical study is presented on spreading and retracting of a single drop impacting on a smooth surface at room temperature. The experimental study showed the influence of kinetic energy, liquid-solid interaction, and energy dissipation on the impact process. The results are reported for Reynolds number from 180 to 5,513, ( Weber number from 0.2 to 176, four different liquids distilled water, n-Octane, n-Te-) ( tradecane, and n-Hexadecane , and four different surfaces slide glass, uncoated silicon ) wafer, HMDS coated silicon wafer, and Teflon film . A theoretical model based on an energy balance was de\u00aeeloped to predict the maximum spreading ratio at low impact \u00aeelocity. The key no\u00aeel feature of this model is that the shape of the drop is assumed to be a spherical cap during the spreading process. When compared to models in the literature, the present model not only gi\u00aees better predictions for low drop impact \u00aeelocities, but also in most cases gi\u00aees predictions that are within 10% of the experimental data at high impact \u00aeelocities.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": "The impacting and spreading of liquid drops on solid surfaces are scientifically and practically important physical processes in many applications such as spray coating, delivery of agricultural chemicals, as well as ink jet printing. The earliest \u017d . work is that of Worthington 1877 who reported an investigation of drops of liquids falling vertically on a horizontal plate. Since then, there have been a number of investigations on the subject. While some of the investigations have been \u017d entirely experimental Bergeron et al., 2000; Sikalo et al., . 2002 , most of the studies have included theoretical andror numerical modeling approaches for predicting the spreading \u017d phenomenon. The theoretical approach Engel, 1955; Ford and Furmidge, 1967; Chandra and Avedisian, 1991; Asai et . al., 1993; Fukai et al., 1998 involves the use of an energy balance on the system, which consists of the drop and the impacted surface, to develop an equation for predicting the U \u017d maximum spreading ratio D ratio of the maximum spreadm Correspondence concerning this article should be addressed to W. W. Carr.",
+                "cite_spans": [
+                    {
+                        "start": 515,
+                        "end": 537,
+                        "text": "Bergeron et al., 2000;",
+                        "ref_id": "BIBREF2"
+                    },
+                    {
+                        "start": 538,
+                        "end": 559,
+                        "text": "Sikalo et al., . 2002",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 713,
+                        "end": 725,
+                        "text": "Engel, 1955;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 726,
+                        "end": 750,
+                        "text": "Ford and Furmidge, 1967;",
+                        "ref_id": "BIBREF9"
+                    },
+                    {
+                        "start": 751,
+                        "end": 779,
+                        "text": "Chandra and Avedisian, 1991;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 780,
+                        "end": 800,
+                        "text": "Asai et . al., 1993;",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 801,
+                        "end": 819,
+                        "text": "Fukai et al., 1998",
+                        "ref_id": "BIBREF11"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": ". ing diameter to initial drop diameter as a function of drop \u017d properties and contact angle. Numerical modeling Harlow and Shannon, 1967; Fukai et al., 1993 Fukai et al., , 1995 Fukai et al., , 1998;; Pasan-. dideh-Fard et al., 1996; Bussmann et al., 1999 has been used to simulate the dynamics of transient flow and to predict the drop impacting process. These studies provide a good understanding of the effects of impacting velocity and liquid properties, that is, viscosity and surface tension, on the impacting process. However, the understanding of the solid-liquid interaction and its effects on the impacting process during spreading and recoiling is far from complete, especially its relative importance during different stages.",
+                "cite_spans": [
+                    {
+                        "start": 113,
+                        "end": 138,
+                        "text": "Harlow and Shannon, 1967;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 139,
+                        "end": 157,
+                        "text": "Fukai et al., 1993",
+                        "ref_id": "BIBREF12"
+                    },
+                    {
+                        "start": 158,
+                        "end": 178,
+                        "text": "Fukai et al., , 1995",
+                        "ref_id": "BIBREF10"
+                    },
+                    {
+                        "start": 179,
+                        "end": 201,
+                        "text": "Fukai et al., , 1998;;",
+                        "ref_id": "BIBREF11"
+                    },
+                    {
+                        "start": 202,
+                        "end": 234,
+                        "text": "Pasan-. dideh-Fard et al., 1996;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 235,
+                        "end": 256,
+                        "text": "Bussmann et al., 1999",
+                        "ref_id": "BIBREF4"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "Several equations for predicting D U based on correlations m andror energy conservation are available in the literature. One of the first correlation equations was presented by Engel \u017d . \u017d 1955 . Since then, there have been several efforts Ford and Furmidge, 1967; Chandra and Avedisian, 1991; Asai et al., 1993; Pasandideh-Fard et al., 1996; Mao et al., 1997; Fukai et . al., 1998 to improve the accuracy of the prediction. The ear-\u017d . lier investigations are summarized by Mao et al. 1997 ",
+                "cite_spans": [
+                    {
+                        "start": 240,
+                        "end": 264,
+                        "text": "Ford and Furmidge, 1967;",
+                        "ref_id": "BIBREF9"
+                    },
+                    {
+                        "start": 265,
+                        "end": 293,
+                        "text": "Chandra and Avedisian, 1991;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 294,
+                        "end": 312,
+                        "text": "Asai et al., 1993;",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 313,
+                        "end": 342,
+                        "text": "Pasandideh-Fard et al., 1996;",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 343,
+                        "end": 360,
+                        "text": "Mao et al., 1997;",
+                        "ref_id": "BIBREF18"
+                    },
+                    {
+                        "start": 361,
+                        "end": 381,
+                        "text": "Fukai et . al., 1998",
+                        "ref_id": "BIBREF11"
+                    },
+                    {
+                        "start": 475,
+                        "end": 490,
+                        "text": "Mao et al. 1997",
+                        "ref_id": "BIBREF18"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": ". Fukai et al. 1998 . Two of the most recent predictive equa-\u017d . tions were presented by Mao et al. 1997 and Fukai et improved the predictions by modifying the model to contain three empirical coefficients, which were determined by fitting them to their numerical results. We believe that the static contact angle is more appropriate since Young's Equation was used to replace the difference between interfacial energies of solid-liquid and solid-vapor, which resulted in cos appearing in the predictive equation.",
+                "cite_spans": [
+                    {
+                        "start": 2,
+                        "end": 19,
+                        "text": "Fukai et al. 1998",
+                        "ref_id": "BIBREF11"
+                    },
+                    {
+                        "start": 89,
+                        "end": 117,
+                        "text": "Mao et al. 1997 and Fukai et",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "In the present work, a comprehensive experimental study on the impaction of a single drop on several smooth surfaces was conducted to provide a foundation for conducting further study on droplet impingement on to textiles. Therefore, splashing phenomenon, which is not relevant to ink jet printing, was not included in this study. A model was developed to improve predictions of the spreading ratio at low Reynolds \u017d and the drop shape at D U is assumed to be a cap of a sphere m instead of a cylindrical disk. As the drops used in applications such as inkjet printing are small, typically well below 100 micron dia., values of Res 2.5\u13902,000 and Wes 2.7\u13901,000 may be expected in our motivating application.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The liquids used in the tests were distilled water, n-Oc-\u017d . tane, n-Tetradecane, and n-Hexadecane Aldrich . A Brook-\u017d . field Viscometer model DV-1 was used to measure the vis-\u017d cosity of the fluid. A Bubble Pressure Tensiometer BP2 Kruss .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Experimental Materials",
+                "sec_num": null
+            },
+            {
+                "text": "GmbH was used to measure dynamic surface tension. Four \u017d . \u017d smooth surfaces were used in the tests: 1 a slide glass Fisher . \u017d . \u017d . Scientific , 2 an uncoated silicon wafer, 3 a silicon wafer \u017d coated with 1,1,1,3,3,3, Hexamethyl disilazane HMDS, . \u017d . Aldrich applied using a CEE Model 100CB Spinner, and 4 \u017d a Teflon coated aluminum film Bytac Teflon Surface Protec-. tors . The slide glass and Teflon film surfaces are highly hydrophilic and hydrophobic surfaces, respectively. Contact angles of liquids on the surfaces were measured using a \u017d VCA2500KE Contact Angle Surface Analysis System AST . Products Inc. . The surface tensions, viscosities, and densities of the liquids and the contact angles of the liquids on the various substrates are given in Table 1 . the laser light and sent a 5-volt TTL signal to a high-speed \u017d . CCD camera SensiCam, Cooke Corp., Auburn Hills, MI , after a preset time delay. The settings of the CCD camera were 100 s exposure time, 800=600 pixels spatial resolution, and 8 bit gray scale in black and white. The camera captured images of the impinging drop and loaded the digital file in a computer. Replicate experiments of single drop impingement were conducted to reproduce the entire drop impingement event using different time delays of the CCD camera. The high-speed CCD camera was also used to determine drop diameter and drop speed when double exposures were superimposed in one frame. \u017d A Kodak MotionCorder Analyzer Eastman Kodak Com-. pany, Model 1000, San Diego, CA was used to take continuous pictures of a single event. A series of pictures were recorded from one drop impingement event using a camera recording speed of 3,000 fps. Other settings of the camera were 200 s exposure time, 128=96 pixels spatial resolution, and 8 bit gray scale in black and white. Drop impaction speed was calculated using droplet displacement, which was measured between two different frames using a calibrated scale, and time between frames.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 766,
+                        "end": 767,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Experimental Materials",
+                "sec_num": null
+            },
+            {
+                "text": "The Kodak camera system was used to obtain most of the experimental data presented in the body of the article. The Kodak camera system had several advantages over the Sensicam camera system. One was obtaining data was much faster since repeated tests required by the Sensicam camera system were not necessary. This also meant fewer surfaces had to be prepared. Another was that the Sensicam camera system could not be used for the impingement test at low Re because the distance between the needle and the solid surface was too small to accommodate the laser triggering system. The Sensicam camera system was used for the spontaneous spreading tests because the fluid layer resulting from spontaneous spreading was very thin. The higher resolution associated with the Sensicam camera system facilitated measurement of the spreading ratio. , 1955; Ford and Furmidge, 1967; Chandra and Avedisian, 1991; Asai et al., 1993; Pasandideh-Fard et al., 1996; Mao et . al., 1997; Fukai et al., 1998 are based on an energy conserva-\u017d . tion equation, where system energy at impact state 1 is set \u017d . equal to system energy at maximum spreading state 2 . The assumptions are made that the drop volume is conserved and the drop spreads into a cylindrical disk of diameter D and height h. The cylindrical-disk assumption is reasonable except for low impact velocities, particularly for high contact angles where the surface area of the cylindrical disk is much higher than the actual surface area. In our model, we make the relatively simple change of assuming that the shape of the fluid in state 2 is a cap of a sphere rather than a cylindrical disk, again holding the fluid volume constant. This geometry which more closely represents the physics of low velocity impact leads to better predictions at low impact velocities, while giving predictions very similar to those of Mao et The energy conservation equation used for previous models is",
+                "cite_spans": [
+                    {
+                        "start": 839,
+                        "end": 846,
+                        "text": ", 1955;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 847,
+                        "end": 871,
+                        "text": "Ford and Furmidge, 1967;",
+                        "ref_id": "BIBREF9"
+                    },
+                    {
+                        "start": 872,
+                        "end": 900,
+                        "text": "Chandra and Avedisian, 1991;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 901,
+                        "end": 919,
+                        "text": "Asai et al., 1993;",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 920,
+                        "end": 949,
+                        "text": "Pasandideh-Fard et al., 1996;",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 950,
+                        "end": 969,
+                        "text": "Mao et . al., 1997;",
+                        "ref_id": "BIBREF18"
+                    },
+                    {
+                        "start": 970,
+                        "end": 988,
+                        "text": "Fukai et al., 1998",
+                        "ref_id": "BIBREF11"
+                    },
+                    {
+                        "start": 1863,
+                        "end": 1869,
+                        "text": "Mao et",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Apparatus",
+                "sec_num": null
+            },
+            {
+                "text": "E q E q E s E q E q E q E 1 \u017d . K 1 S L1 SS1 K 2 S L2 Si2 V 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Models for Predicting Maximum Spreading",
+                "sec_num": null
+            },
+            {
+                "text": "where states 1 and 2 represent impact and maximum spread, respectively. On the lefthand side of the relationship, E is K 1 drop kinetic energy, E is the surface energy of the liquid,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Models for Predicting Maximum Spreading",
+                "sec_num": null
+            },
+            {
+                "text": "and E is the surface energy of the solid area at impact SS1 that will be covered with liquid at maximum spreading. On \u017d . the righthand side, E is the kinetic energy which is zero ,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "K 2 E",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "is the surface energy of the liquid drop, E is the in-",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "SL2 Si2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "terfacial energy between the liquid drop and the solid, and E is the energy viscously dissipated in the droplet as it is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "V 2 deformed from state 1 to state 2. Equation 1 is the relationship used by several investigators \u017dEngel, 1955; Ford and Furmidge, 1967; Chandra and Avedisian, 1991; Asai et al., 1993; Pasandideh-Fard et al., 1996;  . Mao et al., 1997; Fukai et al., 1998 to develop equations for predicting D U . When the impact velocity is zero, Eq. 1 indim cates that the surface and interfacial energies for states 1 and 2 are identical since the kinetic energies of states 1 and 2 are zero, and viscous dissipation is zero according to the relationships used to estimate E when impact velocity is zero.",
+                "cite_spans": [
+                    {
+                        "start": 113,
+                        "end": 137,
+                        "text": "Ford and Furmidge, 1967;",
+                        "ref_id": "BIBREF9"
+                    },
+                    {
+                        "start": 138,
+                        "end": 166,
+                        "text": "Chandra and Avedisian, 1991;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 167,
+                        "end": 185,
+                        "text": "Asai et al., 1993;",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 186,
+                        "end": 215,
+                        "text": "Pasandideh-Fard et al., 1996;",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 216,
+                        "end": 216,
+                        "text": "",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 219,
+                        "end": 236,
+                        "text": "Mao et al., 1997;",
+                        "ref_id": "BIBREF18"
+                    },
+                    {
+                        "start": 237,
+                        "end": 255,
+                        "text": "Fukai et al., 1998",
+                        "ref_id": "BIBREF11"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "V 2 Thus, Eq. 1 becomes",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "E q E s E q E 2 \u017d . SL1 SS1 S L2 Si2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "Equation 2 is incorrect since the drop will spontaneously spread for contact angles less than 180\u040a, and energy will be dissipated. The failure of the energy balance is partly due to the failure of the viscous dissipation equations at low Re. However, even if equations were capable of predicting viscous dissipation at very low impact velocity, energy dissipated \u017d due to the heat of wetting due to the attachment of liquid . molecules to the solid would not be accounted for. Regardless of the dissipation mechanism, the decrease in surface and interfacial energies for spontaneous spreading from state 1 to state 2 can be accounted for as described below.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "It should be noted that previous models predict spreading for zero impact velocity even though the energy balance equation indicates no energy is dissipated during spontaneous spreading. This occurs because, for constant volume, the surface area of a cylindrical disk is greater than that of a spherical cap. However, the predictions are inaccurate for low and high contact angle, and sometimes negative and imaginary values of D U are obtained. m \u017d . Ford and Furmidge 1967 pointed out that, when a small drop is placed on a solid surface, it takes the form of a spher-U \u017d ical cap and that D spreading ratio at equilibrium contact . angle, is given by the expression When the energy spontaneously dissipated into heat is accounted for using \u232c E , Eq. 2 becomes",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "SP E q E s E q E q \u232c E 5 \u017d . SL1 SS1 S L2 Si2 S P",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "If we assume that this amount of energy will be spontaneously dissipated into heat when the impact velocity is greater than zero, Eq. 1 becomes",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "E q E q E s E q E q E q E q \u232c E 6 \u017d . K 1 S L1 SS1 K 2 S L2 Si2 V 2 S P",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "The terms on the lefthand side of Eq. 6 can be expressed as follows",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "3 2 E s d u 7 \u017d . K 1 12 E s d 2 \u2425 8 \u017d . SL1 LV 2 E s D \u2425 9 \u017d . SS1 m SV 4",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "where is the density of liquid drop, u is the impact speed, D is spreading the drop diameter at maximum, and \u2425 is m SV the surface energy of solid-vapor. Expressions for the terms on the righthand side of Eq. 6 and assumptions in writing these expressions are discussed next. The drop shape at maximum spreading was assumed to be a spherical cap, as shown in Figure 2 . With this assumption, E can be written as",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 366,
+                        "end": 367,
+                        "text": "2",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "SL2 2r3 1 4 2 E s 1ycos \u2423 d \u2425 \u017d . SL2 LV 3 \u017e / 2 2y3 cos \u2423 qcos \u2423 1 1ycos \u2423 \u017d . 2 s g \u2423 d \u2425 10 \u017d . \u017d . LV 2 2 sin \u2423",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "where \u2423 is the contact angle at maximum spreading calculated using the assumptions that the shape of the fluid in state 2 is a cap of a sphere and that the fluid volume is con- 2 . State 1 at impact and state 2 at maximum spread.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 177,
+                        "end": 178,
+                        "text": "2",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . \u017d . stant. The function g \u2423 see Eq. 3 is 2r3 3 4 sin \u2423 2 U g \u2423 s D s 11 \u017d . \u017d . \u017d . m 3 2y3 cos \u2423 qcos \u2423 ( ) ( ) Figure",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "and E is given by",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "Si2 2 E s D \u2425 12 \u017d . Si2 m SL 4",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "The energy viscously dissipated in the drop E , as it is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "V 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "deformed from states 1 to 2 has been treated by several in-\u017d vestigators Engel, 1955; Ford and Furmidge, 1967; Chandra and Avedisian, 1991; Asai et al., 1993; Pasandideh-Fard et . al., 1996; Mao et al., 1997; Fukai et al., 1998 ",
+                "cite_spans": [
+                    {
+                        "start": 73,
+                        "end": 85,
+                        "text": "Engel, 1955;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 86,
+                        "end": 110,
+                        "text": "Ford and Furmidge, 1967;",
+                        "ref_id": "BIBREF9"
+                    },
+                    {
+                        "start": 111,
+                        "end": 139,
+                        "text": "Chandra and Avedisian, 1991;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 140,
+                        "end": 158,
+                        "text": "Asai et al., 1993;",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 159,
+                        "end": 190,
+                        "text": "Pasandideh-Fard et . al., 1996;",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 191,
+                        "end": 208,
+                        "text": "Mao et al., 1997;",
+                        "ref_id": "BIBREF18"
+                    },
+                    {
+                        "start": 209,
+                        "end": 227,
+                        "text": "Fukai et al., 1998",
+                        "ref_id": "BIBREF11"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "\u0468 2 u 1 8d t c 2 d\u2340 dt f \u2340 t f D \u2426 H H c m 2 \u017e /\u017e / \u017e / 4 3u \u0468 y 0 \u2340 u 2 d 2 s 0.33 D 14",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . relationships. The first is for high viscosity liquids such as glycerin, and the second is for low viscosity liquids such as water",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "We 1 1ycos \u2423 1 U 4 U 2 0.53 D q y cos D m m 2 \u017e / \u017e / Re 2 4 sin \u2423 We \u232c E SP y1y q s0 15a \u017d . 2 12 d \u2425 LV We 1 1 1 ycos \u2423 U 2 0.33 y cos q D m 2 \u017e / \u017e / ' 4 2 sin \u2423 Re We \u232c E SP y1y q s0 15b \u017d . 2 12 d \u2425 LV",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "These equations can be solved simultaneously with Eq. 11 U \u017d . to obtain D . Note that \u232c E is calculated using Eq. 4.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SL1",
+                "sec_num": null
+            },
+            {
+                "text": "The stages of the impact process observed in our experimental studies are discussed first. These stages depend on the liquid and the interaction of the liquid with the substrate. The parameter used to characterize the impact process will \u017d U . be the drop spreading ratio D s Drd , the diameter of the liquid-solid interface to the initial diameter of the impacting drop.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of substrate on stages of the impact process",
+                "sec_num": null
+            },
+            {
+                "text": "Figure 3 illustrates the impacting process measured using \u017d . the high speed Kodak camera to record the impaction process from drop impact to final resting position in one experiment. The figure shows the spreading ratio of a 2.3 mm water drop with impact speed of 1 mrs on various surfaces at room temperature. The Re and We at this impact velocity and diameter are 2,000 and 24, respectively.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 7,
+                        "end": 8,
+                        "text": "3",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of substrate on stages of the impact process",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . the drops on the slide glass and uncoated silicon wafer surfaces. The maximum spreading ratios on the slide glass and the silicon wafer are only about 10\u139020% greater than that on other surfaces. This is related to the surface energies of the slide glass and the silicon wafer being higher and the contact \u017d . angles for water on these surfaces being lower see Table 1 .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 370,
+                        "end": 371,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of substrate on stages of the impact process",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . In the retractingrrebounding stage C , the liquid retracts much further for drops on the HMDS coated silicon wafer and the Teflon film, which are hydrophobic surfaces. In fact for the slide glass and uncoated silicon wafer, which are hydrophilic surfaces, the liquid retracts to the final spreading ratio, with no discernible retraction beyond the equilibrium spreading position. On the other hand, retraction for the hydrophobic surfaces goes far beyond the equilibrium spreading position. At state 3, t f 4.5 ms, the drops on the Teflon film and polymer coated silicon wafer rise up, but do not leave the surface for an impact speed of 1 mrs. At an impact speed of about 2.36 mrs, the drop on the Teflon film rose slightly above the surface. However, even at this impact speed, the drops on the hydrophilic surfaces retract to the final spreading ratio with no discernible retraction beyond the equilibrium spreading position.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of substrate on stages of the impact process",
+                "sec_num": null
+            },
+            {
+                "text": "After maximum retraction, D U increases until the equilibrium spreading ratio is reached at state 4, t f10.0 ms. The resting spreading ratios for the four surfaces correlate with the static contact angles for water on these substrates. They are close to the values obtained when a droplet is placed on the surfaces with approximately zero impact velocity.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Effect of substrate on stages of the impact process",
+                "sec_num": null
+            },
+            {
+                "text": "Figure 4 shows the influence of impacting kinetic energy \u017d . velocity on the spreading and retracting processes for a water drop impacting on various surfaces. Our experiments were performed using water drops having impact velocities from about 0.08 to 2.36 mrs, and a diameter of 2.3 mm, conditions which correspond to Reynolds numbers from about 180 to 6,000. The maximum spreading ratio increases with increas-\u017d ing impact velocity for all of the surfaces as expected Ford and Furmidge, 1967; Cheng, 1977; Scheller and Bousfield, \u02c7. 1995; Sikalo et al., 2002 . Figure 4a is for water on a hy-\u017d . drophilic surface slide glass , and Figure 4b is for water on a \u017d . hydrophobic surface Teflon film . As discussed above, the impacting process for the hydrophilic surface has only two stages: spreading to the maximum spreading ratio and retracting to the equilibrium spreading ratio. The impacting process for the hydrophobic surface includes spreading, retracting and sometimes rebounding if impact velocity is high enough, and then spreading to the equilibrium spreading ratio. The final equilibrium spreading ratio is primarily determined by the solid-liquid interaction and varies slightly with impacting velocity. \u017d . Pasandideh-Fard et al. 1996 estimated dimensionless time \u017d U . t s t \u0612 urd to reach a maximum spreading ratio to be a constant of 8r3. In the expression for t U , t is time, u is impact velocity, and d is drop diameter. However, it was found that t U increases from 0.32 to 3.08 as the impact velocity increases from 0.08 to 2.36.",
+                "cite_spans": [
+                    {
+                        "start": 471,
+                        "end": 495,
+                        "text": "Ford and Furmidge, 1967;",
+                        "ref_id": "BIBREF9"
+                    },
+                    {
+                        "start": 496,
+                        "end": 508,
+                        "text": "Cheng, 1977;",
+                        "ref_id": "BIBREF6"
+                    },
+                    {
+                        "start": 509,
+                        "end": 541,
+                        "text": "Scheller and Bousfield, \u02c7. 1995;",
+                        "ref_id": "BIBREF20"
+                    },
+                    {
+                        "start": 542,
+                        "end": 570,
+                        "text": "Sikalo et al., 2002 . Figure",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 7,
+                        "end": 8,
+                        "text": "4",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 571,
+                        "end": 573,
+                        "text": "4a",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 642,
+                        "end": 644,
+                        "text": "4b",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of drop kinetic energy",
+                "sec_num": null
+            },
+            {
+                "text": "When the impact velocity approaches zero, the impact process is dominated by the interaction of the liquid and solid surface. This is illustrated in Figure 5 water drop at an impact velocity of 0.08 mrs. After reaching \u017d the maximum spreading ratio which is close to the equilib-. rium spreading ratio , a small amount of retracting and spreading may be present, but it is too small to be detected by the Kodak camera system used for this test.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 156,
+                        "end": 157,
+                        "text": "5",
+                        "ref_id": "FIGREF9"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Effect of drop kinetic energy",
+                "sec_num": null
+            },
+            {
+                "text": "The impact process is greatly affected by the solid-liquid interaction, which can be characterized using a parameter called the ''normalized spreading coefficient.'' When a unit \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Influence of solid-liquid interactions",
+                "sec_num": null
+            },
+            {
+                "text": "where S is the spreading coefficient, \u2425 is interfacial energy \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "LS LV SV",
+                "sec_num": null
+            },
+            {
+                "text": "For a static contact angle ) 0, Eq. 17 can be combined with Young's equation to give",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 \u2425 LV LV",
+                "sec_num": null
+            },
+            {
+                "text": "s cos y1 1 8",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "S",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "S",
+                "sec_num": null
+            },
+            {
+                "text": "\u2425 LV Mao et al. 1997 . The maximum spreading ratio increases with increasing Sr\u2425 , for all impacting veloc-LV ity, but the effect of solid-liquid interactions on the maximum spreading diameter is more pronounced at low impacting velocities. At an impact velocity of 0.086 mrs, drop spreading is LV energy of the drop was increased by almost 800 times when the drop velocity increased from 0.08 to 2.34 mrs. Furthermore, at impacting velocity of 2.34 mrs, the kinetic energy of the impacting drop is about 14.7 times larger than the impacting drop surface energy. Therefore, kinetic energy dominates the impacting and spreading process.",
+                "cite_spans": [
+                    {
+                        "start": 5,
+                        "end": 20,
+                        "text": "Mao et al. 1997",
+                        "ref_id": "BIBREF18"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "S",
+                "sec_num": null
+            },
+            {
+                "text": "When the spreading coefficient is greater than zero, liquid will spontaneously spread over the surface as shown in Figure 7 for a 2 mm drop of n-Tetradecane on uncoated silicon. For zero impact velocity, the variation of D U with time is \u017d well fitted by a power-law relationship Marmur, 1988; Lin et . al., 1996 . For impact velocity greater than zero, there is an initial period where the spreading is driven by the kinetic energy of the impacting drop, and D U increases much faster than that for the zero impact velocity case. After the initial rapid spreading period, D U is almost constant for a period of time. Spontaneous spreading then begins, and the variation of D U with time is well fitted by a power-law relationship as shown. Linear regression of the data indicates that the exponential index increase slightly with the increase of impacting velocity as shown.",
+                "cite_spans": [
+                    {
+                        "start": 280,
+                        "end": 293,
+                        "text": "Marmur, 1988;",
+                        "ref_id": "BIBREF17"
+                    },
+                    {
+                        "start": 294,
+                        "end": 314,
+                        "text": "Lin et . al., 1996 .",
+                        "ref_id": "BIBREF16"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 122,
+                        "end": 123,
+                        "text": "7",
+                        "ref_id": "FIGREF13"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Spreading coefficient greater than and equal to zero",
+                "sec_num": null
+            },
+            {
+                "text": "Kinetic and surface energies are dissipated during an impact process, but mechanisms for the dissipation processes \u017d . are not completely understood. de Gennes 1985 discussed The influence of viscous dissipation on the impacting process is illustrated in Figure 8 , where D U vs. time for two types of alkane drops of 2 mm dia. and 1.9 mrs impact velocity on a Teflon film surface is shown. Weber numbers are \u017d almost the same 158 for n-Octane and 160 for n-Hexade-. cane , and, thus, the ratios of inertial to surface energies are almost the same for the two cases. On the other hand, since the viscosity of the n-Hexadecane is about 6.2 times greater than for n-Octane, Reynolds numbers are quite different \u017d . 4,087 for n-Octane and 856 for n-Hexadecane . Thus, the viscous effects relative to inertial effects are about 4.8 times greater for the n-Hexadecane. The spreading ratio was nearly \u017d U the same during the early stages of spreading t -1 ms, t f . 0.85 . However, the maximum spreading ratio is lower for the \u017d . n-Hexadecane drop about 77% of that of the n-Octane drop because viscous dissipation in the n-Hexadecane is much higher.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 262,
+                        "end": 263,
+                        "text": "8",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Energy dissipation",
+                "sec_num": null
+            },
+            {
+                "text": "Both liquids retract to the resting position in about the same time, although the n-Octane drop has further distance to retract. There is no discernible retraction beyond the resting position for either liquid. The final resting spreading ratio of the n-Hexadecane drop is smaller than that of the n-\u017d Octane, which is due to the surface-liquid interactions equi- librium contact angle of n-Hexadecane is about 50\u040a, while it . is about 31\u040a . These observations on the effect of viscosity on the maximum spreading ratio and final resting spreading ratio agree qualitatively with those reported by Scheller and \u017d . Bousfield 1995 .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Energy dissipation",
+                "sec_num": null
+            },
+            {
+                "text": "The effect of solid-liquid interaction on the retraction of the drop from maximum spreading is illustrated in Figure 9 . Spreading ratios of 2.3 mm water drops impacting four different smooth surfaces at us1.27 mrs are shown. Since the impact velocity and drop diameter are held constant, the Reynolds and Weber numbers are almost identical for the four experiments, that is, 3,003 and 53, respectively. Thus, the major difference is the solid-liquid interaction, which is characterized by cos , where is the static contact angle. Kinetic energy of the impacting drop and viscous energy dissipation dominate during initial spreading in the impacting stage, and the spreading ratio is almost identical until the maximum spreading ratio is approached. The maximum spreading ratio is slightly higher for the slide glass, as ex-\u017d pected, due to strong solid-liquid interaction the spreading . coefficient is highest for water on the slide glass.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 117,
+                        "end": 118,
+                        "text": "9",
+                        "ref_id": "FIGREF15"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Energy dissipation",
+                "sec_num": null
+            },
+            {
+                "text": "At maximum spreading ratio, the surface energy stored in the liquid-vapor interface is greater than for the equilibrium drop shape. As a result, the contact angle decreases below its equilibrium value, and D U decreases. Although water is used for all four experiments, its spreading behavior on the four surfaces is quite different. The drop retracts much more slowly on the slide glass and uncoated silicon wafer and does not retract as far. The drops on the HMDS coated silicon wafer and Teflon film not only retract much faster, but retract through the equilibrium position, and then spread back to the equilibrium position. Because viscosity is the same in the four experiments, the difference in the behavior after the drop reaches the maximum spreading ratio must be explained by some other factor.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Energy dissipation",
+                "sec_num": null
+            },
+            {
+                "text": "The amount of retraction depends on the strength of the \u017d liquid-surface interaction since assuming there is not a microscopic film that we cannot detect by our experimental . method retraction requires liquid to be removed from the solid surface. The energy required to remove the liquid from the surface is related to the work of adhesion W . As the ab drop retracts, excess surface energy stored in the liquid-vapor \u017d . surface is consumed in three ways: 1 used to remove liquid \u017d . from the solid surface, 2 converted into kinetic energy in \u017d . the liquid, and 3 viscously dissipated. As W is increased, ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Energy dissipation",
+                "sec_num": null
+            },
+            {
+                "text": "In Table 2 and Figures 11 and 12 , experimental values of D U for a liquid drop having low impact velocity, low viscosity, \u017d . In Table 2 , experimental results of Asai et al. 1993 for ink jet printing at low Re and We of 58.7 and 5.5, respectively, are compared with model predictions. Our model prediction is 4% lower than the experimental value, while the \u017d . \u017d . models of Mao et al. 1997 and Fukai et al. 1998 predict values that are 22 and 30% greater than the experimental value, respectively.",
+                "cite_spans": [
+                    {
+                        "start": 164,
+                        "end": 180,
+                        "text": "Asai et al. 1993",
+                        "ref_id": "BIBREF1"
+                    },
+                    {
+                        "start": 377,
+                        "end": 396,
+                        "text": "Mao et al. 1997 and",
+                        "ref_id": "BIBREF18"
+                    },
+                    {
+                        "start": 397,
+                        "end": 414,
+                        "text": "Fukai et al. 1998",
+                        "ref_id": "BIBREF11"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 9,
+                        "end": 10,
+                        "text": "2",
+                        "ref_id": "TABREF3"
+                    },
+                    {
+                        "start": 23,
+                        "end": 25,
+                        "text": "11",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 30,
+                        "end": 32,
+                        "text": "12",
+                        "ref_id": "FIGREF19"
+                    },
+                    {
+                        "start": 136,
+                        "end": 137,
+                        "text": "2",
+                        "ref_id": "TABREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Maximum spreading model for strong solid-liquid interaction",
+                "sec_num": null
+            },
+            {
+                "text": "In Figure 13 The data from the present research and literature are compared with our model predictions in Figure 14 . The experimental results are for impact studies for 18-Re-12,958, 32 -We-2,277 and 35--100. Equation 15a was used for the predictions in all cases except for data from Scheller and \u017d . \u017d . Bousfield 1995 , where viscosity was high 300 mPa \u0612 s . For these data, Eq. 15b was used. The predictions of present models are within 10% of most of the experimental data.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 10,
+                        "end": 12,
+                        "text": "13",
+                        "ref_id": "FIGREF20"
+                    },
+                    {
+                        "start": 113,
+                        "end": 115,
+                        "text": "14",
+                        "ref_id": "FIGREF21"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Maximum spreading model for strong solid-liquid interaction",
+                "sec_num": null
+            },
+            {
+                "text": "The stages of the impact process of a drop on a smooth surface depend on the interaction of the liquid with the surface. Considered for water, the impact process for the hy- When the spreading coefficient is greater than zero, liquid spontaneously spreads over the surface. For an impacting drop, there is an initial period where the spreading is driven by the kinetic energy. After the initial rapid spreading period, D U is almost constant for a period of time. Then, spontaneous spreading begins, and the variation of D U with time is well fitted by a power-law relationship.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "At D U , excess surface energy stored in the liquid-vapor A theoretical model based on an energy balance was developed to predict the maximum spreading ratio at low impact velocity. The main new feature of the model lies in the simple geometrical assumption of a spherical cap, rather than a cylindrical disk as in most prior work, for the spreading drop. This geometrical assumption, designed to provide better small-Re and small-We predictions, leads to predictions which when compared to existing models in the literature are not \u017d . only better for low drop impact velocities small Re and We , but in most cases are within 10% of the experimental data even at high impact velocities.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusion",
+                "sec_num": null
+            },
+            {
+                "text": "October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "Manuscript recei\u00aeedNo\u00ae. 13, 2002, and re\u00aeision recei\u00aeed Apr. 3, 2003. October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [
+            {
+                "text": "\u017d This work was supported by the National Textile Center C99-GT07 \u017d . and C02-GT08 .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Acknowledgments",
+                "sec_num": null
+            }
+        ],
+        "bib_entries": {
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "Impact of an Ink \u017d . Drop on Paper",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Asai",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Shioya",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Hirasawa",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Okazaki",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1993,
+                "venue": "J. Imaging Sci. Tech",
+                "volume": "37",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Asai, A., M. Shioya, S. Hirasawa, and T. Okazaki, ''Impact of an Ink \u017d . Drop on Paper,'' J. Imaging Sci. Tech., 37, 205 1993 .",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "Controlling Droplet Deposition with Polymer Additives",
+                "authors": [
+                    {
+                        "first": "V",
+                        "middle": [],
+                        "last": "Bergeron",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Bonn",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "Y"
+                        ],
+                        "last": "Martin",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "L",
+                        "middle": [],
+                        "last": "Vovelle",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "Nature",
+                "volume": "405",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bergeron, V., D. Bonn, J. Y. Martin, and L. Vovelle, ''Controlling Droplet Deposition with Polymer Additives,'' Nature, 405, 772 \u017d . 2000 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "The Influence of Solid-Liquid Interactions on Dynamic Wetting",
+                "authors": [
+                    {
+                        "first": "T",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Blake",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "De"
+                        ],
+                        "last": "Coninck",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2002,
+                "venue": "Ad\u00ae. Colloid Inter. Sci",
+                "volume": "96",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Blake, T. D., and J. De Coninck, ''The Influence of Solid-Liquid Interactions on Dynamic Wetting,'' Ad\u00ae. Colloid Inter. Sci., 96, 21 \u017d . 2002 .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "On a Three-Dimensional Volume Tracking Model of Droplet Impact",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Bussmann",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Mostaghimi",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Chandra",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1999,
+                "venue": "Phys. Fluids",
+                "volume": "11",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bussmann, M., J. Mostaghimi, and S. Chandra, ''On a Three-Dimen- sional Volume Tracking Model of Droplet Impact,'' Phys. Fluids, \u017d . 11, 1406 1999 .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "On the Collision of a Droplet \u017d . with a Solid Surface",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Chandra",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Avedisian",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Proc. R. Soc. Lond",
+                "volume": "432",
+                "issue": "",
+                "pages": "13--1991",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Chandra, S., and C. T. Avedisian, ''On the Collision of a Droplet \u017d . with a Solid Surface,'' Proc. R. Soc. Lond., 432, 13 1991 .",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "Dynamic Spreading of Drops Impacting onto a Solid",
+                "authors": [
+                    {
+                        "first": "L",
+                        "middle": [],
+                        "last": "Cheng",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1977,
+                "venue": "Ind. Eng. Chem. Process Des. De\u00ae",
+                "volume": "16",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Cheng, L., ''Dynamic Spreading of Drops Impacting onto a Solid \u017d . Surface,'' Ind. Eng. Chem. Process Des. De\u00ae., 16, 192 1977 .",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "Wetting: Statics and Dynamics",
+                "authors": [
+                    {
+                        "first": "P",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "De Gennes",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Re\u00ae. Mod. Phys",
+                "volume": "57",
+                "issue": "",
+                "pages": "827--1985",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "de Gennes, P. G., ''Wetting: Statics and Dynamics,'' Re\u00ae. Mod. Phys., \u017d . 57, 827 1985 .",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "Waterdrop Collision with Solid Surface",
+                "authors": [
+                    {
+                        "first": "O",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Engel",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Res. Natn. \u017d . Bur. Stand",
+                "volume": "54",
+                "issue": "",
+                "pages": "281--1955",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Engel, O. G., ''Waterdrop Collision with Solid Surface,'' J. Res. Natn. \u017d . Bur. Stand., 54, 281 1955 .",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "Impact and Spreading of Spray Drops on Foliar Surfaces",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Ford",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "G L"
+                        ],
+                        "last": "Furmidge",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1967,
+                "venue": "Wetting. Soc. Chem. Industry Mono",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Ford, R. E., and C. G. L. Furmidge, ''Impact and Spreading of Spray Drops on Foliar Surfaces,'' Wetting. Soc. Chem. Industry Mono- \u017d . graph, 417 1967 .",
+                "links": null
+            },
+            "BIBREF10": {
+                "ref_id": "b10",
+                "title": "Wetting Effects on the Spreading of a Liquid Droplet Colliding with a Flat Surface: Experiment and",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Fukai",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Y",
+                        "middle": [],
+                        "last": "Shiiba",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Yamamoto",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "O",
+                        "middle": [],
+                        "last": "Miyataka",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Poulikakos",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Megaridis",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Z",
+                        "middle": [],
+                        "last": "Zhao",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1995,
+                "venue": "Phys. Fluids",
+                "volume": "7",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Fukai, J., Y. Shiiba, T. Yamamoto, O. Miyataka, D. Poulikakos, C. M. Megaridis, and Z. Zhao, ''Wetting Effects on the Spreading of a Liquid Droplet Colliding with a Flat Surface: Experiment and \u017d . Modeling,'' Phys. Fluids, 7, 236 1995 .",
+                "links": null
+            },
+            "BIBREF11": {
+                "ref_id": "b11",
+                "title": "Maximum Spreading of Liquid Droplets Colliding with Flat Surfaces",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Fukai",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Tanaka",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "O",
+                        "middle": [],
+                        "last": "Miyatake",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "J. Chem. Eng. Japan",
+                "volume": "31",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Fukai, J., M. Tanaka, and O. Miyatake, ''Maximum Spreading of Liquid Droplets Colliding with Flat Surfaces,'' J. Chem. Eng. Japan, \u017d . 31, 456 1998 .",
+                "links": null
+            },
+            "BIBREF12": {
+                "ref_id": "b12",
+                "title": "Modeling of the Deformation of a Liquid Droplet Impinging upon \u017d . a Flat Surface",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Fukai",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Z",
+                        "middle": [],
+                        "last": "Zhao",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Poulikakos",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Megaridis",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Z",
+                        "middle": [],
+                        "last": "Zhao",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1993,
+                "venue": "Phys. Fluids",
+                "volume": "5",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Fukai, J., Z. Zhao, D. Poulikakos, C. M. Megaridis, and Z. Zhao, ''Modeling of the Deformation of a Liquid Droplet Impinging upon \u017d . a Flat Surface,'' Phys. Fluids, 5, 2588 1993 .",
+                "links": null
+            },
+            "BIBREF13": {
+                "ref_id": "b13",
+                "title": "The Splash of a Liquid Droplet",
+                "authors": [
+                    {
+                        "first": "F",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Harlow",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Shannon",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Appl. Phys",
+                "volume": "38",
+                "issue": "",
+                "pages": "3855--1967",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Harlow, F. H., and J. P. Shannon, ''The Splash of a Liquid Droplet,'' \u017d . J. Appl. Phys., 38, 3855 1967 .",
+                "links": null
+            },
+            "BIBREF14": {
+                "ref_id": "b14",
+                "title": "Principles of Colloid and Surface",
+                "authors": [
+                    {
+                        "first": "P",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Hiemenz",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Rajagopalan",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1997,
+                "venue": "Chemistry",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hiemenz, P. C., and R. Rajagopalan, Principles of Colloid and Surface \u017d . Chemistry, 158 1997 .",
+                "links": null
+            },
+            "BIBREF15": {
+                "ref_id": "b15",
+                "title": "The Recoiling of Liquid Droplets Upon \u017d . Collision with Solid Surfaces",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [
+                            "Y"
+                        ],
+                        "last": "Kim",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Chun",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2001,
+                "venue": "Phys. Fluids",
+                "volume": "13",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Kim, H. Y., and J. H. Chun, ''The Recoiling of Liquid Droplets Upon \u017d . Collision with Solid Surfaces,'' Phys. Fluids, 13, 643 2001 .",
+                "links": null
+            },
+            "BIBREF16": {
+                "ref_id": "b16",
+                "title": "Three-and Two-Dimensional Effects in Wetting Kinetics",
+                "authors": [
+                    {
+                        "first": "C",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Lin",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Ybarra",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Neogi",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1996,
+                "venue": "Ad\u00ae. Colloid Interface Sci",
+                "volume": "67",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lin, C. M., R. M. Ybarra, and P. Neogi, ''Three-and Two-Dimen- sional Effects in Wetting Kinetics,'' Ad\u00ae. Colloid Interface Sci., 67, \u017d . 185 1996 .",
+                "links": null
+            },
+            "BIBREF17": {
+                "ref_id": "b17",
+                "title": "The Radial Capillary",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Marmur",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1988,
+                "venue": "J. Colloid Interface Sci",
+                "volume": "124",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Marmur, A., ''The Radial Capillary,'' J. Colloid Interface Sci., 124, \u017d . 301 1988 .",
+                "links": null
+            },
+            "BIBREF18": {
+                "ref_id": "b18",
+                "title": "Spread and Rebound of Liquid Droplets upon Impact on Flat Surfaces",
+                "authors": [
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Mao",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "C S"
+                        ],
+                        "last": "Kuhn",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Tran",
+                        "middle": [],
+                        "last": "Honghi",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1997,
+                "venue": "AIChE J",
+                "volume": "43",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Mao, T., D. C. S. Kuhn, and Tran Honghi, ''Spread and Rebound of Liquid Droplets upon Impact on Flat Surfaces,'' AIChE J., 43, 2169 \u017d . 1997 .",
+                "links": null
+            },
+            "BIBREF19": {
+                "ref_id": "b19",
+                "title": "Capillary Effects during Droplet Impact on a Solid Surface",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Pasandideh-Fard",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Y",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Qiao",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Chandra",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Mostaghimi",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1996,
+                "venue": "Phys. \u017d . Fluids",
+                "volume": "8",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Pasandideh-Fard, M., Y. M. Qiao, S. Chandra, and J. Mostaghimi, ''Capillary Effects during Droplet Impact on a Solid Surface,'' Phys. \u017d . Fluids, 8, 650 1996 .",
+                "links": null
+            },
+            "BIBREF20": {
+                "ref_id": "b20",
+                "title": "Newtonian Drop Impact with \u017d . Solid Surface",
+                "authors": [
+                    {
+                        "first": "B",
+                        "middle": [],
+                        "last": "Scheller",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Bousfield",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1995,
+                "venue": "AIChE J",
+                "volume": "41",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Scheller, B., and D. W. Bousfield, ''Newtonian Drop Impact with \u017d . Solid Surface,'' AIChE J., 41, 1357 1995 .",
+                "links": null
+            },
+            "BIBREF21": {
+                "ref_id": "b21",
+                "title": "Introduction to Colloid and Surface Chemistry",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Shaw",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1991,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Shaw, D. J., Introduction to Colloid and Surface Chemistry, 151 1991 .",
+                "links": null
+            },
+            "BIBREF22": {
+                "ref_id": "b22",
+                "title": "Analysis of Impact of Droplets on Horizontal Surfaces",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "\u02c7\u0161ikalo",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Marengo",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Tropea",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [
+                            "N"
+                        ],
+                        "last": "Ganic",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Experimental Thermal \u017d . and Fluid Science",
+                "volume": "25",
+                "issue": "",
+                "pages": "503--2002",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "\u02c7\u0160ikalo, S., M. Marengo, C. Tropea, and E. N. Ganic, ''Analysis of Impact of Droplets on Horizontal Surfaces,'' Experimental Thermal \u017d . and Fluid Science, 25, 503 2002 .",
+                "links": null
+            },
+            "BIBREF23": {
+                "ref_id": "b23",
+                "title": "Handbook of Chemistry and Physics",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Weast",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "6--102",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Weast, R. C., Handbook of Chemistry and Physics, CRC Press, pp. \u017d . 6\u1390102 1977 .",
+                "links": null
+            },
+            "BIBREF24": {
+                "ref_id": "b24",
+                "title": "On the Forms Assumed by Drops of Liquids Falling Vertically on a Horizontal Plate",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Worthington",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Proc. R. Soc. Lond",
+                "volume": "25",
+                "issue": "",
+                "pages": "261--1877",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Worthington, A. M., ''On the Forms Assumed by Drops of Liquids Falling Vertically on a Horizontal Plate,'' Proc. R. Soc. Lond., 25, \u017d . 261 1877 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "num": null,
+                "type_str": "figure",
+                "text": "models accurately predict D for most cases m except at low Reynolds and Weber numbers where they overestimate the experimental values, particularly at high and low contact angles, or may give negative or imaginary values at high contact angles. \u017d . The model by Mao et al. 1997 is based on the work of \u017d . Chandra and Avedisian 1991 and Pasandideh-Fard et al. \u017d . 1996 , but improvements in the model were made. In the earlier work, surface-vapor and surface-liquid interaction energies during spreading were included which resulted in cos , where is the contact angle, appearing in the predictive \u017d . equation. While Pasandideh-Fard et al. 1996 used the ad-\u017d . vancing contact angle in their predictions, Mao et al. 1997 \u017d . used the static contact angle. Fukai et al.'s 1998 model was \u017d . also based on Chandra and Avedisian's 1991 model. They",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF1": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Weber numbers Res udr and Wes u dr\u2425 , where LV , u, d, , and \u2425 are the liquid density, impact velocity, LV drop diameter, viscosity, and liquid surface tension, respec-. tively . The model differs from previous models in that a term is added to the energy balance equation to better fit experimental values of D U for low Reynolds and Weber numbers,",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF2": {
+                "num": null,
+                "type_str": "figure",
+                "text": "m",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF3": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 1. Experimental setup for drop impingement test using a single-drop apparatus and a Sensi-Cam.",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF4": {
+                "num": null,
+                "type_str": "figure",
+                "text": "\u017d U Models for predicting maximum drop spreading ratio D m . \u017d s D rd are discussed in this section. Previous models Enm gel",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF5": {
+                "num": null,
+                "type_str": "figure",
+                "text": "and this suggests our approach of using a cap of a variableradius sphere to represent the spreading drop at low impact \u017d . \u017d . velocities small Re and small We . Kim and Chun 2001 have used a truncated sphere assumption in their approximate model which utilizes the variational principle rather than the Navier-Stokes equation to predict spreading and recoiling of droplets; however, they do not present a predictive equation for D U . mThe decrease in surface and interfacial energies for spontaneous spreading from state 1 to state 2, y \u232c E , can be SP calculated using the assumptions that the shape of the fluid in state 2 is a cap of a sphere and that the fluid volume is constant. The equation for \u232c E in terms of the equilibrium SP contact angle for the liquid with the solid is d is impinging the drop diameter, and \u2425 is the sur-LV face energy of liquid-vapor.",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF6": {
+                "num": null,
+                "type_str": "figure",
+                "text": "into Eq. 1, using Young's equation and the definitions of Res udr and Wes u 2 dr\u2425 , LV setting D U s D rd, and rearranging gives the following two m m",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF7": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 3. Spreading and retracting of a 2.3 mm water drop impacting horizontal smooth surfaces at ( ) 1 mr r r r rs spreading coefficient -0 .",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF8": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Spreading and retracting of a 2.3 mm water drop on two surfaces: a Slide glass s31\u040a and b Teflon ( ) film s113\u040a .",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF9": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 5. Spreading of a 2.3 mm water drop on various surfaces at a very low impact velocity of 0.08 mr r r r rs.",
+                "uris": null,
+                "fig_num": "5"
+            },
+            "FIGREF10": {
+                "num": null,
+                "type_str": "figure",
+                "text": "between liquid and solid, \u2425 is surface energy of liquid with LV \u017d . vapor, and \u2425 is surface energy of solid with dry air vapor .SVThe normalized spreading coefficient is obtained by dividing through by \u2425 LV S",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF11": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 6 shows the effect of a normalized spreading coefficient, Sr\u2425 , on D U of a water drop of dia. 2.3 mm with LV m various impact velocities, for Sr\u2425 ranging from y1.39\u1390 LV y0.14. We have not shown data for Sr\u2425 G 0 because this LV corresponds to spontaneous spreading to very large values of D U which will be discussed later. Our data agree well with m \u017d . those reported by Mao et al. 1997 . The maximum spreading ratio increases with increasing Sr\u2425 , for all impacting veloc-",
+                "uris": null,
+                "fig_num": "6"
+            },
+            "FIGREF12": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 6. Effect of normalized spreading coefficient on maximum spreading ratio of water drop impacting various surfaces.",
+                "uris": null,
+                "fig_num": "6"
+            },
+            "FIGREF13": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 7. Effect of impact velocity on spread ratio for a liquid that spontaneously spreads over surface-a 2.0 mm n-Tetradecane drop on an uncoated silicon wafer surface.",
+                "uris": null,
+                "fig_num": "7"
+            },
+            "FIGREF14": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 8. Spreading of 2 mm alkane drops with impact velocity of drop, 1.9 mr r r r rs, on a Teflon film surface. \u017d . \u017d . Re of 4087 n-Octane and 856 n-Hexadecane , and We of \u017d . \u017d . 158 n-Octane and 160 n-Hexadecane .",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF15": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 9. Effect of liquid-surface interaction on the re-( ) tracting Stage C of a 2.3 mm water drop impacting the surfaces at 1.27 mr r r r rs. Res 3,003; We s 53.",
+                "uris": null,
+                "fig_num": "9"
+            },
+            "FIGREF16": {
+                "num": null,
+                "type_str": "figure",
+                "text": "ab less energy is available to be converted into kinetic energy and viscous dissipation, and, thus, retraction decreases. The work of adhesion W is the work necessary to sepaab rate a unit area of a solid-liquid interface into a unit area of a solid-vapor interface and a unit area of liquid-vapor interface. W is equal to the net change of Gibbs free energy per ab the minimum spreading ratio D U , during retraction and W r\u2425 is shown in Figure 10 min ab LV for water drops having a dia. of 2.3 mm at a varying speed of impact. Retraction is much lower for the two cases where W r\u2425 is large and does not change much with impact veab LV locity. As W r\u2425 decreases, D U is reduced since less exab LV min cess surface energy in the liquid-vapor surface is consumed in removing liquid from the solid surface. For the lower values of W r\u2425 , the drop retracts through the equilibrium posiab LV",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF17": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 10. Effect of normalized work of adhesion on minimum value of spreading ratio during retraction of a water drop.",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF18": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 11. Maximum spreading ratio predicted by several models at Res180 and Wes 0.2.",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF19": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 12. Maximum spreading ratio predicted by several models at Res1,712 and We s7.",
+                "uris": null,
+                "fig_num": "12"
+            },
+            "FIGREF20": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 13. Maximum spreading ratio predicted by several models at Res 5,513 and We s176.",
+                "uris": null,
+                "fig_num": "13"
+            },
+            "FIGREF21": {
+                "num": null,
+                "type_str": "figure",
+                "text": "Figure 14. Comparison of current model predictions with experimental results reported in the literature.The solid line is the model value, and the lines above and below represent ten percent deviation level.",
+                "uris": null,
+                "fig_num": "14"
+            },
+            "FIGREF22": {
+                "num": null,
+                "type_str": "figure",
+                "text": "surface causes retraction. The amount of retraction depends on the strength of the liquid-surface interaction since retraction requires liquid to be removed from the solid surface. The energy required to remove the liquid from the surface can be related to the work of adhesion W . The rate and ab amount of retraction decrease with increasing W .",
+                "uris": null,
+                "fig_num": null
+            },
+            "FIGREF23": {
+                "num": null,
+                "type_str": "figure",
+                "text": "ab",
+                "uris": null,
+                "fig_num": null
+            },
+            "TABREF0": {
+                "html": null,
+                "type_str": "table",
+                "text": "and Data from Weast 1977 Handbook of Chemistry and Physics, CRC Press.",
+                "num": null,
+                "content": "<table><tr><td>\u017d .</td></tr></table>"
+            },
+            "TABREF3": {
+                "html": null,
+                "type_str": "table",
+                "text": "Exact values not given byAsai et al. 1993 , but impact velocity ranged from 2.5 to 20 mrs. \u083b Equations 11 and 15a. tion. As impact velocity is increased, the maximum spreading ratio increases and the excess surface energy stored in the liquid-vapor surface increases. As a result, D U decreases for",
+                "num": null,
+                "content": "<table><tr><td/><td/><td>Impact</td><td>Equilibrium</td><td/><td>Mao et al.'s</td><td>Fukai et al.'s</td><td/></tr><tr><td/><td/><td>velocity \u017d . mrs</td><td>Contact \u017d . Angle \u040a</td><td>Experimental data</td><td>\u017d 1997 . model</td><td>\u017d 1998 . model</td><td>Present \u083b model</td></tr><tr><td>Wes 0.2</td><td>U</td><td>0.082</td><td>113</td><td>1.16</td><td>\u2021</td><td>1.13</td><td>1.16</td></tr><tr><td colspan=\"2\">Res180</td><td/><td>73</td><td>1.48</td><td>1.9213</td><td>1.58</td><td>1.55</td></tr><tr><td/><td/><td/><td>33</td><td>1.68</td><td>4.9204</td><td>3.52</td><td>2.03</td></tr><tr><td>U Wes 7</td><td/><td>0.73</td><td>113</td><td>1.92</td><td>1.6484</td><td>1.4053</td><td>1.84</td></tr><tr><td colspan=\"2\">Res1712</td><td/><td>73</td><td>2.08</td><td>2.2068</td><td>1.9515</td><td>2.24</td></tr><tr><td/><td/><td/><td>33</td><td>2.28</td><td>3.3046</td><td>3.5292</td><td>2.93</td></tr><tr><td>Wes 5.5</td><td>\u2020</td><td>\u00a7</td><td>65</td><td>1.42</td><td>1.73</td><td>1.84</td><td>1.37</td></tr><tr><td colspan=\"2\">Res 58.7</td><td/><td/><td/><td/><td/><td/></tr><tr><td colspan=\"6\">U Data from present research.  \u2020 \u017d . Data from Asai et al. 1993 . Equilibrium contact angle of ink on a transparent film was assumed to be 65\u040a.  \u2021 \u017d . Mao et al. 1997 model gives negative and imaginary prediction.  \u00a7 \u017d .</td><td/><td/></tr></table>"
+            }
+        }
+    }
+}

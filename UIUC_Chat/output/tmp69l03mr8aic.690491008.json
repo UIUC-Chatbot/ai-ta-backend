@@ -1,0 +1,1826 @@
+{
+    "paper_id": "tmpbym0wimdaic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:25:59.868177Z"
+    },
+    "title": "Modeling Adsorption of Cane-Sugar Solution Colorant in Packed-Bed Ion Exchangers",
+    "authors": [
+        {
+            "first": "Hugh",
+            "middle": [
+                "A"
+            ],
+            "last": "Broadhurst",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Louisiana State University Agricultural Center",
+                "location": {
+                    "addrLine": "South Stadium Dr",
+                    "postCode": "70803",
+                    "settlement": "Baton Rouge",
+                    "region": "LA"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "Peter",
+            "middle": [
+                "W"
+            ],
+            "last": "Rein",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Louisiana State University Agricultural Center",
+                "location": {
+                    "addrLine": "South Stadium Dr",
+                    "postCode": "70803",
+                    "settlement": "Baton Rouge",
+                    "region": "LA"
+                }
+            },
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "The remo\u00aeal of cane-sugar solution colorant by packed-bed ion exchangers was modeled using a linear dri\u00aeing-force adsorption model. Adsorption of colorant is a complex subject, since color is an indiscrete mixture of many components, making it difficult to measure and e\u00aeen more challenging to model. Three resins were in\u00aeestigated: a strong-( ) ( ) acid cation SAC , a weak-base anion WBA , and a standard sugar industry strong-base anion decolorizing resin. Batch testing of the resins produced linear isotherms, indicating that the colorant is dilute. Results from column testing showed that a plug-flow model with a constant linear isotherm was sufficient in all cases except the SAC resin. The SAC adsorption parameter decreased sharply as the pH increased, causing the colorant to be desorbed from the resin. This situation must be a\u00aeoided if optimal decolorization is to be achie\u00aeed.",
+    "pdf_parse": {
+        "paper_id": "tmpbym0wimdaic",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "The remo\u00aeal of cane-sugar solution colorant by packed-bed ion exchangers was modeled using a linear dri\u00aeing-force adsorption model. Adsorption of colorant is a complex subject, since color is an indiscrete mixture of many components, making it difficult to measure and e\u00aeen more challenging to model. Three resins were in\u00aeestigated: a strong-( ) ( ) acid cation SAC , a weak-base anion WBA , and a standard sugar industry strong-base anion decolorizing resin. Batch testing of the resins produced linear isotherms, indicating that the colorant is dilute. Results from column testing showed that a plug-flow model with a constant linear isotherm was sufficient in all cases except the SAC resin. The SAC adsorption parameter decreased sharply as the pH increased, causing the colorant to be desorbed from the resin. This situation must be a\u00aeoided if optimal decolorization is to be achie\u00aeed.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": "The production of white cane sugar is currently a two-step operation. Raw sugar is light brown in color and is produced in sugar mills. Mills are located close to the cane growers to minimize cane degradation and transportation costs. The raw sugar is subsequently transported to a refinery where the remaining impurities are removed. Figure 1 shows the basic steps in the production of raw sugar from sugarcane. Sucrose is first extracted from sugar cane with water, by counter current milling or cane diffusion. The juice is screened, heated to its boiling point, and then flashed. Suspended solids and colloidal materials are then precipitated with milk of lime \u017d . calcium hydroxide solution and settled in a clarifier. The resulting clear juice is evaporated to approximately 65% dissolved solids in a multiple-effect evaporator train. Sugar is then crystallized from the syrup in a three-stage crystallization process. After each crystallization step, sugar crystals are separated from the mother liquor in centrifuges. The raw sugar is then transported to the refinery, where it is dissolved, purified, and recrystallized to white sugar.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 342,
+                        "end": 343,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "There are three main areas in which the profitability of the \u017d . raw-sugar mill can be increased Fechter et al., 2001 : \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 97,
+                        "end": 119,
+                        "text": "Fechter et al., 2001 :",
+                        "ref_id": "BIBREF4"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "1 Improve the quality of the sugar produced; \u017d . 2 Increase overall recovery of sugar; \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "3 Make use of products in the molasses.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "Correspondence concerning this article should be addressed to P. W. Rein.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "The sugar refinery is a simple and relatively low-cost operation except for the significant energy costs and sugar losses in the refining process. These costs could be saved by producing white sugar at the raw-sugar mill.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "Recent advances in membrane and continuous ion-exchange technology have been utilized by Tongaat-Hulett Sugar Limited and S.A. Bioproducts Limited in the develop-\u017d . ment of the white sugar-mill WSM process to produce white \u017d . sugar directly in the raw-sugar mill Rossiter, 2002 . The process design can be incorporated into an existing raw-sugar \u017d . mill see Figure 2 .",
+                "cite_spans": [
+                    {
+                        "start": 265,
+                        "end": 279,
+                        "text": "Rossiter, 2002",
+                        "ref_id": "BIBREF11"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 368,
+                        "end": 369,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "Juice from the existing first evaporation effect at 20 to 25 \u017d . Brix dissolved solids by mass expressed as a percentage is first ultrafiltered. This removes high molecular-weight material from the syrup that would otherwise irreversibly foul the \u017d ion-exchange resins. The retentate the material rejected by . the membrane may be used as a feedstock to a neighboring distillery or may be recycled to the clarifiers. Impurities leave the system in the clarifier mud. The permeate from the membrane unit must be refrigerated to 10\u040aC, because in the subsequent ion-exchange separations low pH conditions are experienced. Under acidic conditions, sucrose breaks down to fructose and glucose.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "The heart of the process is the continuous ion-exchange demineralization using Calgon Carbon Corporation's ISEP \u017d . ion-exchange separator technology. An ISEP is similar to a conventional simulated moving bed and uses switching valves to achieve a continuous process. The ISEP differs in that it uses a rotating carousel of packed beds about a central feed valve that is made up of a stationary and rotating elements. ISEPs have been used in the South African sugar industry at the Tongaat-Hulett Sugar Refinery to deash high test molasses. The inorganic constituents of sugar solutions are commonly termed ash, and so the demineralization resins have been named deashing resins.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Two demineralization resins, a strong-acid cation SAC \u017d . and a weak-base anion WBA , are used in series to remove \u017d inorganic and charged organic impurities primarily organic . acids . Despite some decolorization, the resulting high-purity juice still has significant color that must be removed in the decolorization ISEP. The decolorizing resin used is a sugar industry standard, a strong-base anion resin in the chloride form. The decolorized juice produced from the WSM process is of such high purity and low color that four crystallization stages may be performed. The benefits of the process include \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "1 Increase in sugar recovery; \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "2 Increase in sugar quality: white sugar not raw sugar is produced;",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "3 Production of high-grade molasses for byproduct ex-\u017d . ploitation termed whitestrap molasses ;",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "4 No fouling in evaporators and vacuum pans; \u017d . 5 Higher heat-transfer coefficients in pans and evaporators.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "Ion-exchange demineralization has been shown to remove \u017d 95% of the ash content of the ultrafiltered syrup Fechter, . 2001 . In parallel with the ash removal, there is an 80% reduction in color. Ash removal by resins is a well-established process, but it is of significant interest to the process developers to investigate the removal of color by ion-exchange resins. If the color adsorption could be modeled then the process design could be optimized to make best use of the resins.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "There is currently no complete model of cane-sugar col-\u017d . orant Godshall and Baunsgaard, 2000 . The sugar industry standard color measurement groups all colored bodies as one component. This is a major assumption. For modeling purposes, it would be useful to define pseudocomponents that represent the cane-sugar colorant. An investigation into cane sugar color formation will give valuable insights on how to define these components.",
+                "cite_spans": [
+                    {
+                        "start": 65,
+                        "end": 94,
+                        "text": "Godshall and Baunsgaard, 2000",
+                        "ref_id": "BIBREF8"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "Interaction between components could be assumed negligible since colorants are so dilute. This would allow the use of a number of single-component models to represent adsorption of color onto the resins. The specific goals in this research were:",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 Develop an analysis technique to measure color; \u2177 Perform batch-adsorption tests to investigate the resin equilibrium properties;",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 Develop a packed-bed adsorption model using the equilibrium properties;",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "\u2177 Perform column-loading experiments and evaluate model parameters for design purposes.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Rossiter, 2002 :",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Syrup at 66 Brix was collected from the Cinclaire mill and stored in a refrigerator at 2\u040aC for use during the research. The feed was prepared by ultrafiltration through a 0.45-m membrane using a PallSep Vibrating Membrane Filter.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Feed preparation",
+                "sec_num": null
+            },
+            {
+                "text": "Batch tests are an important part of the research because they are a simple way of developing an isotherm for the resin, relating the concentration of a species in solution to that on the resin. To maintain constant-temperature conditions a 250-mL jacketed glass beaker was used for all tests, circulating water at 10\u040aC from a Neslab refrigerated water bath through the jacket. A Corning magnetic stirrer plate and stirrer bar were used to mix the resin and syrup in the beaker. Different regions of the isotherm were investigated by altering the concentration of the feed.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Batch tests",
+                "sec_num": null
+            },
+            {
+                "text": "When the resins H q or OH y form are released, the pH of the solution changes significantly. Significant amounts of color can form under these conditions. The testing procedure was kept as short as possible; a period of 30 min was used, as equilibrium could be achieved with the cation resin in this period of time.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Batch tests",
+                "sec_num": null
+            },
+            {
+                "text": "The void fraction is simply measured by drying approximately 5 mL of resin in a vacuum oven. The dry resin is placed into a 10-mL measuring-cylinder and 5 mL of water are added by pipette. The cylinder is then plugged and inverted a number of times to ensure complete mixing of the water and resin. Extra water can be added to wash down any beads from the cylinder walls above the liquid level by pipette. The resin packed-bed volume, volume of water added, and the total volume can be used to calculate the voidage. ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Void-fraction measurement",
+                "sec_num": null
+            },
+            {
+                "text": "Three resins were investigated in the column loading ex-\u017d . periments Table 1 , with three runs performed on each resin at different flow rates. Jacketed 25-mm OD glass columns of 600-mm length were connected to a Neslab circulating refrigerated water bath set to 10\u040aC. FMI piston pumps were used to control the liquid flow rates into and out of the column. Two pumps were used on the column, as it allowed simpler control of the liquid level above the column. The pump at the column exit was set and not adjusted during an entire run. The level of liquid above the resin bed was controlled by setting the flow rate of the inlet pump. An Oakton pH meter was placed after the column to continuously monitor the product pH.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 76,
+                        "end": 77,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Column loading",
+                "sec_num": null
+            },
+            {
+                "text": "Before the run, the column is washed with deionized water to ensure that the bed is free of any contaminants. At the start of the experiment, the feed is switched from water to the appropriate solution and the time noted. A 25-mL sample is drawn at intervals and the pH noted. Different feed materials are used for each resin to simulate the WSM process. To reduce the complexity of the investigation, a single resin is loaded in each experiment, because it is important to have a constant feed composition to the column of interest. Beforehand sufficient feed must be produced by passing ul-\u017d . trafiltered syrup through the appropriate resins Table 1 . In the case of the decolorizing resin, 10 Brix UF feed was used because this is of higher color, shortening the required length of experiment. Each sample was analyzed by gel permeation \u017d . chromatography GPC and for conductivity. The ICUMSA color of a number of samples was also determined.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 651,
+                        "end": 652,
+                        "text": "1",
+                        "ref_id": "TABREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Column loading",
+                "sec_num": null
+            },
+            {
+                "text": "After a run, the column is washed with water until the \u017d product stream is free of color. The required regenerant Ta-. ble 2 must be made up, and 5 to 6 bed volumes are passed \u017d . though the column at a low flow rate typically 30 mLrmin . After regeneration, the column is washed with deionized water until the product pH reaches a stable value.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Resin regeneration",
+                "sec_num": null
+            },
+            {
+                "text": "The use of methanol and ethanol washes were investigated to determine if more color could be removed from the resin, thereby increasing the capacity of the resin, in subsequent runs. ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Resin regeneration",
+                "sec_num": null
+            },
+            {
+                "text": "ICUMSA Color. ICUMSA color is the sugar industry standard color measurement. A small amount of the sample \u017d . to be analyzed approx. 10 mL is placed in a vial and corrected to pH 7\"0.1 using HCl and NaOH solutions. The sample is then diluted to a light golden color, filtered through a 0.45 m syringe filter, analyzed with a spectrophotometer set to 420 nm. The brix of the sample analyzed is determined using a refractometer. ICUMSA color is defined as ICUMSA 420-nm color Abs 420 nm =1,000",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Sample analysis",
+                "sec_num": null
+            },
+            {
+                "text": "\u00c4 4 \u017d . s 1 \u017d . Concentration grmL \u0612 Cell length cm \u00c4 4 \u00c4 4 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Sample analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Equipment used: Spectronic Genesys 2 Spectrophotometer; Bellingham and Stanley Ltd. RFM90 Refractometer; Orion 410A pH meter. ICUMSA 420 color is a measurement to give an indication of the overall color of the juice, but no information is given about the specific types of colorants present in the sample, or their propensity to be included in the sugar crystal during crystallization.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Sample analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Gel Permeation Chromatography. The gel permeation \u017d . chromatography GPC arrangement is described by Broad-\u017d . hurst and Rein 2002 . A Bio-Rad AS-100 HRLC autosampler was used to inject 100 L of sample into an aqueous mobile phase of 0.1 M sodium nitrate, pumped isocratically at 0.5 mLrmin by a Waters 515 HPLC pump. Separation was achieved using two Waters HydrogelTM HPLC columns \u017d . Linear and 120 in series to give a molecular-weight range of 6,000,000 to 100. A Dionex AD20 absorbance detector set to 420 nm was used to determine color and a SpectraSYSTEM RI-150 differential refractometer to measure dissolved solids. Each detector was computer controlled using the Dionex \u017d . \u017d . Peaknet Version 4 system. The absorbance response mV \u017d . can be corrected to absorbance units AU by multiplying by 2=10 -5 AUrmV. This constant divides out in the models, so the determined parameters remain constant.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Sample analysis",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Many authors, including Shore et al. 1984 , Godshall et Godshall et al. 1992 . The removal of high molecular-weight colorants in batch experiments was measured using GPC. The resulting chromatograms all had three distinct peaks. Each peak was treated as a single pseudocomponent to investigate the decolorizing ability of a number of different \u017d . adsorbents. Saska and Oubrahim 1987 report that GPC is a reliable method to investigate the molecular-weight effects of decolorization mechanisms. The WSM process has been investigated using this principle, except that it was applied to the dynamics of the process and not just the overall decolorization.",
+                "cite_spans": [
+                    {
+                        "start": 28,
+                        "end": 59,
+                        "text": "Shore et al. 1984 , Godshall et",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 60,
+                        "end": 80,
+                        "text": "Godshall et al. 1992",
+                        "ref_id": "BIBREF7"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Sample analysis",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Color tests were performed by Broadhurst and Rein 2002 to determine the changes in concentration and color in different MW ranges during processing. Using these data, re-\u017d tention times at which the absorbance was measured Figure",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Analysis of GPC 420-nm absorbance chromatograms",
+                "sec_num": null
+            },
+            {
+                "text": ".",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Analysis of GPC 420-nm absorbance chromatograms",
+                "sec_num": null
+            },
+            {
+                "text": "3 were carefully chosen to correspond with the molecular weights of major colorants. These values were then tracked through the experiments, giving a color\u1390molecular weight profile of the process.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Analysis of GPC 420-nm absorbance chromatograms",
+                "sec_num": null
+            },
+            {
+                "text": "The retention times for pseudocomponents A to F correspond to molecular weights of 10,000, 6,000, 3,000, 1,800, \u017d . 1,200, and 800, respectively Broadhurst and Rein, 2002 .",
+                "cite_spans": [
+                    {
+                        "start": 145,
+                        "end": 170,
+                        "text": "Broadhurst and Rein, 2002",
+                        "ref_id": "BIBREF2"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Analysis of GPC 420-nm absorbance chromatograms",
+                "sec_num": null
+            },
+            {
+                "text": "The system is to be modeled using a linear-driving-force \u017d . LDF model. Axial dispersion is assumed negligible, as Car-\u017d . berry and Wendel 1963 report that this is likely if the bed depth exceeds fifty particle dia. In the experiments performed, the ratio of column length to particle dia. is approximately ten times this value and so plug flow is likely. The \u017d . LDF model governing equations are Rice and Do, 1995",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Modeling and Numerical Solution",
+                "sec_num": null
+            },
+            {
+                "text": "\u0468 C \u0468 C 1y \u2440 \u0468q u q q s0 3 \u017d . i \u0468 z \u0468 t \u2440 \u0468t 1y \u2440 \u0468q X U s k CyC 4 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Modeling and Numerical Solution",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Modeling and Numerical Solution",
+                "sec_num": null
+            },
+            {
+                "text": "An analytical solution is available for this system in the \u017d case of the linear isotherm using Laplace transforms Rice . and Do, 1995; Morley, 1988 ",
+                "cite_spans": [
+                    {
+                        "start": 114,
+                        "end": 134,
+                        "text": "Rice . and Do, 1995;",
+                        "ref_id": "BIBREF10"
+                    },
+                    {
+                        "start": 135,
+                        "end": 147,
+                        "text": "Morley, 1988",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468t",
+                "sec_num": null
+            },
+            {
+                "text": "X X k z \u017d . k zr\u2440 u i y\u2423 C t, z sC 1y e exp y t y \u017d . H 0 \u00bd \u017e / K 1y \u2440 u \u017d . 0 i X k z \u0612 I 2 \u2423 t y d\u2423 5 \u017d . o ( \u017e / 5 K 1y \u2440 u \u017d . i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468t",
+                "sec_num": null
+            },
+            {
+                "text": "A linear isotherm will be substituted into Eq. 4, but unlike \u017d . the classic solution substituting for q , it will be substituted U \u017d . for C . Morley 1988 reports that the measured ICUMSA color isotherm is Langmuir, but is linear under normal column operating conditions. On substitution of a linear isotherm",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468t",
+                "sec_num": null
+            },
+            {
+                "text": "1y \u2440 \u0468q q X s k Cy 6 \u017d . \u017e / \u2440 \u0468t K p H \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468t",
+                "sec_num": null
+            },
+            {
+                "text": "In some cases, experimental results suggested that K, the equilibrium constant, is a function of pH. Since the pH is a variable that varies with time, it makes sense to substitute for C U because it does not appear in any of the derivative terms. This has the advantage of not requiring the derivative of the pH with respect to time.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468t",
+                "sec_num": null
+            },
+            {
+                "text": "The preceding equations may be put into a more concise \u017d form by using the similarity transform method of combina-. tion of variables . Defining the relative time-scale variable z s t y 7",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468t",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . \u017e /",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468t",
+                "sec_num": null
+            },
+            {
+                "text": "Reduction to a dimensionless form is performed using and , as defined below",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468 K",
+                "sec_num": null
+            },
+            {
+                "text": "\u2440 u z z i s t y s 10 \u017d . \u017e / 1y \u2440 L u L i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468 K",
+                "sec_num": null
+            },
+            {
+                "text": "Making the variable transformation and substituting for the",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468 K",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d X . Stanton number, St s k Lru i \u0468 C q sy St C y 11 \u017d . \u017e / \u0468 K \u0468 q q s St C y 12 \u017d . \u017e / \u0468 K",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468 K",
+                "sec_num": null
+            },
+            {
+                "text": "The boundary and initial conditions are essentially unchanged in the transformation",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468 K",
+                "sec_num": null
+            },
+            {
+                "text": "C s 0, sC \u017d . 0 C , s 0 s 0 \u017d . q , s 0 s 0 1 3 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468 K",
+                "sec_num": null
+            },
+            {
+                "text": "The dimensionless equations were solved numerically using FEMLAB, a MATLAB-based product that solves PDEs using the finite-element method. This solution was then adapted into a MATLAB function, accepting the model parameters in the function call. The MATLAB Optimization Toolbox was employed to perform a nonlinear least-square regression on the FEMLAB function, fitting measured data with the model parameters.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2440 \u0468 K",
+                "sec_num": null
+            },
+            {
+                "text": "SAC Batch Tests. The batch tests are particularly useful in analyzing the equilibrium properties of the resin. The most significant result of the batch testing is that the resulting \u017d . isotherms were linear Figure 4 .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 215,
+                        "end": 216,
+                        "text": "4",
+                        "ref_id": "FIGREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "Linear isotherms are simple to work with and indicate that \u017d the solute, in this case the colorant, is dilute Seader and . Henley, 1998 . The modeling technique using pseudocomponents depends on the assumption that the color components are dilute, so that multicomponent isotherms and mass-transfer relations are not required. Table 3 displays the equilibrium parameters obtained after 30 min when equilibrium has been reached. Higher adsorption parameters are measured for the higher molecular-weight components. This means that the resin has a higher affinity for the larger colorants and will be more effective at removing them than the low MW material.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 333,
+                        "end": 334,
+                        "text": "3",
+                        "ref_id": "TABREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "SAC Column Tests. A typical breakthrough curve for the cation column is displayed in Figure 5 . The horizontal axis \u017d represents the relative time-scale variable, defined in Eq.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 92,
+                        "end": 93,
+                        "text": "5",
+                        "ref_id": "FIGREF4"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": ". \u017d 10 , and the vertical axis the color concentration measured . response from the detector . The pH and conductivity are also plotted.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "The product from the column is of a low pH and high conductivity up until s 30. During this period hydrogen ions \u017d q .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d q q H attached to the resin exchange for cations Na , K , 2q 2q",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": ". Ca , Mg , and so on in the syrup feed, lowering the pH.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "Conductivity is closely related to the pH because the more ions in the solution, the higher the conductivity. As the resin's supply of hydrogen ions is exhausted, the conductivity begins to drop. It is interesting that at s 46 the conductivity drops below the feed conductivity and then increases again to the level in the incoming feed. This may be caused by a ''softening'' effect, because divalent cations in solution can exchange with monovalent cations on the resin. The resin shows some \u017d affinity for the colored species in solution in this example, . pseudocomponent D . The concentration of colorant increased continuously up until s 35, where it reaches the After this point, a curious effect occurs: the product from the column increases above the feed concentration for approximately 20 time units. This effect was found in all \u017d experiments for the lower MW species components D, E, . and F .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . In the governing equations Eqs. 11 and 12 , there are two parameters that govern the dynamics of the system, namely, the Stanton number and the adsorption equilibrium constant.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "If a constant linear isotherm is used, the slope of the breakthrough curve will be constantly decreasing owing to the driv-\u017d . ing force term, St C y qrK , tending to zero. This is shown graphically in Figure 6 . The mass-transfer conditions in the bed therefore cannot force the concentration to go above the feed value even if the Stanton number is pH dependent. A change in Stanton number would result in a change of slope.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 209,
+                        "end": 210,
+                        "text": "6",
+                        "ref_id": "FIGREF5"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . If the resin's affinity for the solute species the colorant were somehow decreased during the run, it would drastically alter the dynamics. Going back to the linear isotherm, if K decreases, then q is forced to decrease, releasing material already absorbed on the resin. This effect appears to explain the phenomena occurring in Figure 5 . In addition, it is interesting to note that the effect appears to occur in parallel to the change in the pH and conductivity of the product. Changing the pH of a colorant solution drastically affects its color, indicating a pH sensitivity of the colorant molecule. It appears, in this case, that either or both the resin and the colorant display a change in affinity for each other as the pH increases. Most sugar colorants are amphiphilics, and so at low pH they take on a positive charge, allowing them to be adsorbed into the resin matrix. As the pH of the surrounding solution increases, some of the colorants switch back to their anionic form and are released from the resin. Essentially the equilibrium constant becomes a function of pH. It will be assumed that this dependence will be similar to the Arrhenius equation. Since the pH is defined as a logarithmic func-\u017d . tion, this equation will be adapted slightly so that K pH is high at low pH conditions and decreases exponentially to a constant value at high pH conditions K pH s K e y pH q K 14 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 340,
+                        "end": 341,
+                        "text": "5",
+                        "ref_id": "FIGREF4"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "0 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "Applying this to the model, and using some typical pH val-\u017d . ues to solve, yields a breakthrough Figure 7 with a very similar profile to that displayed in Figure 5 . Parameters then can be regressed using the nonlinear regression algorithm. The regression operation was relatively successful, as most cases \u017d 2 . displayed a coefficient of correlation R above 0.9. Components A and B have not been reported here, as component A was too close to the detection limit of the detector to produce reliable results, and component B displayed different dynamics. Component B had a much larger affinity for the resin than the other components as shown in Table 3 . Figure 8 shows the relationship between the mass-transfer coefficient, k X , and the superficial velocity, for components C to F.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 105,
+                        "end": 106,
+                        "text": "7",
+                        "ref_id": "FIGREF6"
+                    },
+                    {
+                        "start": 163,
+                        "end": 164,
+                        "text": "5",
+                        "ref_id": "FIGREF4"
+                    },
+                    {
+                        "start": 654,
+                        "end": 655,
+                        "text": "3",
+                        "ref_id": "TABREF3"
+                    },
+                    {
+                        "start": 665,
+                        "end": 666,
+                        "text": "8",
+                        "ref_id": "FIGREF7"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "There is some variation in the equilibrium expression pa-\u017d . rameters with liquid velocity Table 4 . Ideally, this equilibrium expression should remain constant, because only the flow rate is changing in each case. There are a number of possible explanations for this. Despite appropriate measures taken, the resin may not have been returned to the same initial condition at the start of each run. Another possibility is that the simplified model does not perfectly emulate the process. Further work is required to establish values that can be used for design purposes.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 97,
+                        "end": 98,
+                        "text": "4",
+                        "ref_id": "TABREF4"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "It is also interesting to compare the values of the adsorp-\u017d . tion parameter obtained in the column tests Table 4 to the \u017d . value obtained in the batch tests Table 3 . The batch-test adsorption parameters were significantly higher than the values measured in the column test, but still showed a similar relationship between components. \u017d .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 113,
+                        "end": 114,
+                        "text": "4",
+                        "ref_id": "TABREF4"
+                    },
+                    {
+                        "start": 166,
+                        "end": 167,
+                        "text": "3",
+                        "ref_id": "TABREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Strong-acid cation resin",
+                "sec_num": null
+            },
+            {
+                "text": "The parameter q represents the resin having some initial 0 color loading before it is contacted with the fluid. Initial conditions of the model would then have to become q , s 0 q 16 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "0",
+                "sec_num": null
+            },
+            {
+                "text": "0 However, by defining a dimensionless concentration parameter qs qy q 17",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "0",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "0",
+                "sec_num": null
+            },
+            {
+                "text": "0 the initial condition is returned to zero and q can be ig-0 nored in the governing equations. This is particularly convenient because the actual values of q are not as important as the values of C. WBA Column Tests. The WBA column test results proved to be far simpler than the SAC resin. A typical breakthrough curve is displayed in Figure 10 . The pH starts from a high \u017d y . value as hydroxide ions OH are released from the resin. As the resin's supply of hydroxide ions is exhausted, the pH drops, since the feed is syrup that has already passed through the SAC resin and has a low pH. The conductivity starts low, because the ash content of the product is extremely low, having been removed by the two resins. The conductivity rises as the resin's hydroxide ion supply runs out.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 343,
+                        "end": 345,
+                        "text": "10",
+                        "ref_id": "FIGREF17"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "0",
+                "sec_num": null
+            },
+            {
+                "text": "The product color starts low and increases until it reaches the feed value. Unlike the SAC resin, no strong pH effects are visible. There does appear to be some change in dynamics as the pH drops, but the effect is so small that it has been ( ) Figure 9 . WBA Isotherms after 30 min 10\u040aC . neglected in the modeling. The WBA resin may therefore be modeled with the linear constant isotherm, allowing the use \u017d . of the analytic model Eq. 5 . The FEMLAB regression technique was still used even though the model is analytic, as the technique was well developed for the SAC case.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 252,
+                        "end": 253,
+                        "text": "9",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "0",
+                "sec_num": null
+            },
+            {
+                "text": "The regression was successful, yielding correlation coefficients greater than 0.95 in most cases. The Stanton number showed considerable increases as the fluid velocity increased. Mass transfer strongly controls this resin, and as the surrounding fluid velocity increases, the resistance decreases drastically, causing an increase in the Stanton number. Extracting the mass-transfer coefficients and plotting vs. the su-\u017d . perficial velocity Figure 11 shows a different behavior of the SAC in this fluid velocity region. The mass-transfer rates increase significantly at higher flow rates.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 450,
+                        "end": 452,
+                        "text": "11",
+                        "ref_id": "FIGREF10"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "0",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . The adsorption equilibrium parameter Figure 12 for the resin remains constant for the two higher velocity runs. The changes observed for the lower velocity may be an experimental error, as some components show an increase and others a decrease. The value measured in the batch test did not correlate well with the regressed column data. This finding may occur because of the different mass-transfer conditions in the column. As in the SAC case, further experimental work is required to confirm these findings.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 48,
+                        "end": 50,
+                        "text": "12",
+                        "ref_id": "FIGREF11"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "0",
+                "sec_num": null
+            },
+            {
+                "text": "The decolorizing resin was controlled by a linear isotherm, \u017d . as discussed by Morley 1988 , and batch tests to establish the form of isotherm were not done. Unlike Morley's model, the product color, in a number of cases did not reach the \u017d . feed value see Figure 13 . The same effect viewed here was observed for the ICUMSA color measurements. In one case, the experiment was allowed to run for 8 h, and still the color did not increase to its feed value. From a visual inspection of the column during a run, the reason for this effect is obvious. A black ring forms at the top of the resin and slowly moves down the column. The resin has more affinity for this dark colorant than any of the others. The yellow colors break through first, and presumably the dark colorant would break through at some point, but this point was not reached in any of the experiments.",
+                "cite_spans": [
+                    {
+                        "start": 80,
+                        "end": 91,
+                        "text": "Morley 1988",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 266,
+                        "end": 268,
+                        "text": "13",
+                        "ref_id": "FIGREF17"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Decolorizing resin",
+                "sec_num": null
+            },
+            {
+                "text": "Again no major pH or conductivity dependence was observed, so a constant linear isotherm model was used in the regression. Since the product did not reach its feed value, the feed color concentration was used as a third variable, in addition to the adsorption parameter and the Stanton number. This gives rise to a portion of decolorization that goes unmodeled and would be a constant in a design process.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Decolorizing resin",
+                "sec_num": null
+            },
+            {
+                "text": "The regression was particularly successful, yielding a lowest correlation coefficient of 0.963, and in most cases greater than 0.99. Morley's model regresses to an average correlation \u017d . coefficient of 0.91 Morley, 1988 . Figure 14 shows that mass-transfer conditions are favorable, since the Stanton numbers and mass-transfer coefficients are considerably larger than for the SAC and WBA resins. Plotting the mass-\u017d . transfer coefficient against superficial velocity Figure 14 shows an almost linear relationship. Higher velocities give rise to more favorable mass-transfer conditions. Interestingly, the higher the component's molecular weight, the faster the mass transfer.",
+                "cite_spans": [
+                    {
+                        "start": 208,
+                        "end": 220,
+                        "text": "Morley, 1988",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 230,
+                        "end": 232,
+                        "text": "14",
+                        "ref_id": "FIGREF17"
+                    },
+                    {
+                        "start": 477,
+                        "end": 479,
+                        "text": "14",
+                        "ref_id": "FIGREF17"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Decolorizing resin",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . The adsorption equilibrium constant Figure 15 remains relatively constant as the superficial velocity changes. As in the WBA case, this parameter would be expected to be constant in designing a decolorization system. The decolorizing resin has the strongest affinity for colorant of all three resins. It is interesting to note that similar constants are obtained for the different pseudocomponents.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 47,
+                        "end": 49,
+                        "text": "15",
+                        "ref_id": "FIGREF13"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Decolorizing resin",
+                "sec_num": null
+            },
+            {
+                "text": "The amount of color that appears to be totally removed, and therefore is unmodeled, is shown in Figure 16 . In design- ing a process, a certain percentage of the feed color concentration will be completely removed and need not be modeled. Again, it is the material that has the least affinity for the resin that is most important. There is considerable scatter in these data, making it impossible to determine the exact behavior of this parameter. Further experimentation is required.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 103,
+                        "end": 105,
+                        "text": "16",
+                        "ref_id": "FIGREF15"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Decolorizing resin",
+                "sec_num": null
+            },
+            {
+                "text": "Since bonds between the colorant and the resin can be hy-\u017d . drophobic in nature Bento et al., 1996 , it was decided to investigate the possibility of using a methanol wash to remove colorants from the resins. A 50% aqueous solution of methanol was used to good effect on the SAC column, removing a significant amount of color. No significant color was observed in the effluents of the other two resins.",
+                "cite_spans": [
+                    {
+                        "start": 81,
+                        "end": 99,
+                        "text": "Bento et al., 1996",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Regeneration aids",
+                "sec_num": null
+            },
+            {
+                "text": "After washing the SAC resin with two bed volumes of methanol, a sample of the effluent was placed in a vacuum oven to evaporate the methanol. The sample was then analyzed with GPC. A significant amount of color was detected \u017d . \u017d Figure 17 at retention times greater than 15 min 8,000 . MW . The evaporated sample was also analyzed for ICUMSA color, yielding a result 40,700 IU. This color was not removed in a typical regeneration. An increase in resin capacity for colorant should be obtained by performing methanol washes. It has been noticed that the decolorizing potential of the SAC resin does decrease after many cycles. This may be caused by inadequate removal of color from the resin in regeneration.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 237,
+                        "end": 239,
+                        "text": "17",
+                        "ref_id": "FIGREF16"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Regeneration aids",
+                "sec_num": null
+            },
+            {
+                "text": "Ethanol washes were also investigated and gave very similar results to the methanol case, but have not been reported here. Prior to GPC analysis, all the organic solvent must be removed. Ethanol forms an azeotrope with water, and so cannot be completely removed from the sample. Rossitter et al.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Regeneration aids",
+                "sec_num": null
+            },
+            {
+                "text": ". 2002 showed substantial benefits in the use of UF retentate as a feedstock to an ethanol distillery. This would make the possibility of regular SAC ethanol washes attractive. The resin could be washed with ethanol from the distillery and the ef- ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The ICUMSA color method has serious shortcomings in measuring the dynamics of decolorizing. Colorant is made up of many components that behave differently in a process. Using GPC as a tool to measure color pseudocomponents has been particularly useful because it allows the components to behave differently in a process model. Essentially the functionality has been stepped up from one equation to a set of equations, one for each defined pseudocomponent. The different behaviors viewed in the adsorption experiments suggest that GPC may be a useful tool in analyzing other sugarsolution color-related processes. For a decolorizing process to be designed for maximum color removal, it must be de-signed for the component that is least removed. ICUMSA cannot give any information about this issue.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "GPC as an analytical tool",
+                "sec_num": null
+            },
+            {
+                "text": "A number of assumptions were made in the modeling process. The first was that the color pseudocomponents can be studied independently of each other. In other words, multicomponent models are not required. The only coupling between the governing equations is in the equilibrium expression. Consider the multicomponent Langmuir isotherm, which reduces to a linear isotherm at low colorant concentrations",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Validity of the plug-flow model",
+                "sec_num": null
+            },
+            {
+                "text": "q K C max ,i i i q s 18 \u017d . i 1q K C i i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Validity of the plug-flow model",
+                "sec_num": null
+            },
+            {
+                "text": "As C \u2122 0, q \u2122 q K C. Clearly if our colorant compo- considered independently. In our case, q K was grouped max,i i as a single parameter K for each component. The highmolecular-weight components in cane-sugar solutions are in the parts per million concentration range. The refractive index detector showed no correlation to the absorbance detector, indicating that the noncolored components are present in far greater concentrations. Thus, the cane-sugar colorants are extremely dilute, and so modeling of their adsorption dynamics can be performed using single component models.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Validity of the plug-flow model",
+                "sec_num": null
+            },
+            {
+                "text": "It was also assumed that the fluid passing through the packed beds is in plug-flow. This assumption was validated by performing a regression using the axial dispersion model. The regression terminated with a Peclet number in excess of 35.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Validity of the plug-flow model",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Froment and Bischoff 1990 recommend a Peclet number based on a particle diameter between 1 and 2. Multiplying the regressed Peclet number by the length-to-dia. ratio yields \u017d . an extremely large particle-based Peclet number over 1,000 , which implies that the axial dispersion term is very small. It is reasonable to use the plug-flow model to model the color adsorption process.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Validity of the plug-flow model",
+                "sec_num": null
+            },
+            {
+                "text": "The SAC showed particularly interesting dynamics. Affinity of colorants for this resin is seriously affected by pH. As the pH increases, the adsorption parameter greatly decreases, causing some components to elute from the column and others to be retained less strongly by the resin. The decrease was modeled using an adapted Arrhenius equation. If the resin is to be operated making use of its full decolorizing power, the pH must not be allowed to increase in the column. The conductivity of the product appeared to be a good indicator of the state of the resin. A falling conductivity gave some advanced warning of an impending color problem. Operating in the low conductivity, ''softening,'' region allows \u017d . the removal of divalent cations such as calcium, magnesium , thus increasing the demineralization capacity of the resin. This becomes less attractive when the decolorizing ability of the resin is considered.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SAC Resin",
+                "sec_num": null
+            },
+            {
+                "text": "The use of a methanol wash was effective in quickly removing a large portion of color from the SAC resin that was not removed in regeneration. Ethanol washing becomes particularly attractive when operating a distillery on the WSM retentate and molasses. Despite not being investigated here, the drop in decolorizing ability of the SAC resin over many loadingrregeneration cycles may be attributed to incomplete regeneration. A more thorough investigation into the use of methanol or ethanol washes is recommended.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "SAC Resin",
+                "sec_num": null
+            },
+            {
+                "text": "The WBA exchange resin showed much simpler dynamics than the SAC resin. Unlike the SAC resin, pH did not influence the adsorption parameter strongly. Constant K values were found sufficient, allowing the use of the analytical model. The resin also showed differing mass-transfer effects, as the mass-transfer coefficient increased greatly at higher flow rates. The batch test also indicated stronger mass-transfer limitations than for the SAC resin, causing the WBA resin to take longer to reach equilibrium.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "WBA resin",
+                "sec_num": null
+            },
+            {
+                "text": "Higher affinities for the colorant were observed for the WBA resin, particularly for the low molecular-weight material. The lack of a pH effect makes the resin simple to design because only the deashing conditions need to be considered. The resin is a good follow-up to the SAC resin, because the SAC resin has a higher affinity for the large material, whereas the WBA material has higher capacities for the low molecular-weight material.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "WBA resin",
+                "sec_num": null
+            },
+            {
+                "text": "The affinity of the decolorizing resin for colored bodies is far higher than any of the other resins. The constant linear isotherm model was found to be sufficient, except that the \u017d . feed concentration unmodeled color removal was used as a variable in the regression. The decolorizing resin also showed far higher mass-transfer coefficients than the SAC and WBA resins. Further experimentation is required to investigate the unmodeled color removal because scatter was observed in the regressed data.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Decolorizing resin",
+                "sec_num": null
+            },
+            {
+                "text": "More advanced GPC detectors have been used in studying \u017d . colorant. Bento et al. 1997 used evaporative light-scattering \u017d . ELS detection in place of the RI detector and diode-array \u017d . detection DAD instead of the absorbance detector. DAD allows the absorbance measurement over a wide range of wavelengths instead of just one. Colorants show absorbance in the UV region, and so this gives a lot more information about the colorant. Analysis of DAD chromatograms is com-\u017d . plex because they are three-dimensional 3-D , having retention, response, and wavelength axes. It may be more practical to analyze colorants at a single UV wavelength by making use of the higher absorbances in this region.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Future research directions",
+                "sec_num": null
+            },
+            {
+                "text": "There is a clear need for more experimental data. More column tests would allow a complete picture to be developed over a range of fluid velocities. This would give the designer a better ability to optimize the process. The foundation has been laid for the measurements to be made. ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Future research directions",
+                "sec_num": null
+            },
+            {
+                "text": "October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [
+            {
+                "text": "Dr. Michael Saska of Audubon Sugar Institute made valuable suggestions in the planning, execution, and evaluation of the results.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Acknowledgments",
+                "sec_num": null
+            },
+            {
+                "text": "Cs concentration in bulk fluid, mV",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Notation",
+                "sec_num": null
+            }
+        ],
+        "bib_entries": {
+            "BIBREF0": {
+                "ref_id": "b0",
+                "title": "\u015augar Colorants by Gel Chromatography with UV and ELS",
+                "authors": [],
+                "year": null,
+                "venue": "Int",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "\u015augar Colorants by Gel Chromatography with UV and ELS,'' Int. \u017d . \u017d .",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "The Characterization of Cane Sugar Colorant",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Broadhurst",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Rein",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2002,
+                "venue": "Proc. Sugar Processing Research Conf",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Broadhurst, H. A., and P. W. Rein, ''The Characterization of Cane Sugar Colorant,'' Proc. Sugar Processing Research Conf., New Or- \u017d . leans, p. 292 2002 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "A Computer Model of the Fixed Bed Catalytic Reactor: The Adiabatic and Quasi-Adiabatic Cases",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Carberry",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Wendel",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1963,
+                "venue": "AIChE J",
+                "volume": "9",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Carberry, J. J., and A. Wendel, ''A Computer Model of the Fixed Bed Catalytic Reactor: The Adiabatic and Quasi-Adiabatic Cases,'' \u017d . \u017d . AIChE J., 9 132 , 129 1963 .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "Direct Production of White Sugar and Whitestrap Molasses by Applying Membrane and Ion Exchange Technology in a Cane Sugar \u017d . Mill",
+                "authors": [
+                    {
+                        "first": "W",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Fechter",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Kitching",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Rajh",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Reimann",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Ahmed",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "R C"
+                        ],
+                        "last": "Jensen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Schorn",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Walthew",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2001,
+                "venue": "Proc. Int. Soc. Sugar Cane Technol",
+                "volume": "24",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Fechter, W. L., S. M. Kitching, M. Rajh, R. H. Reimann, F. E. Ahmed, C. R. C. Jensen, P. M. Schorn, and D. C. Walthew, ''Di- rect Production of White Sugar and Whitestrap Molasses by Ap- plying Membrane and Ion Exchange Technology in a Cane Sugar \u017d . Mill,'' Proc. Int. Soc. Sugar Cane Technol., 24, 100 2001 .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Chemical Reactor Analysis and nd",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [
+                            "F"
+                        ],
+                        "last": "Froment",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Bischoff",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1990,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Froment, G. F., and K. B. Bischoff, Chemical Reactor Analysis and nd \u017d . Design, 2 ed., Wiley, New York 1990 .",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "High Molecular Weight Color in Refineries",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Godshall",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Clarke",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Dooley",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Roberts",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1988,
+                "venue": "Proc. Sugar Process-\u017d . ing Research Conf",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Godshall, M. A., M. A. Clarke, C. D. Dooley, and E. J. Roberts, ''High Molecular Weight Color in Refineries,'' Proc. Sugar Process- \u017d . ing Research Conf., New Orleans, 75 1988 .",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "Comparison of Refinery Decolorization Systems",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Godshall",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Clarke",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Xavier",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Blanco",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1992,
+                "venue": "Proc. Sugar \u017d . Processing Research Conf",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Godshall, M. A., M. A. Clarke, M. M. Xavier, and R. S. Blanco, ''Comparison of Refinery Decolorization Systems,'' Proc. Sugar \u017d . Processing Research Conf., New Orleans, 281 1992 .",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "The Nature of Colorant",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Godshall",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [],
+                        "last": "Baunsgaard",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "Proc. \u017d . Sugar Processing Research Conf",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Godshall, M. A., and D. Baunsgaard, ''The Nature of Colorant,'' Proc. \u017d . Sugar Processing Research Conf., New Orleans, 122 2000 .",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "Mathematical Model of an Ion Exchange Column",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Morley",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Proc. S. Afr. Sugar Technol. Assoc",
+                "volume": "",
+                "issue": "",
+                "pages": "62--1988",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Morley, J. P., ''Mathematical Model of an Ion Exchange Column,'' \u017d . Proc. S. Afr. Sugar Technol. Assoc., p. 62 1988 .",
+                "links": null
+            },
+            "BIBREF10": {
+                "ref_id": "b10",
+                "title": "Applied Mathematics and Modeling for",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Rice",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Do",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1995,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Rice, R. G., and D. D. Do, ''Applied Mathematics and Modeling for \u017d . Chemical Engineers,'' Wiley, New York 1995 .",
+                "links": null
+            },
+            "BIBREF11": {
+                "ref_id": "b11",
+                "title": "White Sugar from Cane at the Factory: The Impact of WSM",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Rossiter",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Jensen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "W",
+                        "middle": [],
+                        "last": "Fechter",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2002,
+                "venue": "Proc. Sugar Processing Research",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Rossiter, G., C. Jensen, and W. Fechter, ''White Sugar from Cane at the Factory: The Impact of WSM,'' Proc. Sugar Processing Research \u017d . Conf., New Orleans, 162 2002 .",
+                "links": null
+            },
+            "BIBREF12": {
+                "ref_id": "b12",
+                "title": "Gel Permeation Chromatography of",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Saska",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Y",
+                        "middle": [],
+                        "last": "Oubrahim",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Sugar J",
+                "volume": "49",
+                "issue": "6",
+                "pages": "19--1987",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Saska, M., and Y. Oubrahim, ''Gel Permeation Chromatography of \u017d . \u017d . Sugarcane Products,'' Sugar J., 49 6 , 19 1987 .",
+                "links": null
+            },
+            "BIBREF13": {
+                "ref_id": "b13",
+                "title": "Separation Process Principles",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Seader",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Henley",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Seader, J. D., and E. J. Henley, ''Separation Process Principles,'' Wi- \u017d . ley, New York 1998 .",
+                "links": null
+            },
+            "BIBREF14": {
+                "ref_id": "b14",
+                "title": "Factors \u017d . Affecting White Sugar Color",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Shore",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Broughton",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "V"
+                        ],
+                        "last": "Dutton",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "A",
+                        "middle": [],
+                        "last": "Sissons",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1984,
+                "venue": "Sugar Technol. Re\u00ae",
+                "volume": "12",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Shore, M., N. W. Broughton, J. V. Dutton, and A. Sissons, ''Factors \u017d . Affecting White Sugar Color,'' Sugar Technol. Re\u00ae., 12, 1984 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "fig_num": "1",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 1. Raw-sugar-mill flow sheet.",
+                "num": null
+            },
+            "FIGREF1": {
+                "fig_num": "2",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 2. White-sugar-mill flow sheet.",
+                "num": null
+            },
+            "FIGREF2": {
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 3. Color pseudocomponent measurement.",
+                "num": null
+            },
+            "FIGREF3": {
+                "fig_num": "4",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 4. SAC Isotherms after 30 min.",
+                "num": null
+            },
+            "FIGREF4": {
+                "fig_num": "5",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 5. A typical SAC breakthrough curve.",
+                "num": null
+            },
+            "FIGREF5": {
+                "fig_num": "6",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 6. Typical constant linear isotherm model solution.",
+                "num": null
+            },
+            "FIGREF6": {
+                "fig_num": "7",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 7. Typical linear isotherm with K a function of pH model solution.",
+                "num": null
+            },
+            "FIGREF7": {
+                "fig_num": "8",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 8. SAC mass-transfer coefficient vs. superficial velocity for components C to F.",
+                "num": null
+            },
+            "FIGREF8": {
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "WBA Batch Tests. The WBA resin showed results that \u017d were slightly different from the SAC in the batch tests Fig-. ure 9, Table 5 . Components B through D have an adsorption isotherm that does not pass through the origin. \u017d . Morley 1988 reports an isotherm of the form qs KC U q q 15",
+                "num": null
+            },
+            "FIGREF9": {
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "A typical WBA breakthrough curve WBA6-D .",
+                "num": null
+            },
+            "FIGREF10": {
+                "fig_num": "11",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 11. WBA mass-transfer coefficient vs. superficial velocity.",
+                "num": null
+            },
+            "FIGREF11": {
+                "fig_num": "12",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 12. WBA isotherm equilibrium constant vs. superficial velocity.",
+                "num": null
+            },
+            "FIGREF12": {
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 14. DECOL mass-transfer coefficient vs. superficial velocity.",
+                "num": null
+            },
+            "FIGREF13": {
+                "fig_num": "15",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 15. DECOL adsorption parameter vs. superficial velocity.",
+                "num": null
+            },
+            "FIGREF14": {
+                "fig_num": null,
+                "type_str": "figure",
+                "uris": null,
+                "text": "The regressed model parameters were found to be reasonable. The mass-transfer coefficient showed relationships close to those in the literature. The resin was shown to have a particularly strong affinity for the high molecular-weight component, B. Components E, D, and F were severely affected by the pH change, causing major drops in decolorization.",
+                "num": null
+            },
+            "FIGREF15": {
+                "fig_num": "16",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 16. DECOL unmodeled color removal vs. superficial velocity.",
+                "num": null
+            },
+            "FIGREF16": {
+                "fig_num": "17",
+                "type_str": "figure",
+                "uris": null,
+                "text": "Figure 17. GPC analysis of SAC methanol wash effluent.",
+                "num": null
+            },
+            "FIGREF17": {
+                "fig_num": "1",
+                "type_str": "figure",
+                "uris": null,
+                "text": "s feed concentration, mV 0 k X s effective mass-transfer coefficient, Lrmin Ksadsorption parameter qs K \u0612 C U \u017d . K pH sadsorption parameter as a function of pH K sequilibrium adsorption parameter from isotherm eq \u017d . K , K s parameters in equation for K pH 0 Lscolumn length, m qsconcentration on solid phase, mV Stsstanton number St s k X Lru i ts time variable, min u ssuperficial fluid velocity, mrmin 0 u s interstitial fluid velocity, mrmin i zsdistance from top of column, m Greek letters \u2440s packed-bed void fraction sdimensionless relative time-scale variable sdimensionless distance \u017d . srate constant in K pH srelative time-scale variable, min Subscripts iscomponent or interstitial 0 ssfeedrinitial or superficial Literature Cited Bento, L. S. M., C. Guimaraes, and M. Mota, ''A Study of Colorants Through Ion Exchange and Salt Regeneration,'' Int. Sugar J., 98 \u017d . \u017d . 1175 , 584 1996 . Bento, L. S. M., M. E. Pereira, and S. Sa, ''Improved Analysis of",
+                "num": null
+            },
+            "TABREF0": {
+                "type_str": "table",
+                "html": null,
+                "num": null,
+                "text": "",
+                "content": "<table><tr><td>Jacket</td><td>Resin</td></tr><tr><td/><td>\u017d .</td></tr></table>"
+            },
+            "TABREF1": {
+                "type_str": "table",
+                "html": null,
+                "num": null,
+                "text": "",
+                "content": "<table><tr><td>Resin</td><td>Regenerant</td><td>\u017d . Temperature \u040aC</td></tr><tr><td>SAC</td><td>6% HCl</td><td>25</td></tr><tr><td>WBA</td><td>10% NaOH</td><td>60</td></tr><tr><td>Decol.</td><td>10% NaCl; 0.2% NaOH</td><td>60</td></tr></table>"
+            },
+            "TABREF3": {
+                "type_str": "table",
+                "html": null,
+                "num": null,
+                "text": "",
+                "content": "<table><tr><td>Component</td><td>A</td><td>B</td><td>C</td><td>D</td><td>E</td><td>F</td></tr><tr><td>K</td><td>56.1</td><td>67.7</td><td>31.6</td><td>22.0</td><td>17.4</td><td>18.1</td></tr></table>"
+            },
+            "TABREF4": {
+                "type_str": "table",
+                "html": null,
+                "num": null,
+                "text": "",
+                "content": "<table><tr><td>Run</td><td/><td/><td>K</td><td>0</td><td/><td/><td>K</td><td>1</td><td/><td/></tr><tr><td colspan=\"2\">N u m b e r</td><td>6</td><td colspan=\"2\">8</td><td>9</td><td>6</td><td colspan=\"2\">8</td><td>9</td><td>6</td><td>8</td><td>9</td></tr><tr><td>\u017d u mrh 0</td><td>.</td><td>3.75</td><td colspan=\"2\">4.89</td><td>6.21</td><td>3.75</td><td colspan=\"2\">4.89</td><td>6.21</td><td>3.75</td><td>4.89</td><td>6.21</td></tr><tr><td>C</td><td/><td>25.7</td><td colspan=\"2\">29.5</td><td>16.8</td><td>18.6</td><td colspan=\"2\">21.2</td><td>10.2</td><td>1.03</td><td>1.80</td><td>0.807</td></tr><tr><td>D</td><td/><td>19.7</td><td colspan=\"2\">30.9</td><td>18.8</td><td>6.2</td><td colspan=\"2\">12.00</td><td>4.17</td><td>1.10</td><td>2.01</td><td>1.16</td></tr><tr><td>E</td><td/><td>19.9</td><td colspan=\"2\">22.3</td><td>17.9</td><td>4.65</td><td colspan=\"2\">5.37</td><td>3.94</td><td>1.02</td><td>1.39</td><td>1.13</td></tr><tr><td>F</td><td/><td>20.1</td><td colspan=\"2\">22.4</td><td>17.5</td><td>4.50</td><td colspan=\"2\">3.20</td><td>3.73</td><td>0.960</td><td>1.15</td><td>1.06</td></tr></table>"
+            },
+            "TABREF5": {
+                "type_str": "table",
+                "html": null,
+                "num": null,
+                "text": "",
+                "content": "<table><tr><td colspan=\"3\">Component</td><td>B</td><td>C</td><td>D</td><td>E</td><td>F</td></tr><tr><td>K</td><td colspan=\"2\">eq</td><td>45.3</td><td>47.3</td><td>47.8</td><td>40.6</td><td>51.0</td></tr><tr><td colspan=\"2\">q</td><td>0</td><td>205.2</td><td>462.0</td><td>424.7</td><td>360.5</td><td>219.3</td></tr></table>"
+            }
+        }
+    }
+}

@@ -1,0 +1,2514 @@
+{
+    "paper_id": "tmps_x8cg1maic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:25:58.359521Z"
+    },
+    "title": "New Maximum-Likelihood Method for Reduction of Distribution-Coefficient Data",
+    "authors": [
+        {
+            "first": "Simon",
+            "middle": [
+                "L"
+            ],
+            "last": "Marshall",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Oak Ridge National Laboratory",
+                "location": {
+                    "postCode": "37831",
+                    "settlement": "Oak Ridge",
+                    "region": "TN"
+                }
+            },
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "The sampling distributions for the acti\u00aeity coefficient \u2425 and distribution ratio or ) K-\u00aealue in binary fluid mixtures are deri\u00aeed from the assumptions that the pressure errors are negligible, and that the \u00aeapor and liquid composition measurements from which they are deri\u00aeed are normally distributed with known mean and \u00aeariance. The distribution of K is shown to be not normal, with de\u00aeiations from normality becoming particularly pronounced at the extremes of the composition range. The dispersion of this distribution is considerably greater than that predicted by the classic error-propagation formula. De\u00aeiation from normality in\u00aealidates the most important assumption implicit in the use of the least-squares criterion as the basis for parameter estimation from acti\u00aeity-coefficient data. This has important implications for the estimation of Henry's law constants for solutes in \u00aeery dilute solutions, as well as for Raoult's law-based infinite-dilution acti\u00aeity coefficients. The use of the exact distributions of \u2425 and K as the basis for a more rigorous maximum-likelihood method for parameter estimation in excess Gibbs energy models based on either Henry's law or Raoult's law standard states is demonstrated.",
+    "pdf_parse": {
+        "paper_id": "tmps_x8cg1maic",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "The sampling distributions for the acti\u00aeity coefficient \u2425 and distribution ratio or ) K-\u00aealue in binary fluid mixtures are deri\u00aeed from the assumptions that the pressure errors are negligible, and that the \u00aeapor and liquid composition measurements from which they are deri\u00aeed are normally distributed with known mean and \u00aeariance. The distribution of K is shown to be not normal, with de\u00aeiations from normality becoming particularly pronounced at the extremes of the composition range. The dispersion of this distribution is considerably greater than that predicted by the classic error-propagation formula. De\u00aeiation from normality in\u00aealidates the most important assumption implicit in the use of the least-squares criterion as the basis for parameter estimation from acti\u00aeity-coefficient data. This has important implications for the estimation of Henry's law constants for solutes in \u00aeery dilute solutions, as well as for Raoult's law-based infinite-dilution acti\u00aeity coefficients. The use of the exact distributions of \u2425 and K as the basis for a more rigorous maximum-likelihood method for parameter estimation in excess Gibbs energy models based on either Henry's law or Raoult's law standard states is demonstrated.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": ". The principle of maximum likelihood ML has found extensive application to parameter-estimation problems arising in chemical engineering\u138fin particular, to the reduction of \u017d . vapor\u1390liquid equilibrium VLE data and the cognate problem of testing the thermodynamic consistency of such measurements. The starting point in all calculations based on this principle is the calculation of a joint probability density function for the measurements, in which the mean value is assumed to be predicted by the functional relationship postulated to exist between the measurements; the parameters are then adjusted, by some numerical optimization technique, to \u017d maximize the value of the likelihood function or more usu-. ally, its logarithm . The goal in VLE data reduction is to describe the thermodynamic properties of fluid mixtures in terms of empirical or semiempirical representations of the excess molar Gibbs energy as a function of the composition.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The parameters in such model equations need to be estimated to optimize the agreement between the measured and calculated phase compositions at equilibrium. Application of the ML principle to this parameter-estimation problem can proceed in two ways.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The most common procedure involves determination of the activity coefficients \u2425 , \u2425 from the measured phase compo-1 2 sitions, and fit of these quantities to the composition dependence predicted by the postulated representation of the excess Gibbs energy in the liquid phase. For this purpose, the dependent variables can be set equal to the activity coeffi-\u017d cients themselves Fabries and Renon, 1975; Gmehling et al., . 1977; Van Ness et al., 1978 , the excess molar Gibbs energy E \u017d g rRT s x ln \u2425 q x ln \u2425 Van Ness et al., 1973; Byers et al., 1973; Abbott and Van Ness, 1975 , or ln \u2425 r\u2425 and the 1 2 \u017d . \u017d . pressure p Kemeny et al., 1982 . Kemeny et al. 1982 con-\u00b4\u015bidered a number of other possible choices for the dependent variables. Maximization of the log-likelihood function in this approach is equivalent to weighted nonlinear least-squares \u017d . WNLS . This involves minimization of a quadratic form in \u017d . the residuals Aitken, 1935 , in which the weight given to each possible product of residuals at a particular design point is an element of the reciprocal variance\u1390covariance matrix for the responses. If there is only one response, or if correlations between the responses are neglected, this quadratic form reduces to a weighted sum of squared residuals. The basic problem that arises in all WNLS is that of estimating the variance\u1390covariance matrix. In the absence of replicate measurements, the covariances are estimated by means of an error-propagation formula based on a Taylor-series expansion, application of which to activity-coefficient data was first de-\u017d . scribed by Ulrichson and Stevenson 1972 . WNLS treatments can be classified according to a hierarchy of approximations made in the treatment of the covariances. The most rigorous treatments allow for both heteroscedasticity and correlated responses, and require estimates of the covariance matrix at each design point. Less rigorous treatments assume the covariance matrix to be the same for all data; the sim-\u017d plest approximation the diagonal uniform weighting approxi-. mation assumes that the weighting matrices are all propor-\u017d . tional to the identity matrix. As discussed by Bard 1974 and \u017d . Bates and Watts 1988, Chap. 4 , application of ML theory in situations where the covariances are unknown requires minimization of the determinant of the moment matrix of residu-\u017d . als Box and Draper, 1965 . The alternative approach, which has been adopted much less widely, is to fit the calculated pressure-composition curves directly to the data, without prior calculation of the activity coefficients at each experimental composition. Here, the ML method is equivalent to minimization of a weighted sum of squared residuals for all the data, subject to vectors of functional constraints containing the activity coefficients derived from the excess Gibbs energy model. Such generalized non-\u017d . linear least squares GNLS calculations can be carried out by use of Gauss-Newton algorithms developed by Britt and \u017d . \u017d .\u017d . Luecke 1973 and Jefferys 1980 BLJ for a single vector of \u017d . functional constraints, and by Anderson et al. 1978 for two vectors of constraints. These ''errors-in-variables'' or ''random-regressor'' approaches rely on fewer assumptions concerning the covariances of the variables, but suffer from the disadvantage of being complex and requiring good initial parameter estimates for convergence.",
+                "cite_spans": [
+                    {
+                        "start": 378,
+                        "end": 402,
+                        "text": "Fabries and Renon, 1975;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 403,
+                        "end": 427,
+                        "text": "Gmehling et al., . 1977;",
+                        "ref_id": "BIBREF13"
+                    },
+                    {
+                        "start": 428,
+                        "end": 449,
+                        "text": "Van Ness et al., 1978",
+                        "ref_id": "BIBREF28"
+                    },
+                    {
+                        "start": 514,
+                        "end": 532,
+                        "text": "Ness et al., 1973;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 533,
+                        "end": 541,
+                        "text": "Byers et",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 542,
+                        "end": 552,
+                        "text": "al., 1973;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 553,
+                        "end": 578,
+                        "text": "Abbott and Van Ness, 1975",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 623,
+                        "end": 642,
+                        "text": "Kemeny et al., 1982",
+                        "ref_id": "BIBREF17"
+                    },
+                    {
+                        "start": 643,
+                        "end": 663,
+                        "text": ". Kemeny et al. 1982",
+                        "ref_id": "BIBREF17"
+                    },
+                    {
+                        "start": 931,
+                        "end": 943,
+                        "text": "Aitken, 1935",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1595,
+                        "end": 1623,
+                        "text": "Ulrichson and Stevenson 1972",
+                        "ref_id": "BIBREF26"
+                    },
+                    {
+                        "start": 2166,
+                        "end": 2175,
+                        "text": "Bard 1974",
+                        "ref_id": "BIBREF4"
+                    },
+                    {
+                        "start": 2184,
+                        "end": 2213,
+                        "text": "Bates and Watts 1988, Chap. 4",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 2369,
+                        "end": 2391,
+                        "text": "Box and Draper, 1965 .",
+                        "ref_id": "BIBREF7"
+                    },
+                    {
+                        "start": 3099,
+                        "end": 3119,
+                        "text": "Anderson et al. 1978",
+                        "ref_id": "BIBREF2"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "1 1 1 1 . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "A previous article compared the performance of this GNLS approach to binary VLE data reduction with the multiresponse WNLS fit of activity coefficients and minimization of \u017d the moment-matrix determinant which is equivalent to per-. forming WNLS with unknown weights . The calculations described therein illustrated the important influence of the weighting matrix in WNLS, and drew attention to the lack of a completely satisfactory way of estimating this matrix, particularly at the extremes of the composition ranges, where errors in composition data can be expected to exert a pro-\u017d . nounced effect on extrapolated infinite-dilution activitycoefficient values and the integral test of thermodynamic consistency. The latter conclusion suggested that it might be profitable to determine the statistical distribution of the activity coefficients estimated from VLE data, and to use this distribution to set up an alternative ML treatment of VLEderived activity coefficients that does not make use of a least-squares criterion and is in principle unaffected by the lack of knowledge of the covariances between the responses.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "An overview of the present article is as follows. In the next section, the two fundamental results relating the statistical distribution of the product and quotient of two random variables to their joint probability density are introduced. In the third section of the article these two results are used to derive the sampling distribution of K and \u2425 for a solute in the \u017d Henry's law limit where the activity of the other component . \u138fthe solvent\u138fis negligibly different from unity , and where errors in the pressure can be neglected. In the fourth section, the joint distribution is derived for the K values of both components, and used as the basis for the maximum-likelihood fit of the activity coefficients to a commonly used empirical representation of excess Gibbs energy.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The distribution of the product and quotient of two random variables is a topic that is not usually covered in elementary treatises on statistics, but the specific problem of determining the distribution of the quotient of two normally distributed random variables has been considered by several au-\u017d thors Geary, 1930; Fieller, 1932; Hinkley, 1969; Shanmu-. galingam, 1982 , mainly in connection with problems in biology and agriculture. The best way of deriving the general expressions for these distributions is by determining the appropriate cumulative probability distributions and differentiating them with respect to the variable. Details of this procedure \u017d . are given by Mood et al. 1974, pp. 187\u1390188 . The results can be stated thus: If the joint probability distribution of two ran-",
+                "cite_spans": [
+                    {
+                        "start": 307,
+                        "end": 319,
+                        "text": "Geary, 1930;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 320,
+                        "end": 334,
+                        "text": "Fieller, 1932;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 335,
+                        "end": 349,
+                        "text": "Hinkley, 1969;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 350,
+                        "end": 373,
+                        "text": "Shanmu-. galingam, 1982",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 681,
+                        "end": 710,
+                        "text": "Mood et al. 1974, pp. 187\u1390188",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Product and Quotient of Two Random Variables",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . \u017d dom variables U and V is f u,\u00ae where U, V can assume U V",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Product and Quotient of Two Random Variables",
+                "sec_num": null
+            },
+            {
+                "text": ". all positive and negative values , the probability densities of the product P sUV and quotient QsUrV are",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Product and Quotient of Two Random Variables",
+                "sec_num": null
+            },
+            {
+                "text": "1 p 1 p \u03f1 \u03f1 f p s f u, dus f ,\u00ae d\u00ae 1 \u017d . \u017d . H H P U V U V \u017e / \u017e / < < < < u u \u00ae \u00ae y\u03f1 y\u03f1 and \u03f1 < < f q s u f u,qu du. 2 \u017d . \u017d . \u017d . H Q U V y\u03f1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Product and Quotient of Two Random Variables",
+                "sec_num": null
+            },
+            {
+                "text": "The purpose of this section is to establish the distribution of the quantity",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Henry's Law Limit: Distribution of K Value",
+                "sec_num": null
+            },
+            {
+                "text": "p 0 Y 1 1 K '\u2425 s , 3 \u017d . 1 1 p X 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Henry's Law Limit: Distribution of K Value",
+                "sec_num": null
+            },
+            {
+                "text": "which describes the vapor\u1390liquid partitioning of component 1 of a binary mixture under conditions where vapor-phase nonideality and Poynting corrections can be ignored, and the liquid-phase mole fraction X is small enough that the activity 1 \u017d . of the solvent component 2 is negligibly different from unity. In terms of Eq. 2, this means formally identifying U with Y , 1 V with X , and Q with K , where the former two variables 1 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Henry's Law Limit: Distribution of K Value",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . are independently distributed, with densities g X and h Y",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "1 1 \u00c4\u017d .< 4 defined within the square X ,Y 0 F X F1,0 F Y F1 . This 1 1 1 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "restriction, and the fact that K can be either less than or greater than unity, makes some modifications of Eq. 2 necessary. As shown in Appendix A, the resulting distribution possesses the general form",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "1 \u00b0Xg X h KX dX K F1 \u017d . \u017d . H 0 f K s 4 \u017d . \u017d . K 1 2 1rK Yh Y g Y rK dY K)1. \u017d . \u017d . \u017d .H \u00a2 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "To proceed further, it is necessary to specify the individual distribution functions g and h appearing in the preceding formula. Since the mole fractions contain random measurement errors, it is natural to choose normal distributions for each. But the use of such distributions is, strictly speaking, fundamentally incompatible with the restriction of X and Y to values between 0 and 1. This incompatibility can, however, be removed by introducing a truncated normal distribution, which is of similar analytical form, but normalized to the fiw x \u017d . nite interval 0,1 . For example, assuming that g X possesses a mean X and standard deviation , the truncated",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "0 X normal distribution is 2 . ' y\u017d\u017d XyX .r 2 0 X g X sC e , 5",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "where the normalization constant is given by '",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "EQUATION",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [
+                    {
+                        "start": 0,
+                        "end": 8,
+                        "text": "EQUATION",
+                        "ref_id": "EQREF",
+                        "raw_str": "1 2 . ' y1 y\u017d\u017d XyX .r 2 0 X C s e d X H X 0 ' 2 1y X X X 0 0 s erf qerf , \u017e / \u017e / ' '",
+                        "eq_num": "2"
+                    }
+                ],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "y1 y\u017d\u017d YyY .r 2 0 Y C s e d Y H Y 0 ' 2 1yY Y Y 0 0 s erf qerf , \u017e / \u017e / ' ' 2 2 2 Y Y",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "As shown in Appendix B, the density function can be written in the form",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "1y X 0 2 2 2 f K sC C 2 G A q1,2 A B , B ; \u017d . K X Y X x x x x \u00bd \u017e / ' 2 x X 0 2 2 yG A q1,y2 A B , B ; x x x x 5 \u017e / ' 2 x 1y X 0 2 2 ' q 2 F A q1,2 A B , B ; X x x x x \u00bd \u017e / ' 2 x X 0 2 2 q F A q1,y2 A B , B ; , 7",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . From the perspective of data analysis, the quantities of most interest are the mean and standard deviation of this distribution. The mean is most directly obtained from the integral \u017d . formulas for f K by applying the definition of an expecta-",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "K tion value \u03f1 1 1 \u00b2 : K ' Kf K dK s K X X h KX dX dK \u017d . \u017d . \u017d . H H H K g 0 0 0 \u03f1 1 2 q K 1rK Yh Y g Y rK dY dK 9 \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "H H",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "1 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "or, interchanging the order of integration ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "w x s K y K f K dK. 1 2 \u017d . \u017d . H K K 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "The counterpart of Eq. 4 for the distribution of the quotient \u017d . of two random variables distributed over y\u03f1,\u03f1 is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "\u03f1 < < f K s X g X h KX dX , 1 3 \u017d . \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "H K y\u03f1 and if g and h are normal distributions, the expectation value",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "1 \u03f1 \u03f1 2 . ' y\u017d\u017d XyX .r 2 0 X < < Kf K dK s X e \u017d . H H K 2 0 y\u03f1 X Y \u03f1 2 . ' y\u017d\u017d K XyY .r 2 0 Y = Ke dK dX 14 \u017d . H \u00bd 5 0 is also infinite, since Y Y \u03f1 2 0 Y 0 . ' y\u017d\u017d K XyY .r 2 0 Y e d K s 1qerf H ( 2 \u017e / ' 2 X 2 0 Y 2 2 Y . ' y\u017dY r 2 0 Y q e . 15",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "\u017e /",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "The ratio distribution assumes a particularly simple form when both means are equal to zero, Thus, following Geary",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . 1930 1 \u03f1 2 2 . . ' ' y\u017d Xr 2 y\u017d K Xr 2 X Y < < f K s X e e dX \u017d . H K 2 y\u03f1 X Y 1 X s 16 \u017d . 2 K Y X 1q \u017e / Y",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "which is known as the Cauchy distribution; that the mean and variance of this distribution are undefined can be seen more clearly than in the general case where the means are unequal to zero. The divergence of the mean and standard deviation can be understood as a consequence of the finite probability that X is zero and YrX is not defined. But in many cases of interest, this probability is not significant. Thus, \u017d . although a divergent ''Cauchy component'' of f K is always K present, it becomes vanishingly small if the mean of the X distribution is many standard deviations different from zero. Under these circumstances the lower limit of the integral \u017d . defining f K can be replaced, with negligible error, by a K positive number X , and the distribution becomes",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "L 1 \u03f1 2 2 . . ' ' y\u017d Xr 2 y\u017d K Xr 2 X Y f K f Xe e dX \u017d . H K 2 X X Y L X \u03f1 \u03f1 2 2 2 2 X 0 yu y\u017d A uqB . yu y\u017d A uqB . x x x x s ue duq e d u H H ' 2 X X Y L L Y 17 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "where the required integrals can be expressed in terms of the results",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "1 ax q b \u03f1 2 2 y\u017d au qbuqc. b r4 ayc e d u s e erfc 18 \u017d . H ( \u017e / ' 2 a 2 a",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "x and e y\u017d a x 2 qb xqc.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "\u03f1 2 y\u017d au qbuqc.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "ue dus",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "H 2 a x b ax q b 2 b r4 ayc y e erfc 19 \u017d . ( \u017e / ' 4 a a 2 a",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "Application of the classic error-propagation formula to K gives ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "< < < < w x \u2426 K s K \u2426 X rX q \u2426 Y rY 20 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "UU K 0 sY rX . 1 1 \u2426 X \u2426 Y \u2020 0 0 \u2426 K s K q . X Y",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "from which it can be concluded that the contribution of errors in X to the errors in the partition ratio will become especially significant when the values of X,Y are comparable to their uncertainties \u2426 X,\u2426 Y. It is of interest to examine this conclusion in the light of the previous analysis, with the identifications \u2426 X ' and \u2426 Y ' . For this purpose, use can",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "X Y",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "be made of the classic measurements by Lewis and Storch \u017d . \u017d . 1917 of vapor\u1390liquid equilibrium in the bromine 1 \u1390carbon \u017d . tetrachloride 2 system, for bromine mole fractions that are sufficiently small that Henry's law clearly applies. The original data consisted of partial pressures of bromine above the solutions, but these can be readily converted into vapor-phase mole fractions by dividing by atmospheric pressure. The data are reproduced in Table 1 , together with the ideal values K 0 sY 0 rX 0 and the uncertainties calculated from the errorpropagation formula. The K-dependence of the distribution function can be plotted by generating values of K according to K s \u2423 Y 0 rX 0 , where \u2423 is a dimensionless scale factor that varies between 0 and 2, and Y 0 , X 0 are taken from the first, third, and fifth lines of Table 1 . These plots are shown in Figure 1 , for which s 0.0001 and s 0.0005.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 457,
+                        "end": 458,
+                        "text": "1",
+                        "ref_id": "TABREF3"
+                    },
+                    {
+                        "start": 832,
+                        "end": 833,
+                        "text": "1",
+                        "ref_id": "TABREF3"
+                    },
+                    {
+                        "start": 868,
+                        "end": 869,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "X",
+                "sec_num": null
+            },
+            {
+                "text": "The width at half-height of the first curve is \u2426\u2423 f 0.3, corresponding to \u2426 K s 0.3rK 0 s 0.6. This is more than twice as large as the error estimate given in the last column of Table 1 . It therefore appears that the error-propagation formula produces overly optimistic estimates of errors in K. The curve corresponding to the highest concentration in Table 1 is not easily shown on the same chart: it has a width of about 0.1 with a maximum value of about 20.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 184,
+                        "end": 185,
+                        "text": "1",
+                        "ref_id": "TABREF3"
+                    },
+                    {
+                        "start": 359,
+                        "end": 360,
+                        "text": "1",
+                        "ref_id": "TABREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . As shown by Lewis and Storch 1917 , the dependence of bromine partial pressure on liquid-phase mole fraction is very well represented by a straight-line plot with zero intercept. Although this confirms the validity of Henry's law, random measurement errors in the mole fractions result in slopes \u017d . Henry's law constants varying between 0.47619 and 0.55098. For each pair of data Y 0 , X 0 a distribution curve can be drawn, with a maximum very close to the ideal value Y 0 rX 0 , \u017d . but since these maxima or most probable values are in general different, the best one can hope for is a compromise value that will maximize the joint probability\u138fthe likelihood function\u138ffor the whole data set. Such a compromise is exactly analogous to that implied by the minimization of squared residuals in conventional data reduction: the only difference is that in the present situation, it is not necessary to assume ",
+                "cite_spans": [
+                    {
+                        "start": 16,
+                        "end": 37,
+                        "text": "Lewis and Storch 1917",
+                        "ref_id": "BIBREF18"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": "that the variables are normally distributed. But since, as shown by Figure 1 , the distribution curves become narrower \u017d and taller as X increases or, more precisely, as X r in-0 0 X . creases , the compromise value is biased toward those corresponding to the smallest relative errors in X . This effect is 0 also exactly analogous to weighted least-squares fitting, if the weights are set equal to the reciprocal variances of the data; the difference is that for the normal distributions implied in the least-squares approaches, the width of the distribution curve at each datum can be more simply related to the variance. With these observations in mind, the likelihood function can be formed by calculating the product of f for all K data and an assumed value of K : the result is the curve shown in Figure 2 , with a maximum at 0.53927 , which is closer to 5 the higher-concentration data. The excellent agreement of this ML estimate with the value of 0.539 given by Lewis and \u017d . Storch 1917 provides indirect confirmation that the assignment s 0.0001 and s 0.0005 was reasonable.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 75,
+                        "end": 76,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    },
+                    {
+                        "start": 810,
+                        "end": 811,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": "Extension of the preceding analysis to include the effect of errors in the pressure on the distribution of the solute activity coefficient is possible if the vapor-phase fugacity coefficients and Poynting corrections are neglected. Thus, assuming that K and the scaled pressure p U ' prp 0 are distributed 1 independently with densities given by Eq. 4 and follows by application of the product formula, Eq. 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": "1 \u2425 \u03f1 U U U f \u2425 s f p f dp 22 \u017d . \u017d . \u017d . H \u232b P K U U \u017e / p p 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": "Evaluation of this integral by numerical quadratures is straightforward, since the density function for p U becomes vanishingly small outside a narrow range, and in the limit as U \u2122 0 becomes like a Dirac delta function. The use of a p scaled pressure variable in this equation is appropriate if the Henry's law constant or the vapor pressure of the pure solute is known. This is clearly not the case in the correlation of gas-solubility data, which are used to determine Henry's law constants; there, the Henry's law constant is best included as an adjustable parameter in the activity-coefficient model ap-\u017d plied to the liquid as in the earlier treatment of the Br \u1390CCl 2 4",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": ". system . But a more important problem that arises is that it is no longer reasonable to neglect the fugacity coefficients and Poynting corrections. These quantities give rise to a complicated nonlinear dependence of the activity coefficient on pressure and composition, for which the distribution function cannot be analytically determined.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": "Another problem to which such an approach is applicable is the analysis of isopiestic equilibration experiments, which are an important source of thermodynamic data for concentrated electrolyte solutions. If the molalities of unknown and reference solutions are denoted by m and m , respectively, ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . \u017d . \u017d . H \u233d \u233d r K r r \u017e / 0 r r",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": "The distribution of K is given by equations of very similar form to those described earlier, the most important difference being in the normalization of the molality distribution w . w x \u017d functions to 0,\u03f1 rather than 0,1 which, as observed earlier for the pressure, is unlikely to have any significant practical . effect . Knowledge of the uncertainty in the osmotic coefficient is clearly of importance in the fit of such data to analyt-\u017d . ical expressions such as the Pitzer equations . In isopiestic experiments, the reference osmotic coefficients are generally obtained either by interpolation from tabulated, smoothed values, or preferably by use of an analytical formula. If the latter were arrived at by a least-squares calculation, the calculated values of could be assigned a standard deviation r equal to the standard deviation of the residuals of the fit. The application of the ratio-distribution theory to the analysis of isopiestic data would evidently require not only the characterization of the precision of the experimental molaliw ties for example, along the lines described by Hefter et al.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "X Y",
+                "sec_num": null
+            },
+            {
+                "text": ".x 1998 , but also a careful weighted nonlinear least-squares analysis of the selected reference data. Both these points require specialized considerations that are beyond the scope of the present discussion.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "In this section attention is devoted to the more general situation in which the activities of both components are dif-ferent from unity, and the deviations from ideality are to be characterized in terms of activity coefficients based on a Raoult's law standard state. In this case it is necessary to admit the possibility that the density functions for the distribution ratios of each component might overlap, so that they would no longer be independently distributed. Such a phenomenon is particularly likely at the extremes of the composition range. Thus, from Eq. 20 it is evident that as the mole fraction of the one component tends to unity, the errors in the distribution coefficient of that component will be much smaller than those in the distribution coefficient of the other component. But it is also true from the preceding analysis that the dispersion in the density function for the K-value of the minor component becomes very large, resulting in the possibility of substantial overlap between the two distributions. To examine this possibility in more detail it is therefore desirable to consider the joint distribution function of K '",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "1 \u017d . \u017d . Y rX and K ' 1yY r 1y X . If values of Y and X are 1 1 2 1 1 1 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "each described by truncated normal distributions with respective means and standard deviations X 0 , , and Y 0 , ,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "1 X 1 Y the joint probability distribution is f X ,Y sC e y1r2\u017d\u017d X 1 yX 0 1 .r X . 2 C e y1r2\u017d\u017d Y 1 yY 0 1 .r Y . 2 . 26 \u017d . \u017d . X Y 1 1 X Y",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "The distribution function for the K-values can be derived from the preceding two equations by application of the transformation formula for multivariate distribution functions",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Anderson, 1958, pp. 10\u139011 \u0468 X ,Y \u017d . 1 1 f K , K s f X ,Y . 27 \u017d . \u017d . \u017d . K K 1 2 X Y 1 1 1 2 \u0468 K , K \u017d . 1 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "As shown in Appendix C, the result of applying this formula is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "f K , K \u017d . K K 1 2 1 2 1y K K y1 \u017d .\u017d . \u00b02 1 K , K g S \u017d . 1 2 1 3 K y K \u017d . 1 2 s f X ,Y 28 \u017d . \u017d . X Y 1 1 1y K K y1 \u017d .\u017d . 1 2 K , K g S ,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 2 3 \u00a2 K y K \u017d . 2 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "where X ,Y are to be obtained from the inverse of the trans-1 1 formation, and permissible values of K , K lie in the semiin-",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 \u00c4\u017d .< 4 finite strips S s K , K K G 1,0 F K F 1 , and S s 1 1 2 1 2 2 \u00c4\u017d .< 4 K , K K G1,0 F K F1 . The lack of resemblance be- 1 2 2 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "tween this equation and that derived in the preceding section for a single solute is a bit perplexing, but this disappears when the marginal distributions are calculated. As shown in Appendix D, these are . 350\u1390355 gives very poor results, especially toward the extremes of the concentration range, where small errors in the activity coefficients are greatly magnified by dividing by the mole fractions. For example, at the point with X s 0.00479, 1 g E rRTX X sy9.68, which is vastly different from the other 1 2 values. A more satisfactory estimate of these parameters can be obtained from a simultaneous fit of both activity coefficients to the preceding equations, by minimization of the moment-matrix determinant, which requires the least restrictive assumptions on the form of the covariance matrix. Application of the conjugate-gradient minimization method gives A s 0.9075870, B s 0.2699164 after three iterations and a residual standard deviation of 0.0480, which is a considerable improvement on the 0.1132 obtained with As 0.82725 and Bs 0.12325. The discrepancy between the two estimates also illustrates the importance of using both activity coefficients for parameter estimation, rather than just one.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "2 0 X y X \u017d . 1rmax 1, K 1 1 1 f K sC C exp y \u017d . H K 1 X Y 1 \u017e / ' 2 0 X 2 0 0 0 K X y X q K X yY \u017d . 1 1 1 1 1 1 =exp y X dX 29 \u017d . 1 1 \u017e / ' 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "X y X \u017d . 1rmax K ,1 2 2 2 f K sC C X exp y \u017d . H K 2 X Y 2 2 \u017e / ' 2 0 X 2 0 0 0 K X y X q K X yY \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "The log-likelihood function consists of the logarithm of the joint probability density, evaluated at each pair of data \u017d 0 0 . 0 0 X ,Y with K s\u2425 p rp and K s\u2425 p rp, and summed These numbers are to be compared with the experimental partition ratios, which are",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "K 0 sY 0 rX 0 s 0.980557 1 1 1 K 0 s 1yY 0 r 1y X 0 s1.221787 \u017d . \u017d . 2 1 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "The agreement between these pairs of K-values is apparently quite good\u138fto within about 1%\u138fbut the effect of the discrepancy between them is greatly magnified by the small value of . Thus, the values of X and Y corresponding to these \u017d .\u017d . Proceeding similarly for all the other points and adding the results leads to the value yln Ls 0.8724649Eq08. Conjugate-gradient minimization of yln L can fail if the components of the gradient with respect to the parameters are sufficiently large to give rise to extrapolations far outside the physically reasonable regions of parameter space. This problem can be overcome by limiting the values of the scalar parameter used in the line searches along the conjugate directions. A simpler alternative, which was adopted here, in-\u017d volves dividing yln L by a constant scaling factor. Such scaling is, however, unlikely to succeed if the minimum being sought is poorly defined as a result of excessively imprecise data, the existence of multiple minima, of the presence of . redundant parameters in the model. When the objective \u017d . function was scaled in this way by a factor of 1 Eq09 the conjugate gradient search converged rapidly: from the initial estimate generated by minimization of the determinant crite-\u017d rion, it led in three iterations to the point 0.9347971, . 0.3419962 , at which yln Ls 0.7468119Eq05. Since the determinant criterion is based on the assumption that the errors in the data are described by a bivariate normal distribution with unknown covariance matrix, the discrepancy between the initial and final parameter estimates illustrates the importance of deviations from normality.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 C C s s 0.7214927Eq06 X Y 3 K y K \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "The activity coefficients are shown in Figure 3 , together with the curves fitted by the determinant method and the ML method. The curve fitted by the determinant method passes approximately through the middle of the cluster of experimental points at the lowest values of X , while the ML curve 1 misses nearly all of these points. This seems reasonable; in the determinant method, no attempt is made to limit the influence of the dilute-solution data by assignment of multiplicative weights. A striking consequence of this is the difference in the extrapolated activity coefficients at infinite dilution, particularly for \u2425 : 3.6 as compared with about 3.2. This 2 corresponds to a difference of about 0.3 kJ mol y1 in the estimate of the excess chemical potential of component 2 at infinite dilution. Finally, in the fit of nonlinear models by any method, it is necessary to admit the possibility that multiple local minima could exist in parameter space. This seems to be precluded by the simple analytical form of the function considered here, but is likely to arise with multiparameter functions containing terms that almost vanish for some values of the variables.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 46,
+                        "end": 47,
+                        "text": "3",
+                        "ref_id": "FIGREF5"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Raoult's Law Limit: Joint Distribution of K and K 2 1",
+                "sec_num": null
+            },
+            {
+                "text": "The calculations presented in the preceding section demonstrated that the exact distribution function of the Kvalues can be used as an alternative basis for ML parameter estimation. The purpose of this section is to consider various aspects of the relationship between this new approach and conventional parameter estimation methods.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "In least-squares methods, it can be analytically proved that the contours of the likelihood function for a two-parameter model in the vicinity of the minimum are ellipses, with aspect ratios that can be related to the standard errors in the parameter estimates. In contrast, the analytical form of the likelihood contours in the present method is less easily established, but the curve shown in Figure 2 for the one-dimensional model seems qualitatively consistent with what one would obtain from a least-squares calculation. But considering that the likelihood contour shapes reflect the combined effects of the precision of the data, the number of points, and the sensitivity of the model to the parameter values and the variables, they seem to be of limited value in illustrating the distinction between the present approach and conventional WNLS or GNLS. Of far more practical importance in this regard is the manner in which the influence of the dilutesolution VLE data on parameter estimates is taken into account. When the determinant criterion is used, no differential weighting is applied to the data; in WNLS, deemphasis of the dilute-solution data is achieved through assumed values of the variances of the activity-coefficient data, while in the present approach the same effect is achieved more rigorously by specifying the precision of the individual vapor and liquid compositions. The effects of these distinctions on the extrapolation behavior of the fitted model are quite striking, as illustrated in Figure 3 .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 402,
+                        "end": 403,
+                        "text": "2",
+                        "ref_id": "FIGREF1"
+                    },
+                    {
+                        "start": 1525,
+                        "end": 1526,
+                        "text": "3",
+                        "ref_id": "FIGREF5"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "Since the present approach involves no assumption that the \u017d . errors in the independent variable liquid-phase composition can be neglected, it invites comparison with the GNLS treat-\u017d . ment described by Anderson et al. 1978 , and the multiequation generalization of the BLJ method described in a previous article. Although the present analysis follows a closely similar argument and is founded on statistical assumptions that are essentially equivalent, it cannot be regarded as an errors-in-variables model in sensu stricto, because the mean values used in setting up the log-likelihood function are fixed equal to the experimental data. In this regard it parallels more closely the VLE data-reduction scheme proposed by Kemeny \u017d . et al. 1982 , which is based on the ''effective variance'' approximation. The conversion of the theory presented in this article into an errors-in-variables method for the analysis of ratio data would require the addition of a scheme for updating the regressors at each iteration. It is not immediately obvious how this could be done.",
+                "cite_spans": [
+                    {
+                        "start": 205,
+                        "end": 225,
+                        "text": "Anderson et al. 1978",
+                        "ref_id": "BIBREF2"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "One limitation already identified is the inability to include the effects of errors in pressure on the distribution of activity coefficients, due to the nonlinearities associated with fugacity coefficients and Poynting corrections. These effects are much better treated by direct GNLS analysis of VLE data. Considering that in low-pressure VLE data these effects are often \u017d small and largely cancel each other Smith and Van Ness, . 1987, p. 347 , this limitation is unlikely to be particularly serious in many practical situations. In any event, the ML method should provide good initial parameter estimates for GNLS calculations. The two approaches are therefore best regarded as complementary rather than as mutually exclusive alternatives. Parameter estimation involving the least-squares analysis of activity coefficients has the advantage of being able to reveal systematic trends indicative of incompatibility between the excess Gibbs energy model and the data. The same observation applies a fortiori to the present theory: by eliminating the need for the generally unknown covariance matrix at each point, the amount of useful information that can be extracted from the composition dependence of activity coefficients has been considerably increased \u138fparticularly for data containing appreciable scatter. A particularly important attribute of the present ML method is that it provides a theoretically valid basis for extrapolation of partition ratios to very low concentrations, where methods based on correlation of g E rRTX X can fail badly. The possible application to analysis of gas-solubility data and isopiestic equilibration experiments has already been mentioned. A further practical problem where such extrapolations are of importance is in the vapor\u1390liquid partitioning of electrolytes from aqueous solutions at high temperatures \u017d . Marshall et al., 2000; Palmer et al., 1999a,b . This has been recognized for many years as an important cause of corrosion in the steam cycles of fossil-fuel and nuclear power stations. Traces of electrolyte impurities that are completely dissociated under ambient conditions become strongly associated as \u017d neutral molecules or ion pairs at high temperatures as the . dielectric constant of the water solvent decreases , and therefore susceptible to volatilization. Measurements of such va-por\u1390liquid transfer are inherently difficult, and rely on the determination of extremely small concentrations\u138fmeasurements of the equilibrium partitioning quotients contain considerable scatter. It is usually required to extract from such data an estimate of the inherent volatility of the electrolyte \u017d . in effect, a molal Henry's law constant by adopting a suitable activity-coefficient model for the aqueous phase and extrapolating to infinite dilution. The theory presented here permits such extrapolations to be made much more rigorously than would be possible with the conventional unweighted least-squares techniques that are typically applied to such data.",
+                "cite_spans": [
+                    {
+                        "start": 411,
+                        "end": 452,
+                        "text": "Smith and Van Ness, . 1987, p. 347 , this",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1854,
+                        "end": 1876,
+                        "text": "Marshall et al., 2000;",
+                        "ref_id": "BIBREF19"
+                    },
+                    {
+                        "start": 1877,
+                        "end": 1901,
+                        "text": "Palmer et al., 1999a,b .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "The problem of fitting experimental partition ratio data to theoretical models has been solved by a ML parameter estimation procedure, based on the exact distribution function for the ratio of two random variables described by truncated normal distributions. For the case of a single solute obeying Henry's law, this distribution function can be expressed in terms of error-function integrals. The most important advantage of the proposed procedure in comparison with conventional least-squares fitting procedures is that knowledge of the mean and variance is not required: these are undefined, as is also true for the well-known case of the ratio of two normally distributed random variables. The joint distribution function for the vapor\u1390liquid partition ratios of each component in a binary mixture can be derived by application of the change-of-variable rule for multivariate distribution functions. ML fits of activity coefficients based on this joint distribution function allow experimental uncertainties to be more rigorously taken into account in the estimation of infinite-dilution activity coefficients. Possible applications to the analysis of isopiestic experiments and modeling of VLE in electrolytes at high temperatures have been identified.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "Prob YrX F K s g X h Y dY dX A1 \u017d . \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "X s 0 Y s 0 the region over which the integral is to be evaluated is the \u017d . \u017d . \u017d . triangle with vertices at 0,0 , 1, K , and 1,0 . The corresponding probability density is obtained from this expression as the limit of",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "Prob YrX F K q \u2426 K yProb YrX F K \u017d . \u017d . \u2426 K Prob K F YrX F K q \u2426 K \u017d . s A2 \u017d . \u2426 K as \u2426 K tends to 0. Thus Prob K F YrX F K q \u2426 K \u017d . 1 \u017d . K q \u2426 K X s g X h Y dY dX \u017d . \u017d . H H X s 0 Y s KX 1 f g X h KX X \u2426 K dX A3 \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "H X s 0 which, after substitution into the previous equation, gives the probability density",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "1 f K s Xg X h KX dX A4 \u017d . \u017d . \u017d . \u017d . H K 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "The form of the distribution for K )1 can be obtained from \u017d . the cumulative probability Prob XrY F1rK , which by analogous reasoning is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "1 YrK Prob XrY F1rK s h Y g X dX dY A5 \u017d . \u017d . \u017d . \u017d . H H 0 0 Prob XrY F1r K q \u2426 K \u017d . \u017d . 1 \u017d . Yr K q \u2426 K s h Y g X dX dY A6 \u017d . \u017d . \u017d . H H 0 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "The increment in cumulative probability corresponding to Eq. 6 is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "Prob 1r K q \u2426 K F XrY F K \u017d . \u017d . 1 \u017d . Yr K q \u2426 K s h Y g X dX dY \u017d . \u017d . H H 0 YrK 1 1 1 f h Y g YrK Y y dY \u017d . \u017d . H K q \u2426 K K 0 \u2426 K 1 fy Yh Y g YrK d Y. A7 \u017d . \u017d . \u017d . H 2 K 0",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "Forming the difference quotient and taking the limit as \u2426 K \u21220, the required probability density is found to be",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "d Prob XrY G K d Prob XrY F K \u017d . \u017d . sy dK dK 1 1 s Yh Y g YrK dY A8 \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "When K s1, the two forms are equal, since . . ' '",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "y\u017d\u017d XyX .r 2 y\u017d\u017d K XyY .r 2 0 X 0 Y f K sC C Xe e dX, \u017d . H K X Y 0 B1 \u017d . ' \u017d . apply the substitution us X y X r 2 . This results in 0 X 2 2 \u017d . ' 1y X r 2 yu y\u017d A uqB . 0 X x x ' ' 2 C C 2 uq X e du \u017d . H X Y X X 0 ' X r 2 0 X 2 2 \u017d . ' 1y X r 2 2 yu y\u017d A uqB . 0 X x x sC C 2 ue du H X Y X ' X r 2 0 X 2 2 \u017d . ' 1y X r 2 yu y\u017d A uqB . 0 X x x ' q 2 u e d u B2 \u017d . H X ' X r 2 0 X ' \u017d . where A ' K r and B ' KX yY r 2 . Each inte- x X Y x 0 0 Y",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "gral can be further subdivided:",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "2 2 \u017d . ' 1y X r 2 yu y\u017d A uqB . 0 X x x ue du H ' X r 2 0 X 2 2 \u017d . ' 1y X r 2 yu y\u017d A uqB . 0 X x x s ue du H 0 2 2 ' X r 2 yu y\u017d A uyB . 0 X x x y ue du; B3 \u017d . H 0 2 2 \u017d . ' 1y X r 2 yu y\u017d A uqB . 0 X x x e d u H ' X r 2 0 X 2 2 2 2 \u017d . ' ' 1y X r 2 X r 2 yu y\u017d A uqB . yu y\u017d A uyB . 0 X 0 X x x x x s e d u q d u . H H 0 0 B4 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "The integrals required here are of the form ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "H H",
+                "sec_num": null
+            },
+            {
+                "text": "Application of the transformation formula requires the elements of the appropriate Jacobian matrix. Since",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "\u0468 K K \u0468 K K \u0468 K K 1 1 1 1 2 2 sy s s \u0468 X X \u0468 Y Y \u0468 X 1y X 1 1 1 1 1 1 \u0468 K K 2 2 sy C1 \u017d . \u0468 Y 1yY 1 1 and \u0468 K \u0468 K 1 1 \u0468 X \u0468 Y \u0468 K , K \u017d . 1 1 1 2 s \u0468 K \u0468 K \u0468 X ,Y \u017d . 2 2 1 1 \u0468 X \u0468 Y 1 1 1 1 s K K y , C2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 X 1yY Y 1y X \u017d . \u017d . the Jacobian determinant appearing in Eq. 41 is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "y1 \u0468 K , K \u0468 X ,Y \u017d . \u017d . 1 2 1 1 s \u0468 X ,Y \u0468 K , K \u017d . \u017d . 1 1 1 2 y1 1 1 s K K y . C3",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 \u00bd 5 X 1yY Y 1y X \u017d . \u017d . 1 1 1 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "From the inverse of the transformation, expressed by formulas giving X ,Y in terms of K , K , namely",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "1 1 1 2 1y K 1y K 2 2 X s Y s K , C 4 \u017d . 1 1 1 K y K Ky K 1 2 1 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "it is clear that not all values of K , K will result in physi-1 2 cally acceptable values of X , Y : obviously X cannot be 1 1 1 negative or greater than unity. The nonnegativity condition on X is satisfied either if K -1 and K ) K , or if K )1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 1 2 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "and K ) K . In the first case, the smallest value X s 0 cor- Eqs. C4 into Eq. C3. After simplification",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "y1 1 1 K K y 1 2 \u00bd 5 X 1yY Y 1y X \u017d . \u017d . 1 1 1 1 1y K K y1 \u017d .\u017d . \u00b02 1 K , K g S \u017d . 1 2 1 3 K y K \u017d . 1 2 s C5 \u017d . 1y K K y1 \u017d .\u017d . 1 2 K , K g S .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 2 3 \u00a2 K y K \u017d . 2 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "The required joint distribution function of K and K is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 therefore f K , K \u017d . K K 1 2 1 2 1y K K y1 \u017d .\u017d . \u00b02 1 K , K g S \u017d . 1 2 1 3 K y K \u017d . 1 2 s f X ,Y C6 \u017d . \u017d . X Y 1 1 1y K K y1 \u017d .\u017d . 1 2 K , K g S ,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 2 3 \u00a2 K y K \u017d . 2 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "where X , Y are to be obtained from Eq. C4.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "1 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix C: Application of the Transformation Formula",
+                "sec_num": null
+            },
+            {
+                "text": "The marginal distribution of K is obtained by holding K 1 1 constant and integrating over all permissible values of K . In 2 view of the preceding discussion, this integral possesses two \u017d . \u017d . different forms. For K , K g S that is, K -1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 2 1 1y K K y1 \u03f1 \u017d .\u017d . 1 2 f K s f X ,Y d K \u017d . \u017d . H K 1 X Y 1 1 2 3 1 1 K y K \u017d . 2 1 2 1 1y K \u03f1 2 0 s C exp y y X C H X 1 Y 2 \u017e / K y K 2 1 1 2 X 2 1 1 y K 2 0 exp y K yY 1 1 2 \u017e / K y K 2 1 2 Y 1y K K y1 \u017d .\u017d . 1 2 = dK D1 \u017d . 2 3 K y K \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "2 1 \u017d . \u017d . while for K , K g S that is, K )1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 1 1 1y K K y1 \u017d .\u017d . 1 2 1 f K s f X ,Y d K \u017d . \u017d . H K 1 X Y 1 1 2 3 1 0 K y K \u017d . 1 2 2 1 1y K 1 2 0 s C exp y y X C H X 1 Y 2 \u017e / K y K 2 0 1 2 X 2 1 1 y K 2 0 exp y K yY 1 1 2 \u017e / K y K 2 1 2 Y 1y K K y1 \u017d .\u017d . 2 1 = dK D2 \u017d . 2 3 K y K \u017d . 1 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "Proceeding similarly, the marginal distribution of K is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "2 1y K K y1 \u03f1 \u017d .\u017d . 2 1 f K s f X ,Y d K \u017d . \u017d . H K 2 X Y 1 1 1 3 2 1 K y K \u017d . 1 2 2 1 1y K \u03f1 2 0 s C exp y y X C H X 1 Y 2 \u017e / K y K 2 1 1 2 X 2 1 1 y K 2 0 exp y K yY 1 1 2 \u017e / K y K 2 1 2 Y 1y K K y1 \u017d .\u017d . 2 1 = dK D3",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "1 3 K y K \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 \u017d . \u017d . for K , K g S that is, K -1 , and",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "1 2 1 2 1y K K y1 \u017d .\u017d . 1 1 2 f K s f X ,Y d K \u017d . \u017d . H K 2 X Y 1 1 1 3 2 0 K y K \u017d . 2 1 2 1 1y K 1 2 0 s C exp y y X C H X 1 Y 2 \u017e / K y K 2 0 1 2 X 2 1 1 y K 2 0 exp y K yY 1 1 2 \u017e / K y K 2 1 2 Y 1y K K y1 \u017d .\u017d . 1 2 = dK D4",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "1 3 K y K \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "2 1 \u017d . \u017d . for K , K g S that is, K )1 . These integrals can be 1 2 2 2 transformed as follows, by change of variable. Thus, in Eq. D1, substitute 1y K X 2 1 2 X '1y X s dX sy dK D5",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "2 1 2 2 K y K 1y K 2 1 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix D: Marginal Distribution Functions of K 1 and K 2",
+                "sec_num": null
+            },
+            {
+                "text": "October 2003 Vol. 49, No. 10 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "KX",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [
+            {
+                "text": "Funding for the research was provided by the Division of Chemical Sciences, Geosciences, and Biosciences, Office of Basic Energy Sciences, U.S. Department of Energy under Contract DEAC05-00OR22725, Oak Ridge National Laboratory, managed and operated by UT-Battelle, LLC. I express my sincere thanks to Dr. J. G. Blencoe for many helpful discussions, and to Dr. M. R. Ally for useful suggestions.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Acknowledgments",
+                "sec_num": null
+            },
+            {
+                "text": "The required distribution is derived by considering the \u017d . probability Prob YrX F K , where the subscript indicating component 1 has been suppressed for clarity. Since this is the \u017d . \u017d . same as Prob XrY G1rK s1yProb XrY F1rK , K can be assumed without loss of generality to be less than 1. Then it follows that and observe thatThen, since K s1\u00b4X s 0 and K s\u03f1\u00b4X s1, the inte-\u017d .for K -1. In Eq. D2, the substitution1 2Since K s 0 \u00b4X s1rK and K s1\u00b4X s 0, the integral\u017d .These two results can be combined into one for-X s dX sy dK D12\u017d .\u017d .2 1The extra factor of K in the argument of the second expo-1 nential can be disposed of by noting thatfrom which follows, after simple algebra,\u017d .Since K s1\u00b4X s1 and K s\u03f1\u00b4X s 0, the transformed\u017d .2 1 and since K s 0 \u00b4X s1y1rK and K s1\u00b4X s1, theComparison of Eqs. D11 and D21 shows that the marginal density functions of K and K are not only the same form, 1 2 but are also closely similar in form to the expression derived in Appendix B for the case of a single solute in the Henry's law limit. This is indeed an attractive situation, since it means that the same computer codes can be applied to both the Henry's law and Raoult's law cases.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Appendix A: Derivation of Equation 4",
+                "sec_num": null
+            }
+        ],
+        "bib_entries": {
+            "BIBREF0": {
+                "ref_id": "b0",
+                "title": "Vapor-Liquid Equilibrium: Part III. Data Reduction with Precise Expressions for g E",
+                "authors": [
+                    {
+                        "first": "M",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Abbott",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Van Ness",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "AIChE \u017d . J",
+                "volume": "21",
+                "issue": "",
+                "pages": "65--1975",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Abbott, M. M., and H. C. Van Ness, ''Vapor-Liquid Equilibrium: Part III. Data Reduction with Precise Expressions for g E ,'' AIChE \u017d . J., 21, 65 1975 .",
+                "links": null
+            },
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "On Least Squares and Combinations of Observa-\u017d . tions",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Aitken",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Proc. Roy. Soc. Edinburgh",
+                "volume": "55",
+                "issue": "",
+                "pages": "42--1935",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Aitken, A. C., ''On Least Squares and Combinations of Observa- \u017d . tions,'' Proc. Roy. Soc. Edinburgh, 55, 42 1935 .",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "Evaluation of Parameters for Nonlinear Thermodynamic Models",
+                "authors": [
+                    {
+                        "first": "T",
+                        "middle": [
+                            "F"
+                        ],
+                        "last": "Anderson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "S"
+                        ],
+                        "last": "Abrams",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "E",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Grens",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [
+                            "I"
+                        ],
+                        "last": "",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1978,
+                "venue": "AIChE J",
+                "volume": "24",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Anderson, T. F., D. S. Abrams, and E. A. Grens II, ''Evaluation of Parameters for Nonlinear Thermodynamic Models,'' AIChE J., 24, \u017d . 20 1978 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "An Introduction to Multi\u00aeariate Statistical Analysis",
+                "authors": [
+                    {
+                        "first": "T",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Anderson",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1958,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Anderson, T. W., An Introduction to Multi\u00aeariate Statistical Analysis, \u017d . Wiley, New York 1958 .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "Nonlinear Parameter Estimation",
+                "authors": [
+                    {
+                        "first": "Y",
+                        "middle": [],
+                        "last": "Bard",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1974,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bard, Y., Nonlinear Parameter Estimation, Academic Press, New York \u017d . 1974 .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Etude du Systeme Brome-Tetrachlorure \u00b4`d e Carbon au Moyen de Radiobrome 82",
+                "authors": [
+                    {
+                        "first": "C",
+                        "middle": [],
+                        "last": "Barthel",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Dode",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1954,
+                "venue": "Bull. Soc. Chim. Fr",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Barthel, C., and M. Dode, ''Etude du Systeme Brome-Tetrachlorure \u00b4`d e Carbon au Moyen de Radiobrome 82,'' Bull. Soc. Chim. Fr., \u017d . 1312 1954 .",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "Nonlinear Regression Analysis and its",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Bates",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "G"
+                        ],
+                        "last": "Watts",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1988,
+                "venue": "Applications",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Bates, D. M., and D. G. Watts, Nonlinear Regression Analysis and its \u017d . Applications, Wiley, New York 1988 .",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "The Bayesian Estimation of Common Parameters from Several Responses",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [
+                            "E P"
+                        ],
+                        "last": "Box",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Draper",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1965,
+                "venue": "Biometrika",
+                "volume": "52",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Box, G. E. P., and N. R. Draper, ''The Bayesian Estimation of Com- mon Parameters from Several Responses,'' Biometrika, 52, 355 \u017d . 1965 .",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "The Estimation of Parameters in",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [
+                            "I"
+                        ],
+                        "last": "Britt",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Luecke",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Technometrics",
+                "volume": "15",
+                "issue": "",
+                "pages": "233--1973",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Britt, H. I., and R. H. Luecke, ''The Estimation of Parameters in \u017d . Nonlinear, Implicit Models,'' Technometrics, 15, 233 1973 .",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "Vapor-Liquid Equilibrium: Part II. Correlations from p-x Data for 15 Systems",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Byers",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Gibbs",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Van Ness",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "AIChE \u017d . J",
+                "volume": "19",
+                "issue": "",
+                "pages": "245--1973",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Byers, S. M., R. E. Gibbs, and H. C. Van Ness, ''Vapor-Liquid Equi- librium: Part II. Correlations from p-x Data for 15 Systems,'' AIChE \u017d . J., 19, 245 1973 .",
+                "links": null
+            },
+            "BIBREF10": {
+                "ref_id": "b10",
+                "title": "Methods of Evaluation and Reduction of Vapor-Liquid Equilibrium Data of Binary Mixtures",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Fabries",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [],
+                        "last": "Renon",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "AIChE J",
+                "volume": "21",
+                "issue": "",
+                "pages": "735--1975",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Fabries, J., and H. Renon, ''Methods of Evaluation and Reduction of Vapor-Liquid Equilibrium Data of Binary Mixtures,'' AIChE J., \u017d . 21, 735 1975 .",
+                "links": null
+            },
+            "BIBREF11": {
+                "ref_id": "b11",
+                "title": "The Distribution of the Index in a Normal Bivariate \u017d . Population",
+                "authors": [
+                    {
+                        "first": "E",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Fieller",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Biometrika",
+                "volume": "24",
+                "issue": "",
+                "pages": "428--1932",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Fieller, E. C., ''The Distribution of the Index in a Normal Bivariate \u017d . Population,'' Biometrika, 24, 428 1932 .",
+                "links": null
+            },
+            "BIBREF12": {
+                "ref_id": "b12",
+                "title": "The Frequency Distribution of the Quotient of Two \u017d . Normal Variates",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Geary",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "J. Roy. Stat. Soc",
+                "volume": "93",
+                "issue": "",
+                "pages": "442--1930",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Geary, R. C., ''The Frequency Distribution of the Quotient of Two \u017d . Normal Variates,'' J. Roy. Stat. Soc., 93, 442 1930 .",
+                "links": null
+            },
+            "BIBREF13": {
+                "ref_id": "b13",
+                "title": "Vapor-Liquid Equilibrium Data Collection",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Gmehling",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "U",
+                        "middle": [],
+                        "last": "Onken",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "W",
+                        "middle": [],
+                        "last": "Arlt",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "U",
+                        "middle": [],
+                        "last": "Weidlich",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1977,
+                "venue": "",
+                "volume": "1",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Gmehling, J., U. Onken, W. Arlt, and U. Weidlich, Vapor-Liquid Equilibrium Data Collection, Vol. 1, Part 1, DECHEMA, Frankfurt \u017d . am Main, Germany 1977 .",
+                "links": null
+            },
+            "BIBREF14": {
+                "ref_id": "b14",
+                "title": "Improved Apparatus and Procedures for Isopiestic Measurements at \u017d . Elevated Temperatures",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Hefter",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "May",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Marshall",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Cornish",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "I",
+                        "middle": [],
+                        "last": "Kron",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "Re\u00ae. Sci. Instrum",
+                "volume": "68",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hefter, G., P. M. May, S. L. Marshall, J. Cornish, and I. Kron, ''Im- proved Apparatus and Procedures for Isopiestic Measurements at \u017d . Elevated Temperatures,'' Re\u00ae. Sci. Instrum., 68, 2558 1998 .",
+                "links": null
+            },
+            "BIBREF15": {
+                "ref_id": "b15",
+                "title": "On the Ratio of Two Correlated Normal Random",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "V"
+                        ],
+                        "last": "Hinkley",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Biometrika",
+                "volume": "56",
+                "issue": "3",
+                "pages": "635--1969",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hinkley, D. V., ''On the Ratio of Two Correlated Normal Random \u017d . \u017d . Variables,'' Biometrika, 56 3 , 635 1969 .",
+                "links": null
+            },
+            "BIBREF16": {
+                "ref_id": "b16",
+                "title": "On the Method of Least Squares",
+                "authors": [
+                    {
+                        "first": "W",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Jefferys",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1980,
+                "venue": "Astrophys. J",
+                "volume": "85",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Jefferys, W. H., ''On the Method of Least Squares,'' Astrophys. J., 85, \u017d . 177 1980 .",
+                "links": null
+            },
+            "BIBREF17": {
+                "ref_id": "b17",
+                "title": "Re-\u00b4duction of Thermodynamic Data by Means of the Multiresponse \u017d . Maximum Likelihood Principle",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Kemeny",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Manczinger",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Skjold-J\u00f8rgensen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [],
+                        "last": "Toth",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1982,
+                "venue": "AIChE J",
+                "volume": "28",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Kemeny, S., J. Manczinger, S. Skjold-J\u00f8rgensen, and M. Toth, ''Re- \u00b4duction of Thermodynamic Data by Means of the Multiresponse \u017d . Maximum Likelihood Principle,'' AIChE J., 28, 20 1982 .",
+                "links": null
+            },
+            "BIBREF18": {
+                "ref_id": "b18",
+                "title": "The Potential of the Bromine Electrode; the Free Energy of Dilution of Hydrogen Bromide; the Distribution of Bromine Between Several Phases",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [
+                            "N"
+                        ],
+                        "last": "Lewis",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [],
+                        "last": "Storch",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1917,
+                "venue": "J. Amer. Chem. Soc",
+                "volume": "39",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lewis, G. N., and H. Storch, ''The Potential of the Bromine Elec- trode; the Free Energy of Dilution of Hydrogen Bromide; the Dis- tribution of Bromine Between Several Phases,'' J. Amer. Chem. Soc., \u017d . 39, 2544 1917 .",
+                "links": null
+            },
+            "BIBREF19": {
+                "ref_id": "b19",
+                "title": "Volatility of Aqueous Acetic Acid, Formic Acid, and Sodium Acetate",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Marshall",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Palmer",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Simonson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Joyce",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2000,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Marshall, S. L., D. A. Palmer, J. M. Simonson, and D. B. Joyce, Volatility of Aqueous Acetic Acid, Formic Acid, and Sodium Acetate, EPRI Rep. TR-113089, Electric Power Research Institute, Palo \u017d . Alto, CA 2000 .",
+                "links": null
+            },
+            "BIBREF20": {
+                "ref_id": "b20",
+                "title": "Introduction to the \u017d . Theory of Statistics",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Mood",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Graybill",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Boes",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1974,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Mood, A. M., F. A. Graybill, and D. C. Boes, Introduction to the \u017d . Theory of Statistics, McGraw-Hill, New York 1974 .",
+                "links": null
+            },
+            "BIBREF21": {
+                "ref_id": "b21",
+                "title": "Volatility of Aqueous Sodium Hydroxide, Bisulfate and Sulfate",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Palmer",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Simonson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Carter",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Jensen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Joyce",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Marshall",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1999,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Palmer, D. A., J. M. Simonson, R. W. Carter, J. P. Jensen, D. B. Joyce, and S. L. Marshall, Volatility of Aqueous Sodium Hydroxide, Bisulfate and Sulfate, EPRI Rep. TR-105801, Electric Power Re- \u017d . search Institute, Palo Alto, CA 1999a .",
+                "links": null
+            },
+            "BIBREF22": {
+                "ref_id": "b22",
+                "title": "Vapor-Liquid Partitioning of Sulfuric Acid and Ammonium Sulfate",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Palmer",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Simonson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "W"
+                        ],
+                        "last": "Carter",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Jensen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Marshall",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1999,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Palmer, D. A., J. M. Simonson, R. W. Carter, J. P. Jensen, and S. L. Marshall, Vapor-Liquid Partitioning of Sulfuric Acid and Ammonium Sulfate, EPRI Rep. TR-112359, Electric Power Research Institute, \u017d . Palo Alto, CA 1999b .",
+                "links": null
+            },
+            "BIBREF23": {
+                "ref_id": "b23",
+                "title": "Experimental Methods: Isopiestic",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Rard",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "F"
+                        ],
+                        "last": "Platford",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1991,
+                "venue": "Acti\u00aeity Coefficients in Electrolyte Solutions",
+                "volume": "2",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Rard, J. A., and R. F. Platford, ''Experimental Methods: Isopiestic,'' Acti\u00aeity Coefficients in Electrolyte Solutions, 2nd ed., K. S. Pitzer, \u017d . ed., CRC Press, Boca Raton, FL, p. 209 1991 .",
+                "links": null
+            },
+            "BIBREF24": {
+                "ref_id": "b24",
+                "title": "On the Analysis of the Ratio of Two Corre-\u017d . lated Normal Variables",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Shanmugalingam",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1982,
+                "venue": "Statistician",
+                "volume": "31",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Shanmugalingam, S., ''On the Analysis of the Ratio of Two Corre- \u017d . lated Normal Variables,'' Statistician, 31, 251 1982 .",
+                "links": null
+            },
+            "BIBREF25": {
+                "ref_id": "b25",
+                "title": "Introduction to Chemical Engineer",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Smith",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "H",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Van Ness",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1987,
+                "venue": "Thermodynamics",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Smith, J. M., and H. C. Van Ness, Introduction to Chemical Engineer- \u017d . ing Thermodynamics, 4th ed., Wiley, New York 1987 .",
+                "links": null
+            },
+            "BIBREF26": {
+                "ref_id": "b26",
+                "title": "Effects of Experimental Errors on Thermodynamic Consistency and on Representation of Vapor-Liquid Equilibrium Data",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Ulrichson",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Stevenson",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1972,
+                "venue": "Ind. Eng. Chem. Fundam",
+                "volume": "11",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Ulrichson, D. L., and F. D. Stevenson, ''Effects of Experimental Er- rors on Thermodynamic Consistency and on Representation of Vapor-Liquid Equilibrium Data,'' Ind. Eng. Chem. Fundam., 11, \u017d . 287 1972 .",
+                "links": null
+            },
+            "BIBREF27": {
+                "ref_id": "b27",
+                "title": "Vapor-Liquid Equilibrium: Part I. An Appraisal of Data Reduction Methods",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Van Ness",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Byers",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Gibbs",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "AIChE \u017d . J",
+                "volume": "19",
+                "issue": "",
+                "pages": "238--1973",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Van Ness, H. C., S. M. Byers, and R. E. Gibbs, ''Vapor-Liquid Equi- librium: Part I. An Appraisal of Data Reduction Methods,'' AIChE \u017d . J., 19, 238 1973 .",
+                "links": null
+            },
+            "BIBREF28": {
+                "ref_id": "b28",
+                "title": "Vapor-Liquid Equilibrium: Part V. Data Reduction by Maximum Likelihood",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Van Ness",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "F",
+                        "middle": [],
+                        "last": "Pedersen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [],
+                        "last": "Rasmussen",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1978,
+                "venue": "AIChE J",
+                "volume": "21",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Van Ness, H. C., F. Pedersen, and P. Rasmussen, ''Vapor-Liquid Equilibrium: Part V. Data Reduction by Maximum Likelihood,'' \u017d . AIChE J., 21, 1055 1978 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "text": "Figure 1. Distribution function calculated for X s 0 ( ) ( ) 0.00394, Y curve 1 , 0.003 curve 2 , and 0 ( ) 0.005 curve 3 ; s 0.0002, s 0.0005.",
+                "uris": null,
+                "fig_num": "1",
+                "num": null,
+                "type_str": "figure"
+            },
+            "FIGREF1": {
+                "text": "Figure 2. Log-likelihood function calculated for the data of Table 1, as a function of K.",
+                "uris": null,
+                "fig_num": "2",
+                "num": null,
+                "type_str": "figure"
+            },
+            "FIGREF2": {
+                "text": "application of the isofugacity condition to the common sol-\u017d . vent results in the equationRard and Platford, 1991 , and , are the molal osmotic coefficients and r r ionic dissociation numbers of unknown and reference electrolytes, respectively. This equation can be rewritten as s K 24 \u017d . r \u017d . where K s mr m . Since r is just a constant, the disr r r tribution in the values of the osmotic coefficient can be related to the individual distributions of and K by",
+                "uris": null,
+                "fig_num": null,
+                "num": null,
+                "type_str": "figure"
+            },
+            "FIGREF3": {
+                "text": "calculated K-values are found from the inverse transforma-\u017d . tion to be X s 0.9431001, Y s 0.9303957 see Appendix C , so the arguments of the exponentials are the negative squares of X y X 0 0.9431001y0.These give extremely small numbers upon exponentiation. Finally, since the preexponential factor is 1y K K y1",
+                "uris": null,
+                "fig_num": null,
+                "num": null,
+                "type_str": "figure"
+            },
+            "FIGREF5": {
+                "text": "Figure 3. Fit of activity coefficients from Table 2. Open circles: \u2425 ; filled circles: \u2425 . Curve 1a: determinant fit 1 2 of \u2425 ; curve 1b: determinant fit of \u2425 ; curve 2a: ML fit of \u2425 ; 1 2 1 curve 2b: ML fit of \u2425 .",
+                "uris": null,
+                "fig_num": "3",
+                "num": null,
+                "type_str": "figure"
+            },
+            "FIGREF6": {
+                "text": "2",
+                "uris": null,
+                "fig_num": null,
+                "num": null,
+                "type_str": "figure"
+            },
+            "FIGREF9": {
+                "text": "to K s1, and the largest value X s1 is obtained 2 1when K s 0 and K s1. Proceeding similarly for the other 2 1 case, it therefore follows that permissible values of K , K semiinfinite strips S s K , K K G1,0 F K F1 , determinant in the distribution function can be rewritten entirely in terms of K , K by substitution of 2 1",
+                "uris": null,
+                "fig_num": null,
+                "num": null,
+                "type_str": "figure"
+            },
+            "TABREF3": {
+                "text": "",
+                "num": null,
+                "content": "<table><tr><td>U p rtorr 1</td><td>X</td><td>U 1</td><td>U 1 Y</td><td>K</td><td>UU</td><td>\u2426 K</td><td>\u2020</td></tr><tr><td>1.52</td><td colspan=\"2\">0.00420</td><td>0.00200</td><td colspan=\"2\">0.47619</td><td colspan=\"2\">0.13039</td></tr><tr><td>1.60</td><td colspan=\"2\">0.00420</td><td>0.00211</td><td colspan=\"2\">0.50238</td><td colspan=\"2\">0.13101</td></tr><tr><td>2.39</td><td colspan=\"2\">0.00599</td><td>0.00314</td><td colspan=\"2\">0.52421</td><td colspan=\"2\">0.09222</td></tr><tr><td>4.27</td><td colspan=\"2\">0.01020</td><td>0.00562</td><td colspan=\"2\">0.55098</td><td colspan=\"2\">0.05442</td></tr><tr><td>5.43</td><td colspan=\"2\">0.01300</td><td>0.00714</td><td colspan=\"2\">0.54923</td><td colspan=\"2\">0.04269</td></tr><tr><td>9.57</td><td colspan=\"2\">0.02360</td><td>0.01259</td><td colspan=\"2\">0.53347</td><td colspan=\"2\">0.02345</td></tr><tr><td>9.83</td><td colspan=\"2\">0.02380</td><td>0.01293</td><td colspan=\"2\">0.54328</td><td colspan=\"2\">0.02329</td></tr><tr><td>10.27</td><td colspan=\"2\">0.02500</td><td>0.01351</td><td colspan=\"2\">0.54040</td><td colspan=\"2\">0.02216</td></tr></table>",
+                "type_str": "table",
+                "html": null
+            },
+            "TABREF4": {
+                "text": "",
+                "num": null,
+                "content": "<table><tr><td/><td>U p rtorr</td><td>X</td><td>UU 1</td><td>Y 1</td><td>\u2020</td><td>\u2020  \u2020 \u2425</td><td/><td>\u2425</td><td>\u2021</td></tr><tr><td/><td>69.56</td><td colspan=\"2\">0.9194</td><td colspan=\"2\">0.901524</td><td>1.004529</td><td colspan=\"2\">2.510712</td></tr><tr><td/><td>70.07</td><td colspan=\"2\">0.9120</td><td colspan=\"2\">0.895390</td><td>1.013164</td><td colspan=\"2\">2.460722</td></tr><tr><td/><td>70.86</td><td colspan=\"2\">0.8567</td><td colspan=\"2\">0.856054</td><td>1.042807</td><td colspan=\"2\">2.102787</td></tr><tr><td/><td>71.18</td><td colspan=\"2\">0.8523</td><td colspan=\"2\">0.850660</td><td>1.046290</td><td colspan=\"2\">2.126151</td></tr><tr><td/><td>67.94</td><td colspan=\"2\">0.6628</td><td colspan=\"2\">0.752281</td><td>1.135674</td><td colspan=\"2\">1.474477</td></tr><tr><td/><td>63.11</td><td colspan=\"2\">0.4938</td><td colspan=\"2\">0.678815</td><td>1.277699</td><td colspan=\"2\">1.182968</td></tr><tr><td/><td>64.19</td><td colspan=\"2\">0.4900</td><td colspan=\"2\">0.680324</td><td>1.312554</td><td colspan=\"2\">1.188635</td></tr><tr><td/><td>60.95</td><td colspan=\"2\">0.3859</td><td colspan=\"2\">0.600984</td><td>1.397952</td><td colspan=\"2\">1.169946</td></tr><tr><td/><td>60.70</td><td colspan=\"2\">0.3822</td><td colspan=\"2\">0.601318</td><td>1.406476</td><td colspan=\"2\">1.157201</td></tr><tr><td/><td>53.84</td><td colspan=\"2\">0.2482</td><td colspan=\"2\">0.501486</td><td>1.602110</td><td colspan=\"2\">1.054682</td></tr><tr><td/><td>54.18</td><td colspan=\"2\">0.2453</td><td colspan=\"2\">0.497970</td><td>1.619849</td><td colspan=\"2\">1.064721</td></tr><tr><td/><td>45.13</td><td colspan=\"2\">0.1178</td><td colspan=\"2\">0.318192</td><td>1.795310</td><td colspan=\"2\">1.030390</td></tr><tr><td/><td>39.55</td><td colspan=\"2\">0.0545</td><td colspan=\"2\">0.180531</td><td>1.929443</td><td colspan=\"2\">1.012649</td></tr><tr><td/><td>37.71</td><td colspan=\"2\">0.0479</td><td colspan=\"2\">0.168656</td><td>1.955473</td><td colspan=\"2\">0.972739</td></tr><tr><td/><td>36.24</td><td colspan=\"2\">0.0220</td><td colspan=\"2\">0.078918</td><td>1.914580</td><td colspan=\"2\">1.008298</td></tr><tr><td/><td>34.41</td><td colspan=\"2\">0.00957</td><td colspan=\"2\">0.036617</td><td>1.939049</td><td colspan=\"2\">0.988783</td></tr><tr><td/><td>32.66</td><td colspan=\"2\">0.00479</td><td colspan=\"2\">0.017915</td><td>1.798666</td><td colspan=\"2\">0.951975</td></tr><tr><td/><td>34.02</td><td colspan=\"2\">0.001582</td><td colspan=\"2\">0.005879</td><td>1.861889</td><td colspan=\"2\">1.000697</td></tr><tr><td/><td>33.97</td><td colspan=\"2\">0.000936</td><td colspan=\"2\">0.003533</td><td>1.888146</td><td colspan=\"2\">1.000937</td></tr><tr><td/><td>33.89</td><td colspan=\"2\">0.000762</td><td colspan=\"2\">0.002773</td><td>1.816783</td><td colspan=\"2\">0.999284</td></tr><tr><td/><td>33.89</td><td colspan=\"2\">0.000762</td><td colspan=\"2\">0.002773</td><td>1.816783</td><td colspan=\"2\">0.999284</td></tr><tr><td>U</td><td colspan=\"8\">\u017d Sum of partial pressures measured by Barthel and Dode 1954 . . \u00daU</td></tr><tr><td/><td colspan=\"8\">\u017d Liquid-phase mole fraction measured by Barthel and Dode 1954 . .  \u2020Vapor-phase</td></tr><tr><td/><td/><td colspan=\"6\">mole fractions calculated from partial pressures.</td></tr><tr><td colspan=\"7\">\u2020 \u2020 Activity coefficient \u2425 s Y pr X p , p s 67.9 torr. \u017d 0 . 0 1 1 1 1 1  \u2021 \u017d 0 . 0 Activity coefficient \u2425 s Y pr X p , p s 33.85 torr. 2 2 2 2 2</td><td/></tr><tr><td colspan=\"2\">and</td><td/><td/><td/><td/><td/><td/></tr><tr><td/><td/><td/><td/><td/><td/><td/><td>0</td><td>2</td></tr></table>",
+                "type_str": "table",
+                "html": null
+            }
+        }
+    }
+}

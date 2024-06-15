@@ -1,0 +1,1543 @@
+{
+    "paper_id": "tmpuyez4feqaic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:07:47.898809Z"
+    },
+    "title": "Testing the Relative Importance of Mass and Heat Resistances in Solid Catalysts",
+    "authors": [
+        {
+            "first": "Roman",
+            "middle": [],
+            "last": "Petrus",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Rzeszow University of Technology",
+                "location": {
+                    "addrLine": "al. Powstancow Warszawy \u00b4\u00b46",
+                    "postCode": "35-959",
+                    "settlement": "Rzeszow",
+                    "country": "Poland"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "Miros\u0142aw",
+            "middle": [],
+            "last": "Szukiewicz",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Rzeszow University of Technology",
+                "location": {
+                    "addrLine": "al. Powstancow Warszawy \u00b4\u00b46",
+                    "postCode": "35-959",
+                    "settlement": "Rzeszow",
+                    "country": "Poland"
+                }
+            },
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "for isothermal conditions andror absence of diffusion resistances in catalytic reaction were deri\u00aeed using approximate profiles of reagents concentration and temperature for the important reaction Aq B\u2122 R and for a power-law type of the\nkinetic equation, which are quite often applied in practice. The method can be easily adapted to another type of kinetic rate equation andror more complicated reaction schemes. The de\u00aeeloped criteria were applied to some data from the literature with good result.",
+    "pdf_parse": {
+        "paper_id": "tmpuyez4feqaic",
+        "_pdf_hash": "",
+        "abstract": [
+            {
+                "text": "for isothermal conditions andror absence of diffusion resistances in catalytic reaction were deri\u00aeed using approximate profiles of reagents concentration and temperature for the important reaction Aq B\u2122 R and for a power-law type of the",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            },
+            {
+                "text": "kinetic equation, which are quite often applied in practice. The method can be easily adapted to another type of kinetic rate equation andror more complicated reaction schemes. The de\u00aeeloped criteria were applied to some data from the literature with good result.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Abstract",
+                "sec_num": null
+            }
+        ],
+        "body_text": [
+            {
+                "text": "Is external diffusion limiting? Does temperature gradient in a catalyst pellet play a major role? Is internal diffusion important? In many instances it is of interest to obtain quick estimates to these questions. It could widen researcher experience on a process and could make designing easier, and also modeling and simulating, which are more and more commonly applied and useful methods of process analysis. It should be pointed out that answers to the questions can help to build correct mathematical models of catalytic processes that are highly nonlinear and coupled. The lack of mass-or heat-transport resistances or, especially, isothermal conditions result in a substantially simplified model equation set and a method of solution.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "The literature on chemical reactor engineering includes a number of diagnostic criteria. Major reviews on this topic are \u017d . given by Froment and Bischoff 1979 and Doraiswamy and \u017d . Sharma 1984 . In addition, an interesting criterion on the importance of temperature and concentration gradients in \u017d . catalyst pellets was given by Dogu and Dogu 1984 . These are the criteria that still are the most often applied in practice. Some of the criteria from among those just listed will be discussed in detail in the following. Unfortunately, these criteria concern only the single-component reactions, which considerably lessens their usefulness in practice.",
+                "cite_spans": [
+                    {
+                        "start": 333,
+                        "end": 351,
+                        "text": "Dogu and Dogu 1984",
+                        "ref_id": "BIBREF3"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . Dogu 1985 had developed a criteria for multicomponent reactions. He relied on parabolic concentration profiles and Correspondence concerning this article should be addressed to R. Petrus. a hyperbolic-type temperature profile inside a pellet. The intrinsic reaction rate was expanded into a Taylor series. In this article, a number of criteria are developed with the intention of presenting a simple and general method of detecting interphase transport intrusions and intraparticle temperature and concentration gradients for the pellet. The relationships were derived using the parabolic concentration profiles \u017d . w and temperature profiles by Petrus 1988a,b a parabolic \u017d .x temperature profile was first used by Anderson 1963 and a modified power series expansion of effectiveness factor terms. The changes result in simplified algebra with no loss of accuracy. The method applied is explained using an important example, quite often used in practice reaction Aq B\u2122 A B R, and for a power-law type of the kinetic equation. The R method can be easily adapted to another type of kinetic rate equations andror more complicated reaction schemes.",
+                "cite_spans": [
+                    {
+                        "start": 184,
+                        "end": 191,
+                        "text": "Petrus.",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 720,
+                        "end": 733,
+                        "text": "Anderson 1963",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Introduction",
+                "sec_num": null
+            },
+            {
+                "text": "Consider a case where the active material is supported on \u017d nonactive core it is often seen in practice, such as this type of catalyst is commonly used in selective hydrogenation of . acetylene\u138fa very important commercial process . The steady-state mass and heat balances for the two-component single nonisothermal reaction",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "Aq B\u2122 R 1 \u017d . A B R",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "can be expressed in dimensionless form as follows",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "1 d dc i i a 2 D x y \u233d R s 0, is A, B 2 \u017d . i \u017d c , . a i \u017e / x dx dx A 1 d d a 2 x q \u2424 \u233d R s 0 3 \u017d . 0 \u017d c , . a i \u017e /",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "x dx dx with boundary conditions",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "dc d i s 0 s 0 at x s 0 4 \u017d . dx dx dc K d i i U U s Sh E y c s Nu 1y at x s1 5 \u017d . \u017d . \u017d . i i, s s dx D dx i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "where R is the kinetic expression, and is equal to 0 for \u017dc , .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "i the nonactive core. The subscript i denotes a component of a",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . reaction is A, B . Parameters D , K , E are equal to 1 A A A",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "and will be omitted in the following.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "The dimensionless radius of the pellet is defined as follows",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "r y R nc x s 6 \u017d . R y R 0 nc",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "where R denotes the radius of the nonactive core of the nc pellet.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "Note that: \u2177 The model includes the case of the fully active pellet; then R s 0; i boundary conditions can be omitted. This rule will be applied in the following, as well.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "Solving the model equations gives the reaction components andror temperature profiles. Unfortunately it is a rather hard problem to solve, although the key-component concept and the Prater relationship, which relates the temperature and concentration profiles, can make the task easier. However, the aim of this work can be achieved without finding an exact solution, by assuming parabolic profiles of reagents andror temperature. But this simple assumption is complicated due to internal diffusion. It is common knowledge that for small and medium internal diffusion resistance, reagent concentrations, and in consequence reaction rate in an active part of a \u017d . catalyst pellet, are positive cf. curve 1 in Figure 1 . Thus, the \u017d reaction zone that is, the area for which a reaction rate is . significant is equal to the active part of the catalyst pellet. As diffusional resistances grow, the reagent concentration in \u017d the active part drops cf. curve 2, for which the concentration . drops to null at r s R , and finally the reaction zone narnc \u017d rows cf. in curve 3, the resistance is significant, and R repc . resents the position of the hypothetical reaction interface .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 716,
+                        "end": 717,
+                        "text": "1",
+                        "ref_id": "FIGREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "It is easy to see in Figure 1 that the parabolic approximation of the concentration profile in the whole active part of the pellet is correct only for curves 1 and 2; that is, for small and medium internal diffusion resistance. Otherwise the parabolic approximation should concern only the reaction zone. Note, that curves 2 and 3 differ from each other in principle by the location of the border of the reaction zone. It follows that the narrower reaction zone can be taken into consideration relatively easily by substituting the radius of the nonactive core, R , by the hypothetical reaction interface, nc R , in the model. Thus, coordinate x should be substituted",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 28,
+                        "end": 29,
+                        "text": "1",
+                        "ref_id": "FIGREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "c by r y R c s 7 \u017d . R y R 0 c",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "At first the region of the small internal diffusion resistance will be considered. Parabolic concentrations and temperature profiles are given by c x s c q a 1y x 2 8 \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "A A s c A c x s c q a 1y x 2 9 \u017d . \u017d . \u017d . B B s c B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "x s q a 1y x 2 10 \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "s",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "The unknown parameters a , a , and a can be found by c A cB \u017d . using boundary conditions Eq. 5",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "Sh U 1y c \u017d . As a sy U 11 \u017d . c A 2 K i U Sh E y c \u017d . B B s D i a sy U 12 \u017d . cB 2 Nu U 1y",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "On the other hand, the mass and heat fluxes at steady state can be expressed as . 8, 11, 15; 9, 12, 16; and 10, 13, 17 , respectively, the concentration and temperature profiles are expressed by",
+                "cite_spans": [
+                    {
+                        "start": 80,
+                        "end": 118,
+                        "text": ". 8, 11, 15; 9, 12, 16; and 10, 13, 17",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "\u233f s aq1 Sh U 1y c 15 \u017d . \u017d . \u017d . 0 A A s K B i U \u233f s aq1 Sh E y c 16 \u017d . \u017d . \u017d . 0 A B B s D A i \u233f \u2424 s aq1 Nu U y1 1 7 \u017d . \u017d . \u017d . 0 A 0 s Combining Eqs",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "\u233f 1 1 0 A 2 c x s1y q U 1y x 18 \u017d . \u017d . \u017d . A U aq1 Sh 2 \u233f 1 1 B 0 A 2 c x s E y q U 1y x 19 \u017d . \u017d . \u017d . B B U aq1 Sh K 2 D \u017d . A B B \u233f 1 1 0 A 2 x s1q \u2424 q U 1y x 20 \u017d . \u017d . \u017d . 0 U aq1 Nu 2",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "The profiles are valid if the reaction zone is the same as the active zone of the pellet. Curve 2 in Figure 1 represents an extreme case for the concentration profiles, which means that either the concentration of component A or the concentration of component B is equal to 0 for x s 0. This observation can help to evaluate the region of validity of Eqs. 18\u139020, namely, they are valid if",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 108,
+                        "end": 109,
+                        "text": "1",
+                        "ref_id": "FIGREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "2 aq1 2 aq1 Sh U K D E \u017d . \u017d . A B BB \u233f -\u233f s min , 0 A 0 A ,crit U U \u017e / 2q Sh U 2 D q Sh K U \u017d . B B B 21 \u017d . By analogy, if \u233f G \u233f , then 0 A 0 A,crit \u233f 1 1 0 A 2 c s1y q V 1y 22 \u017d . \u017d . \u017d . A U aq1 Sh 2 \u233f 1 1 B 0 A 2 c s E y q V 1y 23 \u017d . \u017d . \u017d . B B U aq1 Sh K 2 D \u017d . A B B \u233f 1 1 0 A 2 s1q \u2424 q V 1y 24 \u017d . \u017d . \u017d . 0 U aq1 Nu 2 where R 2 aq1 2 2 aq1 E D \u017d . \u017d . c A B B V s1y smin y , U \u017e R \u233f Sh \u233f 0 0 A B 0 A 2 D B y 25 \u017d . U / Sh K B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "Equation 25 results from the observation that either the concentration of component A or the concentration of compo-\u017d . nent B is equal to 0 for s 0 cf. curve 3 in Figure 1 .",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 171,
+                        "end": 172,
+                        "text": "1",
+                        "ref_id": "FIGREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "And finally two additional notes. The value of the Weisz modulus is restricted by physical considerations so that in this extreme case, V approaches 0, which leads to the following equation",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "A U U \u233f -\u233f s min aq1 Sh , aq1 Sh K E \u017d . \u017d . 0 A 0 A ,bound B B \u017e / B 26 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "Note that the use of Eqs. 18\u139020 is sufficient to achieve the aim of the work. The only exception concerns heat-transfer resistances and will be presented later.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "The way to obtain the profiles as well as to calculate the reaction zone depth, V, and limiting values \u233f and",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "0 A,crit \u017d . \u233f is described in more detail by Petrus 1988a,b . 0 A.bound",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "Next we present an evaluation of the importance of temperature or concentration gradients based on the effecti\u00aeeness factor, a very important particle parameter. It is common knowledge that an overall effectiveness factor i s s \u017d . while the second the well-known local effectiveness factor is a reflection of intraparticle temperature and concentrations gradients, and is expressed as",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "1 a s aq1 x R dx 27 \u017d . \u017d . H 0 \u017d c , .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "1 a aq1 x R dx \u017d . H \u017dc , . i 0 s 30 \u017d . R c , . i s s",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "And so, in order to derive the criteria we assume that the influence of the overall transport limitation can be neglected if maximal deviation of does not exceed 5%. Similarly, the 0 influence of external transport resistances or internal temperature and concentration gradients can also be ignored if the maximal deviation of or , respectively, does not exe x ceed 5%. This approach is in many instances sufficiently exact and permits the criteria obtained to be shown as closed mathematical formulas.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "To derive the criteria for reactions frequently found in in-\u017d . dustrial practice Eq. 1 with power-law kinetics, we can write",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "n1 n2 c c 1 A B R s exp \u2425 1y 31 \u017d . \u017dc , . 0 n2 i \u017e / E B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "Since both concentrations and temperature profiles are determined, all that is left to be shown is a way to derive the criteria and mathematical manipulations.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Theory",
+                "sec_num": null
+            },
+            {
+                "text": "In the first instance, considering the most general case, the simultaneous intrusion of both external resistances, it is enough to take the parameter into account, that is, its e x value should be found in the range 0.95--1.05 32",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "External mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "External mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "e x Substituting Eq. 29 into Eq. 32 and combining with Eq. 31 leads to",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "External mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "n1 n2 c c 1 As Bs 0.95- exp \u2425 1y -1.05 33 \u017d . 0 n2 \u017e / E s B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "External mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "where c , c , and can be obtained by substituting x s1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "External mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "As Bs s into Eqs. 18\u139020. By combining the resulting equation with Eq. 33, the following inequality can be obtained",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "External mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "n2 n1 \u233f \u233f 0 A B 0 A 0.95-1y 1y U U \u017e / \u017e / aq1 Sh aq1 K E Sh \u017d . \u017d . A B B 1 =exp \u2425 1y -1.05 34 \u017d . 0 \u233f 0 A 0 1q \u2424 0 U aq1 Nu \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "External mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "The preceding relationship is rather complicated. A powerseries expansion of concentrations and temperature terms \u017d . with truncating nonlinear terms allows us to simplify it to the inequality",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "External mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "\u233f \u233f 0 A B 0 A 0.05 aq1 ) n1q n2 1 y n1 \u017d . U U \u017e / Sh K E aq1 Sh \u017d . A B B \u233f \u2425\u2424 \u233f 0 A 0 0 A U y \u0612 Sh y U U \u00bd aq1 Sh Nu 3 \u017d . \u233f B 0 A = n1q n2 1 y n1 U 5 \u017e / K E aq1 Sh \u017d . A B B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "External mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "35",
+                "sec_num": null
+            },
+            {
+                "text": "In this inequality, the first term gives information on the diffusion limitations, and the second term gives information on \u017d the heat effects. If heat-transfer resistance is negligible such . as for isothermal processes , Eq. 35 can be simplified by substitution of Nu U \u2122\u03f1. This leads to",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "35",
+                "sec_num": null
+            },
+            {
+                "text": "\u233f \u233f 0 A B 0 A 0.05 aq1 ) n1q n2 1 y n1 \u017d . U U \u017e / Sh K E aq1 Sh \u017d . A B B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "35",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "36",
+                "sec_num": null
+            },
+            {
+                "text": "Similarly if the external mass-transfer resistance is negligible \u017d U . Sh approaches infinity , then to examine heat resistance it is enough to check the simple inequality",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "36",
+                "sec_num": null
+            },
+            {
+                "text": "\u2425\u2424 \u233f 0 0A 0.05 aq1 ) 37 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "36",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "36",
+                "sec_num": null
+            },
+            {
+                "text": "Equations 36 and 37 also can be derived on the basis of Eq. 33 by neglecting the terms concerning concentration or heat dependence, respectively.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Nu",
+                "sec_num": null
+            },
+            {
+                "text": "Equations concerning internal mass-and heat-transfer resistances can be derived in the same way as was described in the preceding subsections. The only difference is the use of the following equation 0.95--1.05 38 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Internal mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "instead of Eq. 32. So substituting Eq. 30 into Eq. 38 and combining with the equations that describe the concentration and temperature \u017d profiles, linearization by expanding a result into a power se-. ries and truncating nonlinear terms and then integrating leads to the following inequality",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Internal mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "B 0.05 aq1 aq3 ) \u233f n1q n2 y\u2425 \u2424 \u017d .\u017d . 0 A 0 0 \u00bd E D A B B \u233f 2 0 A B y n1 \u0612 n2 aq1 aq5 E D \u017d . A B B 2 n1 2 n2 B y\u2425 \u2424 = q 0 0 \u017e aq5 aq5 E D \u017d . \u017d . A B B 3\u233f n1 0 A = 1y 39 \u017d . 5 \u017e // aq1 aq7 \u017d .\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Internal mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "If the preceding inequality is true, then both concentration and temperature gradients inside the pellet are neglected. Similarly, as in the preceding point, a criterion concerning only internal mass-transfer resistances if heat-transfer resistance is negligible can be derived. The following equation presents it",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Internal mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "B 0.05 aq1 aq3 ) \u233f n1q n2 \u017d .\u017d . 0 A E D A B B = 2\u233f 0 A 1y n1 4 0 \u017d . \u017e / aq1 aq5 \u017d .\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Internal mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "Finally a criterion on the lack of an internal temperature \u017d . gradient if concentration gradients can be omitted derived in the proposed way is given by",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Internal mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "< < 0.05 aq1 aq3 ) \u2425 \u2424 \u233f 41 \u017d .\u017d . \u017d . 0 0 0A",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Internal mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "Using the following equation 0.95--1.05 42 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "O\u00a9erall mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "0 and following the reasoning in the same way as described earlier, one can obtain three expressions. First, all resistances can be neglected if the following inequality is true aq3 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "O\u00a9erall mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "0.05 aq1 aq3 ) \u233f n1 q1 \u017d .\u017d . 0 A U \u017e / Sh n2 aq3 1 \u017d . B q q U \u017e / E K Sh D A B B B aq3 \u233f \u017d . 0 A y\u2425 \u232a q1 y 0 0 U \u017e / Nu aq1 \u017d . n1 \u0612 n2 1 1 B = q U U \u00bd \u017e E K Sh Nu A B B 2 1 1 q y \u2425 \u2424 n1 q 0 0 U U \u017e / aq5 D S h N u \u017d . B 2 n2 1 2 B q q q U / \u017e / aq5 E D Nu aq5 \u017d . \u017d . A B B 2\u233f 0 A y n1 \u0612 n2 aq1 aq5 D E \u017d .\u017d . B B 1 1 3 = q q 43 \u017d . U U 5 \u017e / Nu Sh aq7",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "O\u00a9erall mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "O\u00a9erall mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d Next, the mass-transfer resistances can be omitted if the . heat-transfer resistances are negligible if aq3 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "O\u00a9erall mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "0.05 aq1 aq3 ) \u233f n1 1q \u017d .\u017d . 0 A U \u017e / \u00bd Sh aq3 1 \u017d . B q n2 q U E K Sh D A B B B \u233f aq3 1 \u017d . 0 A y n1 q U U 2 \u017e 3 K Sh K Sh B B 1 2 q q 44 \u017d . U 5 / D Sh aq5 D \u017d . B B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "O\u00a9erall mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d Finally, the heat-transfer resistances can be omitted if the . mass-transfer resistances are negligible if aq3 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "O\u00a9erall mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "0.05 aq1 aq3 ) \u2425 \u2424 \u233f 1q 45 \u017d .\u017d . \u017d . 0 0 0A U \u017e /",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "O\u00a9erall mass-and heat-transfer resistances",
+                "sec_num": null
+            },
+            {
+                "text": "But a more detailed analysis leads to the conclusion that the pellet can be isothermal apart from the mentioned case if the internal heat-transfer resistance is neglected instead of the external one and the reaction zone is narrow; that is, the w value of parameter V is close to 0 this problem was consid-\u017d . x ered in earlier works by Petrus 1988a,b . In this case, the following inequality should be considered",
+                "cite_spans": [
+                    {
+                        "start": 337,
+                        "end": 353,
+                        "text": "Petrus 1988a,b .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Nu",
+                "sec_num": null
+            },
+            {
+                "text": "< < 0.05) \u2425 1y 0 4 6 \u017d . \u017d . \u017d . 0 s",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Nu",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d . where and 0 can be obtained by substituting s1 or s s 0 respectively, into Eq. 24. By the substitution of and s \u017d . 0 into Eq. 46 and using Eq. 25, the following inequalities can be obtained ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Nu",
+                "sec_num": null
+            },
+            {
+                "text": "\u233f 0 A \u2425 \u2424 1y 0 0 U \u017e / aq1 Sh \u017d . 0.05) 47 \u017d . U 2 Sh 1q \u2424 0 U \u017e / Nu or E D \u233f D A B B 0 A B \u2425 \u2424 y 0 0 U \u017e / aq1 Sh K \u017d . B B 0.05) 48 \u017d . 2 U E K Sh A B B 1q \u2424 0 U \u017e / Nu B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Nu",
+                "sec_num": null
+            },
+            {
+                "text": "The criteria were derived using the approximate temperature and concentration profiles. The choice of the profile type has an immediate impact on the accuracy and simplicity of the criteria. The chosen profiles should satisfy the basic relationships for a catalyst pellet, for example, the Prater relationship. If necessary, the accuracy can be improved at the expense of the simplicity of the outcome by considering \u017d . high-order terms of the series expansion see Eqs. 53 and 54 .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "In the previous section many criteria were derived for the diffusion-reaction process in a catalyst particle. Experimental data published in the literature do not allow all of the criteria to be tested. For this reason only some of them are verified and discussed here. Moreover, the criteria derived in this article involve only two-component reactions, and this limitation makes a comparison with criteria available in the literature difficult. However, the criteria can be easily adapted to one-component reactions by the simple substitution of n2 s 0 \u017d and s 0 with the single exception of Eq. 48, which con-B . cerns only two-component reactions . It allows us to both compare developed criteria with published ones and to prove their correctness. All cited criteria will be expressed using the notation of this work.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "At first, inequalities 36, 37, and 40, are considered. For a one-component reaction and for a spherical particle, they can be expressed as \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "\u233f 0 A 0.15) n1 4 9 \u017d . U Sh \u233f 0 A 0.15) \u2424 \u2425 50 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "0 A 0 A \u017e / n1 21 2 n1y1 \u2425 \u2424 \u2425 \u2424 1 0 0 0 0 3 = y q 2 y q n1\u233f \u017d . 0 A \u017e / n1 n1 n1 567 2 n1y1 n1y2 n1y1 \u2425 \u2424 \u2425 \u2424 \u017d .\u017d . 0 0 0 0 = y3 q3 2 \u017e / n1 n1 n1 n1 3 \u2425 \u2424 1 0 0 4 y q n1\u233f \u017d . 0 A \u017e / n1 18,711 n1y1 n1y2 n1y3 n1y1 n1y2 \u2425 \u2424 \u017d .\u017d .\u017d . \u017d .\u017d . 0 0 = y q 4 3 2 n1 n1 n1 2 3 4 n1y1 \u2425 \u2424 \u2425 \u2424 \u2425 \u2424 0 0 0 0 0 0 y6 q4 y 54 \u017d . \u017e / \u017e / \u017e / n1 n1 n1 n1 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "Based on the results given by Maymo and Smith 1966 , inequalities 52\u139054 can be compared. Table 1 presents the comparison.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 95,
+                        "end": 96,
+                        "text": "1",
+                        "ref_id": "TABREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "In agreement with the earlier assumption, the lack of resistances is indicated by the value of the effectiveness factor\u138fif \u017d . its value is included in the range 0.95, 1.05 , then resistances can be neglected. Inequality 52 is true only for run 8-7, and a measured value of the effectiveness factor s 0.96 confirms it. In the remaining circumstances, inequality 52 indicates that the resistances cannot be neglected. In contrast to inequality ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": "( ) U",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion",
+                "sec_num": null
+            },
+            {
+                "text": ". 52, inequality 53, given by Dogu and Dogu 1984 , indicates \u017d the lack of resistances for as far as four runs 8-4, 8-7, 11-2, . \u017d 10-2 . If the error for runs 8-4 and 11-2 is not big effective-. ness factor values are close to an extreme value of 0.95 , then for run 10-2 inequality 53 completely fails. Inequality 54 does not have this drawback. What is the reason? Inequality 52 can be easily rearranged to get",
+                "cite_spans": [
+                    {
+                        "start": 30,
+                        "end": 60,
+                        "text": "Dogu and Dogu 1984 , indicates",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u2425 \u2424 2\u2425 \u2424 0 0 0 0 2 0.75) n1\u233f 1y q \u233f n1 5 5 \u017d . 0 A 0 A \u017e / n1 2 1",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "Inequalities 53\u139055 differ from one another by the last terms on the righthand side, which describe the interaction between the mass and heat fluxes in the pellet. In some circumstances, the interaction plays a major role and it primarily impacts on process behavior. The core of the importance of the interaction between the mass and heat fluxes is presented \u017d . in Figure 2 . This figure presents the relation \u233f s f \u2424 for 0 A 0 \u017d . \u017d . run 10-2 Table 1 . The single point square represents data for run 10-2. The area below the solid line includes processes for which internal mass-and heat-transfer resistances can be omitted, in agreement with Eq. 53. It is easy to see that if \u2425 \u2424 rn1 is sufficiently close to 1, then the \u233f value can be 0 0 0A unlimited, which cannot be found in practice. Taking the interaction between the mass and heat fluxes in the pellet into account eliminates this drawback by limiting the \u233f value 0 A",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 373,
+                        "end": 374,
+                        "text": "2",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 452,
+                        "end": 453,
+                        "text": "1",
+                        "ref_id": "TABREF1"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "for which the internal mass-and heat-transfer resistances can be omitted. The area under the dashed line in Figure 2 represents the processes for which the resistances can be omit-\u017d . ted in agreement with Eq. 52 . Equation 54 correctly indicates the lack of resistance, because its accuracy was improved by considering the high-order terms of the series expansion. The area for which internal mass-and heat-transfer resistances can be omitted in agreement with Eq. 53 is simi-\u017d . lar to the area under the dashed line but smaller . Similar outcomes were obtained for other values of parameters \u2424 , 0 \u2425 , \u233f , and n. ",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 115,
+                        "end": 116,
+                        "text": "2",
+                        "ref_id": null
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "\u233f \u2424 0 A 0 1q 1q U U \u017e / 5 \u2425 \u2424 Nu 3 Nu 0 0 0.75) n1\u233f q1y 0 A U 2 Sh n1 \u233f \u2424 0 A 0 1q U \u017e / 3 Nu 57 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The verified results are presented in Table 2 . Inequality 56 is valid for data included in the first, third, and last rows of the Table 2 , and without error indicates cases for which 0.95--1.05; that is, cases for which all mass-0 and heat-transfer resistances can be omitted. Inequality 57 fails for the last case, unfortunately.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 44,
+                        "end": 45,
+                        "text": "2",
+                        "ref_id": "TABREF3"
+                    },
+                    {
+                        "start": 137,
+                        "end": 138,
+                        "text": "2",
+                        "ref_id": "TABREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "Finally, we discuss inequality 40 for two-component reactions. For a spherical particle, it can be expressed as 2\u233f \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "B 0 A 0.75) \u233f n1q n2 1 y n1 5 8 \u017d . 0 A \u017e / E D 21 A B B",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "0 A \u017e / E D A B B \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The verification is based on results given by Baldi et al. 1974 . The results are presented in Table 3 .",
+                "cite_spans": [
+                    {
+                        "start": 46,
+                        "end": 63,
+                        "text": "Baldi et al. 1974",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 101,
+                        "end": 102,
+                        "text": "3",
+                        "ref_id": "TABREF4"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "In all cases, both inequalities 58 and 59 are not true, so internal mass-transfer resistances cannot be neglected. Experimental values of the effectiveness factor confirm these outcomes.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "All of the outcomes presented previously suggest that the criteria developed here are correct. The method of verification also proves that the criteria can be successfully applied Baldi et al. 1974 . after being simplified for one-component reactions and in some circumstances are better than the criteria published earlier, because they take the interaction between mass and heat fluxes in the pellet into account. The method can be particularly easily adapted to another type of kinetic rate \u017d equation such as the Langmuir-Hinshelwood type or any type . of experimental relationship . In that case, the kinetic equa-\u017d tion of the power-law type is replaced with a ''new'' one determination of parabolic profiles of reagent concentrations . and temperature can be omitted . For more complicated reaction schemes, the full methodology of the criteria derivation should be utilized. And finally one last note. If the criteria are not sufficiently precise, they can be easily improved by considering the high-order the terms of the series expansion.",
+                "cite_spans": [
+                    {
+                        "start": 180,
+                        "end": 199,
+                        "text": "Baldi et al. 1974 .",
+                        "ref_id": null
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "( ) U",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d",
+                "sec_num": null
+            },
+            {
+                "text": "The derived criteria of mass and transfer that are relatively important concern quite a large class of reactions, and they are characterized by good accuracy. Moreover, the method of derivation presented for the chosen reaction and kinetic equation can be easily extended to practically any type of reaction in accordance with the following scheme: The criteria are straightforward, and their use should not cause difficulties, even though they have the disadvantage of rather complex formulas if the number of species taking part in a process is large andror the reaction kinetics are not in a power-law form.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d ascoefficient equal to 0, 1, 2 for planar, cylindrical, . and spherical geometry of the pellet, respectively A, B, Rscomponents a , a , a scoefficients in Eqs. 11\u139014 ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Notation",
+                "sec_num": null
+            },
+            {
+                "text": "September 2003 Vol. 49, No. 9 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d c, . September 2003 Vol. 49, No. 9 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [],
+        "bib_entries": {
+            "BIBREF0": {
+                "ref_id": "b0",
+                "title": "A Criterion for Isothermal Behavior of a Catalyst \u017d . Pellet",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Anderson",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. Sci",
+                "volume": "18",
+                "issue": "",
+                "pages": "147--1963",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Anderson, J. B., ''A Criterion for Isothermal Behavior of a Catalyst \u017d . Pellet,'' Chem. Eng. Sci., 18, 147 1963 .",
+                "links": null
+            },
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "Catalytic Oxidation of Formic Acid in Water. Intraparticle Diffusion in Liquid-\u017d . Filled Pores",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Baldi",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Goto",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C.-K",
+                        "middle": [],
+                        "last": "Chow",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Smith",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Ind. Eng. Chem. Process Des. De\u00ae",
+                "volume": "13",
+                "issue": "",
+                "pages": "447--1974",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Baldi, G., S. Goto, C.-K. Chow, and J. M. Smith, ''Catalytic Oxida- tion of Formic Acid in Water. Intraparticle Diffusion in Liquid- \u017d . Filled Pores,'' Ind. Eng. Chem. Process Des. De\u00ae., 13, 447 1974 .",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "A General Criterion to Test the Relative Importance of Intraparticle and External Heat and Mass Transfer Resistances in \u017d . Porous Catalysts",
+                "authors": [
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Dogu",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Can. J. Chem. Eng",
+                "volume": "63",
+                "issue": "",
+                "pages": "37--1985",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Dogu, T., ''A General Criterion to Test the Relative Importance of Intraparticle and External Heat and Mass Transfer Resistances in \u017d . Porous Catalysts,'' Can. J. Chem. Eng., 63, 37 1985 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "Testing the Relative Importance of Temperature and Concentration Gradients in Catalyst Pellets",
+                "authors": [
+                    {
+                        "first": "T",
+                        "middle": [],
+                        "last": "Dogu",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "G",
+                        "middle": [],
+                        "last": "Dogu",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1984,
+                "venue": "AIChE \u017d . J",
+                "volume": "30",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Dogu, T., and G. Dogu, ''Testing the Relative Importance of Tem- perature and Concentration Gradients in Catalyst Pellets,'' AIChE \u017d . J., 30, 1002 1984 .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "Heterogeneous Reactions: \u017d . Analysis, Examples and Reactor Design",
+                "authors": [
+                    {
+                        "first": "L",
+                        "middle": [
+                            "K"
+                        ],
+                        "last": "Doraiswamy",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Sharma",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1984,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Doraiswamy, L. K., and M. M. Sharma, Heterogeneous Reactions: \u017d . Analysis, Examples and Reactor Design, Wiley, New York 1984 .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Chemical Reactor Analysis and",
+                "authors": [
+                    {
+                        "first": "G",
+                        "middle": [
+                            "F"
+                        ],
+                        "last": "Froment",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "K",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Bischoff",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1979,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Froment, G. F., and K. B. Bischoff, Chemical Reactor Analysis and \u017d . Design, Wiley, New York 1979 .",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "Inadequacy of the Criteria for Detecting Inter-\u017d . phase Transport Intrusions",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Hudgins",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. Sci",
+                "volume": "36",
+                "issue": "",
+                "pages": "1579--1981",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hudgins, R. R., ''Inadequacy of the Criteria for Detecting Inter- \u017d . phase Transport Intrusions,'' Chem. Eng. Sci., 36, 1579 1981 .",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "Testing of the Intraparticle \u017d . Mass Transfer Criterion",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Hudgins",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "P",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Silveston",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. Sci",
+                "volume": "40",
+                "issue": "",
+                "pages": "667--1984",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Hudgins, R. R., and P. L. Silveston, ''Testing of the Intraparticle \u017d . Mass Transfer Criterion,'' Chem. Eng. Sci., 40, 667 1984 .",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "Catalytic Oxidation of Hydrogen\u138fIntrapellet Heat and Mass Transfer",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Maymo",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Smith",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1966,
+                "venue": "AIChE J",
+                "volume": "12",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Maymo, J. A., and J. M. Smith, ''Catalytic Oxidation of Hydrogen\u138fIntrapellet Heat and Mass Transfer,'' AIChE J., 12, \u017d . 845 1966 .",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "Roznica Temperatury i G\u0142e \u02dbbokosc Strefy Reakcji w \u00b4\u00b4\u017d . Porowatym Ziarnie Katalizatora",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Petrus",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Inz. Chem. Proc",
+                "volume": "9",
+                "issue": "",
+                "pages": "203--1988",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Petrus, R., ''Roznica Temperatury i G\u0142e \u02dbbokosc Strefy Reakcji w \u00b4\u00b4\u017d . Porowatym Ziarnie Katalizatora,'' Inz. Chem. Proc., 9, 203 1988a .",
+                "links": null
+            },
+            "BIBREF10": {
+                "ref_id": "b10",
+                "title": "Roznica Temperatury i G\u0142e \u02dbbokosc Strefy Reakcji w \u00b4\u1e54 orowatym Ziarnie Katalizatora II",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Petrus",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Inz. Chem. Proc",
+                "volume": "9",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Petrus, R., ''Roznica Temperatury i G\u0142e \u02dbbokosc Strefy Reakcji w \u00b4\u1e54 orowatym Ziarnie Katalizatora II,'' Inz. Chem. Proc., 9, 427 \u017d .",
+                "links": null
+            },
+            "BIBREF11": {
+                "ref_id": "b11",
+                "title": "Wspo\u0142czynnik Efektywnosci Oraz \u00b4\u1e3einimalne Roznice Temperatur w Porowatych Ziarnach Kataliza-\u00b4\u017d . tora",
+                "authors": [
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Petrus",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Respondek",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1979,
+                "venue": "Inz. Chem",
+                "volume": "IX",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Petrus, R., and J. Respondek, ''Wspo\u0142czynnik Efektywnosci Oraz \u00b4\u1e3einimalne Roznice Temperatur w Porowatych Ziarnach Kataliza- \u00b4\u017d . tora,'' Inz. Chem., IX, 195 1979 .",
+                "links": null
+            },
+            "BIBREF12": {
+                "ref_id": "b12",
+                "title": "Model Kinetyczny Uwodornienia Propylenu na Katalizatorze Platynowym",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Respondek",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Petrus",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1978,
+                "venue": "Inz. Chem",
+                "volume": "VIII",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Respondek, J., and R. Petrus, ''Model Kinetyczny Uwodornienia Propylenu na Katalizatorze Platynowym,'' Inz. Chem., VIII, 155 \u017d . 1978 .",
+                "links": null
+            },
+            "BIBREF13": {
+                "ref_id": "b13",
+                "title": "Catalyst Particle Effectiveness with Unsymmetrical Boundary Conditions",
+                "authors": [
+                    {
+                        "first": "Ch",
+                        "middle": [],
+                        "last": "Tan",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Smith",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1984,
+                "venue": "Chem. Eng. Sci",
+                "volume": "39",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Tan, Ch., S., and J. M. Smith, ''Catalyst Particle Effectiveness with Unsymmetrical Boundary Conditions,'' Chem. Eng. Sci., 39, 1329 \u017d . 1984 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "fig_num": null,
+                "num": null,
+                "uris": null,
+                "type_str": "figure",
+                "text": "The model includes the case of reaction A\u2122 R; A R then s 0 and the equation for component B should be B omitted; \u2177 For isothermal processes the rate equation does not depend on temperature and proper terms in kinetic equation R and are neglected in the model. Hence, Eq. 3 with \u017dC , ."
+            },
+            "FIGREF1": {
+                "fig_num": "1",
+                "num": null,
+                "uris": null,
+                "type_str": "figure",
+                "text": "Figure 1. Reagent concentration vs. radius of the pellet."
+            },
+            "FIGREF3": {
+                "fig_num": null,
+                "num": null,
+                "uris": null,
+                "type_str": "figure",
+                "text": "of mass and heat resistances, both outside and inside of the catalyst pellet. It can be presented as a product of"
+            },
+            "FIGREF4": {
+                "fig_num": null,
+                "num": null,
+                "uris": null,
+                "type_str": "figure",
+                "text": "49\u139051 were published earlier, and \u017d . they were verified by Hudgins 1981 and Hudgins and Silve-\u017d . ston 1984 . This confirms indirectly that inequalities 36, 37, and 40, are correct for two-component reactions.Inequality 39 concerning internal mass-and heat-transfer resistances for a one-component reaction and for a spherical particle can be expressed as"
+            },
+            "FIGREF5": {
+                "fig_num": null,
+                "num": null,
+                "uris": null,
+                "type_str": "figure",
+                "text": "which concerns all mass-and heat-transfer resistances, can be verified on the basis of results presented ( ) Figure 2. \u233f vs. \u2424 for the run 10-2"
+            },
+            "FIGREF7": {
+                "fig_num": null,
+                "num": null,
+                "uris": null,
+                "type_str": "figure",
+                "text": "parabolic profiles of reagent concentrations and temperatures inside the pellet using mass and heat balances and stoichiometry;\u2177 Substitution of the profiles or values of the concentrations andror temperatures at the characteristic points of the \u017d . pellet surface, center, and so on into the proper inequality;\u2177 Mathematical manipulations expansion into a power se-. ries, integration, and so on to obtain the final version of the criterion"
+            },
+            "FIGREF8": {
+                "fig_num": null,
+                "num": null,
+                "uris": null,
+                "type_str": "figure",
+                "text": "sratio of effective diffusion coefficients of coi mponents i and A E sratio of bulk concentrations of components i and A i K sratio of mass-transfer coefficients of components i i and A ni, is1, 2 sorder of reaction in respect to component i Nu U smodified Nusselt number r sdistance in the pellet R skinetic expression"
+            },
+            "TABREF0": {
+                "num": null,
+                "type_str": "table",
+                "html": null,
+                "content": "<table/>",
+                "text": "Inequality 47 is valid if component B is in excess in the reaction mixture and, vice versa, inequality 48 is valid if component A is in excess in the reaction mixture."
+            },
+            "TABREF1": {
+                "num": null,
+                "type_str": "table",
+                "html": null,
+                "content": "<table><tr><td>Run \u2424</td><td>0</td><td>\u2425</td><td>0</td><td colspan=\"2\">\u2425 \u2424rn1 \u233f 0 0 0 A</td><td>Eq. 52 Eq. 53 Eq. 54</td></tr><tr><td colspan=\"4\">7-1 0.030 7.00</td><td>0.261</td><td>4.47 0.67</td><td>2.97</td><td>2.65</td><td>3.13</td></tr><tr><td colspan=\"4\">8-4 0.131 6.81</td><td>1.109</td><td>5.53 0.93</td><td>1.60</td><td>0.49</td><td>1.28</td></tr><tr><td colspan=\"4\">8-7 0.136 7.27</td><td>1.230</td><td>3.84 0.96</td><td>0.41</td><td>0.71</td><td>0.06</td></tr><tr><td colspan=\"4\">11-2 0.116 7.03</td><td>1.014</td><td>4.33 0.92</td><td>1.12</td><td>0.048</td><td>0.92</td></tr><tr><td colspan=\"4\">E1 0.339 6.75</td><td>2.846</td><td>5.18 1.10</td><td>2.98</td><td>7.68</td><td>8.47</td></tr><tr><td colspan=\"4\">10-2 0.116 6.58</td><td>0.949</td><td>12.31 0.60</td><td>9.35</td><td>0.504 12.06</td></tr></table>",
+                "text": ""
+            },
+            "TABREF2": {
+                "num": null,
+                "type_str": "table",
+                "html": null,
+                "content": "<table><tr><td>0 A</td><td>0</td></tr></table>",
+                "text": ""
+            },
+            "TABREF3": {
+                "num": null,
+                "type_str": "table",
+                "html": null,
+                "content": "<table><tr><td colspan=\"2\">U Sh</td><td>U Nu</td><td>\u2425</td><td>0</td><td/><td>\u2424</td><td>0</td><td colspan=\"5\">\u2425 \u2424rn1 \u233f 0 0 0 A</td><td>0</td><td>Eq. 56 Eq. 57</td></tr><tr><td colspan=\"2\">1.0</td><td colspan=\"6\">1.0 10.0 y0.4</td><td/><td>y4.0</td><td/><td colspan=\"3\">0.0098 0.98</td><td>0.29</td><td>0.29</td></tr><tr><td colspan=\"2\">1.0</td><td colspan=\"6\">1.0 10.0 y0.4</td><td/><td>y4.0</td><td/><td colspan=\"3\">0.176 0.669 5.18</td><td>5.40</td></tr><tr><td colspan=\"2\">50.0</td><td colspan=\"6\">1.0 10.0 y1.0</td><td colspan=\"2\">y10.0</td><td/><td colspan=\"3\">0.0096 0.961 0.59</td><td>0.59</td></tr><tr><td colspan=\"2\">50.0</td><td colspan=\"6\">1.0 10.0 y1.0</td><td colspan=\"2\">y10.0</td><td/><td colspan=\"3\">0.138 0.554 8.35</td><td>8.90</td></tr><tr><td colspan=\"5\">69.16 10.06 9.65</td><td/><td colspan=\"2\">0.0428</td><td/><td colspan=\"4\">1.160 38.13</td><td>0.937 19.46</td><td>7.04</td></tr><tr><td colspan=\"5\">67.25 9.77 9.63</td><td/><td colspan=\"2\">0.065</td><td/><td colspan=\"4\">1.758 33.31</td><td>1.092 14.43 15.27</td></tr><tr><td colspan=\"5\">61.53 8.74 9.89</td><td/><td colspan=\"2\">0.082</td><td/><td colspan=\"4\">2.278 22.05</td><td>1.032 0.14 16.73</td></tr><tr><td>U</td><td colspan=\"13\">\u017d Based on data given by Tan and Smith 1984 upper part , Respondek .\u017d .</td></tr><tr><td/><td colspan=\"13\">\u017d and Petrus 1978 , Petrus and Respondek 1979 lower part . . \u017d .\u017d .</td></tr><tr><td colspan=\"14\">\u017d by Tan and Smith 1984 , and by Respondek and Petrus 1978 . \u017d .</td></tr><tr><td colspan=\"14\">\u017d and Petrus and Respondek 1979 . For a one-component re-.</td></tr><tr><td colspan=\"14\">action and for a spherical particle it can be expressed as</td></tr><tr><td/><td colspan=\"4\">0.75) n1\u233f 0 A</td><td colspan=\"7\">5 U \u00bd Sh n1 \u2425 \u2424 0 0 q1y</td><td/></tr><tr><td/><td/><td>=</td><td colspan=\"3\">5 Nu U</td><td colspan=\"3\">q1y n1</td><td>\u233f 0 A 3</td><td>\u017e</td><td>1 U Sh</td><td>q</td><td>1 Nu U</td><td>q</td><td>2 7</td><td>/</td><td>5</td><td>56 \u017d .</td></tr><tr><td colspan=\"14\">\u017d The criterion by Dogu 1985 has the form .</td></tr><tr><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td/><td>5</td></tr></table>",
+                "text": ""
+            },
+            "TABREF4": {
+                "num": null,
+                "type_str": "table",
+                "html": null,
+                "content": "<table><tr><td/><td>E</td><td>B</td><td>D</td><td>B</td><td>r B A</td><td colspan=\"2\">n1 n2</td><td>\u233f 0 A</td><td>Eq. 58 Eq. 59</td></tr><tr><td/><td colspan=\"4\">2.6 0.4</td><td>2</td><td>1</td><td>1</td><td>0.462 0.92</td><td>1.31</td><td>1.35</td></tr><tr><td/><td colspan=\"4\">2.6 0.4</td><td>2</td><td>1</td><td>1</td><td>1.060 0.87</td><td>2.89</td><td>3.09</td></tr><tr><td>U</td><td colspan=\"5\">Based on data given by</td><td/><td/><td>\u017d</td><td>.</td></tr></table>",
+                "text": ""
+            }
+        }
+    }
+}

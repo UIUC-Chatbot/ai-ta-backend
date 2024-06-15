@@ -1,0 +1,1241 @@
+{
+    "paper_id": "tmpr1b_mr70aic",
+    "header": {
+        "generated_with": "S2ORC 1.0.0",
+        "date_generated": "2024-06-15T00:25:57.181549Z"
+    },
+    "title": "Process Security Analysis: \u2425-Analysis and \u00fd \u00fd-Map",
+    "authors": [
+        {
+            "first": "Korkut",
+            "middle": [],
+            "last": "Uygun",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Wayne State University",
+                "location": {
+                    "postCode": "48202",
+                    "settlement": "Detroit",
+                    "region": "MI"
+                }
+            },
+            "email": ""
+        },
+        {
+            "first": "Yinlun",
+            "middle": [],
+            "last": "Huang",
+            "suffix": "",
+            "affiliation": {
+                "laboratory": "",
+                "institution": "Wayne State University",
+                "location": {
+                    "postCode": "48202",
+                    "settlement": "Detroit",
+                    "region": "MI"
+                }
+            },
+            "email": ""
+        }
+    ],
+    "year": "",
+    "venue": null,
+    "identifiers": {},
+    "abstract": "",
+    "pdf_parse": {
+        "paper_id": "tmpr1b_mr70aic",
+        "_pdf_hash": "",
+        "abstract": [],
+        "body_text": [
+            {
+                "text": "Dept. of Chemical Engineering, Lamar University, Beaumont, TX 77710 Chemical processes are often operated under high pressures, at high temperatures, and with fast material flows and complex manufacturing mechanisms. Thus, their operation is always more risky, environmentally more harmful, and potentially more dangerous than other types of manufacturing activities when abnormal or destructive situations arise. In the extreme, catastrophes, such as explosions, toxic release, and loss of life, will occur unexpectedly and rapidly, particularly when a premeditated attack is made by an adversary who has sufficient technical background on chemical operations. Obviously, such security-threatening situations must be detected early, the potential impacts on production must be precisely evaluated, and operational solutions must be quickly derived. However, systematic and effective methodologies are not available for the chemical process industries today. Scientists and engineers are greatly challenged to swiftly develop a knowledge base of process security that can fundamentally help the industry perform process-security analysis, assess-\u017d ment, and improvement Margiloff, 2001; Cunningham, 2002;  . Ragan et al., 2002 . Process security is an extended concept and practice of process safety. Over the past decades, various process-safety techniques and tools have been developed and implemented \u017d . in the industries. HAZOP HAZard and OPerability analysis , \u017d . \u017d LOPA Layer Of Protection Analysis , and FTA Fault Tree . \u017d Analysis are among the most popular ones Dimitriadis et al., 1996; Lees, 1996; Allen and Shonnard, 2002; Crowl and . Louvar, 2002 . They are effective in identifying process malfunctions and deriving solutions to ensure safe production. The scientific tools for safety enhancement are mainly probability analysis and logical reasoning about the root causes of adverse conditions. Existing safety technologies are almost exclusively based on steady-state information. Solutions generally are derived on experience, and they are usually statisti-\u017d . cal and qualitative Dimitriadis et al., 1996; Dowell, 1998 . Correspondence concerning this article should be addressed to Y. L. Huang.",
+                "cite_spans": [
+                    {
+                        "start": 1170,
+                        "end": 1186,
+                        "text": "Margiloff, 2001;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1187,
+                        "end": 1204,
+                        "text": "Cunningham, 2002;",
+                        "ref_id": "BIBREF3"
+                    },
+                    {
+                        "start": 1205,
+                        "end": 1205,
+                        "text": "",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1208,
+                        "end": 1228,
+                        "text": "Ragan et al., 2002 .",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1573,
+                        "end": 1598,
+                        "text": "Dimitriadis et al., 1996;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 1599,
+                        "end": 1610,
+                        "text": "Lees, 1996;",
+                        "ref_id": "BIBREF6"
+                    },
+                    {
+                        "start": 1611,
+                        "end": 1636,
+                        "text": "Allen and Shonnard, 2002;",
+                        "ref_id": "BIBREF0"
+                    },
+                    {
+                        "start": 1637,
+                        "end": 1663,
+                        "text": "Crowl and . Louvar, 2002 .",
+                        "ref_id": "BIBREF2"
+                    },
+                    {
+                        "start": 2100,
+                        "end": 2125,
+                        "text": "Dimitriadis et al., 1996;",
+                        "ref_id": null
+                    },
+                    {
+                        "start": 2126,
+                        "end": 2140,
+                        "text": "Dowell, 1998 .",
+                        "ref_id": "BIBREF5"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Helen H. Lou",
+                "sec_num": null
+            },
+            {
+                "text": "Different from process safety that follows likelihood, process security concerns adverse events caused by factors of harmful intentions. The occurrence of a process-security problem is a possible but not a probable situation. Therefore, the solution to this type of problem cannot rely on probability. To avoid any severe consequence, a fast and accurate assessment and a timely and effective action are the must-have requirements. Their effectiveness depends upon the fundamental understanding of process behavior, particularly process dynamics, beyond the normal operation zone.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Helen H. Lou",
+                "sec_num": null
+            },
+            {
+                "text": "A process may display very different types of behavior in \u017d . the operation zones. Lou et al. 2003 note that most of the available process models characterize normal operations; hence, their suitability for characterizing system behavior in abnormal regions should be carefully verified. Based on this argument, they suggest partitioning the process input and \u017d . output spaces into four major zones: 1 Zone I\u138fthe normal \u017d . operation zone; 2 Zone II\u138fthe security-alerting zone where \u017d . a security-sensitive process change must be dealt with; 3 Zone III\u138fthe security-threatening zone where an effective \u017d . security-assurance action must be taken immediately; and 4 Zone IV\u138fthe security-disaster zone where the changes are irreversible and a severe consequence results. Figure 1 depicts the operation zone classification for a general process. For simplicity in discussion, the union of Zones I, II, and III is denoted as the security space throughout this work.",
+                "cite_spans": [
+                    {
+                        "start": 83,
+                        "end": 98,
+                        "text": "Lou et al. 2003",
+                        "ref_id": "BIBREF7"
+                    }
+                ],
+                "ref_spans": [
+                    {
+                        "start": 778,
+                        "end": 779,
+                        "text": "1",
+                        "ref_id": "FIGREF0"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Operation Zone Classification",
+                "sec_num": null
+            },
+            {
+                "text": "The mapping of both the input and output spaces can be crucial in process security analysis. Output-based security monitoring provides a feedback security control, while inputbased monitoring enables feedforward measures, therefore, it is highly desirable to have the input space mapping of the security zones. The output security zones can be relatively easily mapped, since they are usually based on equipment limits; however, the exact mapping of the input space is prob- lematic. Note that a process security model can be a mapping function between the input and output spaces, but the construction of the zone borders, especially in a multidimensional case, requires excessive system simulations.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Operation Zone Classification",
+                "sec_num": null
+            },
+            {
+                "text": "A fundamental basis for process-security analysis is the characterization of process behavior in the entire security space. This characterization requires a modeling effort beyond the normal practice.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Process-Security Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Consider a general process-security model that can de-\u017d . scribe a process in all operation zones Zones I, II, and III \u017d . before entering the security-disaster zone Zone IV",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Process-security model",
+                "sec_num": null
+            },
+            {
+                "text": "dyrdt s f y, u, d,t 1 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Process-security model",
+                "sec_num": null
+            },
+            {
+                "text": "where y is the vector of output variables, u is the vector of manipulated variables, d is the vector of disturbances. It is possible to use either a single model for the entire security space, or a group of models, each of which is valid for an individual operational zone. This does not affect the applicability of the analysis method. For the sake of simplicity, the discussion is focused on a multiple-input, single-output system. However, the method described below is applicable to more complex systems. Minor necessary modifications to achieve that will be discussed later in the text.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Process-security model",
+                "sec_num": null
+            },
+            {
+                "text": "A mathematical framework for process-security study introduced here is with the assumption that a process-security model is available. The principal idea in \u2425-analysis is to in-\u017d vestigate the gradient of system dynamic equations the time . derivatives directly, rather than going through the integration process, which is a time consuming task. However, a mathematical description of process security should be introduced first.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Definition 1. Process security, in the context of this work, is defined as the ability of the system to retain a secure operation when suffering subtle attacks. The attacks are mathe-\u017d . matically represented as disturbances d and crippled con-\u017d . trol and safety systems u in the process-security model.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "A security threat is an event that can lead to a disaster if no effective countermeasure is taken, typically happening in an interval of minutes or seconds. Brute-force attacks, such as bombing and hostile takeover, are within the scope of the existing security methods for infrastructure enhancement \u017d . Ashcroft et al., 2001 . In this work, process security is mathematically defined as",
+                "cite_spans": [
+                    {
+                        "start": 305,
+                        "end": 328,
+                        "text": "Ashcroft et al., 2001 .",
+                        "ref_id": "BIBREF1"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "A process is secure if G min 2 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "where is the minimum time required by the process to move \u017d . from the nominal operation point in Zone I to the security \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "min disaster zone Zone IV ; and is the time needed for detecting the threat, making decisions, and taking necessary countermeasures to eliminate the threat. The length of this time lag between the occurrence and the resolution is determined by a number of factors, including the nature of the process, equipment, and personnel, among others. Note that having a zero min would make all processes secure by de- fault. Therefore, a nonzero requirement is imposed.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Remark 1. The reference point for defining the minimum time, , is the nominal operation point, y . Therefore, is 0 independent of the current status of the process / t 3 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "The minimum time needed for moving to the disaster zone \u017d . from a different reference point, y t , is defined as opr s opr y t , u t , t 4 \u017d . \u017d . \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "It is worth noting that both and opr are the functions of process structure. Thus, alternative designs under the same security threat may have different and opr values, in general.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Remark 2. The evaluation of the exact values of or opr requires extensive dynamic simulations for searching all possible threat profiles.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Definition 2. The maximum speed of a process moving \u017d . from the nominal operating point y in Zone I to the secu-0 \u017d . rity disaster zone Zone IV is denoted as \u232b. It has the following form",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "N y y y N I V 0 \u232b s 5 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "min Note that \u232b is finite, since min is nonzero by definition. Re- arranging the preceding equations gives \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "N y y y N I V 0 min s 6 \u017d . \u232b The Security Theorem. Let \u2425 s max f y, u, d, t 7 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Then the process is secure if \u2425 F \u232b.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Before proving the theorem, the concept of process critical time is introduced below.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Definition 3. The process critical time, , as the worst-case estimate of , is defined as",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "N y y y N I V 0 s 10 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "\u2425 Note that dyrdt is the speed the system moves from one state to the other. Since dyrdt cannot exceed \u2425 , the system \u017d . cannot move from the nominal point y to Zone IV more 0 quickly than .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Remark 3. is an underestimate of the actual time to \u017d . disaster , that is, G , provided the maximization problem is solved to globality.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Remark 4. is a process constant; it is determined by the process limits and inherent process behavior. A nonconstant estimate of the time to Zone IV for on-line security evaluation will also be formulated later.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Proof of Theorem. If \u2425 F \u232b, combining Eqs. 6 and 10 yields G min 11 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Also, from Remark 3, we have",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "G 12",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Combining Eqs. 11 and 12 gives G G min 13 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "and, therefore G min 14 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Thus, by Definition 1, the process is secure. Remark 5. \u2425 is defined as the maximum of the time derivative function, since usually security-threatening events occur at high temperatures and pressures. For other cases, where a low value is problematic, or both high and low values are problematic, the following alternative formulations can be utilized, such as",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "\u2425 s N min f y,u,d,t N 15 \u017d . \u017d . y ,u , d ,t or 2 2 w x \u2425 s max f y,u,d,t 16 \u017d . \u017d . y ,u , d ,t",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Remark 6. In the Security Theorem, the constraints in Eq. 8 are critical in defining process-security boundaries. Thus, they should be determined carefully and precisely. Most \u017d . functions can be driven to divergence that is, to \"\u03f1 if the variables are allowed to, but this behavior does not contain any information related to process security. It is important to observe whether the process can be rendered disastrous through physically possible interventions. Therefore, all variables should be physically limited. For instance, the feed-stream flow rate cannot exceed what the pipes can handle. The system behavior in the security space is of particular importance; beyond that, the process will be in Zone IV, which is in an unrecoverable situation. A process-security model is not expected to remain meaningful for Zone IV.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Definition 4. The minimum time for the system to reach \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425 -Analysis",
+                "sec_num": null
+            },
+            {
+                "text": "Zone IV from the current operating point, y t in Zones IV I, II, or III, is named the process operational security time, opr , which is defined as",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d. y",
+                "sec_num": null
+            },
+            {
+                "text": "N y y y t \u017d . I V opr t s 17 \u017d . \u017d . \u2425 Remark 7",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d. y",
+                "sec_num": null
+            },
+            {
+                "text": ". opr is a worst-case estimate of how fast the process can move from the current operating point to the disaster zone; therefore, it is a time-dependent measure.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d. y",
+                "sec_num": null
+            },
+            {
+                "text": "Remark 8. opr is a worst-case estimate for the security- \u017d . action available time, as defined by Lou et al. 2003 \u017d . \u017d .",
+                "cite_spans": [
+                    {
+                        "start": 98,
+                        "end": 113,
+                        "text": "Lou et al. 2003",
+                        "ref_id": "BIBREF7"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d. y",
+                "sec_num": null
+            },
+            {
+                "text": "Remark 9. rec is an optimistic estimate for the actual recovery time, rec , that is, rec G rec .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u2425",
+                "sec_num": null
+            },
+            {
+                "text": "and opr are the worst-case estimates to the actual time to the disaster for a process. However, the ease of the calculation comes at the cost of the accuracy. The accuracy of the predictions can be enhanced easily when necessity arises. The principal idea is to divide the output zone into multiple regions in a grid, and to evaluate separate values of \u2425 j and j , where superscript j denotes the index for each of these smaller intervals. Then, the process critical time, , will simply be the sum of regional critical times over the index j. As the number of regions increase, the accuracy will also increase. At the limit, for a single-output system, becomes an exact estimate of , but at the cost of solving an infinite number of optimization problems. The issues of optimal decision for the number of regions and grid placement will not be addressed here, although the similarity between this approach and numerical discretization and integration techniques should be underlined.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Enhancing accuracy",
+                "sec_num": null
+            },
+            {
+                "text": "The analysis outlined earlier can be applied to the systems of higher complexity. Prior to the description of the method, significantly security-sensitive variables should be distinguished from others when a multiple-input multiple-output \u017d . MIMO process is considered. Definition 6. A critical variable is a process output that is used directly to define Zone IV. In chemical processes, temperature and pressure are the usual critical variables.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "Multiple Outputs. For a process with multiple output variables, one \u2425 should be defined for each critical output, that is",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "\u2425 s max f y,u,d,t 19 \u017d . \u017d . i i y ,u , d ,t",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "Each \u2425 is the maximum speed the system can have along the i direction of the ith critical variable. Accordingly, the process critical time, , for the variable, y , can be defined as",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "i i N y y y N I V ,i 0,i s 20 \u017d . i \u2425 i",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "In this case, the process critical time for the entire system is s min 21",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "\u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "i i Remark 10. The process critical time estimated by Eq. 21 is an underestimate, even if an infinite number of regions is used, since it assumes a system moving along a single output direction without any movement along others. Note that the system can move along different directions simultaneously, unless the outputs are completely decoupled. This movement along other directions will take some additional time for the system to reach Zone IV. Thus, the estimated time is less than the actual time to a disaster. The \u00dd-maps, which are to be introduced in the following section, can be used to identify the interdependencies among the output variables explicitly. Also note that Eq. 20 is defined based on the assumption that the security limits for the critical variables are not correlated, that is, Zone IV is defined by a hyperrectangle.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "Differential-Algebraic Systems. In general, a system will \u017d . have a multitude of state variables x as well as output vari-\u017d . ables y . A general MIMO system can therefore be formulated as ",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "dx s f x,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "General systems",
+                "sec_num": null
+            },
+            {
+                "text": "where h is the vector defining the relationships used in the differential equations, typically correlations for parameter es-\u017d . timation; g is the vector relating the state variables x to the \u017d . output variables y . In this case, a \u2425-analysis problem can be expressed as \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d . \u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "dg x \u017d . i \u2425 s max \u0612 f x,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d . \u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "Note that this is a constrained optimization problem.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d . \u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "Remark 11. The proposed analysis method is applicable to general dynamic systems, therefore naturally including linear systems. Furthermore, due to the linearity property, linear systems have their maximum rate of changes at a combination of the maximumrminimum bounds of variables, which simplifies the optimization task. However, it should be noted that it is unlikely for a single linear model to describe a process over the entire security space. Using multiple linear models is possible, but unless the system displays extreme nonlinearity, the inherent error that comes with such approximation schemes is not justified.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d . \u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "Remark 12. In the development of the \u2425-analysis, it is assumed that all controlrsafety systems are either off-line or act as disturbances in a manner that affects the system adversely, rather than their expected regulative effects. However, it could be useful to run what-if scenarios considering some of these regulatory systems being on-line, especially for the design of safety systems. It is quite possible to account for the response of such systems in the estimation of process critical time, due to the use of optimization as the basis of the \u2425-analysis. Detailed descriptions will not be presented here, but in summary, the only necessary modification is to include the effect of these controlrsafety systems as additional constraints in the optimization. For instance, a P-only controller could be included in the following manner \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d . \u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "\u2425 s max f y,u,",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d . \u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "us u 0 q K xy x set 30 \u017d . \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d . \u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "This would result in the calculation of process critical time when a controller is working. Safety systems could be included in a variety of ways, such as additional bounds on variables or onroff controllers. The only difficulty would be encountered when the control action cannot be expressed an-\u017d . alytically such as model predictive control systems . In such cases, an explicit control law that approximates the actual control response should be used.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d . \u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "Due to the ease of use and computational speed of \u2425-analysis, a large number of what-if scenarios could be run very quickly and be used in the design of safetyrsecurity systems, as well as an on-line situation assessment.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u017d . \u017d .",
+                "sec_num": null
+            },
+            {
+                "text": "While the \u2425-analysis establishes a rate-of-change-based measure of process security, a more thorough inspection over the entire security space is also highly desirable. In this regard, the process security map, or simply \u00dd-map, is intro-\u017d . duced. The basic idea is to reveal the rates of change dyrdt of critical variables over the entire operation zones. The \u00ddmap illustrates the relationship between dyrdt and two-system variables in a 3-D surface plot form: the function dyrdt \u017d . variable 1, variable 2 is plotted over a range of the system variables of interest. The remaining system variables are fixed at the values that maximize dyrdt; thus, the \u00dd-map illustrates the value of \u2425 vs. varying system variables. This serves as a tool to visualize the system behavior, as it will be exemplified in the case study that is investigated in the next section.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u00dd-Map",
+                "sec_num": null
+            },
+            {
+                "text": "It should also be noted that the mapping between the input and output spaces is crucial in process-security analysis, but difficult to establish. Given the output space, the input space should be mapped to identify different security zones \u017d . Lou et al., 2003 . \u00dd-Maps produce an estimate of the space \u2423 s 7.08 10 h mapping for the inputs automatically. It is possible to observe the regions where the rates of change in output variables are low, moderate, or high, and classify the mapping of both spaces accordingly. However, this method will relate the changes of outputs to inputs, rather than outputs to inputs. ",
+                "cite_spans": [
+                    {
+                        "start": 244,
+                        "end": 260,
+                        "text": "Lou et al., 2003",
+                        "ref_id": "BIBREF7"
+                    }
+                ],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "\u00dd-Map",
+                "sec_num": null
+            },
+            {
+                "text": "0 0 J dt dt C C p p dT dV UA J J H IN OU T V qT s F T y F T q T yT 35 \u017d . \u017d . J J J J 0 J J J dt dt C J J",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Case Study: Nonisothermal CSTR",
+                "sec_num": null
+            },
+            {
+                "text": "where k s \u2423 e yErRT 36 \u017d .",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Case Study: Nonisothermal CSTR",
+                "sec_num": null
+            },
+            {
+                "text": "The system parameters and variable ranges are listed in Table 1 . It is assumed that this model can characterize the system behavior in the entire process security zone, that is, Zones I through III. For the process-security analysis, the feedback-control system is considered to be crippled. The \u017d . critical output variable is the temperature in the reactor T , as it is the primary security threat in a possible runaway reaction. The results of \u2425-analysis, performed in GAMS with different numbers of regions, is displayed in Table 2 . The 3c and 3d, and coolant temperature and feed temperature are also insignificant compared to the reactor temperature as illustrated in Figures 3e and 3f . An interesting observation is that around the runaway point, the rate of change of temperature is not affected by \u017d . the inputs F and F at all Figure 3b . The reason is that at 0 the maximum point, T sT s 555.56 K, and as it can be traced 0 in Eqs. 31 and 35, when input and reactor temperatures are equal, the flow terms cancel each other. Naturally, the flow rates will have an indirect effect through volume of liquid in \u017d . reactor see Eq. 31 , but as already discussed, variable V itself is not significant on the temperature rate of change at high temperatures.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 62,
+                        "end": 63,
+                        "text": "1",
+                        "ref_id": "TABREF5"
+                    },
+                    {
+                        "start": 535,
+                        "end": 536,
+                        "text": "2",
+                        "ref_id": "TABREF6"
+                    },
+                    {
+                        "start": 684,
+                        "end": 686,
+                        "text": "3e",
+                        "ref_id": "FIGREF3"
+                    },
+                    {
+                        "start": 691,
+                        "end": 693,
+                        "text": "3f",
+                        "ref_id": "FIGREF3"
+                    },
+                    {
+                        "start": 847,
+                        "end": 849,
+                        "text": "3b",
+                        "ref_id": "FIGREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Case Study: Nonisothermal CSTR",
+                "sec_num": null
+            },
+            {
+                "text": "The two variables of interest, therefore, are the reactant concentration and reactor temperature, which both have significant effects as depicted in Figure 3a . However, Figure 3a also illustrates that the rate of change can be a significant percentage of its maximum, even around the nominal point m at sufficiently high temperatures. Therefore, the runaway reaction can occur without a change in the reactant concentration; hence, C is not a limiting factor. A low concentra-A \u017d tion will increase the time to disaster approximately four times its original value, if concentration is fixed to the nomi-. nal point , but this does not change the original conclusion from the \u2425-analysis that a runaway reaction can occur rapidly. Rather, the \u00dd-maps validate our conclusion; the system has a serious security vulnerability.",
+                "cite_spans": [],
+                "ref_spans": [
+                    {
+                        "start": 156,
+                        "end": 158,
+                        "text": "3a",
+                        "ref_id": "FIGREF3"
+                    },
+                    {
+                        "start": 177,
+                        "end": 179,
+                        "text": "3a",
+                        "ref_id": "FIGREF3"
+                    }
+                ],
+                "eq_spans": [],
+                "section": "Case Study: Nonisothermal CSTR",
+                "sec_num": null
+            },
+            {
+                "text": "To further illustrate the use of the developed tools, an ''on-line'' process security assessment is conducted. Let's consider the situation when T is 513.3 K. Using the pre-calcu-\u017d . lated \u2425 values 20 regions , we can obtain opr s 0.982 s This leads to the conclusion that the process is only 0.982 s away from a disaster. The process recovery time can also be evaluated as",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Case Study: Nonisothermal CSTR",
+                "sec_num": null
+            },
+            {
+                "text": "< < 513.3y333.3 rec s s 0.651 s \u2425",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Case Study: Nonisothermal CSTR",
+                "sec_num": null
+            },
+            {
+                "text": "This result indicates that the system will not have recovered to the nominal operation before 0.651 s. Note that the precalculated \u2425 values are utilized; hence, the calculation of opr and rec can be performed very quickly, without need for additional optimizations.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Case Study: Nonisothermal CSTR",
+                "sec_num": null
+            },
+            {
+                "text": "This work has introduced a number of tools and decision criteria for process-security analysis. As demonstrated in the case study, these tools can be used in tandem to identify possible process-security problems, to analyze correlations between critical process inputs and security-sensitive outputs, and to find the principal factors leading to the securitythreatening possibilities.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion and Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "\u2425-Analysis, constituted of the security theorem and first three definitions, presents a method for quickly evaluating process security for any given system. The need for deriving analytical or numerical solutions to the system differential equations is circumvented by the direct use of the time derivative functions. The optimization scheme for evaluating \u2425 enables screening for all possible combinations of disturbances and manipulated variable changes without the need for extensive trial-and-error procedures with simulations. The process critical time, , is a process constant that gives a quantitative measure for system security; it is easy to understand, evaluate, and compare with the requirements. These measures can also be implemented within a process design algorithm for improved process security.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion and Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "The \u00dd-maps are a visual tool to analyze the system and to deduce additional information about the process and its likely exposure to security threats, as exemplified in the case study. Contrary to the \u2425-analysis, which is numerical and can be automated readily, the \u00dd-maps present a human-oriented tool for the study of existing industrial cases, or use in developing secure processes, by engineers. The major focus of future work should be extracting the information deducible from the \u00dd-maps via purely computational methods.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion and Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "Due to the ease of use, the developments introduced in this work are particularly attractive in assessing the security vulnerability at the plant level, such as in chemical plants or refineries. However, in certain multidimensional cases, the method can lead to low process-critical time estimations. Therefore, the process-security prediction accuracy should be monitored closely through the use of \u00dd-maps. Several methods for accuracy improvement and error estimation are currently under development.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Discussion and Conclusions",
+                "sec_num": null
+            },
+            {
+                "text": "September 2003 Vol. 49, No. 9 AIChE Journal",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "",
+                "sec_num": null
+            }
+        ],
+        "back_matter": [
+            {
+                "text": "This work is supported in part by the National Science Foundation under Grants CTS-0211163 and CCLI-0127307.",
+                "cite_spans": [],
+                "ref_spans": [],
+                "eq_spans": [],
+                "section": "Acknowledgment",
+                "sec_num": null
+            }
+        ],
+        "bib_entries": {
+            "BIBREF0": {
+                "ref_id": "b0",
+                "title": "Green Engineering: En\u00aeironmentally Conscious Design of Chemical Processes",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Allen",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "R"
+                        ],
+                        "last": "Shonnard",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2002,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Allen, D. T., and D. R. Shonnard, Green Engineering: En\u00aeironmen- tally Conscious Design of Chemical Processes, Prentice Hall, Upper \u017d . Saddle River, NJ 2002 .",
+                "links": null
+            },
+            "BIBREF1": {
+                "ref_id": "b1",
+                "title": "Chemical Facility Vulnerability Assessment Methodology",
+                "authors": [
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Ashcroft",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "D",
+                        "middle": [
+                            "J"
+                        ],
+                        "last": "Daniels",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "V"
+                        ],
+                        "last": "Hart",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2001,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Ashcroft, J., D. J. Daniels, and S. V. Hart, Chemical Facility Vulnera- bility Assessment Methodology, U.S. Department of Justice, Wash- \u017d . ington, DC 2001 ; http:rrwww.ojp.usdoj.gov.",
+                "links": null
+            },
+            "BIBREF2": {
+                "ref_id": "b2",
+                "title": "Chemical Process Safety: Fundamentals with Applications",
+                "authors": [
+                    {
+                        "first": "D",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Crowl",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [
+                            "F"
+                        ],
+                        "last": "Louvar",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2002,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Crowl, D. A., and J. F. Louvar, Chemical Process Safety: Fundamen- tals with Applications, 2nd ed., Prentice Hall, Upper Saddle River, \u017d . NJ 2002 .",
+                "links": null
+            },
+            "BIBREF3": {
+                "ref_id": "b3",
+                "title": "What Can the Industrial Chemical Community Contribute to the Nation's Security?",
+                "authors": [
+                    {
+                        "first": "S",
+                        "middle": [],
+                        "last": "Cunningham",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2002,
+                "venue": "Workshop on National Security & Homeland Defense: Challenge for the Chemical Science in the 21st Century",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Cunningham, S., ''What Can the Industrial Chemical Community Contribute to the Nation's Security?,'' Workshop on National Secu- rity & Homeland Defense: Challenge for the Chemical Science in the 21st Century, National Academies of Sciences and Engineer- \u017d . ing, Irvine, CA 2002 .",
+                "links": null
+            },
+            "BIBREF4": {
+                "ref_id": "b4",
+                "title": "A Case Study in Hybrid Process Safety Verification",
+                "authors": [
+                    {
+                        "first": "V",
+                        "middle": [
+                            "D"
+                        ],
+                        "last": "Dimitriadis",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "J",
+                        "middle": [],
+                        "last": "Hackenberg",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [],
+                        "last": "Shah",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "C",
+                        "middle": [
+                            "C"
+                        ],
+                        "last": "Pantelides",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Comput. Chem. \u017d . Eng",
+                "volume": "20",
+                "issue": "",
+                "pages": "503--1996",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Dimitriadis, V. D., J. Hackenberg, N. Shah, and C. C. Pantelides, ''A Case Study in Hybrid Process Safety Verification,'' Comput. Chem. \u017d . Eng., 20, s503 1996 .",
+                "links": null
+            },
+            "BIBREF5": {
+                "ref_id": "b5",
+                "title": "Layer of Protection Analysis for Determining",
+                "authors": [
+                    {
+                        "first": "A",
+                        "middle": [
+                            "M"
+                        ],
+                        "last": "Dowell",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "",
+                        "middle": [],
+                        "last": "Iii",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1998,
+                "venue": "ISA Trans",
+                "volume": "37",
+                "issue": "2",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Dowell, A. M., III, ''Layer of Protection Analysis for Determining \u017d . \u017d . Safety Integrity Level,'' ISA Trans., 37 2 , 155 1998 .",
+                "links": null
+            },
+            "BIBREF6": {
+                "ref_id": "b6",
+                "title": "Loss Pre\u00aeention in the Process Industries",
+                "authors": [
+                    {
+                        "first": "F",
+                        "middle": [
+                            "P"
+                        ],
+                        "last": "Lees",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1996,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lees, F. P., Loss Pre\u00aeention in the Process Industries, 2nd ed., Butter- \u017d . worths, London 1996 .",
+                "links": null
+            },
+            "BIBREF7": {
+                "ref_id": "b7",
+                "title": "Process Security Assessment: Operational Space Classification and Process Security",
+                "authors": [
+                    {
+                        "first": "H",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Lou",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "R",
+                        "middle": [],
+                        "last": "Muthusamy",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "Y",
+                        "middle": [
+                            "L"
+                        ],
+                        "last": "Huang",
+                        "suffix": ""
+                    }
+                ],
+                "year": 2003,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Lou, H. H., R. Muthusamy, and Y. L. Huang, ''Process Security As- sessment: Operational Space Classification and Process Security \u017d . Index,'' in press, Trans I.ChemE 2003 .",
+                "links": null
+            },
+            "BIBREF8": {
+                "ref_id": "b8",
+                "title": "Process Modeling, Simulation and Control for Chemical",
+                "authors": [
+                    {
+                        "first": "W",
+                        "middle": [],
+                        "last": "Luyben",
+                        "suffix": ""
+                    }
+                ],
+                "year": 1990,
+                "venue": "",
+                "volume": "",
+                "issue": "",
+                "pages": "",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Luyben, W., Process Modeling, Simulation and Control for Chemical \u017d . Engineers, 2nd ed., McGraw-Hill, New York 1990 .",
+                "links": null
+            },
+            "BIBREF9": {
+                "ref_id": "b9",
+                "title": "Geopolitics and Chemical Engineering",
+                "authors": [
+                    {
+                        "first": "I",
+                        "middle": [
+                            "B"
+                        ],
+                        "last": "Margiloff",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. \u017d",
+                "volume": "97",
+                "issue": "12",
+                "pages": "7--2001",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Margiloff, I. B., ''Geopolitics and Chemical Engineering,'' Chem. Eng. \u017d . \u017d . Prog., 97 12 , 7 2001 .",
+                "links": null
+            },
+            "BIBREF10": {
+                "ref_id": "b10",
+                "title": "Chemical Plant Safety: Applying the Tools of the Trade to a New",
+                "authors": [
+                    {
+                        "first": "P",
+                        "middle": [
+                            "T"
+                        ],
+                        "last": "Ragan",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "M",
+                        "middle": [
+                            "E"
+                        ],
+                        "last": "Kiburn",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "S",
+                        "middle": [
+                            "H"
+                        ],
+                        "last": "Roberts",
+                        "suffix": ""
+                    },
+                    {
+                        "first": "N",
+                        "middle": [
+                            "A"
+                        ],
+                        "last": "Kimmerle",
+                        "suffix": ""
+                    }
+                ],
+                "year": null,
+                "venue": "Chem. Eng. Prog",
+                "volume": "98",
+                "issue": "2",
+                "pages": "62--2002",
+                "other_ids": {},
+                "num": null,
+                "urls": [],
+                "raw_text": "Ragan, P. T., M. E. Kiburn, S. H. Roberts, and N. A. Kimmerle, ''Chemical Plant Safety: Applying the Tools of the Trade to a New \u017d . \u017d . Risk,'' Chem. Eng. Prog., 98 2 , 62 2002 .",
+                "links": null
+            }
+        },
+        "ref_entries": {
+            "FIGREF0": {
+                "uris": null,
+                "num": null,
+                "fig_num": "1",
+                "type_str": "figure",
+                "text": "Figure 1. Space mapping of inputs and outputs: a 2-D example."
+            },
+            "FIGREF1": {
+                "uris": null,
+                "num": null,
+                "fig_num": "2",
+                "type_str": "figure",
+                "text": "Figure 2 depicts a jacketed CSTR system where an \u017d exothermic reaction takes place. The original case Luyben, . 1990 is slightly modified to render the example more interesting for security analysis. The system model is given below dV s F y F 31 \u017d ."
+            },
+            "FIGREF2": {
+                "uris": null,
+                "num": null,
+                "fig_num": "2",
+                "type_str": "figure",
+                "text": "Figure 2. Nonisothermal CSTR with a cooling jacket."
+            },
+            "FIGREF3": {
+                "uris": null,
+                "num": null,
+                "fig_num": "3",
+                "type_str": "figure",
+                "text": "Figure 3. Process security maps of the rate of change of reactor temperature with different system variables. \u017d . \u017d . \u017d . a Reactant concentration and reactor temperature, b reactor flow in and flow out, c liquid volume in reactor and reactor temperature, \u017d . . \u017d . d reactant concentration and volume of liquid in reactor, e inlet temperature and reactor temperature, f reactor temperature and coolant temperature."
+            },
+            "FIGREF4": {
+                "uris": null,
+                "num": null,
+                "fig_num": null,
+                "type_str": "figure",
+                "text": "dTrdt f 2=10 Krh at C s 3.92 kmolr A 3 ."
+            },
+            "TABREF1": {
+                "num": null,
+                "type_str": "table",
+                "content": "<table><tr><td>rec</td><td>t s</td><td>0</td><td>18</td></tr></table>",
+                "text": ". Definition 5. The recovery time of the system from the \u017d . current operating point, y t , to the nominal operating point, y , is estimated by",
+                "html": null
+            },
+            "TABREF5": {
+                "num": null,
+                "type_str": "table",
+                "content": "<table><tr><td>Variable Name</td><td/><td/><td>Minimum</td><td>Nominal</td><td>Maximum</td></tr><tr><td>3 Reactor feed flow rate F m rh \u017d . \u017d 0 3 \u017d . \u017d Reactor output flow rate F m rh .</td><td>.</td><td/><td>0 0</td><td>1.13 1.13</td><td>1.98 1.98</td></tr><tr><td colspan=\"2\">in J out .\u017d Jacket feed flow rate F \u017d m rh 3 \u017d .\u017d Jacket output flow rate F m rh . 3 J</td><td>.</td><td>0 0</td><td>1.41 1.41</td><td>2.83 2.83</td></tr><tr><td>\u017d . \u017d . Reactor feed temperature T K 0</td><td/><td/><td>222.22</td><td>294.44</td><td>555.56</td></tr><tr><td>\u017d . \u017d . Temperature in reactor T K</td><td/><td/><td>222.22</td><td>333.33</td><td>555.56</td></tr><tr><td colspan=\"3\">\u017d . \u017d . Temperature in jacket T K J \u017d .\u017d Inlet concentration C kmolrm A 0 3 \u017d . \u017d . Concentration C kmolrm A \u017d . \u017d . 3 . 3 Volume of liquid in reactor V m</td><td>222.22 0 0 0.02</td><td>330.33 8.01 3.92 1.36</td><td>555.56 16.02 16.02 1.98</td></tr><tr><td>3 \u017d . \u017d . Coolant volume in jacket V m J</td><td/><td/><td>0.002</td><td>0.11</td><td>0.198</td></tr><tr><td/><td/><td/><td>Parameters</td><td/></tr><tr><td colspan=\"3\">\u017d . Jacket Feed Temperature T s 294.44 K J 0 Es69,780 kJr kmol</td><td/><td>C s 3.14 kJr kg K p 3 s800.95 kgrm</td></tr><tr><td>2 Us 3,066.3 kJrh m K 2 A s 23.23 m H Rs8.314 kJrkmol K 10 y1</td><td/><td/><td/><td>C s 4.19 kJrkg K J 3 s997.98 kgrm J sy69,780 kJrkmol</td></tr></table>",
+                "text": "",
+                "html": null
+            },
+            "TABREF6": {
+                "num": null,
+                "type_str": "table",
+                "content": "<table><tr><td>No. of Regions</td><td>\u017d . s</td></tr><tr><td>1</td><td>0.09</td></tr><tr><td>2</td><td>1.11</td></tr><tr><td>5</td><td>1.40</td></tr><tr><td>10</td><td>1.53</td></tr><tr><td>20</td><td>1.63</td></tr></table>",
+                "text": "",
+                "html": null
+            }
+        }
+    }
+}
