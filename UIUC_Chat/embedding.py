@@ -20,12 +20,19 @@ def get_embeddings(prompt, model="nomic-embed-text:v1.5", base_url="https://olla
     response = requests.post(base_url, data=json.dumps(payload), headers=headers)
 
     if response.status_code == 200:
-        return response.json()
-    # if response.status_code == 500:
+        embedding_json = response.json()
+        if "embedding" in embedding_json:
+            embeddings = embedding_json["embedding"]
+            if isinstance(embeddings, list):
+                return embeddings
+            else:
+                print("Error: Embeddings is not a list")
+        else:
+            print("Error: 'embeddings' key not found in response")
     else:
-        # Handle errors
         print(f"Error: {response.status_code}, {response.text}")
-        return None
+
+    return None
 
 # prompt = "The sky is blue because of Rayleigh scattering"
 # embeddings = get_embeddings(prompt)

@@ -208,7 +208,7 @@ def parse_and_group_by_section(filepath):
                     # "page_num": section_page,
                     "chunk_text": [],
                     "chunk_tokens": [],
-                    "embedding": ""
+                    "embedding": []
                 })
 
             if tokens > 7000:
@@ -224,10 +224,10 @@ def parse_and_group_by_section(filepath):
             
             # print("start embedding")
             for i, chunk in enumerate(result[-1]["chunk_text"]):
-                context_with_title = f'Section {result[-1]["sec_num"]}: {result[-1]["sec_title"]}\n{chunk}'
-                embedding = get_embeddings(context_with_title)
-                embedding_json = json.dumps(embedding)
-                result[-1]["embedding"] = embedding_json
+              context_with_title = f'Section {result[-1]["sec_num"]}: {result[-1]["sec_title"]}\n{chunk}'
+              embedding = get_embeddings(context_with_title)
+              result[-1]["embedding"].append(embedding)
+
 
         total_tokens = sum([entry["tokens"] for entry in result])
         avg_tokens_per_section = total_tokens / max(len(result), 1)

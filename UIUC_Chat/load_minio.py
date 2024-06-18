@@ -24,7 +24,8 @@ client = Minio(
 grobid_server = os.getenv('GROBID_SERVER')
 LOG_FILE = 'successfully_parsed_files.log'
 ERR_LOG_FILE = f'ERRORS_parsed_files.log'
-BUCKET_NAME = 'science'
+BUCKET_NAME_1 = 'small-science'
+# BUCKET_NAME_2 = 'pubmed'
 DB_PATH = 'articles.db'
 
 
@@ -59,7 +60,6 @@ def main_parallel_upload():
     initialize_database(DB_PATH)
     # folder_name = '83500000/10.21767/'
     processed_files = load_processed_files(LOG_FILE)
-    objects = client.list_objects(BUCKET_NAME, recursive=True)#, prefix=folder_name)
     
     start_time = time.monotonic()
     
@@ -68,16 +68,33 @@ def main_parallel_upload():
     db_proc = Process(target=db_worker, args=(queue, DB_PATH))
     db_proc.start()
 
-    processed_count = 0 
+    processed_count_science = 0
+    processed_count_pubmed = 0
+    max_count = 5000
 
     with ProcessPoolExecutor(max_workers=20) as executor:
         futures = {}
-        for obj in objects:
+        for obj in client.list_objects(BUCKET_NAME_1, recursive=True):
+            if processed_count_science >= max_count:
+                break
             if obj.object_name not in processed_files:
-                futures[executor.submit(upload_single_pdf, obj, queue)] = obj
-                processed_count += 1
-                if processed_count >= 5000:
-                    break
+                response = client.get_object(BUCKET_NAME_1, obj.object_name)
+                file_content = response.read()
+                response.close()
+                response.release_conn()
+                futures[executor.submit(upload_single_pdf, obj.object_name, file_content, queue)] = obj
+                processed_count_science += 1
+
+        # for obj in client.list_objects(BUCKET_NAME_2, recursive=True):
+        #     if processed_count_pubmed >= max_count:
+        #         break
+        #     if obj.object_name not in processed_files:
+        #         response = client.get_object(BUCKET_NAME_2, obj.object_name)
+        #         file_content = response.read()
+        #         response.close()
+        #         response.release_conn()
+        #         futures[executor.submit(upload_single_pdf, obj.object_name, file_content, queue)] = obj
+        #         processed_count_pubmed += 1
 
         for future in as_completed(futures):
             obj = futures[future]
@@ -92,18 +109,22 @@ def main_parallel_upload():
     db_proc.join()
     print(f"Total Runtime: {(time.monotonic() - start_time):.2f} seconds")
 
-def upload_single_pdf(minio_object, queue):
+def upload_single_pdf(minio_object_name, file_content, queue):
     """
     This is the fundamental unit of parallelism: upload a single PDF to SQLite, all or nothing.
     """
-    try: 
+    try:
         start_time = time.monotonic()
-        temp_dir = tempfile.gettempdir()
-        temp_file_path = os.path.join(temp_dir, minio_object.object_name)
-        os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
-        with open(temp_file_path, 'wb') as tmp_file:
-            client.fget_object(BUCKET_NAME, minio_object.object_name, tmp_file.name)
-            print(f"Downloaded {minio_object.object_name}")
+        
+        # print(f"Processing {minio_object_name}")
+        
+        # Create a temporary file in memory
+        with tempfile.NamedTemporaryFile() as tmp_file:
+            tmp_file.write(file_content)
+            temp_file_path = tmp_file.name
+        
+            # print(f"Downloaded {minio_object_name}")
+
             grobid_config = {
                 "grobid_server": grobid_server,
                 "batch_size": 1000,
@@ -115,27 +136,30 @@ def upload_single_pdf(minio_object, queue):
 
             os.makedirs(temp_path, exist_ok=True)
             os.makedirs(output_path, exist_ok=True)
-            output_file = process_pdf_file(tmp_file.name, temp_path, output_path, grobid_config)
+            output_file = process_pdf_file(temp_file_path, temp_path, output_path, grobid_config)
             metadata, grouped_data, all_sections, total_tokens, avg_tokens_per_section, max_tokens_per_section = parse_and_group_by_section(output_file.name)
+            
             queue.put({
                 'metadata': metadata,
                 'total_tokens': total_tokens,
                 'grouped_data': grouped_data,
                 'object_name': DB_PATH,
-                'file_name': minio_object.object_name
+                'file_name': minio_object_name
             })
-            # print("Metadata:", metadata)
-            # print("grouped data: ", grouped_data)
-            # print("Number of tokens per section:")
-            # for section in grouped_data:
-            #     print(f"Section {section['sec_num']} ({section['sec_title']}): {section['tokens']} tokens")
-            # print("All sections:", json.dumps(all_sections, indent=2))
-            # print("Total tokens:", total_tokens)
-            # print("Average tokens per section:", avg_tokens_per_section)
-            # print("Max tokens per section:", max_tokens_per_section)
-            # insert_data(metadata, total_tokens, grouped_data, DB_PATH)
-            # save_processed_file(LOG_FILE, minio_object.object_name)
-            print(f"Single Task Runtime: {(time.monotonic() - start_time):.2f} seconds")
+            
+            # Clean up the temporary file
+                # print("Metadata:", metadata)
+                # print("grouped data: ", grouped_data)
+                # print("Number of tokens per section:")
+                # for section in grouped_data:
+                #     print(f"Section {section['sec_num']} ({section['sec_title']}): {section['tokens']} tokens")
+                # print("All sections:", json.dumps(all_sections, indent=2))
+                # print("Total tokens:", total_tokens)
+                # print("Average tokens per section:", avg_tokens_per_section)
+                # print("Max tokens per section:", max_tokens_per_section)
+                # insert_data(metadata, total_tokens, grouped_data, DB_PATH)
+                # save_processed_file(LOG_FILE, minio_object.object_name)
+            # print(f"Single Task Runtime: {(time.monotonic() - start_time):.2f} seconds")
 
             # TODO: LOGS SUCCESSES
 

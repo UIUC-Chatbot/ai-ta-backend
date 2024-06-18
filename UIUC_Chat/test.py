@@ -23,7 +23,7 @@ BASE_TEMP_DIR = 'temp'
 BASE_OUTPUT_DIR = 'output'
 temp_path = BASE_TEMP_DIR
 output_path = BASE_OUTPUT_DIR
-input_path = '/Users/jackhuang/Desktop/ai-ta-backend/UIUC_Chat/pdf/2303.14186v2.pdf'
+input_path = '/home/guest/ai-ta-backend/UIUC_Chat/pdf/issn.1678-4456.bjvras.2008.26685.pdf'
 
 grobid_config = {
     "grobid_server": 'https://grobid.kastan.ai',
