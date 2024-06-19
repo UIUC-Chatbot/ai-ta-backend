@@ -504,7 +504,8 @@ def configure(binder: Binder) -> None:
     vector_bound = True
 
   if all(os.getenv(key) for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "S3_BUCKET_NAME"]) or any(os.getenv(key) for key in ["MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_URL"]):
-    logging.info("Binding to AWS S3 storage")
+    if os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY"): logging.info("Binding to AWS storage")
+    elif os.getenv("MINIO_ACCESS_KEY") and os.getenv("MINIO_SECRET_KEY"): logging.info("Binding to Minio storage")
     binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
     storage_bound = True
 
