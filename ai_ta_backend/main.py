@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from typing import List
-
+from ai_ta_backend.database.poi_sql import POISQLDatabase
 from dotenv import load_dotenv
 from flask import (
     Flask,
@@ -46,6 +46,7 @@ from ai_ta_backend.service.workflow_service import WorkflowService
 from ai_ta_backend.extensions import db
 
 
+from langchain_core.messages import HumanMessage, SystemMessage
 
 app = Flask(__name__)
 CORS(app)
@@ -228,12 +229,16 @@ def createConversationMap(service: NomicService):
 def query_sql_agent():
     data = request.get_json()
     user_input = data.get('query')
+    system_message = SystemMessage(content="you are a helpful assistant and need to provide answers in text format about the plants found in India. If the Question is not related to plants in India answer 'I do not have any information on this.'")
+   
     if not user_input:
         return jsonify({"error": "No query provided"}), 400
 
     try:
-        response = generate_response(user_input)
-        return jsonify({"response": response}), 200
+        user_01 = HumanMessage(content=user_input)
+        inputs = {"messages": [system_message,user_01]}
+        response = generate_response(inputs)
+        return  str(response), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -516,7 +521,8 @@ def configure(binder: Binder) -> None:
             binder.bind(SQLAlchemyDatabase, to=db, scope=SingletonScope)
             sql_bound = True
             break
-  
+  # if os.getenv(POI_SQL_DB_NAME): # type: ignore
+  #     binder.bind(SQLAlchemyDatabase, to=POISQLDatabase, scope=SingletonScope)
   # Conditionally bind databases based on the availability of their respective secrets
   if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
     logging.info("Binding to Qdrant database")
