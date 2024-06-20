@@ -1,4 +1,3 @@
-import json
 import logging
 import os
 import sys
@@ -6,35 +5,33 @@ import time
 from typing import List
 
 from dotenv import load_dotenv
-from flask import (
-    Flask,
-    Response,
-    abort,
-    jsonify,
-    make_response,
-    request,
-    send_from_directory,
-)
+from flask import abort
+from flask import Flask
+from flask import jsonify
+from flask import make_response
+from flask import request
+from flask import Response
+from flask import send_from_directory
 from flask_cors import CORS
 from flask_executor import Executor
-from flask_injector import FlaskInjector, RequestScope
-from injector import Binder, SingletonScope
+from flask_injector import FlaskInjector
+from flask_injector import RequestScope
+from injector import Binder
+from injector import SingletonScope
 
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.qdrant import VectorDatabase
 from ai_ta_backend.database.sql import SQLAlchemyDatabase
-from ai_ta_backend.executors.flask_executor import (
-    ExecutorInterface,
-    FlaskExecutorAdapter,
-)
-from ai_ta_backend.executors.process_pool_executor import (
-    ProcessPoolExecutorAdapter,
-    ProcessPoolExecutorInterface,
-)
-from ai_ta_backend.executors.thread_pool_executor import (
-    ThreadPoolExecutorAdapter,
-    ThreadPoolExecutorInterface,
-)
+from ai_ta_backend.executors.flask_executor import ExecutorInterface
+from ai_ta_backend.executors.flask_executor import FlaskExecutorAdapter
+from ai_ta_backend.executors.process_pool_executor import \
+    ProcessPoolExecutorAdapter
+from ai_ta_backend.executors.process_pool_executor import \
+    ProcessPoolExecutorInterface
+from ai_ta_backend.executors.thread_pool_executor import \
+    ThreadPoolExecutorAdapter
+from ai_ta_backend.executors.thread_pool_executor import \
+    ThreadPoolExecutorInterface
 from ai_ta_backend.extensions import db
 from ai_ta_backend.service.export_service import ExportService
 from ai_ta_backend.service.nomic_service import NomicService
@@ -68,8 +65,7 @@ def index() -> Response:
   Returns:
       JSON: _description_
   """
-  response = jsonify(
-      {"hi there, this is a 404": "Welcome to UIUC.chat backend 🚅 Read the docs here: https://docs.uiuc.chat/ "})
+  response = jsonify({"hi there, this is a 404": "Welcome to UIUC.chat backend 🚅 Read the docs here: https://docs.uiuc.chat/ "})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
@@ -141,9 +137,7 @@ def getAll(service: RetrievalService) -> Response:
 
   if course_name == '':
     # proper web error "400 Bad request"
-    abort(
-        400,
-        description=f"Missing the one required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+    abort(400, description=f"Missing the one required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   distinct_dicts = service.getAll(course_name)
 
@@ -261,7 +255,7 @@ def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
 
   # background execution of tasks!!
   #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
-  result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
+  flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -289,8 +283,7 @@ def export_convo_history(service: ExportService):
     response.headers.add('Access-Control-Allow-Origin', '*')
 
   else:
-    response = make_response(
-        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
     os.remove(export_status['response'][0])
@@ -307,7 +300,7 @@ def export_conversations_custom(service: ExportService):
 
   if course_name == '' and emails == []:
     # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' and 'destination_email_ids' must be provided.")
+    abort(400, description="Missing required parameter: 'course_name' and 'destination_email_ids' must be provided.")
 
   export_status = service.export_conversations(course_name, from_date, to_date, emails)
   print("EXPORT FILE LINKS: ", export_status)
@@ -321,8 +314,7 @@ def export_conversations_custom(service: ExportService):
     response.headers.add('Access-Control-Allow-Origin', '*')
 
   else:
-    response = make_response(
-        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
     os.remove(export_status['response'][0])
@@ -352,8 +344,7 @@ def exportDocuments(service: ExportService):
     response.headers.add('Access-Control-Allow-Origin', '*')
 
   else:
-    response = make_response(
-        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response = make_response(send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
     response.headers.add('Access-Control-Allow-Origin', '*')
     response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
     os.remove(export_status['response'][0])

@@ -4,11 +4,11 @@ import time
 import traceback
 from typing import Dict, List, Optional, Union
 
-import openai
 from injector import inject
 from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
+import openai
 
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.qdrant import VectorDatabase
@@ -73,9 +73,7 @@ class RetrievalService:
     try:
       start_time_overall = time.monotonic()
 
-      found_docs: list[Document] = self.vector_search(search_query=search_query,
-                                                      course_name=course_name,
-                                                      doc_groups=doc_groups)
+      found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name, doc_groups=doc_groups)
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
@@ -208,10 +206,7 @@ class RetrievalService:
         if self.sentry is not None:
           self.sentry.capture_exception(e)
 
-  def getTopContextsWithMQR(self,
-                            search_query: str,
-                            course_name: str,
-                            token_limit: int = 4_000) -> Union[List[Dict], str]:
+  def getTopContextsWithMQR(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
     """
     New info-retrieval pipeline that uses multi-query retrieval + filtering + reciprocal rank fusion + context padding.
     1. Generate multiple queries based on the input search query.

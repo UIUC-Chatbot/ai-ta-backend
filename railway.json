@@ -13,10 +13,7 @@
           ]
         },
         "setup": {
-          "nixPkgs": [
-            "python310",
-            "gcc"
-          ]
+          "nixPkgs": ["python310", "gcc"]
         }
       }
     }

@@ -35,7 +35,7 @@
 #   """
 #   print("in create_document_map()")
 #   nomic.login(os.getenv('NOMIC_API_KEY'))
- 
+
 #   try:
 #     # check if map exists
 #     response = SUPABASE_CLIENT.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
@@ -50,7 +50,7 @@
 #                                                                                               desc=False).execute()
 #     if not response.count:
 #       return "No documents found for this course."
-    
+
 #     total_doc_count = response.count
 #     print("Total number of documents in Supabase: ", total_doc_count)
 
@@ -59,7 +59,7 @@
 #       return "Cannot create a map because there are less than 20 documents in the course."
 
 #     first_id = response.data[0]['id']
-    
+
 #     combined_dfs = []
 #     curr_total_doc_count = 0
 #     doc_count = 0
@@ -67,7 +67,7 @@
 
 #     # iteratively query in batches of 25
 #     while curr_total_doc_count < total_doc_count:
-      
+
 #       response = SUPABASE_CLIENT.table("documents").select(
 #             "id, created_at, s3_path, url, base_url, readable_filename, contexts").eq("course_name", course_name).gte(
 #                 'id', first_id).order('id', desc=False).limit(25).execute()
@@ -93,7 +93,7 @@
 #           topic_label_field = "text"
 #           colorable_fields = ["readable_filename", "text", "base_url", "created_at"]
 #           result = create_map(embeddings, metadata, project_name, index_name, topic_label_field, colorable_fields)
-          
+
 #           if result == "success":
 #             # update flag
 #             first_batch = False
@@ -109,7 +109,6 @@
 #             else:
 #               insert_response = SUPABASE_CLIENT.table("projects").insert(project_info).execute()
 #               print("Insert Response from supabase: ", insert_response)
-            
 
 #         else:
 #           # append to existing map
@@ -123,7 +122,7 @@
 #             info = {'last_uploaded_doc_id': last_id}
 #             update_response = SUPABASE_CLIENT.table("projects").update(info).eq("course_name", course_name).execute()
 #             print("Response from supabase: ", update_response)
-        
+
 #         # reset variables
 #         combined_dfs = []
 #         doc_count = 0
@@ -160,11 +159,10 @@
 #         else:
 #           insert_response = SUPABASE_CLIENT.table("projects").insert(project_info).execute()
 #           print("Insert Response from supabase: ", insert_response)
-        
-  
+
 #     # rebuild the map
 #     rebuild_map(course_name, "document")
-    
+
 #   except Exception as e:
 #     print(e)
 #     sentry_sdk.capture_exception(e)
@@ -201,10 +199,9 @@
 #     sentry_sdk.capture_exception(e)
 #     return "Error in deleting from document map: {e}"
 
-
 # def log_to_document_map(course_name: str):
 #   """
-#   This is a function which appends new documents to an existing document map. It's called 
+#   This is a function which appends new documents to an existing document map. It's called
 #   at the end of split_and_upload() after inserting data to Supabase.
 #   Args:
 #     data: dict - the response data from Supabase insertion
@@ -227,14 +224,14 @@
 #       # create a map
 #       create_document_map(course_name)
 #       return "Document map not present, triggering map creation."
-      
+
 #     project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
 #     project_name = "Document Map for " + course_name
-    
+
 #     # check if project is LOCKED, if yes -> skip logging
 #     if not project.is_accepting_data:
 #       return "Skipping Nomic logging because project is locked."
-        
+
 #     # fetch count of records greater than last_uploaded_doc_id
 #     print("last uploaded doc id: ", last_uploaded_doc_id)
 #     response = SUPABASE_CLIENT.table("documents").select("id", count="exact").eq("course_name", course_name).gt("id", last_uploaded_doc_id).execute()
@@ -262,7 +259,7 @@
 
 #         # append to existing map
 #         print("Appending data to existing map...")
-                               
+
 #         result = append_to_map(embeddings, metadata, project_name)
 #         if result == "success":
 #           # update the last uploaded id in supabase
@@ -270,15 +267,15 @@
 #           info = {'last_uploaded_doc_id': last_id}
 #           update_response = SUPABASE_CLIENT.table("projects").update(info).eq("course_name", course_name).execute()
 #           print("Response from supabase: ", update_response)
-                
+
 #         # reset variables
 #         combined_dfs = []
 #         doc_count = 0
 #         print("Records uploaded: ", current_doc_count)
-            
+
 #       # set first_id for next iteration
 #       first_id = response.data[-1]['id'] + 1
-        
+
 #     # upload last set of docs
 #     if doc_count > 0:
 #       final_df = pd.concat(combined_dfs, ignore_index=True)
@@ -292,13 +289,12 @@
 #         project_info = {'last_uploaded_doc_id': last_id}
 #         update_response = SUPABASE_CLIENT.table("projects").update(project_info).eq("course_name", course_name).execute()
 #         print("Response from supabase: ", update_response)
-            
+
 #     return "success"
 #   except Exception as e:
 #     print(e)
-#     return "failed"        
-                
-    
+#     return "failed"
+
 # def create_map(embeddings, metadata, map_name, index_name, topic_label_field, colorable_fields):
 #   """
 #   Generic function to create a Nomic map from given parameters.
@@ -380,7 +376,7 @@
 #           "created_at": created_at,
 #           "s3_path": row['s3_path'],
 #           "url": row['url'],
-#           "base_url": row['base_url'],  
+#           "base_url": row['base_url'],
 #           "readable_filename": row['readable_filename'],
 #           "modified_at": current_time,
 #           "text": text_row
@@ -431,8 +427,5 @@
 #     sentry_sdk.capture_exception(e)
 #     return "Error in rebuilding map: {e}"
 
-
-
 # if __name__ == '__main__':
 #   pass
-

@@ -94,7 +94,6 @@
 # # MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 # OPENAI_API_TYPE = "azure"  # "openai" or "azure"
 
-
 # def loader():
 #   """
 #   The loader function will run once for each worker that starts up. https://docs.beam.cloud/deployment/loaders
@@ -141,10 +140,8 @@
 
 #   return qdrant_client, vectorstore, s3_client, supabase_client, posthog
 
-
 # # autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
 # autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
-
 
 # # Triggers determine how your app is deployed
 # # @app.rest_api(
@@ -230,7 +227,6 @@
 
 #   print(f"Final success_fail_dict: {success_fail_dict}")
 #   return json.dumps(success_fail_dict)
-
 
 # class Ingest():
 
@@ -843,7 +839,7 @@
 #             text = pytesseract.image_to_string(im.original)
 #             print("Page number: ", i, "Text: ", text[:100])
 #             pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
-      
+
 #       metadatas: List[Dict[str, Any]] = [
 #               {
 #                   'course_name': course_name,
@@ -1363,7 +1359,6 @@
 #   #       break
 
 #   #   return all_files
-
 
 # if __name__ == "__main__":
 #   raise NotImplementedError("This file is not meant to be run directly")

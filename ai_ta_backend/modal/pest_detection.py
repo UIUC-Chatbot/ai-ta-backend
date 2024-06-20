@@ -16,14 +16,18 @@ Inspired by https://modal.com/docs/examples/webcam#prediction-function
 import inspect
 import json
 import os
-import traceback
-import uuid
 from tempfile import NamedTemporaryFile
+import traceback
 from typing import List
+import uuid
 
-import modal
 from fastapi import Request
-from modal import Secret, Stub, build, enter, web_endpoint
+import modal
+from modal import build
+from modal import enter
+from modal import Secret
+from modal import Stub
+from modal import web_endpoint
 
 # Simpler image, but slower cold starts: modal.Image.from_registry('ultralytics/ultralytics:latest-cpu')
 image = (
@@ -42,16 +46,10 @@ stub = Stub("v2_pest_detection_yolo", image=image)
 
 # Imports needed inside the image
 with image.imports():
-  import inspect
-  import os
-  import traceback
-  import uuid
-  from tempfile import NamedTemporaryFile
-  from typing import List
 
   import boto3
-  import requests
   from PIL import Image
+  import requests
   from ultralytics import YOLO
 
 

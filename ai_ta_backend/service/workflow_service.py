@@ -1,10 +1,11 @@
-import requests
-import time
-import os
-import supabase
-from urllib.parse import quote
 import json
+import os
+import time
+from urllib.parse import quote
+
 from injector import inject
+import requests
+
 from ai_ta_backend.database.supabase import SQLDatabase
 
 
@@ -78,12 +79,7 @@ class WorkflowService:
     else:
       return all_executions
 
-  def get_workflows(self,
-                    limit,
-                    pagination: bool = True,
-                    api_key: str = "",
-                    active: bool = False,
-                    workflow_name: str = ''):
+  def get_workflows(self, limit, pagination: bool = True, api_key: str = "", active: bool = False, workflow_name: str = ''):
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}

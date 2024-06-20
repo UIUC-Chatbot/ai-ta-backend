@@ -1,8 +1,8 @@
-import os
-import time
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from multiprocessing import Manager
+import os
+import time
 
 DOCUMENTS_TABLE = os.environ['SUPABASE_DOCUMENTS_TABLE']
 # SUPABASE_CLIENT = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'],
@@ -68,14 +68,11 @@ def supabase_context_padding(doc, course_name, result_docs):
   # query by url or s3_path
   if 'url' in doc.metadata.keys() and doc.metadata['url']:
     parent_doc_id = doc.metadata['url']
-    response = SUPABASE_CLIENT.table(DOCUMENTS_TABLE).select('*').eq('course_name',
-                                                                     course_name).eq('url', parent_doc_id).execute()
+    response = SUPABASE_CLIENT.table(DOCUMENTS_TABLE).select('*').eq('course_name', course_name).eq('url', parent_doc_id).execute()
 
   else:
     parent_doc_id = doc.metadata['s3_path']
-    response = SUPABASE_CLIENT.table(DOCUMENTS_TABLE).select('*').eq('course_name',
-                                                                     course_name).eq('s3_path',
-                                                                                     parent_doc_id).execute()
+    response = SUPABASE_CLIENT.table(DOCUMENTS_TABLE).select('*').eq('course_name', course_name).eq('s3_path', parent_doc_id).execute()
 
   data = response.data
 

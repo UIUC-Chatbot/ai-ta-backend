@@ -1,18 +1,18 @@
+from concurrent.futures import ProcessPoolExecutor
 import json
 import os
 import uuid
 import zipfile
-from concurrent.futures import ProcessPoolExecutor
 
+from injector import inject
 import pandas as pd
 import requests
-from injector import inject
 
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLAlchemyDatabase
+from ai_ta_backend.extensions import db
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.emails import send_email
-from ai_ta_backend.extensions import db
 
 
 class ExportService:
@@ -35,7 +35,7 @@ class ExportService:
 		"""
 
     response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date)
-    
+
     # add a condition to route to direct download or s3 download
     if response.count and response.count > 500:
       # call background task to upload to s3
@@ -228,7 +228,7 @@ class ExportService:
         return {"response": "Error downloading file!"}
     else:
       return {"response": "No data found between the given dates."}
-    
+
     # Encountered pickling error while running the background task. So, moved the function outside the class.
 
 
@@ -240,10 +240,10 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 	3. send an email to the course admins with the pre-signed URL.
 
 	Args:
-		response (dict): The response from the Supabase query.
-		download_type (str): The type of download - 'documents' or 'conversations'.
-		course_name (str): The name of the course.
-	  s3_path (str): The S3 path where the file will be uploaded.
+    response (dict): The response from the Supabase query.
+    download_type (str): The type of download - 'documents' or 'conversations'.
+    course_name (str): The name of the course.
+    s3_path (str): The S3 path where the file will be uploaded.
 	"""
   s3 = AWSStorage()
   sql = SQLAlchemyDatabase(db)
@@ -301,7 +301,6 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     # generate presigned URL
     s3_url = s3.generatePresignedUrl('get_object', os.environ['S3_BUCKET_NAME'], s3_path, 172800)
 
-
     # get admin email IDs
     headers = {"Authorization": f"Bearer {os.environ['VERCEL_READ_ONLY_API_KEY']}", "Content-Type": "application/json"}
 
@@ -344,6 +343,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     print(e)
     return "Error: " + str(e)
 
+
 def export_data_in_bg_emails(response, download_type, course_name, s3_path, emails):
   """
 	This function is called in export_documents_csv() to upload the documents to S3.
@@ -352,10 +352,10 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
 	3. send an email to the course admins with the pre-signed URL.
 
 	Args:
-		response (dict): The response from the Supabase query.
-		download_type (str): The type of download - 'documents' or 'conversations'.
-		course_name (str): The name of the course.
-	  s3_path (str): The S3 path where the file will be uploaded.
+    response (dict): The response from the Supabase query.
+    download_type (str): The type of download - 'documents' or 'conversations'.
+    course_name (str): The name of the course.
+    s3_path (str): The S3 path where the file will be uploaded.
 	"""
   s3 = AWSStorage()
   sql = SQLAlchemyDatabase(db)
@@ -415,7 +415,7 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
 
     admin_emails = emails
     bcc_emails = []
-    
+
     print("admin_emails: ", admin_emails)
     print("bcc_emails: ", bcc_emails)
 

@@ -4,10 +4,9 @@ from typing import Any
 import tiktoken
 
 
-def count_tokens_and_cost(
-    prompt: str,
-    completion: str = '',
-    openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
+def count_tokens_and_cost(prompt: str,
+                          completion: str = '',
+                          openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
   """
   # TODO: improve w/ extra tokens used by model: https://github.com/openai/openai-cookbook/blob/d00e9a48a63739f5b038797594c81c8bb494fc09/examples/How_to_count_tokens_with_tiktoken.ipynb
   Returns the number of tokens in a text string.
@@ -126,9 +125,7 @@ def analyze_conversations(supabase_client: Any = None):
 
       # If the message is from the assistant, it's a completion
       elif role == 'assistant':
-        num_tokens_completion, cost_completion = count_tokens_and_cost(prompt='',
-                                                                       completion=content,
-                                                                       openai_model_name=model_name)
+        num_tokens_completion, cost_completion = count_tokens_and_cost(prompt='', completion=content, openai_model_name=model_name)
         total_completion_cost += cost_completion
         print(f'Assistant Completion: {content}\nTokens: {num_tokens_completion}, cost: {cost_completion}')
   return total_convos, total_messages, total_prompt_cost, total_completion_cost

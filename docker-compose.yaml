@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # sqlite:
@@ -26,8 +26,8 @@ services:
   minio:
     image: minio/minio
     environment:
-      MINIO_ROOT_USER: 'minioadmin' # Customize access key
-      MINIO_ROOT_PASSWORD: 'minioadmin' # Customize secret key
+      MINIO_ROOT_USER: "minioadmin" # Customize access key
+      MINIO_ROOT_PASSWORD: "minioadmin" # Customize secret key
     command: server /data
     ports:
       - "9000:9000" # Console access

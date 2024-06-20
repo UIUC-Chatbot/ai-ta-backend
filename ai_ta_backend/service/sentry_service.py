@@ -1,7 +1,7 @@
 import os
 
-import sentry_sdk
 from injector import inject
+import sentry_sdk
 
 
 class SentryService:
