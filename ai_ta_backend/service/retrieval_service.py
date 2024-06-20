@@ -33,6 +33,14 @@ class RetrievalService:
     self.posthog = posthog
     self.nomicService = nomicService
 
+    print("self.sqlDb", self.sqlDb)
+    print("Attributes of sqlDb:", dir(self.sqlDb))  # Print all attributes of sqlDb
+
+    try: 
+      assert hasattr(self.sqlDb, 'getAllMaterialsForCourse'), "BAD BAD -- sqlDb does not have the method getAllMaterialsForCourse"
+    except Exception as e: 
+      print("Error loading getAllMaterialsForCourse: ", e)
+
     openai.api_key = os.environ["OPENAI_API_KEY"]
 
     self.embeddings = OpenAIEmbeddings(
@@ -138,6 +146,7 @@ class RetrievalService:
     Returns:
         list of dictionaries with distinct s3 path, readable_filename and course_name, url, base_url.
     """
+    print("Inside retrieval Service getAll()")
 
     response = self.sqlDb.getAllMaterialsForCourse(course_name)
 

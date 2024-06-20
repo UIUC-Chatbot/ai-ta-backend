@@ -41,7 +41,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./db:/app/db # Mount local directory to store SQLite database
+      - ./db:/usr/src/app/db # Mount local directory to store SQLite database
     depends_on:
       # - sqlite
       - redis

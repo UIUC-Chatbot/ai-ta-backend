@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 import os
 import time
 from typing import List
@@ -44,14 +45,20 @@ from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
 from ai_ta_backend.extensions import db
 
+
+# Make docker log our prints() -- Set PYTHONUNBUFFERED to ensure no output buffering
+os.environ['PYTHONUNBUFFERED'] = '1'
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 1)
+sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 1)
+
 app = Flask(__name__)
 CORS(app)
 executor = Executor(app)
 # app.config['EXECUTOR_MAX_WORKERS'] = 5 nothing == picks defaults for me
-#app.config['SERVER_TIMEOUT'] = 1000  # seconds
+# app.config['SERVER_TIMEOUT'] = 1000  # seconds
 
 # load API keys from globally-availabe .env file
-load_dotenv()
+load_dotenv(override=True)
 
 @app.route('/')
 def index() -> Response:
@@ -131,6 +138,7 @@ def getTopContexts(service: RetrievalService) -> Response:
 def getAll(service: RetrievalService) -> Response:
   """Get all course materials based on the course_name
   """
+  print("In getAll()")
   course_name: List[str] | str = request.args.get('course_name', default='', type=str)
 
   if course_name == '':
@@ -494,6 +502,7 @@ def configure(binder: Binder) -> None:
               db.init_app(app)
               db.create_all()
             binder.bind(SQLAlchemyDatabase, to=db, scope=SingletonScope)
+            print("Bound to SQL DB!")
             sql_bound = True
             break
   
