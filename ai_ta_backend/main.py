@@ -36,11 +36,10 @@ from ai_ta_backend.executors.thread_pool_executor import (
 )
 from ai_ta_backend.service.export_service import ExportService
 from ai_ta_backend.service.nomic_service import NomicService
+from ai_ta_backend.service.poi_agent_service_v2 import POIAgentService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
-from ai_ta_backend.service.poi_agent_service import generate_response ## need to add langchain-community langchain-core langchain-openai to requirements.txt
-
 # from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.service.workflow_service import WorkflowService
 from ai_ta_backend.extensions import db
@@ -55,7 +54,7 @@ executor = Executor(app)
 #app.config['SERVER_TIMEOUT'] = 1000  # seconds
 
 # load API keys from globally-availabe .env file
-load_dotenv()
+load_dotenv(override=True)
 
 @app.route('/')
 def index() -> Response:
@@ -226,9 +225,9 @@ def createConversationMap(service: NomicService):
 
 
 @app.route('/query_sql_agent', methods=['POST'])
-def query_sql_agent():
+def query_sql_agent(service: POIAgentService):
     data = request.get_json()
-    user_input = data.get('query')
+    user_input = data["query"]
     system_message = SystemMessage(content="you are a helpful assistant and need to provide answers in text format about the plants found in India. If the Question is not related to plants in India answer 'I do not have any information on this.'")
    
     if not user_input:
@@ -237,7 +236,7 @@ def query_sql_agent():
     try:
         user_01 = HumanMessage(content=user_input)
         inputs = {"messages": [system_message,user_01]}
-        response = generate_response(inputs)
+        response = service.run_workflow(inputs)
         return  str(response), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -518,11 +517,13 @@ def configure(binder: Binder) -> None:
               app.config['SQLALCHEMY_DATABASE_URI'] = url
               db.init_app(app)
               db.create_all()
-            binder.bind(SQLAlchemyDatabase, to=db, scope=SingletonScope)
+            binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
             sql_bound = True
             break
-  # if os.getenv(POI_SQL_DB_NAME): # type: ignore
-  #     binder.bind(SQLAlchemyDatabase, to=POISQLDatabase, scope=SingletonScope)
+  if os.getenv("POI_SQL_DB_NAME"):
+      logging.info(f"Binding to POI SQL database with URL: {os.getenv('POI_SQL_DB_NAME')}")
+      binder.bind(POISQLDatabase, to=POISQLDatabase(db), scope=SingletonScope)
+      binder.bind(POIAgentService, to=POIAgentService, scope=SingletonScope)
   # Conditionally bind databases based on the availability of their respective secrets
   if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
     logging.info("Binding to Qdrant database")

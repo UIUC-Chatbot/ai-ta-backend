@@ -19,16 +19,20 @@ typing-inspect==0.9.0
 typing_extensions==4.8.0
 
 # Utils
-tiktoken==0.5.1
+tiktoken==0.7.0
 python-dotenv==1.0.0
 pydantic==1.10.13 # pydantic v1 works better for ray
 flask-executor==1.0.0
 
 # AI & core services
 nomic==2.0.14
-openai==0.28.1
-langchain==0.0.331
+openai==1.31.2
+langchain==0.2.2
 langchainhub==0.1.14
+langgraph==0.0.69
+faiss-cpu==1.8.0
+langchain-community==0.2.3
+langchain-openai==0.1.8
 
 # Data
 boto3==1.28.79
