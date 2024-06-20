@@ -1,6 +1,5 @@
 import logging
 import os
-import sys
 import time
 from typing import List
 
@@ -39,11 +38,6 @@ from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
-
-# Make docker log our prints() -- Set PYTHONUNBUFFERED to ensure no output buffering
-os.environ['PYTHONUNBUFFERED'] = '1'
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 1)
-sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 1)
 
 app = Flask(__name__)
 CORS(app)
@@ -113,6 +107,9 @@ def getTopContexts(service: RetrievalService) -> Response:
   token_limit: int = data.get('token_limit', 3000)
   doc_groups: List[str] = data.get('doc_groups', [])
 
+  logging.info(f"QDRANT URL {os.environ['QDRANT_URL']}")
+  logging.info(f"QDRANT_API_KEY {os.environ['QDRANT_API_KEY']}")
+
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
     abort(
@@ -132,7 +129,7 @@ def getTopContexts(service: RetrievalService) -> Response:
 def getAll(service: RetrievalService) -> Response:
   """Get all course materials based on the course_name
   """
-  print("In getAll()")
+  logging.info("In getAll()")
   course_name: List[str] | str = request.args.get('course_name', default='', type=str)
 
   if course_name == '':
@@ -167,8 +164,8 @@ def delete(service: RetrievalService, flaskExecutor: ExecutorInterface):
   start_time = time.monotonic()
   # background execution of tasks!!
   flaskExecutor.submit(service.delete_data, course_name, s3_path, source_url)
-  print(f"From {course_name}, deleted file: {s3_path}")
-  print(f"⏰ Runtime of FULL delete func: {(time.monotonic() - start_time):.2f} seconds")
+  logging.info(f"From {course_name}, deleted file: {s3_path}")
+  logging.info(f"⏰ Runtime of FULL delete func: {(time.monotonic() - start_time):.2f} seconds")
   # we need instant return. Delets are "best effort" assume always successful... sigh :(
   response = jsonify({"outcome": 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -185,7 +182,7 @@ def nomic_map(service: NomicService):
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   map_id = service.get_nomic_map(course_name, map_type)
-  print("nomic map\n", map_id)
+  logging.info("nomic map\n", map_id)
 
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -251,7 +248,7 @@ def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
         description=
         f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
     )
-  print(f"In /onResponseCompletion for course: {course_name}")
+  logging.info(f"In /onResponseCompletion for course: {course_name}")
 
   # background execution of tasks!!
   #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
@@ -272,7 +269,7 @@ def export_convo_history(service: ExportService):
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   export_status = service.export_convo_history_json(course_name, from_date, to_date)
-  print("EXPORT FILE LINKS: ", export_status)
+  logging.info("EXPORT FILE LINKS: ", export_status)
 
   if export_status['response'] == "No data found between the given dates.":
     response = Response(status=204)
@@ -303,7 +300,7 @@ def export_conversations_custom(service: ExportService):
     abort(400, description="Missing required parameter: 'course_name' and 'destination_email_ids' must be provided.")
 
   export_status = service.export_conversations(course_name, from_date, to_date, emails)
-  print("EXPORT FILE LINKS: ", export_status)
+  logging.info("EXPORT FILE LINKS: ", export_status)
 
   if export_status['response'] == "No data found between the given dates.":
     response = Response(status=204)
@@ -333,7 +330,7 @@ def exportDocuments(service: ExportService):
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   export_status = service.export_documents_json(course_name, from_date, to_date)
-  print("EXPORT FILE LINKS: ", export_status)
+  logging.info("EXPORT FILE LINKS: ", export_status)
 
   if export_status['response'] == "No data found between the given dates.":
     response = Response(status=204)
@@ -393,9 +390,9 @@ def get_all_workflows(service: WorkflowService) -> Response:
   pagination = request.args.get('pagination', default=True, type=bool)
   active = request.args.get('active', default=False, type=bool)
   name = request.args.get('workflow_name', default='', type=str)
-  print(request.args)
+  logging.info(request.args)
 
-  print("In get_all_workflows.. api_key: ", api_key)
+  logging.info("In get_all_workflows.. api_key: ", api_key)
 
   # if no API Key, return empty set.
   # if api_key == '':
@@ -409,10 +406,10 @@ def get_all_workflows(service: WorkflowService) -> Response:
     return response
   except Exception as e:
     if "unauthorized" in str(e).lower():
-      print("Unauthorized error in get_all_workflows: ", e)
+      logging.info("Unauthorized error in get_all_workflows: ", e)
       abort(401, description=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
     else:
-      print("Error in get_all_workflows: ", e)
+      logging.info("Error in get_all_workflows: ", e)
       abort(500, description=f"Failed to fetch n8n workflows: {e}")
 
 
@@ -426,14 +423,14 @@ def switch_workflow(service: WorkflowService) -> Response:
   activate = request.args.get('activate', default='', type=str)
   id = request.args.get('id', default='', type=str)
 
-  print(request.args)
+  logging.info(request.args)
 
   if api_key == '':
     # proper web error "400 Bad request"
     abort(400, description=f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`")
 
   try:
-    print("activation!!!!!!!!!!!", activate)
+    logging.info("activation!!!!!!!!!!!", activate)
     response = service.switch_workflow(id, api_key, activate)
     response = jsonify(response)
     response.headers.add('Access-Control-Allow-Origin', '*')
@@ -455,7 +452,7 @@ def run_flow(service: WorkflowService) -> Response:
   name = request.json.get('name', '')
   data = request.json.get('data', '')
 
-  print("Got /run_flow request:", request.json)
+  logging.info("Got /run_flow request:", request.json)
 
   if api_key == '':
     # proper web error "400 Bad request"
@@ -499,7 +496,7 @@ def configure(binder: Binder) -> None:
         db.init_app(app)
         db.create_all()
       binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
-      print("Bound to SQL DB!")
+      logging.info("Bound to SQL DB!")
       sql_bound = True
       break
 
@@ -507,6 +504,10 @@ def configure(binder: Binder) -> None:
   if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(
       os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
     logging.info("Binding to Qdrant database")
+
+    logging.info(f"Qdrant Collection Name: {os.environ['QDRANT_COLLECTION_NAME']}")
+    logging.info(f"Qdrant URL: {os.environ['QDRANT_URL']}")
+    logging.info(f"Qdrant API Key: {os.environ['QDRANT_API_KEY']}")
     binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
     vector_bound = True
 

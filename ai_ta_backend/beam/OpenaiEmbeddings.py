@@ -224,9 +224,9 @@
 #           task_list.append(task)
 #           next_request = None  # reset next_request to empty
 
-#           # print("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
+#           # logging.info("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
 #           # one_task_result = task.result()
-#           # print("one_task_result", one_task_result)
+#           # logging.info("one_task_result", one_task_result)
 
 #       # if all tasks are finished, break
 #       if status_tracker.num_tasks_in_progress == 0:
@@ -485,8 +485,8 @@
 #   #   total_prompt_tokens = 0
 #   #   total_completion_tokens = 0
 
-#   #   print("Results, end of main: ", oai.results)
-#   #   print("-"*50)
+#   #   logging.info("Results, end of main: ", oai.results)
+#   #   logging.info("-"*50)
 
 #   #   # jsonObject = json.loads(oai.results)
 #   #   for element in oai.results:
@@ -498,15 +498,15 @@
 #   #               total_prompt_tokens += item['usage']['prompt_tokens']
 #   #               total_completion_tokens += item['usage']['completion_tokens']
 
-#   #   print("Assistant Contents:", assistant_contents)
-#   #   print("Total Prompt Tokens:", total_prompt_tokens)
-#   #   print("Total Completion Tokens:", total_completion_tokens)
+#   #   logging.info("Assistant Contents:", assistant_contents)
+#   #   logging.info("Total Prompt Tokens:", total_prompt_tokens)
+#   #   logging.info("Total Completion Tokens:", total_completion_tokens)
 #   #   turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
-#   #   print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
+#   #   logging.info("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
 
 #   #   gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
-#   #   print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
-#   #   print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
+#   #   logging.info("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
+#   #   logging.info("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
 #   '''
 #   Pricing:
 #   GPT4:

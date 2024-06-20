@@ -4,6 +4,7 @@ coursera-dl/
 wandb
 *.ipynb
 *.pem
+qdrant_data/*
 
 # don't expose env files
 .env

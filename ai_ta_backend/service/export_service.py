@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
 import json
+import logging
 import os
 import uuid
 import zipfile
@@ -55,16 +56,16 @@ class ExportService:
         first_id = int(str(response.data[0].id))
         last_id = int(str(response.data[-1].id))
 
-        print("total_doc_count: ", total_doc_count)
-        print("first_id: ", first_id)
-        print("last_id: ", last_id)
+        logging.info("total_doc_count: ", total_doc_count)
+        logging.info("first_id: ", first_id)
+        logging.info("last_id: ", last_id)
 
         curr_doc_count = 0
         filename = course_name + '_' + str(uuid.uuid4()) + '_documents.jsonl'
         file_path = os.path.join(os.getcwd(), filename)
 
         while curr_doc_count < total_doc_count:
-          print("Fetching data from id: ", first_id)
+          logging.info("Fetching data from id: ", first_id)
 
           response = self.sql.getDocsForIdsGte(course_name, first_id)
           df = pd.DataFrame(response.data)
@@ -91,7 +92,7 @@ class ExportService:
           os.remove(file_path)
           return {"response": (zip_file_path, zip_filename, os.getcwd())}
         except Exception as e:
-          print(e)
+          logging.info(e)
           self.sentry.capture_exception(e)
           return {"response": "Error downloading file."}
       else:
@@ -105,7 +106,7 @@ class ExportService:
 				from_date (str, optional): The start date for the data export. Defaults to ''.
 				to_date (str, optional): The end date for the data export. Defaults to ''.
 		"""
-    print("Exporting conversation history to json file...")
+    logging.info("Exporting conversation history to json file...")
 
     response = self.sql.getConversationsBetweenDates(course_name, from_date, to_date)
 
@@ -120,7 +121,7 @@ class ExportService:
 
     # Fetch data
     if response.count > 0:
-      print("id count greater than zero")
+      logging.info("id count greater than zero")
       first_id = int(str(response.data[0].id))
       last_id = int(str(response.data[-1].id))
       total_count = response.count
@@ -130,7 +131,7 @@ class ExportService:
       curr_count = 0
       # Fetch data in batches of 25 from first_id to last_id
       while curr_count < total_count:
-        print("Fetching data from id: ", first_id)
+        logging.info("Fetching data from id: ", first_id)
         response = self.sql.getAllConversationsBetweenIds(course_name, first_id, last_id)
         # Convert to pandas dataframe
         df = pd.DataFrame(response.data)
@@ -145,7 +146,7 @@ class ExportService:
         # Update first_id
         if len(response.data) > 0:
           first_id = int(str(response.data[-1].id)) + 1
-          print("updated first_id: ", first_id)
+          logging.info("updated first_id: ", first_id)
 
       # Download file
       try:
@@ -159,7 +160,7 @@ class ExportService:
 
         return {"response": (zip_file_path, zip_filename, os.getcwd())}
       except Exception as e:
-        print(e)
+        logging.info(e)
         self.sentry.capture_exception(e)
         return {"response": "Error downloading file!"}
     else:
@@ -169,7 +170,7 @@ class ExportService:
     """
     Another function for exporting convos, emails are passed as a string.
     """
-    print("Exporting conversation history to json file...")
+    logging.info("Exporting conversation history to json file...")
 
     response = self.sql.getConversationsBetweenDates(course_name, from_date, to_date)
 
@@ -184,7 +185,7 @@ class ExportService:
 
     # Fetch data
     if response.count > 0:
-      print("id count greater than zero")
+      logging.info("id count greater than zero")
       first_id = int(str(response.data[0].id))
       last_id = int(str(response.data[-1].id))
       total_count = response.count
@@ -194,7 +195,7 @@ class ExportService:
       curr_count = 0
       # Fetch data in batches of 25 from first_id to last_id
       while curr_count < total_count:
-        print("Fetching data from id: ", first_id)
+        logging.info("Fetching data from id: ", first_id)
         response = self.sql.getAllConversationsBetweenIds(course_name, first_id, last_id)
         # Convert to pandas dataframe
         df = pd.DataFrame(response.data)
@@ -209,7 +210,7 @@ class ExportService:
         # Update first_id
         if len(response.data) > 0:
           first_id = int(str(response.data[-1].id)) + 1
-          print("updated first_id: ", first_id)
+          logging.info("updated first_id: ", first_id)
 
       # Download file
       try:
@@ -223,7 +224,7 @@ class ExportService:
 
         return {"response": (zip_file_path, zip_filename, os.getcwd())}
       except Exception as e:
-        print(e)
+        logging.info(e)
         self.sentry.capture_exception(e)
         return {"response": "Error downloading file!"}
     else:
@@ -250,8 +251,8 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 
   total_doc_count = response.count
   first_id = response.data[0]['id']
-  print("total_doc_count: ", total_doc_count)
-  print("pre-defined s3_path: ", s3_path)
+  logging.info("total_doc_count: ", total_doc_count)
+  logging.info("pre-defined s3_path: ", s3_path)
 
   curr_doc_count = 0
   filename = s3_path.split('/')[-1].split('.')[0] + '.jsonl'
@@ -259,7 +260,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
 
   # download data in batches of 100
   while curr_doc_count < total_doc_count:
-    print("Fetching data from id: ", first_id)
+    logging.info("Fetching data from id: ", first_id)
     if download_type == "documents":
       response = sql.getAllDocumentsForDownload(course_name, first_id)
     else:
@@ -283,7 +284,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
   with zipfile.ZipFile(zip_file_path, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
     zipf.write(file_path, filename)
 
-  print("zip file created: ", zip_file_path)
+  logging.info("zip file created: ", zip_file_path)
 
   try:
     # upload to S3
@@ -296,7 +297,7 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     os.remove(file_path)
     os.remove(zip_file_path)
 
-    print("file uploaded to s3: ", s3_file)
+    logging.info("file uploaded to s3: ", s3_file)
 
     # generate presigned URL
     s3_url = s3.generatePresignedUrl('get_object', os.environ['S3_BUCKET_NAME'], s3_path, 172800)
@@ -319,8 +320,8 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
     # add course owner email to admin_emails
     admin_emails.append(course_metadata['course_owner'])
     admin_emails = list(set(admin_emails))
-    print("admin_emails: ", admin_emails)
-    print("bcc_emails: ", bcc_emails)
+    logging.info("admin_emails: ", admin_emails)
+    logging.info("bcc_emails: ", bcc_emails)
 
     # add a check for emails, don't send email if no admin emails
     if len(admin_emails) == 0:
@@ -335,12 +336,12 @@ def export_data_in_bg(response, download_type, course_name, s3_path):
       subject = "UIUC.chat Export Complete for " + course_name
     body_text = "The data export for " + course_name + " is complete.\n\nYou can download the file from the following link: \n\n" + s3_url + "\n\nThis link will expire in 48 hours."
     email_status = send_email(subject, body_text, os.environ['EMAIL_SENDER'], admin_emails, bcc_emails)
-    print("email_status: ", email_status)
+    logging.info("email_status: ", email_status)
 
     return "File uploaded to S3. Email sent to admins."
 
   except Exception as e:
-    print(e)
+    logging.info(e)
     return "Error: " + str(e)
 
 
@@ -362,8 +363,8 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
 
   total_doc_count = response.count
   first_id = response.data[0]['id']
-  print("total_doc_count: ", total_doc_count)
-  print("pre-defined s3_path: ", s3_path)
+  logging.info("total_doc_count: ", total_doc_count)
+  logging.info("pre-defined s3_path: ", s3_path)
 
   curr_doc_count = 0
   filename = s3_path.split('/')[-1].split('.')[0] + '.jsonl'
@@ -371,7 +372,7 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
 
   # download data in batches of 100
   while curr_doc_count < total_doc_count:
-    print("Fetching data from id: ", first_id)
+    logging.info("Fetching data from id: ", first_id)
     if download_type == "documents":
       response = sql.getAllDocumentsForDownload(course_name, first_id)
     else:
@@ -395,7 +396,7 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
   with zipfile.ZipFile(zip_file_path, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
     zipf.write(file_path, filename)
 
-  print("zip file created: ", zip_file_path)
+  logging.info("zip file created: ", zip_file_path)
 
   try:
     # upload to S3
@@ -408,7 +409,7 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
     os.remove(file_path)
     os.remove(zip_file_path)
 
-    print("file uploaded to s3: ", s3_file)
+    logging.info("file uploaded to s3: ", s3_file)
 
     # generate presigned URL
     s3_url = s3.generatePresignedUrl('get_object', os.environ['S3_BUCKET_NAME'], s3_path, 172800)
@@ -416,8 +417,8 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
     admin_emails = emails
     bcc_emails = []
 
-    print("admin_emails: ", admin_emails)
-    print("bcc_emails: ", bcc_emails)
+    logging.info("admin_emails: ", admin_emails)
+    logging.info("bcc_emails: ", bcc_emails)
 
     # add a check for emails, don't send email if no admin emails
     if len(admin_emails) == 0:
@@ -432,10 +433,10 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
       subject = "UIUC.chat Export Complete for " + course_name
     body_text = "The data export for " + course_name + " is complete.\n\nYou can download the file from the following link: \n\n" + s3_url + "\n\nThis link will expire in 48 hours."
     email_status = send_email(subject, body_text, os.environ['EMAIL_SENDER'], admin_emails, bcc_emails)
-    print("email_status: ", email_status)
+    logging.info("email_status: ", email_status)
 
     return "File uploaded to S3. Email sent to admins."
 
   except Exception as e:
-    print(e)
+    logging.info(e)
     return "Error: " + str(e)

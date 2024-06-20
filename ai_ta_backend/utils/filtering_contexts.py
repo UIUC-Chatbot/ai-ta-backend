@@ -45,7 +45,7 @@
 
 #   def filter_context(self, context, user_query, langsmith_prompt_obj):
 #     final_prompt = str(langsmith_prompt_obj.format(context=context, user_query=user_query))
-#     # print(f"-------\nfinal_prompt:\n{final_prompt}\n^^^^^^^^^^^^^")
+#     # logging.info(f"-------\nfinal_prompt:\n{final_prompt}\n^^^^^^^^^^^^^")
 #     try:
 #       # completion = run_caii_hosted_llm(final_prompt)
 #       # completion = run_replicate(final_prompt)
@@ -53,7 +53,7 @@
 #       return {"completion": completion, "context": context}
 #     except Exception as e:
 #       sentry_sdk.capture_exception(e)
-#       print(f"Error: {e}")
+#       logging.info(f"Error: {e}")
 
 # def run_caii_hosted_llm(prompt, max_tokens=300, temp=0.3, **kwargs):
 #   """
@@ -87,7 +87,7 @@
 #   #                            "max_new_tokens": 250,
 #   #                            "presence_penalty": 1
 #   #                        })
-#   print(output)
+#   logging.info(output)
 #   return output
 
 # def run_anyscale(prompt, model_name="HuggingFaceH4/zephyr-7b-beta"):
@@ -110,12 +110,12 @@
 #   )
 
 #   output = ret["choices"][0]["message"]["content"]  # type: ignore
-#   print("Response from Anyscale:", output[:150])
+#   logging.info("Response from Anyscale:", output[:150])
 
 #   # input_length = len(tokenizer.encode(prompt))
 #   # output_length = len(tokenizer.encode(output))
 #   # Input tokens {input_length}, output tokens: {output_length}"
-#   print(f"^^^^ one anyscale call Runtime: {(time.monotonic() - start_time):.2f} seconds.")
+#   logging.info(f"^^^^ one anyscale call Runtime: {(time.monotonic() - start_time):.2f} seconds.")
 #   return output
 
 # def parse_result(result: str):
@@ -130,7 +130,7 @@
 #                         timeout: Optional[float] = None,
 #                         max_concurrency: Optional[int] = 180):
 
-#   print("⏰⏰⏰ Starting filter_top_contexts() ⏰⏰⏰")
+#   logging.info("⏰⏰⏰ Starting filter_top_contexts() ⏰⏰⏰")
 
 #   timeout = timeout or float(os.environ["FILTER_TOP_CONTEXTS_TIMEOUT_SECONDS"])
 #   # langsmith_prompt_obj = hub.pull("kastanday/filter-unrelated-contexts-zephyr") # TOO UNSTABLE, service offline
@@ -138,8 +138,8 @@
 #   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
 
 #   max_concurrency = min(100, len(contexts))
-#   print("max_concurrency is max of 100, or len(contexts), whichever is less ---- Max concurrency:", max_concurrency)
-#   print("Num contexts to filter:", len(contexts))
+#   logging.info("max_concurrency is max of 100, or len(contexts), whichever is less ---- Max concurrency:", max_concurrency)
+#   logging.info("Num contexts to filter:", len(contexts))
 
 #   # START TASKS
 #   actor = AsyncActor.options(max_concurrency=max_concurrency, num_cpus=0.001).remote()  # type: ignore
@@ -161,10 +161,10 @@
 #       r['context'] for r in results if r and 'context' in r and 'completion' in r and parse_result(r['completion'])
 #   ]
 
-#   print("🧠🧠 TOTAL DOCS PROCESSED BY ANYSCALE FILTERING:", len(results))
-#   print("🧠🧠 TOTAL DOCS KEPT, AFTER FILTERING:", len(best_contexts_to_keep))
+#   logging.info("🧠🧠 TOTAL DOCS PROCESSED BY ANYSCALE FILTERING:", len(results))
+#   logging.info("🧠🧠 TOTAL DOCS KEPT, AFTER FILTERING:", len(best_contexts_to_keep))
 #   mqr_runtime = round(time.monotonic() - start_time, 2)
-#   print(f"⏰ Total elapsed time: {mqr_runtime} seconds")
+#   logging.info(f"⏰ Total elapsed time: {mqr_runtime} seconds")
 
 #   posthog.capture('distinct_id_of_the_user',
 #                   event='filter_top_contexts',
@@ -182,9 +182,9 @@
 # def run_main():
 #   start_time = time.monotonic()
 #   # final_passage_list = filter_top_contexts(contexts=CONTEXTS * 2, user_query=USER_QUERY)
-#   # print("✅✅✅ TOTAL included in results: ", len(final_passage_list))
-#   print(f"⏰⏰⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
-#   # print("Total contexts:", len(CONTEXTS) * 2)
+#   # logging.info("✅✅✅ TOTAL included in results: ", len(final_passage_list))
+#   logging.info(f"⏰⏰⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
+#   # logging.info("Total contexts:", len(CONTEXTS) * 2)
 
 # # ! CONDA ENV: llm-serving
 # if __name__ == "__main__":

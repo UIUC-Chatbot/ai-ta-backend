@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import time
 
@@ -49,14 +50,14 @@ class NomicService():
       project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
       map = project.get_map(project_name)
 
-      print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
+      logging.info(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
       return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
     except Exception as e:
       # Error: ValueError: You must specify a unique_id_field when creating a new project.
       if str(e) == 'You must specify a unique_id_field when creating a new project.':  # type: ignore
-        print("Nomic map does not exist yet, probably because you have less than 20 queries/documents on your project: ", e)
+        logging.info("Nomic map does not exist yet, probably because you have less than 20 queries/documents on your project: ", e)
       else:
-        print("ERROR in get_nomic_map():", e)
+        logging.info("ERROR in get_nomic_map():", e)
         self.sentry.capture_exception(e)
       return {"map_id": None, "map_link": None}
 
@@ -72,16 +73,16 @@ class NomicService():
     try:
       # check if map exists
       response = self.sql.getConvoMapFromProjects(course_name)
-      print("Response from supabase: ", response.data)
+      logging.info("Response from supabase: ", response.data)
 
       # entry not present in projects table
       if not response.data:
-        print("Map does not exist for this course. Redirecting to map creation...")
+        logging.info("Map does not exist for this course. Redirecting to map creation...")
         return self.create_conversation_map(course_name)
 
       # entry present for doc map, but not convo map
       elif response.data[0].convo_map_id is not None:
-        print("Map does not exist for this course. Redirecting to map creation...")
+        logging.info("Map does not exist for this course. Redirecting to map creation...")
         return self.create_conversation_map(course_name)
 
       project_id = response.data[0].convo_map_id
@@ -95,7 +96,7 @@ class NomicService():
       # fetch count of conversations since last upload
       response = self.sql.getCountFromLLMConvoMonitor(course_name, last_id=last_uploaded_convo_id)
       total_convo_count = response.count
-      print("Total number of unlogged conversations in Supabase: ", total_convo_count)
+      logging.info("Total number of unlogged conversations in Supabase: ", total_convo_count)
 
       if total_convo_count == 0:
         # log to an existing conversation
@@ -109,14 +110,14 @@ class NomicService():
 
       while current_convo_count < total_convo_count:
         response = self.sql.getAllConversationsBetweenIds(course_name, first_id, 0, 100)
-        print("Response count: ", len(response.data))
+        logging.info("Response count: ", len(response.data))
         if len(response.data) == 0:
           break
         df = pd.DataFrame(response.data)
         combined_dfs.append(df)
         current_convo_count += len(response.data)
         convo_count += len(response.data)
-        print(current_convo_count)
+        logging.info(current_convo_count)
 
         if convo_count >= 500:
           # concat all dfs from the combined_dfs list
@@ -124,24 +125,24 @@ class NomicService():
           # prep data for nomic upload
           embeddings, metadata = self.data_prep_for_convo_map(final_df)
           # append to existing map
-          print("Appending data to existing map...")
+          logging.info("Appending data to existing map...")
           result = self.append_to_map(embeddings, metadata, NOMIC_MAP_NAME_PREFIX + course_name)
           if result == "success":
             last_id = int(final_df['id'].iloc[-1])
             project_info = {'course_name': course_name, 'convo_map_id': project_id, 'last_uploaded_convo_id': last_id}
             project_response = self.sql.updateProjects(course_name, project_info)
-            print("Update response from supabase: ", project_response)
+            logging.info("Update response from supabase: ", project_response)
           # reset variables
           combined_dfs = []
           convo_count = 0
-          print("Records uploaded: ", current_convo_count)
+          logging.info("Records uploaded: ", current_convo_count)
 
         # set first_id for next iteration
         first_id = int(str(response.data[-1].id)) + 1
 
       # upload last set of convos
       if convo_count > 0:
-        print("Uploading last set of conversations...")
+        logging.info("Uploading last set of conversations...")
         final_df = pd.concat(combined_dfs, ignore_index=True)
         embeddings, metadata = self.data_prep_for_convo_map(final_df)
         result = self.append_to_map(embeddings, metadata, NOMIC_MAP_NAME_PREFIX + course_name)
@@ -149,14 +150,14 @@ class NomicService():
           last_id = int(final_df['id'].iloc[-1])
           project_info = {'course_name': course_name, 'convo_map_id': project_id, 'last_uploaded_convo_id': last_id}
           project_response = self.sql.updateProjects(course_name, project_info)
-          print("Update response from supabase: ", project_response)
+          logging.info("Update response from supabase: ", project_response)
 
       # rebuild the map
       self.rebuild_map(course_name, "conversation")
       return "success"
 
     except Exception as e:
-      print(e)
+      logging.info(e)
       self.sentry.capture_exception(e)
       return "Error in logging to conversation map: {e}"
 
@@ -164,7 +165,7 @@ class NomicService():
     """
     This function logs follow-up questions to existing conversations in the map.
     """
-    print(f"in log_to_existing_conversation() for course: {course_name}")
+    logging.info(f"in log_to_existing_conversation() for course: {course_name}")
 
     try:
       conversation_id = conversation['id']
@@ -211,23 +212,23 @@ class NomicService():
       metadata = pd.DataFrame(uploaded_data)
       embeddings = np.array(embeddings)
 
-      print("Metadata shape:", metadata.shape)
-      print("Embeddings shape:", embeddings.shape)
+      logging.info("Metadata shape:", metadata.shape)
+      logging.info("Embeddings shape:", embeddings.shape)
 
       # deleting existing map
-      print("Deleting point from nomic:", project.delete_data([prev_id]))
+      logging.info("Deleting point from nomic:", project.delete_data([prev_id]))
 
       # re-build map to reflect deletion
       project.rebuild_maps()
 
       # re-insert updated conversation
       result = self.append_to_map(embeddings, metadata, project_name)
-      print("Result of appending to existing map:", result)
+      logging.info("Result of appending to existing map:", result)
 
       return "success"
 
     except Exception as e:
-      print("Error in log_to_existing_conversation():", e)
+      logging.info("Error in log_to_existing_conversation():", e)
       self.sentry.capture_exception(e)
       return "Error in logging to existing conversation: {e}"
 
@@ -240,7 +241,7 @@ class NomicService():
     try:
       # check if map exists
       response = self.sql.getConvoMapFromProjects(course_name)
-      print("Response from supabase: ", response.data)
+      logging.info("Response from supabase: ", response.data)
       if response.data:
         if response.data[0].convo_map_id is not None:
           return "Map already exists for this course."
@@ -256,7 +257,7 @@ class NomicService():
 
       # if >20, iteratively fetch records in batches of 100
       total_convo_count = response.count
-      print("Total number of conversations in Supabase: ", total_convo_count)
+      logging.info("Total number of conversations in Supabase: ", total_convo_count)
 
       first_id = int(str(response.data[0].id)) - 1
       combined_dfs = []
@@ -268,14 +269,14 @@ class NomicService():
       # iteratively query in batches of 50
       while current_convo_count < total_convo_count:
         response = self.sql.getAllConversationsBetweenIds(course_name, first_id, 0, 100)
-        print("Response count: ", len(response.data))
+        logging.info("Response count: ", len(response.data))
         if len(response.data) == 0:
           break
         df = pd.DataFrame(response.data)
         combined_dfs.append(df)
         current_convo_count += len(response.data)
         convo_count += len(response.data)
-        print(current_convo_count)
+        logging.info(current_convo_count)
 
         if convo_count >= 500:
           # concat all dfs from the combined_dfs list
@@ -285,7 +286,7 @@ class NomicService():
 
           if first_batch:
             # create a new map
-            print("Creating new map...")
+            logging.info("Creating new map...")
             index_name = course_name + "_convo_index"
             topic_label_field = "first_query"
             colorable_fields = ["user_email", "first_query", "conversation_id", "created_at"]
@@ -305,35 +306,35 @@ class NomicService():
                 project_response = self.sql.updateProjects(course_name, project_info)
               else:
                 project_response = self.sql.insertProjectInfo(project_info)
-              print("Update response from supabase: ", project_response)
+              logging.info("Update response from supabase: ", project_response)
           else:
             # append to existing map
-            print("Appending data to existing map...")
+            logging.info("Appending data to existing map...")
             project = AtlasProject(name=project_name, add_datums_if_exists=True)
             result = self.append_to_map(embeddings, metadata, project_name)
             if result == "success":
-              print("map append successful")
+              logging.info("map append successful")
               last_id = int(final_df['id'].iloc[-1])
               project_info = {'last_uploaded_convo_id': last_id}
               project_response = self.sql.updateProjects(course_name, project_info)
-              print("Update response from supabase: ", project_response)
+              logging.info("Update response from supabase: ", project_response)
 
           # reset variables
           combined_dfs = []
           convo_count = 0
-          print("Records uploaded: ", current_convo_count)
+          logging.info("Records uploaded: ", current_convo_count)
 
         # set first_id for next iteration
         try:
-          print("response: ", response.data[-1].id)
+          logging.info("response: ", response.data[-1].id)
         except Exception as e:
-          print("response: ", response.data)
+          logging.info("response: ", response.data)
         first_id = int(str(response.data[-1].id)) + 1
 
-      print("Convo count: ", convo_count)
+      logging.info("Convo count: ", convo_count)
       # upload last set of convos
       if convo_count > 0:
-        print("Uploading last set of conversations...")
+        logging.info("Uploading last set of conversations...")
         final_df = pd.concat(combined_dfs, ignore_index=True)
         embeddings, metadata = self.data_prep_for_convo_map(final_df)
         if first_batch:
@@ -345,29 +346,29 @@ class NomicService():
 
         else:
           # append to map
-          print("in map append")
+          logging.info("in map append")
           result = self.append_to_map(embeddings, metadata, project_name)
 
         if result == "success":
-          print("last map append successful")
+          logging.info("last map append successful")
           last_id = int(final_df['id'].iloc[-1])
           project = AtlasProject(name=project_name, add_datums_if_exists=True)
           project_id = project.id
           project_info = {'course_name': course_name, 'convo_map_id': project_id, 'last_uploaded_convo_id': last_id}
-          print("Project info: ", project_info)
+          logging.info("Project info: ", project_info)
           # if entry already exists, update it
           projects_record = self.sql.getConvoMapFromProjects(course_name)
           if projects_record.data:
             project_response = self.sql.updateProjects(course_name, project_info)
           else:
             project_response = self.sql.insertProjectInfo(project_info)
-          print("Response from supabase: ", project_response)
+          logging.info("Response from supabase: ", project_response)
 
       # rebuild the map
       self.rebuild_map(course_name, "conversation")
       return "success"
     except Exception as e:
-      print(e)
+      logging.info(e)
       self.sentry.capture_exception(e)
       return "Error in creating conversation map:" + str(e)
 
@@ -377,7 +378,7 @@ class NomicService():
     """
     This function rebuilds a given map in Nomic.
     """
-    print("in rebuild_map()")
+    logging.info("in rebuild_map()")
     nomic.login(os.getenv('NOMIC_API_KEY'))
 
     if map_type.lower() == 'document':
@@ -394,7 +395,7 @@ class NomicService():
         project.rebuild_maps()
       return "success"
     except Exception as e:
-      print(e)
+      logging.info(e)
       self.sentry.capture_exception(e)
       return "Error in rebuilding map: {e}"
 
@@ -410,7 +411,7 @@ class NomicService():
 			colorable_fields: list of str
 		"""
     nomic.login(os.environ['NOMIC_API_KEY'])
-    print("in create_map()")
+    logging.info("in create_map()")
     try:
       project = atlas.map_embeddings(embeddings=embeddings,
                                      data=metadata,
@@ -423,7 +424,7 @@ class NomicService():
       project.create_index(index_name, build_topic_model=True)
       return "success"
     except Exception as e:
-      print(e)
+      logging.info(e)
       return "Error in creating map: {e}"
 
   def append_to_map(self, embeddings, metadata, map_name):
@@ -441,7 +442,7 @@ class NomicService():
         project.add_embeddings(embeddings=embeddings, data=metadata)
       return "success"
     except Exception as e:
-      print(e)
+      logging.info(e)
       return "Error in appending to map: {e}"
 
   def data_prep_for_convo_map(self, df: pd.DataFrame):
@@ -453,7 +454,7 @@ class NomicService():
 			embeddings: np.array of embeddings
 			metadata: pd.DataFrame of metadata
 		"""
-    print("in data_prep_for_convo_map()")
+    logging.info("in data_prep_for_convo_map()")
 
     try:
       metadata = []
@@ -478,7 +479,7 @@ class NomicService():
         if isinstance(messages[0]['content'], list):
           if 'text' in messages[0]['content'][0]:
             first_message = messages[0]['content'][0]['text']
-            #print("First message:", first_message)
+            #logging.info("First message:", first_message)
         else:
           first_message = messages[0]['content']
         user_queries.append(first_message)
@@ -510,7 +511,7 @@ class NomicService():
             "created_at": created_at,
             "modified_at": current_time
         }
-        #print("Metadata row:", meta_row)
+        #logging.info("Metadata row:", meta_row)
         metadata.append(meta_row)
 
       embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
@@ -521,12 +522,12 @@ class NomicService():
 
       metadata = pd.DataFrame(metadata)
       embeddings = np.array(embeddings)
-      print("Metadata shape:", metadata.shape)
-      print("Embeddings shape:", embeddings.shape)
+      logging.info("Metadata shape:", metadata.shape)
+      logging.info("Embeddings shape:", embeddings.shape)
       return embeddings, metadata
 
     except Exception as e:
-      print("Error in data_prep_for_convo_map():", e)
+      logging.info("Error in data_prep_for_convo_map():", e)
       self.sentry.capture_exception(e)
       return None, None
 
@@ -538,18 +539,18 @@ class NomicService():
 			course_name: str
 			ids: list of str
 		"""
-    print("in delete_from_document_map()")
+    logging.info("in delete_from_document_map()")
 
     try:
       # fetch project from Nomic
       project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
 
       # delete the ids from Nomic
-      print("Deleting point from document map:", project.delete_data(ids))
+      logging.info("Deleting point from document map:", project.delete_data(ids))
       with project.wait_for_project_lock():
         project.rebuild_maps()
       return "Successfully deleted from Nomic map"
     except Exception as e:
-      print(e)
+      logging.info(e)
       self.sentry.capture_exception(e)
       return "Error in deleting from document map: {e}"

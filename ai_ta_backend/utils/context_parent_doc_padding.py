@@ -1,5 +1,6 @@
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+import logging
 from multiprocessing import Manager
 import os
 import time
@@ -13,7 +14,7 @@ def context_parent_doc_padding(found_docs, search_query, course_name):
   """
     Takes top N contexts acquired from QRANT similarity search and pads them
     """
-  print("inside main context padding")
+  logging.info("inside main context padding")
   start_time = time.monotonic()
 
   with Manager() as manager:
@@ -33,7 +34,7 @@ def context_parent_doc_padding(found_docs, search_query, course_name):
 
     result_contexts = supabase_contexts_no_duplicates + list(qdrant_contexts)
 
-    print(f"⏰ Context padding runtime: {(time.monotonic() - start_time):.2f} seconds")
+    logging.info(f"⏰ Context padding runtime: {(time.monotonic() - start_time):.2f} seconds")
 
     return result_contexts
 
@@ -80,10 +81,10 @@ def supabase_context_padding(doc, course_name, result_docs):
     # do the padding
     filename = data[0]['readable_filename']
     contexts = data[0]['contexts']
-    #print("no of contexts within the og doc: ", len(contexts))
+    #logging.info("no of contexts within the og doc: ", len(contexts))
 
     if 'chunk_index' in doc.metadata and 'chunk_index' in contexts[0].keys():
-      #print("inside chunk index")
+      #logging.info("inside chunk index")
       # pad contexts by chunk index + 3 and - 3
       target_chunk_index = doc.metadata['chunk_index']
       for context in contexts:
@@ -97,7 +98,7 @@ def supabase_context_padding(doc, course_name, result_docs):
           result_docs.append(context)
 
     elif doc.metadata['pagenumber'] != '':
-      #print("inside page number")
+      #logging.info("inside page number")
       # pad contexts belonging to same page number
       pagenumber = doc.metadata['pagenumber']
 
@@ -112,7 +113,7 @@ def supabase_context_padding(doc, course_name, result_docs):
           result_docs.append(context)
 
     else:
-      #print("inside else")
+      #logging.info("inside else")
       # refactor as a Supabase object and append
       context_dict = {
           'text': doc.page_content,

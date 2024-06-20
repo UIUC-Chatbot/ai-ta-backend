@@ -1,4 +1,6 @@
-version: "3.8"
+# version: 3.8
+
+# TODO: Update the network connections to each service (Minio, Redis), e.g. use `http://qdrant:6333` instead of `http://localhost:6333`
 
 services:
   # sqlite:
@@ -11,45 +13,76 @@ services:
   redis:
     image: redis:latest
     ports:
-      - "6379:6379"
+      - 6379:6379
+    networks:
+      - my-network
     volumes:
       - redis-data:/data
 
   qdrant:
-    image: generall/qdrant:latest
-    volumes:
-      - qdrant-data:/qdrant/storage
+    image: qdrant/qdrant:v1.9.5
+    restart: always
+    container_name: qdrant
     ports:
-      - "6333:6333" # HTTP API
-      - "6334:6334" # gRPC API
+      - 6333:6333
+      - 6334:6334
+    expose:
+      - 6333
+      - 6334
+      - 6335
+    volumes:
+      - ./qdrant_data:/qdrant/storage
+      - ./qdrant_config.yaml:/qdrant/config/production.yaml # Mount the config file directly as a volume
+    networks:
+      - my-network
+    healthcheck:
+      test:
+        [
+          CMD,
+          curl,
+          -f,
+          -H,
+          { Authorization: Bearer qd-SbvSWrYpa473J33yPjdL },
+          http://localhost:6333/health,
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   minio:
-    image: minio/minio
+    image: minio/minio:RELEASE.2024-06-13T22-53-53Z
     environment:
-      MINIO_ROOT_USER: "minioadmin" # Customize access key
-      MINIO_ROOT_PASSWORD: "minioadmin" # Customize secret key
+      MINIO_ROOT_USER: minioadmin # Customize access key
+      MINIO_ROOT_PASSWORD: minioadmin # Customize secret key
     command: server /data
     ports:
-      - "9000:9000" # Console access
-      - "9001:9001" # API access
+      - 9000:9000 # Console access
+      - 9001:9001 # API access
+    networks:
+      - my-network
     volumes:
       - minio-data:/data
 
   flask_app:
-    # build: . # Directory with Dockerfile for Flask app
-    image: kastanday/ai-ta-backend:gunicorn
+    build: . # Directory with Dockerfile for Flask app
+    # image: kastanday/ai-ta-backend:gunicorn
     ports:
-      - "8000:8000"
+      - 8000:8000
     volumes:
       - ./db:/usr/src/app/db # Mount local directory to store SQLite database
+    networks:
+      - my-network
     depends_on:
-      # - sqlite
-      - redis
       - qdrant
+      - redis
       - minio
 
+# declare the network resource
+# this will allow you to use service discovery and address a container by its name from within the network
+networks:
+  my-network: {}
+
 volumes:
-  # sqlite-data:
-  redis-data:
-  qdrant-data:
-  minio-data:
+  redis-data: {}
+  qdrant-data: {}
+  minio-data: {}

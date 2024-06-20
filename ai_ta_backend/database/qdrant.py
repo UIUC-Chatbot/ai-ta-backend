@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import List
 
@@ -22,7 +23,8 @@ class VectorDatabase():
     """
     # vector DB
     self.qdrant_client = QdrantClient(
-        url=os.environ['QDRANT_URL'],
+        url='http://qdrant:6333',
+        https=False,
         api_key=os.environ['QDRANT_API_KEY'],
         timeout=20,  # default is 5 seconds. Getting timeout errors w/ document groups.
     )
@@ -41,7 +43,7 @@ class VectorDatabase():
 
     # Filter for the must_conditions
     myfilter = models.Filter(must=must_conditions)
-    print(f"Filter: {myfilter}")
+    logging.info(f"Qdrant serach Filter: {myfilter}")
 
     # Search the vector database
     search_results = self.qdrant_client.search(
@@ -52,6 +54,7 @@ class VectorDatabase():
         limit=top_n,  # Return n closest points
         # In a system with high disk latency, the re-scoring step may become a bottleneck: https://qdrant.tech/documentation/guides/quantization/
         search_params=models.SearchParams(quantization=models.QuantizationSearchParams(rescore=False)))
+
     return search_results
 
   def _create_search_conditions(self, course_name, doc_groups: List[str]):

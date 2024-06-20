@@ -1,3 +1,4 @@
+import logging
 import os
 
 from injector import inject
@@ -39,14 +40,14 @@ class SQLDatabase():
   def getDocumentsBetweenDates(self, course_name: str, from_date: str, to_date: str, table_name: str):
     if from_date != '' and to_date != '':
       # query between the dates
-      print("from_date and to_date")
+      logging.info("from_date and to_date")
 
       response = self.supabase_client.table(table_name).select("id", count='exact').eq("course_name", course_name).gte(
           'created_at', from_date).lte('created_at', to_date).order('id', desc=False).execute()
 
     elif from_date != '' and to_date == '':
       # query from from_date to now
-      print("only from_date")
+      logging.info("only from_date")
       response = self.supabase_client.table(table_name).select("id",
                                                                count='exact').eq("course_name",
                                                                                  course_name).gte('created_at',
@@ -55,7 +56,7 @@ class SQLDatabase():
 
     elif from_date == '' and to_date != '':
       # query from beginning to to_date
-      print("only to_date")
+      logging.info("only to_date")
       response = self.supabase_client.table(table_name).select("id",
                                                                count='exact').eq("course_name",
                                                                                  course_name).lte('created_at',
@@ -64,7 +65,7 @@ class SQLDatabase():
 
     else:
       # query all data
-      print("No dates")
+      logging.info("No dates")
       response = self.supabase_client.table(table_name).select("id", count='exact').eq("course_name",
                                                                                        course_name).order('id', desc=False).execute()
     return response

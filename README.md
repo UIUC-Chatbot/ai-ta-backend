@@ -16,9 +16,11 @@ Automatic [API Reference](https://uiuc-chatbot.github.io/ai-ta-backend/reference
 
 ## Docker Deployment
 
-1. Build flask image `docker build -t kastanday/ai-ta-backend:gunicorn .`
-2. Push flask image `docker push kastanday/ai-ta-backend:gunicorn`
-3. Run docker compose `docker compose up`
+1. Just run Docker Compose `docker compose up --build`
+
+Works on version: `Docker Compose version v2.27.1-desktop.1`
+
+Works on Apple Silicon M1 `aarch64`, and `x86`.
 
 ## 📣 Development
 

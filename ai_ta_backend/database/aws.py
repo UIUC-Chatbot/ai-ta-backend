@@ -1,3 +1,4 @@
+import logging
 import os
 
 import boto3
@@ -9,14 +10,14 @@ class AWSStorage():
   @inject
   def __init__(self):
     if all(os.getenv(key) for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]):
-      print("Using AWS for storage")
+      logging.info("Using AWS for storage")
       self.s3_client = boto3.client(
           's3',
           aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
           aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
       )
     elif all(os.getenv(key) for key in ["MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_URL"]):
-      print("Using Minio for storage")
+      logging.info("Using Minio for storage")
       self.s3_client = boto3.client('s3',
                                     endpoint_url=os.getenv('MINIO_URL'),
                                     aws_access_key_id=os.getenv('MINIO_ACCESS_KEY'),
