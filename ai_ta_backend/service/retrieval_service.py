@@ -9,9 +9,10 @@ from injector import inject
 from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
-from ai_ta_backend.database.sql import SQLAlchemyDatabase
+
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.qdrant import VectorDatabase
+from ai_ta_backend.database.sql import SQLAlchemyDatabase
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -32,14 +33,6 @@ class RetrievalService:
     self.sentry = sentry
     self.posthog = posthog
     self.nomicService = nomicService
-
-    print("self.sqlDb", self.sqlDb)
-    print("Attributes of sqlDb:", dir(self.sqlDb))  # Print all attributes of sqlDb
-
-    try: 
-      assert hasattr(self.sqlDb, 'getAllMaterialsForCourse'), "BAD BAD -- sqlDb does not have the method getAllMaterialsForCourse"
-    except Exception as e: 
-      print("Error loading getAllMaterialsForCourse: ", e)
 
     openai.api_key = os.environ["OPENAI_API_KEY"]
 
@@ -146,8 +139,6 @@ class RetrievalService:
     Returns:
         list of dictionaries with distinct s3 path, readable_filename and course_name, url, base_url.
     """
-    print("Inside retrieval Service getAll()")
-
     response = self.sqlDb.getAllMaterialsForCourse(course_name)
 
     data = response.data
@@ -347,7 +338,7 @@ class RetrievalService:
 
       # delete from Nomic
       response = self.sqlDb.getProjectsMapForCourse(course_name)
-      data, count = response.data, response.count
+      data, _count = response.data, response.count
       if not data:
         raise Exception(f"No document map found for this course: {course_name}")
       project_id = str(data[0].doc_map_id)
@@ -441,7 +432,7 @@ class RetrievalService:
               "max_vector_score": max_vector_score,
               "min_vector_score": min_vector_score,
               "avg_vector_score": avg_vector_score,
-              "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,  
+              "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,
           },
       )
 
