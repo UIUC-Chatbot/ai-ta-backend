@@ -1135,7 +1135,7 @@ class Ingest():
     course_name = metadatas[0]['course_name']
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
-    original_filename = incoming_s3_path.split('/')[-1][37:]  # remove the 37-char uuid prefix
+    #original_filename = incoming_s3_path.split('/')[-1][37:]  # remove the 37-char uuid prefix
 
     # check if uuid exists in s3_path -- not all s3_paths have uuids!
     incoming_filename = incoming_s3_path.split('/')[-1]
@@ -1150,6 +1150,7 @@ class Ingest():
 
     if incoming_s3_path:
       filename = incoming_s3_path
+      # replace current string comparison with - original_filename - uuic. 
       supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
           'course_name', course_name).like('s3_path', '%' + original_filename + '%').order('id', desc=True).execute()
       supabase_contents = supabase_contents.data
