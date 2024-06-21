@@ -134,6 +134,7 @@ def loader():
   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   sentry_sdk.init(
       dsn=os.getenv("SENTRY_DSN"),
+      environment='development',
       # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
       traces_sample_rate=1.0,
       # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
@@ -1139,6 +1140,7 @@ class Ingest():
 
     # check if uuid exists in s3_path -- not all s3_paths have uuids!
     incoming_filename = incoming_s3_path.split('/')[-1]
+    print("incoming_filename: ", incoming_filename)
     pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
                          re.I)  # uuid V4 pattern, and v4 only.
     if bool(pattern.search(incoming_filename)):
@@ -1147,13 +1149,14 @@ class Ingest():
     else:
       # do not remove anything and proceed with duplicate checking
       original_filename = incoming_filename
-
+    print("original_filename: ", original_filename)
     if incoming_s3_path:
       filename = incoming_s3_path
       # replace current string comparison with - original_filename - uuic. 
       supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
           'course_name', course_name).like('s3_path', '%' + original_filename + '%').order('id', desc=True).execute()
       supabase_contents = supabase_contents.data
+      print("No. of records retrieved: ", len(supabase_contents))
     elif url:
       filename = url
       supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
@@ -1164,28 +1167,50 @@ class Ingest():
       supabase_contents = []
 
     supabase_whole_text = ""
+    exact_doc_exists = False
     if len(supabase_contents) > 0:  # if a doc with same filename exists in Supabase
-      # concatenate texts
-      supabase_contexts = supabase_contents[0]
-      for text in supabase_contexts['contexts']:
-        supabase_whole_text += text['text']
+      # compare all retrieved records with original filename --> records like 3.pdf will be retrived for 453.pdf too, so we need to weed out the irrelevant ones
+      for record in supabase_contents:
+        curr_filename = record['s3_path'].split('/')[-1]
+        print("Retrieved file: ", curr_filename)
+        if bool(pattern.search(curr_filename)):
+          # uuid pattern exists -- remove the uuid and proceed with duplicate checking
+          sql_filename = curr_filename[37:]
+        else:
+          # do not remove anything and proceed with duplicate checking
+          sql_filename = curr_filename
 
-      current_whole_text = ""
-      for text in texts:
-        current_whole_text += text['input']
+        if original_filename == sql_filename:
+          supabase_contexts = record
+          exact_doc_exists = True
+          print("Exact doc exists in Supabase!")
+          print("s3_path: ", record['s3_path'])
+          break
 
-      if supabase_whole_text == current_whole_text:  # matches the previous file
-        print(f"Duplicate ingested! 📄 s3_path: {filename}.")
-        return True
+      if exact_doc_exists:
+        # concatenate texts
+        supabase_contexts = supabase_contents[0]
+        for text in supabase_contexts['contexts']:
+          supabase_whole_text += text['text']
 
-      else:  # the file is updated
-        print(f"Updated file detected! Same filename, new contents. 📄 s3_path: {filename}")
+        current_whole_text = ""
+        for text in texts:
+          current_whole_text += text['input']
 
-        # call the delete function on older docs
-        for content in supabase_contents:
-          print("older s3_path to be deleted: ", content['s3_path'])
-          delete_status = self.delete_data(course_name, content['s3_path'], '')
+        if supabase_whole_text == current_whole_text:  # matches the previous file
+          print(f"Duplicate ingested! 📄 s3_path: {filename}.")
+          return True
+
+        else:  # the file is updated
+          print(f"Updated file detected! Same filename, new contents. 📄 s3_path: {filename}")
+
+          # call the delete function on older doc
+          print("older s3_path to be deleted: ", supabase_contexts['s3_path'])
+          delete_status = self.delete_data(course_name, supabase_contexts['s3_path'], '')
           print("delete_status: ", delete_status)
+          return False
+      else:
+        print(f"NOT a duplicate! 📄s3_path: {filename}")
         return False
 
     else:  # filename does not already exist in Supabase, so its a brand new file
