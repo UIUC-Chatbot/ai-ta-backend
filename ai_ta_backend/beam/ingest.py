@@ -1173,7 +1173,6 @@ class Ingest():
       for record in supabase_contents:
         if incoming_s3_path:  
           curr_filename = record['s3_path'].split('/')[-1]
-          print("File retrieved from SQL: ", curr_filename)
           if bool(pattern.search(curr_filename)):
             # uuid pattern exists -- remove the uuid and proceed with duplicate checking
             sql_filename = curr_filename[37:]
@@ -1185,17 +1184,16 @@ class Ingest():
           sql_filename = record['url']
         else: 
           continue
-        print("Original filename: ", original_filename, "SQL filename: ", sql_filename)
-        if original_filename == sql_filename:
+        print("Original filename: ", original_filename, "Current SQL filename: ", sql_filename)
+        
+        if original_filename == sql_filename: # compare og s3_path/url with incoming s3_path/url
           supabase_contexts = record
           exact_doc_exists = True
-          print("Exact doc exists in Supabase!")
-          print("File: ", sql_filename)
+          print("Exact doc exists in Supabase:", sql_filename)
           break
 
       if exact_doc_exists:
-        # concatenate texts
-        # supabase_contexts = supabase_contents[0]
+        # concatenate og texts
         for text in supabase_contexts['contexts']:
           supabase_whole_text += text['text']
 
@@ -1208,11 +1206,14 @@ class Ingest():
           return True
 
         else:  # the file is updated
-          print(f"Updated file detected! Same filename, new contents. 📄 s3_path: {original_filename}")
+          print(f"Updated file detected! Same filename, new contents. 📄s3_path/url: {original_filename}")
 
           # call the delete function on older doc
-          print("older s3_path to be deleted: ", supabase_contexts['s3_path'])
-          delete_status = self.delete_data(course_name, supabase_contexts['s3_path'], '')
+          print("older s3_path/url to be deleted: ", sql_filename)
+          if incoming_s3_path:
+            delete_status = self.delete_data(course_name, sql_filename, '')
+          else:
+            delete_status = self.delete_data(course_name, '', sql_filename)
           print("delete_status: ", delete_status)
           return False
       else:
