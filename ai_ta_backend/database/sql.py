@@ -1,125 +1,230 @@
-import os
-
-import supabase
+from typing import List
 from injector import inject
+from flask_sqlalchemy import SQLAlchemy
+import ai_ta_backend.model.models as models
+import logging
 
+from ai_ta_backend.model.response import DatabaseResponse
 
-class SQLDatabase:
+class SQLAlchemyDatabase:
 
-  @inject
-  def __init__(self):
-    # Create a Supabase client
-    self.supabase_client = supabase.create_client(  # type: ignore
-        supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
+    @inject
+    def __init__(self, db: SQLAlchemy):  
+        logging.info("Initializing SQLAlchemyDatabase")
+        self.db = db
+        # Ensure an app context is pushed (Flask-Injector will handle this)
+        # with current_app.app_context():
+        #     db.init_app(current_app)
+        #     db.create_all()  # Create tables
 
-  def getAllMaterialsForCourse(self, course_name: str):
-    return self.supabase_client.table(
-        os.environ['SUPABASE_DOCUMENTS_TABLE']).select('course_name, s3_path, readable_filename, url, base_url').eq(
-            'course_name', course_name).execute()
+    def getAllMaterialsForCourse(self, course_name: str):
+        try:
+            query = self.db.select(models.Document).where(models.Document.course_name == course_name)
+            result = self.db.session.execute(query).scalars().all()
+            documents: List[models.Document] = [doc for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result))
+        finally:
+            self.db.session.close()
 
-  def getMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
-    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq(
-        's3_path', s3_path).eq('course_name', course_name).execute()
+    def getMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
+        try:
+            query = self.db.select(models.Document).where(models.Document.course_name == course_name, models.Document.s3_path == s3_path)
+            result = self.db.session.execute(query).scalars().all()
+            documents: List[models.Document] = [doc for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result))
+        finally:
+            self.db.session.close()
 
-  def getMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
-    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq(
-        key, value).eq('course_name', course_name).execute()
+    def getMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
+        try:
+            query = self.db.select(models.Document).where(models.Document.course_name == course_name, getattr(models.Document, key) == value)
+            result = self.db.session.execute(query).scalars().all()
+            documents: List[models.Document] = [doc for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result))
+        finally:
+            self.db.session.close()
 
-  def deleteMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
-    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq(key, value).eq(
-        'course_name', course_name).execute()
+    def deleteMaterialsForCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
+        try:
+            query = self.db.delete(models.Document).where(models.Document.course_name == course_name, getattr(models.Document, key) == value)
+            self.db.session.execute(query)
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
 
-  def deleteMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
-    return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq('s3_path', s3_path).eq(
-        'course_name', course_name).execute()
+    def deleteMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
+        try:
+            query = self.db.delete(models.Document).where(models.Document.course_name == course_name, models.Document.s3_path == s3_path)
+            self.db.session.execute(query)
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
 
-  def getProjectsMapForCourse(self, course_name: str):
-    return self.supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
+    def getProjectsMapForCourse(self, course_name: str):
+        try:
+            query = self.db.select(models.Project.doc_map_id).where(models.Project.course_name == course_name)
+            result = self.db.session.execute(query).scalars().all()
+            projects: List[models.Project] = [doc for doc in result]
+            return DatabaseResponse[models.Project](data=projects, count=len(result))
+        finally:
+            self.db.session.close()
 
-  def getDocumentsBetweenDates(self, course_name: str, from_date: str, to_date: str, table_name: str):
-    if from_date != '' and to_date != '':
-      # query between the dates
-      print("from_date and to_date")
+    def getDocumentsBetweenDates(self, course_name: str, from_date: str, to_date: str):
+        try:
+            query = self.db.select(models.Document).where(models.Document.course_name == course_name)
+            if from_date:
+                query = query.filter(models.Document.created_at >= from_date)
+            if to_date:
+                query = query.filter(models.Document.created_at <= to_date)
+            result = self.db.session.execute(query).scalars().all()
+            documents: List[models.Document] = [doc for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result))
+        finally:
+            self.db.session.close()
+            
+    def getConversationsBetweenDates(self, course_name: str, from_date: str, to_date: str):
+        try:
+            query = self.db.select(models.LlmConvoMonitor).where(models.LlmConvoMonitor.course_name == course_name)
+            if from_date:
+                query = query.filter(models.LlmConvoMonitor.created_at >= from_date)
+            if to_date:
+                query = query.filter(models.LlmConvoMonitor.created_at <= to_date)
+            result = self.db.session.execute(query).scalars().all()
+            documents: List[models.LlmConvoMonitor] = [doc for doc in result]
+            return DatabaseResponse[models.LlmConvoMonitor](data=documents, count=len(result))
+        finally:
+            self.db.session.close()
 
-      response = self.supabase_client.table(table_name).select("id", count='exact').eq("course_name", course_name).gte(
-          'created_at', from_date).lte('created_at', to_date).order('id', desc=False).execute()
+    def getAllDocumentsForDownload(self, course_name: str, first_id: int):
+        try:
+            query = self.db.select(models.Document).where(models.Document.course_name == course_name, models.Document.id >= first_id)
+            result = self.db.session.execute(query).scalars().all()
+            documents: List[models.Document] = [doc for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result))
+        finally:
+            self.db.session.close()
+            
+    def getAllConversationsForDownload(self, course_name: str, first_id: int):
+        try:
+            query = self.db.select(models.LlmConvoMonitor).where(models.LlmConvoMonitor.course_name == course_name, models.LlmConvoMonitor.id >= first_id)
+            result = self.db.session.execute(query).scalars().all()
+            conversations: List[models.LlmConvoMonitor] = [doc for doc in result]
+            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result))
+        finally:
+            self.db.session.close()
 
-    elif from_date != '' and to_date == '':
-      # query from from_date to now
-      print("only from_date")
-      response = self.supabase_client.table(table_name).select("id", count='exact').eq("course_name", course_name).gte(
-          'created_at', from_date).order('id', desc=False).execute()
+    def getAllConversationsBetweenIds(self, course_name: str, first_id: int, last_id: int, limit: int = 50):
+        try:
+            query = self.db.select(models.LlmConvoMonitor).where(models.LlmConvoMonitor.course_name == course_name, models.LlmConvoMonitor.id > first_id)
+            if last_id != 0:
+                query = query.filter(models.LlmConvoMonitor.id <= last_id)
+            query = query.limit(limit)
+            result = self.db.session.execute(query).scalars().all()
+            conversations: List[models.LlmConvoMonitor] = [doc for doc in result]
+            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result))
+        finally:
+            self.db.session.close()
 
-    elif from_date == '' and to_date != '':
-      # query from beginning to to_date
-      print("only to_date")
-      response = self.supabase_client.table(table_name).select("id", count='exact').eq("course_name", course_name).lte(
-          'created_at', to_date).order('id', desc=False).execute()
+    def getDocsForIdsGte(self, course_name: str, first_id: int, fields: str = "*", limit: int = 100):
+        try:
+            fields_to_select = [getattr(models.Document, field) for field in fields.split(", ")]
+            query = self.db.select(*fields_to_select).where(models.Document.course_name == course_name, models.Document.id >= first_id).limit(limit)
+            result = self.db.session.execute(query).scalars().all()
+            documents: List[models.Document] = [doc for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result))
+        finally:
+            self.db.session.close()
 
-    else:
-      # query all data
-      print("No dates")
-      response = self.supabase_client.table(table_name).select("id", count='exact').eq(
-          "course_name", course_name).order('id', desc=False).execute()
-    return response
+    def insertProjectInfo(self, project_info):
+        try:
+            self.db.session.execute(self.db.insert(models.Project).values(**project_info))
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
 
-  def getAllFromTableForDownloadType(self, course_name: str, download_type: str, first_id: int):
-    if download_type == 'documents':
-      response = self.supabase_client.table("documents").select("*").eq("course_name", course_name).gte(
-          'id', first_id).order('id', desc=False).limit(100).execute()
-    else:
-      response = self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
-          'id', first_id).order('id', desc=False).limit(100).execute()
+    def getAllFromLLMConvoMonitor(self, course_name: str):
+        try:
+            query = self.db.select(models.LlmConvoMonitor).where(models.LlmConvoMonitor.course_name == course_name)
+            result = self.db.session.execute(query).scalars().all()
+            conversations: List[models.LlmConvoMonitor] = [doc for doc in result]
+            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result))
+        finally:
+            self.db.session.close()
 
-    return response
+    def getCountFromLLMConvoMonitor(self, course_name: str, last_id: int):
+        try:
+            query = self.db.select(models.LlmConvoMonitor.id).where(models.LlmConvoMonitor.course_name == course_name)
+            if last_id != 0:
+                query = query.filter(models.LlmConvoMonitor.id > last_id)
+            count_query = self.db.select(self.db.func.count()).select_from(query.subquery())
+            count = self.db.session.execute(count_query).scalar()
+            return DatabaseResponse[models.LlmConvoMonitor](data=[], count=1)
+        finally:
+            self.db.session.close()
 
-  def getAllConversationsBetweenIds(self, course_name: str, first_id: int, last_id: int, limit: int = 50):
-    if last_id == 0:
-      return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gt(
-          'id', first_id).order('id', desc=False).limit(limit).execute()
-    else:
-      return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
-          'id', first_id).lte('id', last_id).order('id', desc=False).limit(limit).execute()
-    
+    def getDocMapFromProjects(self, course_name: str):
+        try:
+            query = self.db.select(models.Project.doc_map_id).where(models.Project.course_name == course_name)
+            result = self.db.session.execute(query).scalars().all()
+            documents: List[models.Project] = [doc for doc in result]
+            return DatabaseResponse[models.Project](data=documents, count=len(result))
+        finally:
+            self.db.session.close()
 
-  def getDocsForIdsGte(self, course_name: str, first_id: int, fields: str = "*", limit: int = 100):
-    return self.supabase_client.table("documents").select(fields).eq("course_name", course_name).gte(
-        'id', first_id).order('id', desc=False).limit(limit).execute()
+    def getConvoMapFromProjects(self, course_name: str):
+        try:
+            query = self.db.select(models.Project).where(models.Project.course_name == course_name)
+            result = self.db.session.execute(query).scalars().all()
+            conversations: List[models.Project] = [doc for doc in result]
+            return DatabaseResponse[models.Project](data=conversations, count=len(result))
+        finally:
+            self.db.session.close()
 
-  def insertProjectInfo(self, project_info):
-    return self.supabase_client.table("projects").insert(project_info).execute()
+    def updateProjects(self, course_name: str, data: dict):
+        try:
+            query = self.db.update(models.Project).where(models.Project.course_name == course_name).values(**data)
+            self.db.session.execute(query)
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
 
-  def getAllFromLLMConvoMonitor(self, course_name: str):
-    return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).order('id', desc=False).execute()
-  
-  def getCountFromLLMConvoMonitor(self, course_name: str, last_id: int):
-    if last_id == 0:
-      return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).order('id', desc=False).execute()
-    else:
-      return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq("course_name", course_name).gt("id", last_id).order('id', desc=False).execute()
-  
-  def getDocMapFromProjects(self, course_name: str):
-    return self.supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
-  
-  def getConvoMapFromProjects(self, course_name: str):
-    return self.supabase_client.table("projects").select("*").eq("course_name", course_name).execute()
-  
-  def updateProjects(self, course_name: str, data: dict):
-    return self.supabase_client.table("projects").update(data).eq("course_name", course_name).execute()
-  
-  def getLatestWorkflowId(self):
-    return self.supabase_client.table('n8n_workflows').select("latest_workflow_id").execute()
-  
-  def lockWorkflow(self, id: str):
-    return self.supabase_client.table('n8n_workflows').insert({"latest_workflow_id": id, "is_locked": True}).execute()
-  
-  def deleteLatestWorkflowId(self, id: str):
-    return self.supabase_client.table('n8n_workflows').delete().eq('latest_workflow_id', id).execute()
-  
-  def unlockWorkflow(self, id: str):
-    return self.supabase_client.table('n8n_workflows').update({"is_locked": False}).eq('latest_workflow_id', id).execute()
+    def getLatestWorkflowId(self):
+        try:
+            query = self.db.select(models.N8nWorkflows.latest_workflow_id)
+            result = self.db.session.execute(query).fetchone()
+            return result
+        finally:
+            self.db.session.close()
 
-  def getConversation(self, course_name: str, key: str, value: str):
-    return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
+    def lockWorkflow(self, id: str):
+        try:
+            new_workflow = models.N8nWorkflows(is_locked=True)
+            self.db.session.add(new_workflow)
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
 
-  
+    def deleteLatestWorkflowId(self, id: str):
+        try:
+            query = self.db.delete(models.N8nWorkflows).where(models.N8nWorkflows.latest_workflow_id == id)
+            self.db.session.execute(query)
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
+
+    def unlockWorkflow(self, id: str):
+        try:
+            query = self.db.update(models.N8nWorkflows).where(models.N8nWorkflows.latest_workflow_id == id).values(is_locked=False)
+            self.db.session.execute(query)
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
+
+    def getConversation(self, course_name: str, key: str, value: str):
+        try:
+            query = self.db.select(models.LlmConvoMonitor).where(getattr(models.LlmConvoMonitor, key) == value)
+            result = self.db.session.execute(query).scalars().all()
+            conversations: List[models.LlmConvoMonitor] = [doc for doc in result]
+            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result))
+        finally:
+            self.db.session.close()

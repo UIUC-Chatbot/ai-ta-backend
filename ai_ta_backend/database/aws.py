@@ -4,7 +4,7 @@ import boto3
 from injector import inject
 
 
-class AWSStorage:
+class AWSStorage():
 
   @inject
   def __init__(self):

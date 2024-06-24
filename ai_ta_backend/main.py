@@ -1,8 +1,9 @@
 import json
+import logging
 import os
 import time
 from typing import List
-
+from ai_ta_backend.database.poi_sql import POISQLDatabase
 from dotenv import load_dotenv
 from flask import (
     Flask,
@@ -17,10 +18,10 @@ from flask_cors import CORS
 from flask_executor import Executor
 from flask_injector import FlaskInjector, RequestScope
 from injector import Binder, SingletonScope
-
+from ai_ta_backend.database.sql import SQLAlchemyDatabase
 from ai_ta_backend.database.aws import AWSStorage
-from ai_ta_backend.database.sql import SQLDatabase
-from ai_ta_backend.database.vector import VectorDatabase
+from ai_ta_backend.database.qdrant import VectorDatabase
+
 from ai_ta_backend.executors.flask_executor import (
     ExecutorInterface,
     FlaskExecutorAdapter,
@@ -35,12 +36,16 @@ from ai_ta_backend.executors.thread_pool_executor import (
 )
 from ai_ta_backend.service.export_service import ExportService
 from ai_ta_backend.service.nomic_service import NomicService
+from ai_ta_backend.service.poi_agent_service_v2 import POIAgentService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
-
-from ai_ta_backend.beam.nomic_logging import create_document_map
+# from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.service.workflow_service import WorkflowService
+from ai_ta_backend.extensions import db
+
+
+from langchain_core.messages import HumanMessage, SystemMessage
 
 app = Flask(__name__)
 CORS(app)
@@ -49,8 +54,7 @@ executor = Executor(app)
 #app.config['SERVER_TIMEOUT'] = 1000  # seconds
 
 # load API keys from globally-availabe .env file
-load_dotenv()
-
+load_dotenv(override=True)
 
 @app.route('/')
 def index() -> Response:
@@ -191,19 +195,19 @@ def nomic_map(service: NomicService):
   return response
 
 
-@app.route('/createDocumentMap', methods=['GET'])
-def createDocumentMap(service: NomicService):
-  course_name: str = request.args.get('course_name', default='', type=str)
+# @app.route('/createDocumentMap', methods=['GET'])
+# def createDocumentMap(service: NomicService):
+#   course_name: str = request.args.get('course_name', default='', type=str)
 
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+#   if course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  map_id = create_document_map(course_name)
+#   map_id = create_document_map(course_name)
 
-  response = jsonify(map_id)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   response = jsonify(map_id)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 @app.route('/createConversationMap', methods=['GET'])
 def createConversationMap(service: NomicService):
@@ -218,6 +222,27 @@ def createConversationMap(service: NomicService):
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+
+@app.route('/query_sql_agent', methods=['POST'])
+def query_sql_agent(service: POIAgentService):
+    data = request.get_json()
+    user_input = data["query"]
+    system_message = SystemMessage(content="you are a helpful assistant and need to provide answers in text format about the plants found in India. If the Question is not related to plants in India answer 'I do not have any information on this.'")
+   
+    if not user_input:
+        return jsonify({"error": "No query provided"}), 400
+
+    try:
+        user_01 = HumanMessage(content=user_input)
+        inputs = {"messages": [system_message,user_01]}
+        response = service.run_workflow(inputs)
+        return  str(response), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
 
 @app.route('/logToConversationMap', methods=['GET'])
 def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
@@ -473,19 +498,74 @@ def run_flow(service: WorkflowService) -> Response:
 
 
 def configure(binder: Binder) -> None:
-  binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)
-  binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
-  binder.bind(SentryService, to=SentryService, scope=SingletonScope)
-  binder.bind(NomicService, to=NomicService, scope=SingletonScope)
-  binder.bind(ExportService, to=ExportService, scope=SingletonScope)
-  binder.bind(WorkflowService, to=WorkflowService, scope=SingletonScope)
-  binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
-  binder.bind(SQLDatabase, to=SQLDatabase, scope=SingletonScope)
-  binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
+  vector_bound = False
+  sql_bound = False
+  storage_bound = False
+
+  # Define database URLs with conditional checks for environment variables
+  DB_URLS = {
+      'supabase': f"postgresql://{os.getenv('SUPABASE_KEY')}@{os.getenv('SUPABASE_URL')}" if os.getenv('SUPABASE_KEY') and os.getenv('SUPABASE_URL') else None,
+      'sqlite': f"sqlite:///{os.getenv('SQLITE_DB_NAME')}" if os.getenv('SQLITE_DB_NAME') else None,
+      'postgres': f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_URL')}" if os.getenv('POSTGRES_USER') and os.getenv('POSTGRES_PASSWORD') and os.getenv('POSTGRES_URL') else None
+  }
+
+  # Bind to the first available SQL database configuration
+  for db_type, url in DB_URLS.items():
+        if url:
+            logging.info(f"Binding to {db_type} database with URL: {url}")
+            with app.app_context():
+              app.config['SQLALCHEMY_DATABASE_URI'] = url
+              db.init_app(app)
+              db.create_all()
+            binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
+            sql_bound = True
+            break
+  if os.getenv("POI_SQL_DB_NAME"):
+      logging.info(f"Binding to POI SQL database with URL: {os.getenv('POI_SQL_DB_NAME')}")
+      binder.bind(POISQLDatabase, to=POISQLDatabase(db), scope=SingletonScope)
+      binder.bind(POIAgentService, to=POIAgentService, scope=SingletonScope)
+  # Conditionally bind databases based on the availability of their respective secrets
+  if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
+    logging.info("Binding to Qdrant database")
+    binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
+    vector_bound = True
+
+  if all(os.getenv(key) for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "S3_BUCKET_NAME"]) or any(os.getenv(key) for key in ["MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_URL"]):
+    logging.info("Binding to AWS S3 storage")
+    binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
+    storage_bound = True
+
+
+  # Conditionally bind services based on the availability of their respective secrets
+  if os.getenv("NOMIC_API_KEY"):
+      logging.info("Binding to Nomic service")
+      binder.bind(NomicService, to=NomicService, scope=SingletonScope)
+
+  if os.getenv("POSTHOG_API_KEY"):
+      logging.info("Binding to Posthog service")
+      binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
+
+  if os.getenv("SENTRY_DSN"):
+      logging.info("Binding to Sentry service")
+      binder.bind(SentryService, to=SentryService, scope=SingletonScope)
+
+  if os.getenv("EMAIL_SENDER"):
+      logging.info("Binding to Export service")
+      binder.bind(ExportService, to=ExportService, scope=SingletonScope)
+
+  if os.getenv("N8N_URL"):
+      logging.info("Binding to Workflow service")
+      binder.bind(WorkflowService, to=WorkflowService, scope=SingletonScope)
+
+  if vector_bound and sql_bound and storage_bound:
+      logging.info("Binding to Retrieval service")
+      binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)
+
+  # Always bind the executor and its adapters
   binder.bind(ExecutorInterface, to=FlaskExecutorAdapter(executor), scope=SingletonScope)
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter, scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
-
+  logging.info("Configured all services and adapters", binder._bindings)
 
 FlaskInjector(app=app, modules=[configure])
 

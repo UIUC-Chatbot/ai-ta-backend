@@ -6,6 +6,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
 
+
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
 
 

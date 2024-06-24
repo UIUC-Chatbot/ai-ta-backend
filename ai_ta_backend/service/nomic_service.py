@@ -10,8 +10,8 @@ import pandas as pd
 from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
+from ai_ta_backend.database.sql import SQLAlchemyDatabase
 
-from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.sentry_service import SentryService
 
 LOCK_EXCEPTIONS = [
@@ -24,7 +24,7 @@ LOCK_EXCEPTIONS = [
 class NomicService():
 
   @inject
-  def __init__(self, sentry: SentryService, sql: SQLDatabase):
+  def __init__(self, sentry: SentryService, sql: SQLAlchemyDatabase):
     nomic.login(os.environ['NOMIC_API_KEY'])
     self.sentry = sentry
     self.sql = sql
@@ -84,12 +84,12 @@ class NomicService():
         return self.create_conversation_map(course_name)
       
       # entry present for doc map, but not convo map
-      elif not response.data[0]['convo_map_id']:
+      elif not response.data[0].convo_map_id is None:
         print("Map does not exist for this course. Redirecting to map creation...")
         return self.create_conversation_map(course_name)
           
-      project_id = response.data[0]['convo_map_id']
-      last_uploaded_convo_id = response.data[0]['last_uploaded_convo_id']
+      project_id = response.data[0].convo_map_id
+      last_uploaded_convo_id: int = int(str(response.data[0].last_uploaded_convo_id))
 
       # check if project is accepting data
       project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
@@ -141,7 +141,7 @@ class NomicService():
           print("Records uploaded: ", current_convo_count)
 
         # set first_id for next iteration
-        first_id = response.data[-1]['id'] + 1
+        first_id = int(str(response.data[-1].id)) + 1
 
       # upload last set of convos
       if convo_count > 0:
@@ -180,7 +180,7 @@ class NomicService():
       project_name = 'Conversation Map for ' + course_name
       project = AtlasProject(name=project_name, add_datums_if_exists=True)
 
-      prev_id = incoming_id_response.data[0]['id']
+      prev_id = str(incoming_id_response.data[0].id)
       uploaded_data = project.get_data(ids=[prev_id]) # fetch data point from nomic
       prev_convo = uploaded_data[0]['conversation']
 
@@ -248,7 +248,7 @@ class NomicService():
       response = self.sql.getConvoMapFromProjects(course_name)
       print("Response from supabase: ", response.data)
       if response.data:
-        if response.data[0]['convo_map_id']:
+        if response.data[0].convo_map_id is not None:
           return "Map already exists for this course."
 
       # if no, fetch total count of records
@@ -264,7 +264,7 @@ class NomicService():
       total_convo_count = response.count
       print("Total number of conversations in Supabase: ", total_convo_count)
 
-      first_id = response.data[0]['id'] - 1
+      first_id = int(str(response.data[0].id)) - 1
       combined_dfs = []
       current_convo_count = 0
       convo_count = 0
@@ -332,10 +332,10 @@ class NomicService():
 
         # set first_id for next iteration
         try:
-          print("response: ", response.data[-1]['id'])
+          print("response: ", response.data[-1].id)
         except:
           print("response: ", response.data)
-        first_id = response.data[-1]['id'] + 1
+        first_id = int(str(response.data[-1].id)) + 1
 
       print("Convo count: ", convo_count)
       # upload last set of convos
@@ -481,6 +481,7 @@ class NomicService():
           user_email = row['user_email']
 
         messages = row['convo']['messages']
+        first_message = ""
 
         # some conversations include images, so the data structure is different
         if isinstance(messages[0]['content'], list):
@@ -493,6 +494,7 @@ class NomicService():
 
         # construct metadata for multi-turn conversation
         for message in messages:
+          text = ""
           if message['role'] == 'user':
             emoji = "🙋 "
           else:
