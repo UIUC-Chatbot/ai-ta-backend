@@ -34,24 +34,24 @@ class RetrievalService:
     self.posthog = posthog
     self.nomicService = nomicService
 
-    openai.api_key = os.environ["OPENAI_API_KEY"]
+    openai.api_key = os.environ["VLADS_OPENAI_KEY"]
 
     self.embeddings = OpenAIEmbeddings(
         model='text-embedding-ada-002',
-        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        openai_api_type=os.environ['OPENAI_API_TYPE'],
-        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        openai_api_version=os.environ["OPENAI_API_VERSION"],
+        # openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+        # openai_api_type=os.environ['OPENAI_API_TYPE'],
+        # openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+        # openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
 
-    self.llm = AzureChatOpenAI(
-        temperature=0,
-        deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
-        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        openai_api_version=os.environ["OPENAI_API_VERSION"],
-        openai_api_type=os.environ['OPENAI_API_TYPE'],
-    )
+    # self.llm = AzureChatOpenAI(
+    #     temperature=0,
+    #     deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
+    #     openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+    #     openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+    #     openai_api_version=os.environ["OPENAI_API_VERSION"],
+    #     openai_api_type=os.environ['OPENAI_API_TYPE'],
+    # )
 
   def getTopContexts(self,
                      search_query: str,
@@ -370,7 +370,8 @@ class RetrievalService:
     # Capture the search invoked event to PostHog
     self._capture_search_invoked_event(search_query, course_name, doc_groups)
     # Perform the vector search
-    search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n, disabled_doc_groups)
+    search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                                 disabled_doc_groups)
     # Process the search results by extracting the page content and metadata
     found_docs = self._process_search_results(search_results, course_name)
     # Capture the search succeeded event to PostHog with the vector scores
@@ -393,9 +394,11 @@ class RetrievalService:
         },
     )
 
-  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n, disabled_doc_groups):
+  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n,
+                             disabled_doc_groups):
     qdrant_start_time = time.monotonic()
-    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n, disabled_doc_groups)
+    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                            disabled_doc_groups)
     self.qdrant_latency_sec = time.monotonic() - qdrant_start_time
     return search_results
 
@@ -428,7 +431,7 @@ class RetrievalService:
             "max_vector_score": max_vector_score,
             "min_vector_score": min_vector_score,
             "avg_vector_score": avg_vector_score,
-            "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,  
+            "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,
         },
     )
 
