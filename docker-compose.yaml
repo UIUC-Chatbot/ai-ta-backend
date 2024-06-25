@@ -1,15 +1,4 @@
-# version: 3.8
-
-# TODO: Update the network connections to each service (Minio, Redis), e.g. use `http://qdrant:6333` instead of `http://localhost:6333`
-
 services:
-  # sqlite:
-  #   image: nouchka/sqlite3
-  #   volumes:
-  #     - sqlite-data:/root/db
-  #     - ./init-scripts:/docker-entrypoint-initdb.d # Mount initialization scripts
-  #   command: [ "sqlite3", "/root/db/sqlite.db", "-cmd", ".tables" ]
-
   redis:
     image: redis:latest
     ports:
