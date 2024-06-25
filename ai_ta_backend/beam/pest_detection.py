@@ -10,9 +10,11 @@ import json
 import os
 import time
 import traceback
+import uuid
 from typing import Any, Dict, List
 
 import beam
+import boto3
 import requests
 from beam import App, QueueDepthAutoscaler, Runtime, Volume
 from PIL import Image
@@ -25,7 +27,9 @@ requirements = [
     "ultralytics==8.1.0",
     "torchvision==0.17.0",
     "opencv-python",
+    "boto3==1.34",
     "pillow",
+    "numpy<2",
 ]
 
 volume_path = "./models"
@@ -65,8 +69,16 @@ def loader():
     print("Loading model from volume")
     model = YOLO(model_path)
 
+  s3 = boto3.client(
+      service_name="s3",
+      endpoint_url=f"https://{os.environ['CLOUDFLARE_ACCOUNT_ID']}.r2.cloudflarestorage.com",
+      aws_access_key_id=os.environ['CLOUDFLARE_ACCESS_KEY_ID'],
+      aws_secret_access_key=os.environ['CLOUDFLARE_SECRET_ACCESS_KEY'],
+      # region_name="<location>", # Must be one of: wnam, enam, weur, eeur, apac, auto
+  )
+
   print(f"⏰ Runtime to load model: {(time.monotonic() - start_time):.2f} seconds")
-  return model
+  return model, s3
 
 
 # autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=2, max_replicas=3)
@@ -83,7 +95,7 @@ def predict(**inputs: Dict[str, Any]):
     Run the pest detection plugin on an image and return image data as blobs.
     """
   print("Inside predict() endpoint")
-  model = inputs["context"]
+  model, s3 = inputs["context"]
   image_urls: List[str] = inputs.get('image_urls', [])  # type: ignore
   print(f"Image URLs: {image_urls}")
 
@@ -98,18 +110,23 @@ def predict(**inputs: Dict[str, Any]):
     # Run the plugin
     annotated_images = _detect_pests(model, image_urls)
     print(f"annotated_images found: {len(annotated_images)}")
-    blob_results = []
+    img_urls = []
 
     for image in annotated_images:
       # Convert image to bytes
       img_byte_arr = io.BytesIO()
-      image.save(img_byte_arr, format='PNG')
+      image.save(img_byte_arr, format='JPEG')
       img_byte_arr = img_byte_arr.getvalue()
-      # Encode bytes to base64 string
-      base64_encoded = base64.b64encode(img_byte_arr).decode('utf-8')
-      blob_results.append(base64_encoded)
 
-    return blob_results
+      # Upload image to R2 bucket 'public-assets/cropwizard/pest_detection/...'
+      upload_key = f"cropwizard/pest_detection/{uuid.uuid4()}.jpg"
+      img_url = f"https://assets.kastan.ai/{upload_key}"
+
+      s3.upload_fileobj(io.BytesIO(img_byte_arr), 'public-assets', upload_key)
+      img_urls.append(img_url)
+      print("Image URL: ", img_url)
+
+    return {"image_urls": img_urls}
   except Exception as e:
     err = f"❌❌ Error in (pest_detection): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n{traceback.format_exc()}"  # type: ignore
     print(err)
