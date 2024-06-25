@@ -91,9 +91,6 @@ app = App("ingest",
               ),
           ))
 
-# MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
-OPENAI_API_TYPE = "azure"  # "openai" or "azure"
-
 
 def loader():
   """
@@ -107,10 +104,12 @@ def loader():
       api_key=os.getenv('QDRANT_API_KEY'),
   )
 
-  vectorstore = Qdrant(client=qdrant_client,
-                       collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                       embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE,
-                                                   openai_api_key=os.getenv('VLADS_OPENAI_KEY')))
+  vectorstore = Qdrant(
+      client=qdrant_client,
+      collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+      embeddings=OpenAIEmbeddings(
+          openai_api_type=os.environ['OPENAI_API_TYPE'],  # "openai" or "azure"
+          openai_api_key=os.getenv('VLADS_OPENAI_KEY')))
 
   # S3
   s3_client = boto3.client(
