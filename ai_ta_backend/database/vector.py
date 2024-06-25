@@ -24,12 +24,9 @@ class VectorDatabase():
         timeout=20,  # default is 5 seconds. Getting timeout errors w/ document groups.
     )
 
-    self.vectorstore = Qdrant(
-        client=self.qdrant_client,
-        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-        embeddings=OpenAIEmbeddings(openai_api_key=os.environ['VLADS_OPENAI_KEY']),
-        openai_api_type=os.environ['OPENAI_API_TYPE'],  # "openai" or "azure" 
-    )
+    self.vectorstore = Qdrant(client=self.qdrant_client,
+                              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+                              embeddings=OpenAIEmbeddings(openai_api_key=os.environ['VLADS_OPENAI_KEY']))
 
   def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n,
                     disabled_doc_groups: List[str]):
