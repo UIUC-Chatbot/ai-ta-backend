@@ -27,7 +27,8 @@ class VectorDatabase():
     self.vectorstore = Qdrant(
         client=self.qdrant_client,
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-        embeddings=OpenAIEmbeddings(openai_api_type=os.environ['OPENAI_API_TYPE']),  # "openai" or "azure"
+        embeddings=OpenAIEmbeddings(openai_api_key=os.environ['VLADS_OPENAI_KEY']),
+        openai_api_type=os.environ['OPENAI_API_TYPE'],  # "openai" or "azure" 
     )
 
   def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n,
