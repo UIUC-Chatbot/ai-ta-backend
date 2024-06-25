@@ -1151,7 +1151,6 @@ class Ingest():
         original_filename = incoming_filename
       print("Filename after removing uuid: ", original_filename)
       
-
       supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
           'course_name', course_name).like('s3_path', '%' + original_filename + '%').order('id', desc=True).execute()
       supabase_contents = supabase_contents.data
@@ -1202,7 +1201,7 @@ class Ingest():
           current_whole_text += text['input']
 
         if supabase_whole_text == current_whole_text:  # matches the previous file
-          print(f"Duplicate ingested! 📄 s3_path: {original_filename}.")
+          print(f"Duplicate ingested! 📄 s3_path/url: {original_filename}.")
           return True
 
         else:  # the file is updated
