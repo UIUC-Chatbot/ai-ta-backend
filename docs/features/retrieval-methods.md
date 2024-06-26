@@ -45,7 +45,7 @@ LLM Guided retrieval thrives with structured data.&#x20;
 
 ### Scientific PDF parsing
 
-* Grobid (with [AllenAI's PaperMerge](https://github.com/allenai/papermage/blob/main/examples/quick\_start\_demo.ipynb) wrapper for great dev experience)
+* Grobid (using [doc2json](https://github.com/allenai/s2orc-doc2json) package to convert research paper to S2ORC JSON. It is good with parsing sections, references, and tables when given formal research papers.)
 * Nougut&#x20;
 * Oreo
 
@@ -55,55 +55,57 @@ Our goal is to parse and store academic PDFs with maximally structured informati
 
 3 tables to store academic PDFs:
 
-1. Papers
+1. Article
 2. Section
 3. Contexts
 
+Using [FastnanoID](https://github.com/oliverlambson/fastnanoid?tab=readme-ov-file) to quickly generate unique and short random IDs for entries.&#x20;
+
 **Papers**
 
-"A paper has sections"
+"A paper has sections and references"
 
-<table><thead><tr><th width="91">ULD</th><th>Num tokens</th><th width="78">Title</th><th>Date published</th><th>Journal</th><th>Authors</th><th>Sections</th></tr></thead><tbody><tr><td></td><td></td><td></td><td></td><td></td><td></td><td>[array of pointers to section object]</td></tr></tbody></table>
+<table><thead><tr><th width="104">NanoID</th><th>Num tokens</th><th width="78">Title</th><th>Date published</th><th>Journal</th><th>Authors</th><th>Sections</th></tr></thead><tbody><tr><td></td><td></td><td></td><td></td><td></td><td></td><td>[array of pointers to section object]</td></tr></tbody></table>
 
-**Sections**
+**Sections (including references)**
 
 "A section has contexts"
 
-<table><thead><tr><th>ULD</th><th width="117">Num tokens</th><th>Section title </th><th>Section number</th><th>Contexts</th></tr></thead><tbody><tr><td></td><td></td><td></td><td></td><td>[array of pointers to context object]</td></tr></tbody></table>
+<table><thead><tr><th>NanoID</th><th width="117">Num tokens</th><th>Section title </th><th>Section number</th><th>Contexts</th></tr></thead><tbody><tr><td></td><td></td><td></td><td>Mark "ref" if it's reference, otherwise, section numbers</td><td>[array of pointers to context object]</td></tr></tbody></table>
 
 **Contexts**
 
-The base unit of text. Each context must fit within a LLM embedding model's context window (typically 8k tokens or more precisely`2^13 = 8,192` tokens).
+The base unit of text. Each context must fit within an LLM embedding model's context window (typically 8k tokens or more precisely`2^13 = 8,192` tokens).
 
-<table><thead><tr><th width="91">ULD</th><th>Text</th><th width="127">Section title</th><th width="156">Section number</th><th width="125">Num tokens</th><th width="204">embedding-nomic_1.5</th><th width="142">Page number</th><th>stop reason</th></tr></thead><tbody><tr><td></td><td>&#x3C;Raw text></td><td></td><td></td><td></td><td></td><td></td><td>"Section" or "Token limit" if the section is larger than our embedding model context window.</td></tr></tbody></table>
+<table><thead><tr><th width="105">NanoID</th><th>Text</th><th width="127">Section title</th><th width="156">Section number</th><th width="125">Num tokens</th><th width="204">embedding-nomic_1.5</th><th width="142">Page number</th><th>stop reason</th></tr></thead><tbody><tr><td></td><td>&#x3C;Raw text></td><td></td><td></td><td></td><td></td><td></td><td>"Section" or "Token limit" if the section is larger than our embedding model context window.</td></tr></tbody></table>
 
 #### SQL details
 
 SQLite, and most SQL implementations, don't allow for a single field to point to an array of foreign keys, so we use the "Junction table" pattern for our one-to-many relationships.
 
-Junction tables simply allow one `paper` to have **many** `sections` and one `section` to have **many** `contexts`.
+Junction tables simply allow one article to have **many** `sections` and one `section` to have **many** `contexts`.
 
-* `PaperSections` table
+* `Article_Sections` table
 
 ```sql
-CREATE TABLE PaperSections (
-    paper_id INTEGER,
-    section_id INTEGER,
-    FOREIGN KEY (paper_id) REFERENCES Papers(paper_id),
-    FOREIGN KEY (section_id) REFERENCES Sections(section_id),
-    PRIMARY KEY (paper_id, section_id)
+CREATE TABLE IF NOT EXISTS article_sections (
+    Article_ID TEXT,
+    Section_ID TEXT,
+    PRIMARY KEY (Article_ID, Section_ID),
+    FOREIGN KEY (Article_ID) REFERENCES articles(ID),
+    FOREIGN KEY (Section_ID) REFERENCES sections(ID)
 );
 ```
 
-* `SectionContexts` table
+* `Section_Contexts` table
 
 ```sql
-CREATE TABLE SectionContexts (
-    paper_id INTEGER,
-    section_id INTEGER,
-    FOREIGN KEY (paper_id) REFERENCES Papers(paper_id),
-    FOREIGN KEY (section_id) REFERENCES Sections(section_id),
-    PRIMARY KEY (paper_id, section_id)
+CREATE TABLE IF NOT EXISTS sections_contexts (
+    Section_ID TEXT,
+    Context_ID TEXT,
+    PRIMARY KEY (Section_ID, Context_ID),
+    FOREIGN KEY (Section_ID) REFERENCES sections(ID),
+    FOREIGN KEY (Context_ID) REFERENCES contexts(ID)
 );
 ```
 
