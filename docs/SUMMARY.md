@@ -8,6 +8,7 @@
 * [Retrieval Methods](features/retrieval-methods.md)
 * [Web Crawling Details](features/web-crawling-details.md)
 * [Bulk Export Documents or Conversation History](features/bulk-export-documents-or-conversation-history.md)
+* [Duplication in Ingested Documents](features/duplication-in-ingested-documents.md)
 
 ## API
 
