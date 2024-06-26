@@ -38,9 +38,10 @@ class RetrievalService:
 
     self.embeddings = OpenAIEmbeddings(
         model='text-embedding-ada-002',
+        openai_api_key=os.environ["VLADS_OPENAI_KEY"],
+        # openai_api_key=os.environ["AZURE_OPENAI_KEY"],
         # openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
         # openai_api_type=os.environ['OPENAI_API_TYPE'],
-        # openai_api_key=os.environ["AZURE_OPENAI_KEY"],
         # openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
 
