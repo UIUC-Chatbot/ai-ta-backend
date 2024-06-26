@@ -134,7 +134,6 @@ def loader():
   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   sentry_sdk.init(
       dsn=os.getenv("SENTRY_DSN"),
-      environment='development',
       # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
       traces_sample_rate=1.0,
       # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
@@ -1172,6 +1171,7 @@ class Ingest():
       for record in supabase_contents:
         if incoming_s3_path:  
           curr_filename = record['s3_path'].split('/')[-1]
+          older_s3_path = record['s3_path']
           if bool(pattern.search(curr_filename)):
             # uuid pattern exists -- remove the uuid and proceed with duplicate checking
             sql_filename = curr_filename[37:]
@@ -1187,6 +1187,7 @@ class Ingest():
         
         if original_filename == sql_filename: # compare og s3_path/url with incoming s3_path/url
           supabase_contexts = record
+          
           exact_doc_exists = True
           print("Exact doc exists in Supabase:", sql_filename)
           break
@@ -1210,9 +1211,9 @@ class Ingest():
           # call the delete function on older doc
           print("older s3_path/url to be deleted: ", sql_filename)
           if incoming_s3_path:
-            delete_status = self.delete_data(course_name, sql_filename, '')
+            delete_status = self.delete_data(course_name, older_s3_path, '')
           else:
-            delete_status = self.delete_data(course_name, '', sql_filename)
+            delete_status = self.delete_data(course_name, '', url)
           print("delete_status: ", delete_status)
           return False
       else:
