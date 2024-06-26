@@ -1134,60 +1134,93 @@ class Ingest():
     course_name = metadatas[0]['course_name']
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
-    original_filename = incoming_s3_path.split('/')[-1][37:]  # remove the 37-char uuid prefix
-
-    # check if uuid exists in s3_path -- not all s3_paths have uuids!
-    incoming_filename = incoming_s3_path.split('/')[-1]
-    pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
-                         re.I)  # uuid V4 pattern, and v4 only.
-    if bool(pattern.search(incoming_filename)):
-      # uuid pattern exists -- remove the uuid and proceed with duplicate checking
-      original_filename = incoming_filename[37:]
-    else:
-      # do not remove anything and proceed with duplicate checking
-      original_filename = incoming_filename
 
     if incoming_s3_path:
-      filename = incoming_s3_path
+      # check if uuid exists in s3_path -- not all s3_paths have uuids!
+      incoming_filename = incoming_s3_path.split('/')[-1]
+      print("Full filename: ", incoming_filename)
+      pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
+                          re.I)  # uuid V4 pattern, and v4 only.
+      if bool(pattern.search(incoming_filename)):
+        # uuid pattern exists -- remove the uuid and proceed with duplicate checking
+        original_filename = incoming_filename[37:]
+      else:
+        # do not remove anything and proceed with duplicate checking
+        original_filename = incoming_filename
+      print("Filename after removing uuid: ", original_filename)
+      
       supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
           'course_name', course_name).like('s3_path', '%' + original_filename + '%').order('id', desc=True).execute()
       supabase_contents = supabase_contents.data
+      print("No. of S3 path based records retrieved: ", len(supabase_contents)) # multiple records can be retrieved: 3.pdf and 453.pdf
+
     elif url:
-      filename = url
-      supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
+      original_filename = url
+      supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 'url').eq(
           'course_name', course_name).eq('url', url).order('id', desc=True).execute()
       supabase_contents = supabase_contents.data
+      print("No. of URL-based records retrieved: ", len(supabase_contents))
     else:
-      filename = None
+      original_filename = None
       supabase_contents = []
 
     supabase_whole_text = ""
-    if len(supabase_contents) > 0:  # if a doc with same filename exists in Supabase
-      # concatenate texts
-      supabase_contexts = supabase_contents[0]
-      for text in supabase_contexts['contexts']:
-        supabase_whole_text += text['text']
+    exact_doc_exists = False
+    if len(supabase_contents) > 0:  # a doc with same filename exists in Supabase
+      for record in supabase_contents:
+        if incoming_s3_path:  
+          curr_filename = record['s3_path'].split('/')[-1]
+          older_s3_path = record['s3_path']
+          if bool(pattern.search(curr_filename)):
+            # uuid pattern exists -- remove the uuid and proceed with duplicate checking
+            sql_filename = curr_filename[37:]
+          else:
+            # do not remove anything and proceed with duplicate checking
+            sql_filename = curr_filename
+        elif url:
+          print("URL retrieved from SQL: ", record.keys())
+          sql_filename = record['url']
+        else: 
+          continue
+        print("Original filename: ", original_filename, "Current SQL filename: ", sql_filename)
+        
+        if original_filename == sql_filename: # compare og s3_path/url with incoming s3_path/url
+          supabase_contexts = record
+          
+          exact_doc_exists = True
+          print("Exact doc exists in Supabase:", sql_filename)
+          break
 
-      current_whole_text = ""
-      for text in texts:
-        current_whole_text += text['input']
+      if exact_doc_exists:
+        # concatenate og texts
+        for text in supabase_contexts['contexts']:
+          supabase_whole_text += text['text']
 
-      if supabase_whole_text == current_whole_text:  # matches the previous file
-        print(f"Duplicate ingested! 📄 s3_path: {filename}.")
-        return True
+        current_whole_text = ""
+        for text in texts:
+          current_whole_text += text['input']
 
-      else:  # the file is updated
-        print(f"Updated file detected! Same filename, new contents. 📄 s3_path: {filename}")
+        if supabase_whole_text == current_whole_text:  # matches the previous file
+          print(f"Duplicate ingested! 📄 s3_path/url: {original_filename}.")
+          return True
 
-        # call the delete function on older docs
-        for content in supabase_contents:
-          print("older s3_path to be deleted: ", content['s3_path'])
-          delete_status = self.delete_data(course_name, content['s3_path'], '')
+        else:  # the file is updated
+          print(f"Updated file detected! Same filename, new contents. 📄s3_path/url: {original_filename}")
+
+          # call the delete function on older doc
+          print("older s3_path/url to be deleted: ", sql_filename)
+          if incoming_s3_path:
+            delete_status = self.delete_data(course_name, older_s3_path, '')
+          else:
+            delete_status = self.delete_data(course_name, '', url)
           print("delete_status: ", delete_status)
+          return False
+      else:
+        print(f"NOT a duplicate! 📄s3_path: {original_filename}")
         return False
 
     else:  # filename does not already exist in Supabase, so its a brand new file
-      print(f"NOT a duplicate! 📄s3_path: {filename}")
+      print(f"NOT a duplicate! 📄s3_path: {original_filename}")
       return False
 
   def delete_data(self, course_name: str, s3_path: str, source_url: str):
