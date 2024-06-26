@@ -4,15 +4,13 @@ For local testing w/ hot reload: beam serve usage_analysis.py
 Use CAII gmail to auth.
 """
 
-import json
 import os
 from datetime import datetime
 from typing import Any, Dict, List
 
 import beam
-import requests
 import supabase
-from beam import App, QueueDepthAutoscaler, Runtime
+from beam import App, Runtime
 from posthog import Posthog
 
 requirements = [
@@ -31,19 +29,6 @@ app = App("usage_analysis",
           ))
 
 
-def loader():
-  """
-    The loader function will run once for each worker that starts up. https://docs.beam.cloud/deployment/loaders
-    """
-  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
-  supabase_client = supabase.create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_API_KEY'])  # type: ignore
-
-  return posthog, supabase_client
-
-
-autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=2, max_replicas=3)
-
-
 @app.schedule(when="2 2 * * *")  # 2:02 AM daily
 def usage_analysis(**inputs: Dict[str, Any]):
   """
@@ -52,10 +37,10 @@ def usage_analysis(**inputs: Dict[str, Any]):
     Args:
         course_name (str): The name of the course.
     """
-  # course_name = str = inputs.get('course_name', '')
-  print("Running usage analysis for course:")
-
-  posthog, supabase_client = inputs['context']
+  print("Running usage analysis for course")
+  posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
+  supabase_client = supabase.create_client(os.environ['SUPABASE_URL'], os.environ['SUPABASE_API_KEY'])  # type: ignore
+  print("Instantiated Posthog and Supabase clients")
 
   posthog.capture('distinct_id_of_the_user', event='usage_analysis_ran', properties={
       'hi_josh': "👋",
@@ -64,13 +49,13 @@ def usage_analysis(**inputs: Dict[str, Any]):
   # if course_name:
   #     # single course
   #     print("Single course")
-  #     metrics = get_usage_data(course_name, supabase_client)
+  #     metrics = get_usage_data(course_name, supabase)
   #     print("Metrics:", metrics)
 
   #     posthog.capture('usage_metrics', metrics)
 
   #     # upload to Supabase
-  #     response = supabase_client.table('usage_metrics').insert(metrics).execute()
+  #     response = supabase.table('usage_metrics').insert(metrics).execute()
   #     print("Response:", response)
 
   # else:
