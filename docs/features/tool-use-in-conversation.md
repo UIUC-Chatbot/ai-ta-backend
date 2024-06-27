@@ -6,11 +6,13 @@ description: >-
 
 # Tool use in conversation
 
-## Demo
+Now in UIUC.chat, you can create your own tools for the LLM to use seamlessly during a conversation. See our demo below.
+
+<figure><img src="../.gitbook/assets/image (1).png" alt=""><figcaption><p>The concept of "tool use." The LLM parses a user input and determines if any of the available tools are relevant. If so, the AI generates the input params and then our code manually invokes the tool requested by the LLM. Finally, the output is sent back to the LLM to generate a final answer consider the tool output. <a href="https://python.langchain.com/v0.1/docs/use_cases/tool_use/">Image source</a>.</p></figcaption></figure>
+
+## Tools demo
 
 {% embed url="https://www.youtube.com/watch?v=sSai_F1cbEI" %}
-
-
 
 ## Get access
 
@@ -19,6 +21,15 @@ Tools are invite-only during beta. Just shoot me an email and I'll send you an o
 `Email me: kvday2@illinois.edu`
 
 I'm happy to onboard anyone. No need to justify anything, no calls required.&#x20;
+
+## N8n to easily define tools!
+
+To make it as easy as possible for you to create your own tools, we self-host n8n a visual workflow builder. We chose n8n after an intense study of the market because of:&#x20;
+
+* n8n's [massive library of integrations](https://n8n.io/integrations/) (Slack, Jira, Google drive, Gmail, etc)
+* Library of [creative & helpful templates](https://n8n.io/workflows/)
+  * I like [Talk to your SQLite database with a LangChain AI Agent](https://n8n.io/workflows/2292-talk-to-your-sqlite-database-with-a-langchain-ai-agent/)
+* [Cool features](https://n8n.io/features/) (drag & drop, code running, LLM abilities)
 
 ## Usage - Write your own tool
 
@@ -64,6 +75,8 @@ To take an image as input, put `image_urls` as a field in your `n8n Form Trigger
 If you're using code, you'll have to parse this `image_urls` text into a JSON array. This is required because n8n doesn't allow JSON inputs, so we use a text input and have to parse the JSON data manually.
 
 ```python
+image_urls: List[str] = post_body.get('image_urls', []) # grab data from POST body
+
 if image_urls and isinstance(image_urls, str):
   image_urls = json.loads(image_urls)
 print(f"Parsed image URLs: {image_urls}")
@@ -123,6 +136,4 @@ During beta, try using the feature branch here: [https://uiuc-chat-git-n8n-ui-ka
 1. Define tools in `uiuc.chat/<YOUR-PROJECT>/tools`
 2. Enable the tools you want active in your project
 3. Start chatting, tools will be invoked as needed.
-
-<figure><img src="../.gitbook/assets/image (1).png" alt=""><figcaption><p>The concept of "tool use." The LLM parses a user input and determines if any of the available tools are relevant. If so, the AI generates the input params and then our code manually invokes the tool requested by the LLM. Finally, the output is sent back to the LLM to generate a final answer consider the tool output. <a href="https://python.langchain.com/v0.1/docs/use_cases/tool_use/">Image source</a>.</p></figcaption></figure>
 
