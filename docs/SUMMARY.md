@@ -19,3 +19,7 @@
 
 * [System Architecture](technical/system-architecture.md)
 * [Cost of Service](technical/cost-of-service.md)
+
+***
+
+* [CropWizard Document License Information](cropwizard-document-license-information.md)
