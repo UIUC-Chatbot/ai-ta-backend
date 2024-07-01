@@ -43,11 +43,43 @@ Mirroring the human research process, we let the LLM decide if the retrieved con
 
 LLM Guided retrieval thrives with structured data.&#x20;
 
-### Scientific PDF parsing
+### Scientific PDF Parsing
 
-* Grobid (using [doc2json](https://github.com/allenai/s2orc-doc2json) package to convert research paper to S2ORC JSON. It is good with parsing sections, references, and tables when given formal research papers.)
-* Nougut&#x20;
-* Oreo
+TL;DR
+
+1. Start with **Grobid**. Excellent at parsing `sections`, `references`.&#x20;
+2. Re-run with **Unstructured**. Replace all figures and tables from Grobid with Unstructured, we find their `yolox` model is best at parsing tables accurately.
+3. For math, use Nougout.&#x20;
+
+Based on our empirical testing, and conversations with domain experts from NCSA and Argonne, this is our PDF parsing pipeline for Pumbed, Arxiv, and any typical scientific PDFs.&#x20;
+
+[**Grobid**](https://github.com/kermitt2/grobid) **is the best at creating outlines from scientific PDFs.** The [Full-Text module](https://grobid.readthedocs.io/en/latest/training/fulltext/) properly segments articles into sections, like `1. introduction, 1.1 background on LLMs, 2. methods... etc.` Precise outlines is crucial to LLM-guided-retrieval, for the LLM to properly request other sections of the paper.
+
+We highly recommend the [doc2json wrapper around Grobid](https://github.com/allenai/s2orc-doc2json) to make it easier to use the outputs.
+
+
+
+Parsing tables is best done with Unstructured. In our experiments with tricky PDFs, YOLOX is slightly superior to Detectron2.&#x20;
+
+```python
+elements = partition(filename=filename,
+                     strategy="hi_res",
+                     hi_res_model_name="yolox")
+```
+
+<details>
+
+<summary>Example of a complex table parsed with Unstructured vs Grobid</summary>
+
+Here's a tricky table to parse. We want to capture all this info into a markdown-like format. We find Grobid really struggles with this, Unstructured w/ `yolox` does a near-perfect job. In this case, it's perfect except the +/- symbols are usually parsed into `+` symbols.
+
+![](<../.gitbook/assets/CleanShot 2024-07-01 at 11.01.24.png>)
+
+
+
+</details>
+
+* [Nougut](https://github.com/facebookresearch/nougat) - **best at parsing mathematical symbols.** Excellent at parsing "rendered LaTeX symbols back raw LaTeX code." This method uses an encoder-decoder Transformer model, so realistically it requires a GPU to run.&#x20;
 
 ### Data layout in SQLite
 
@@ -79,11 +111,19 @@ The base unit of text. Each context must fit within an LLM embedding model's con
 
 <table><thead><tr><th width="105">NanoID</th><th>Text</th><th width="127">Section title</th><th width="156">Section number</th><th width="125">Num tokens</th><th width="204">embedding-nomic_1.5</th><th width="142">Page number</th><th>stop reason</th></tr></thead><tbody><tr><td></td><td>&#x3C;Raw text></td><td></td><td></td><td></td><td></td><td></td><td>"Section" or "Token limit" if the section is larger than our embedding model context window.</td></tr></tbody></table>
 
-#### SQL details
+#### Example SQLite DB of pubmed articles
 
-SQLite, and most SQL implementations, don't allow for a single field to point to an array of foreign keys, so we use the "Junction table" pattern for our one-to-many relationships.
+Here's a full SQLite database you can download to explore the final form of our documents. I recommend using [DB Browser for SQLite](https://sqlitebrowser.org/) to view the tables.
 
-Junction tables simply allow one article to have **many** `sections` and one `section` to have **many** `contexts`.
+{% file src="../.gitbook/assets/Pubmed_Example_extraction.db" %}
+A SQLite database containing an example of a single article in the following format.&#x20;
+{% endfile %}
+
+#### SQL implementation details
+
+SQLite, and most SQL implementations, don't allow for a single field to point to an array of foreign keys, so we use the _**Junction table**_ pattern for our one-to-many relationships.
+
+_**Junction tables**_ simply allow one article to have **many** `sections` and one `section` to have **many** `contexts`.
 
 * `Article_Sections` table
 
