@@ -90,10 +90,19 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
                 next_page_url = None
 
             # multi-process all records in current page
-            with concurrent.futures.ProcessPoolExecutor() as executor:
-                results = [executor.submit(downloadPDFSpringer, record, directory) for record in data['records']]
-                for f in concurrent.futures.as_completed(results):
-                    print(f.result())
+            # with concurrent.futures.ProcessPoolExecutor() as executor:
+            #     results = []
+            #     for i in range(0, len(data['records']), 3):
+            #         batch = data['records'][i:i+3]
+            #         batch_results = [executor.submit(downloadPDFSpringer, record, directory) for record in batch]
+            #         results.extend(batch_results)
+            #     for f in concurrent.futures.as_completed(results):
+            #         print(f.result())
+
+            for i in range(len(data['records'])):
+                status = downloadPDFSpringer(data['records'][i], directory)
+                print("Status: ", status)
+                
 
             # update current records count
             current_records += int(len(data['records']))
@@ -141,21 +150,21 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
 
 
     # call ingest
-    beam_url = "https://41kgx.apps.beam.cloud"
-    headers = {
-    "Content-Type": "application/json",
-    "Authorization": "Basic " + os.getenv('BEAM_AUTH_TOKEN')    # type: ignore
-    }
-    for data in ingest_data:
-        payload = json.dumps(data)
-        response = requests.post(beam_url, headers=headers, data=payload)
-        if response.status_code == 200:
-            print("Task status retrieved successfully!")
-        else:
-            print(f"Error: {response.status_code}. {response.text}")
+    # beam_url = "https://41kgx.apps.beam.cloud"
+    # headers = {
+    # "Content-Type": "application/json",
+    # "Authorization": "Basic " + os.getenv('BEAM_AUTH_TOKEN')    # type: ignore
+    # }
+    # for data in ingest_data:
+    #     payload = json.dumps(data)
+    #     response = requests.post(beam_url, headers=headers, data=payload)
+    #     if response.status_code == 200:
+    #         print("Task status retrieved successfully!")
+    #     else:
+    #         print(f"Error: {response.status_code}. {response.text}")
 
-    # Delete files from local directory
-    shutil.rmtree(directory)
+    # # Delete files from local directory
+    # shutil.rmtree(directory)
                                 
     return "success"
 
