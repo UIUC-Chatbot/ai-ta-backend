@@ -41,7 +41,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
-from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
+#from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
 from OpenaiEmbeddings import OpenAIAPIProcessor
 from PIL import Image
 from posthog import Posthog
@@ -1102,9 +1102,9 @@ class Ingest():
           os.getenv('SUPABASE_DOCUMENTS_TABLE')).insert(document).execute()  # type: ignore
 
       # add to Nomic document map
-      if len(response.data) > 0:
-        course_name = contexts[0].metadata.get('course_name')
-        log_to_document_map(course_name)
+      # if len(response.data) > 0:
+      #   course_name = contexts[0].metadata.get('course_name')
+      #   log_to_document_map(course_name)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
@@ -1259,22 +1259,22 @@ class Ingest():
           else:
             print("Error in deleting file from Qdrant:", e)
             sentry_sdk.capture_exception(e)
-        try:
-          # delete from Nomic
-          response = self.supabase_client.from_(
-              os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq('s3_path', s3_path).eq(
-                  'course_name', course_name).execute()
-          data = response.data[0]  #single record fetched
-          nomic_ids_to_delete = []
-          context_count = len(data['contexts'])
-          for i in range(1, context_count + 1):
-            nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
+        # try:
+        #   # delete from Nomic
+        #   response = self.supabase_client.from_(
+        #       os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq('s3_path', s3_path).eq(
+        #           'course_name', course_name).execute()
+        #   data = response.data[0]  #single record fetched
+        #   nomic_ids_to_delete = []
+        #   context_count = len(data['contexts'])
+        #   for i in range(1, context_count + 1):
+        #     nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
 
-          # delete from Nomic
-          delete_from_document_map(course_name, nomic_ids_to_delete)
-        except Exception as e:
-          print("Error in deleting file from Nomic:", e)
-          sentry_sdk.capture_exception(e)
+        #   # delete from Nomic
+        #   delete_from_document_map(course_name, nomic_ids_to_delete)
+        # except Exception as e:
+        #   print("Error in deleting file from Nomic:", e)
+        #   sentry_sdk.capture_exception(e)
 
         try:
           self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq('s3_path', s3_path).eq(
@@ -1304,21 +1304,21 @@ class Ingest():
           else:
             print("Error in deleting file from Qdrant:", e)
             sentry_sdk.capture_exception(e)
-        try:
-          # delete from Nomic
-          response = self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, url, contexts").eq(
-              'url', source_url).eq('course_name', course_name).execute()
-          data = response.data[0]  #single record fetched
-          nomic_ids_to_delete = []
-          context_count = len(data['contexts'])
-          for i in range(1, context_count + 1):
-            nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
+        # try:
+        #   # delete from Nomic
+        #   response = self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, url, contexts").eq(
+        #       'url', source_url).eq('course_name', course_name).execute()
+        #   data = response.data[0]  #single record fetched
+        #   nomic_ids_to_delete = []
+        #   context_count = len(data['contexts'])
+        #   for i in range(1, context_count + 1):
+        #     nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
 
-          # delete from Nomic
-          delete_from_document_map(course_name, nomic_ids_to_delete)
-        except Exception as e:
-          print("Error in deleting file from Nomic:", e)
-          sentry_sdk.capture_exception(e)
+        #   # delete from Nomic
+        #   delete_from_document_map(course_name, nomic_ids_to_delete)
+        # except Exception as e:
+        #   print("Error in deleting file from Nomic:", e)
+        #   sentry_sdk.capture_exception(e)
 
         try:
           # delete from Supabase

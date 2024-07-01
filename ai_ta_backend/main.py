@@ -190,50 +190,50 @@ def nomic_map(service: NomicService):
   return response
 
 
-@app.route('/createDocumentMap', methods=['GET'])
-def createDocumentMap(service: NomicService):
-  course_name: str = request.args.get('course_name', default='', type=str)
+# @app.route('/createDocumentMap', methods=['GET'])
+# def createDocumentMap(service: NomicService):
+#   course_name: str = request.args.get('course_name', default='', type=str)
 
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+#   if course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  map_id = create_document_map(course_name)
+#   map_id = create_document_map(course_name)
 
-  response = jsonify(map_id)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
-@app.route('/createConversationMap', methods=['GET'])
-def createConversationMap(service: NomicService):
-  course_name: str = request.args.get('course_name', default='', type=str)
-
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
-
-  map_id = service.create_conversation_map(course_name)
-
-  response = jsonify(map_id)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   response = jsonify(map_id)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 
-@app.route('/logToConversationMap', methods=['GET'])
-def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
-  course_name: str = request.args.get('course_name', default='', type=str)
+# @app.route('/createConversationMap', methods=['GET'])
+# def createConversationMap(service: NomicService):
+#   course_name: str = request.args.get('course_name', default='', type=str)
 
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+#   if course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  #map_id = service.log_to_conversation_map(course_name)
-  map_id = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
+#   map_id = service.create_conversation_map(course_name)
 
-  response = jsonify(map_id)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   response = jsonify(map_id)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
+
+
+# @app.route('/logToConversationMap', methods=['GET'])
+# def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
+#   course_name: str = request.args.get('course_name', default='', type=str)
+
+#   if course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+#   #map_id = service.log_to_conversation_map(course_name)
+#   map_id = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
+
+#   response = jsonify(map_id)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 
 @app.route('/onResponseCompletion', methods=['POST'])
@@ -253,7 +253,7 @@ def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
 
   # background execution of tasks!!
   #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
-  result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
+  #result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
   response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
