@@ -21,6 +21,7 @@ import beam
 import boto3
 import fitz
 import openai
+import pdfplumber
 import pytesseract
 import sentry_sdk
 import supabase
@@ -75,6 +76,7 @@ requirements = [
     "beautifulsoup4==4.12.2",
     "sentry-sdk==1.39.1",
     "nomic==2.0.14",
+    "pdfplumber==0.11.0",  # PDF OCR, better performance than Fitz/PyMuPDF in my Gies PDF testing.
 ]
 
 # TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
@@ -89,9 +91,6 @@ app = App("ingest",
               ),
           ))
 
-# MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
-OPENAI_API_TYPE = "azure"  # "openai" or "azure"
-
 
 def loader():
   """
@@ -105,10 +104,12 @@ def loader():
       api_key=os.getenv('QDRANT_API_KEY'),
   )
 
-  vectorstore = Qdrant(client=qdrant_client,
-                       collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                       embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE,
-                                                   openai_api_key=os.getenv('VLADS_OPENAI_KEY')))
+  vectorstore = Qdrant(
+      client=qdrant_client,
+      collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+      embeddings=OpenAIEmbeddings(
+          openai_api_type=os.environ['OPENAI_API_TYPE'],  # "openai" or "azure"
+          openai_api_key=os.getenv('VLADS_OPENAI_KEY')))
 
   # S3
   s3_client = boto3.client(
@@ -131,11 +132,13 @@ def loader():
 
   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
   sentry_sdk.init(
-      dsn="https://examplePublicKey@o0.ingest.sentry.io/0",
-
-      # Enable performance monitoring
-      enable_tracing=True,
-  )
+      dsn=os.getenv("SENTRY_DSN"),
+      # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+      traces_sample_rate=1.0,
+      # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
+      # We recommend adjusting this value in production.
+      profiles_sample_rate=1.0,
+      enable_tracing=True)
 
   return qdrant_client, vectorstore, s3_client, supabase_client, posthog
 
@@ -151,7 +154,7 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
     callback_url='https://uiuc-chat-git-ingestprogresstracking-kastanday.vercel.app/api/UIUC-api/ingestTaskCallback',
     max_pending_tasks=15_000,
     max_retries=3,
-    timeout=-1,
+    timeout=60 * 5,
     loader=loader,
     autoscaler=autoscaler)
 def ingest(**inputs: Dict[str, Any]):
@@ -227,6 +230,7 @@ def ingest(**inputs: Dict[str, Any]):
     pass
 
   print(f"Final success_fail_dict: {success_fail_dict}")
+  sentry_sdk.flush(timeout=20)
   return json.dumps(success_fail_dict)
 
 
@@ -760,14 +764,18 @@ class Ingest():
         # download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
         ### READ OCR of PDF
-        doc = fitz.open(pdf_tmpfile.name)  # type: ignore
+        try:
+          doc = fitz.open(pdf_tmpfile.name)  # type: ignore
+        except fitz.fitz.EmptyFileError as e:
+          print(f"Empty PDF file: {s3_path}")
+          return "Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text."
 
         # improve quality of the image
         zoom_x = 2.0  # horizontal zoom
         zoom_y = 2.0  # vertical zoom
         mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
 
-        pdf_pages_OCRed: List[Dict] = []
+        pdf_pages_no_OCR: List[Dict] = []
         for i, page in enumerate(doc):  # type: ignore
 
           # UPLOAD FIRST PAGE IMAGE to S3
@@ -784,7 +792,7 @@ class Ingest():
 
           # Extract text
           text = page.get_text().encode("utf8").decode("utf8", errors='ignore')  # get plain text (is in UTF-8)
-          pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
+          pdf_pages_no_OCR.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
 
         metadatas: List[Dict[str, Any]] = [
             {
@@ -795,19 +803,81 @@ class Ingest():
                 'readable_filename': kwargs.get('readable_filename', page['readable_filename']),
                 'url': kwargs.get('url', ''),
                 'base_url': kwargs.get('base_url', ''),
-            } for page in pdf_pages_OCRed
+            } for page in pdf_pages_no_OCR
         ]
-        pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+        pdf_texts = [page['text'] for page in pdf_pages_no_OCR]
 
-        success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        # count the total number of words in the pdf_texts. If it's less than 100, we'll OCR the PDF
+        has_words = any(text.strip() for text in pdf_texts)
+        if has_words:
+          success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+        else:
+          print("⚠️ PDF IS EMPTY -- OCR-ing the PDF.")
+          success_or_failure = self._ocr_pdf(s3_path=s3_path, course_name=course_name, **kwargs)
+
         return success_or_failure
     except Exception as e:
-      err = f"❌❌ Error in (PDF ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      err = f"❌❌ Error in PDF ingest (no OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )  # type: ignore
       print(err)
       sentry_sdk.capture_exception(e)
       return err
     return "Success"
+
+  def _ocr_pdf(self, s3_path: str, course_name: str, **kwargs):
+    self.posthog.capture('distinct_id_of_the_user',
+                         event='ocr_pdf_invoked',
+                         properties={
+                             'course_name': course_name,
+                             's3_path': s3_path,
+                         })
+
+    pdf_pages_OCRed: List[Dict] = []
+    try:
+      with NamedTemporaryFile() as pdf_tmpfile:
+        # download from S3 into pdf_tmpfile
+        self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
+
+        with pdfplumber.open(pdf_tmpfile.name) as pdf:
+          # for page in :
+          for i, page in enumerate(pdf.pages):
+            im = page.to_image()
+            text = pytesseract.image_to_string(im.original)
+            print("Page number: ", i, "Text: ", text[:100])
+            pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
+
+      metadatas: List[Dict[str, Any]] = [
+          {
+              'course_name': course_name,
+              's3_path': s3_path,
+              'pagenumber': page['page_number'] + 1,  # +1 for human indexing
+              'timestamp': '',
+              'readable_filename': kwargs.get('readable_filename', page['readable_filename']),
+              'url': kwargs.get('url', ''),
+              'base_url': kwargs.get('base_url', ''),
+          } for page in pdf_pages_OCRed
+      ]
+      pdf_texts = [page['text'] for page in pdf_pages_OCRed]
+      self.posthog.capture('distinct_id_of_the_user',
+                           event='ocr_pdf_succeeded',
+                           properties={
+                               'course_name': course_name,
+                               's3_path': s3_path,
+                           })
+
+      has_words = any(text.strip() for text in pdf_texts)
+      if not has_words:
+        raise ValueError(
+            "Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text.")
+
+      success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+      return success_or_failure
+    except Exception as e:
+      err = f"❌❌ Error in PDF ingest (with OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
+      print(err)
+      sentry_sdk.capture_exception(e)
+      return err
 
   def _ingest_single_txt(self, s3_path: str, course_name: str, **kwargs) -> str:
     """Ingest a single .txt or .md file from S3.
@@ -978,6 +1048,8 @@ class Ingest():
       for i, context in enumerate(contexts):
         context.metadata['chunk_index'] = i
 
+      print("Starting to call embeddings API")
+      embeddings_start_time = time.monotonic()
       oai = OpenAIAPIProcessor(
           input_prompts_list=input_texts,
           request_url='https://api.openai.com/v1/embeddings',
@@ -990,6 +1062,7 @@ class Ingest():
           logging_level=logging.INFO,
           token_encoding_name='cl100k_base')  # nosec -- reasonable bandit error suppression
       asyncio.run(oai.process_api_requests_from_file())
+      print(f"⏰ embeddings tuntime: {(time.monotonic() - embeddings_start_time):.2f} seconds")
       # parse results into dict of shape page_content -> embedding
       embeddings_dict: dict[str, List[float]] = {
           item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results
@@ -1005,7 +1078,7 @@ class Ingest():
 
       self.qdrant_client.upsert(
           collection_name=os.environ['QDRANT_COLLECTION_NAME'],  # type: ignore
-          points=vectors  # type: ignore
+          points=vectors,  # type: ignore
       )
       ### Supabase SQL ###
       contexts_for_supa = [{
@@ -1041,6 +1114,7 @@ class Ingest():
                                'readable_filename': metadatas[0].get('readable_filename', None),
                                'url': metadatas[0].get('url', None),
                                'base_url': metadatas[0].get('base_url', None),
+                               'is_duplicate': False,
                            })
       print("successful END OF split_and_upload")
       return "Success"
@@ -1048,6 +1122,7 @@ class Ingest():
       err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       print(err)
       sentry_sdk.capture_exception(e)
+      sentry_sdk.flush(timeout=20)
       return err
 
   def check_for_duplicates(self, texts: List[Dict], metadatas: List[Dict[str, Any]]) -> bool:
@@ -1059,60 +1134,93 @@ class Ingest():
     course_name = metadatas[0]['course_name']
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
-    original_filename = incoming_s3_path.split('/')[-1][37:]  # remove the 37-char uuid prefix
-
-    # check if uuid exists in s3_path -- not all s3_paths have uuids!
-    incoming_filename = incoming_s3_path.split('/')[-1]
-    pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
-                         re.I)  # uuid V4 pattern, and v4 only.
-    if bool(pattern.search(incoming_filename)):
-      # uuid pattern exists -- remove the uuid and proceed with duplicate checking
-      original_filename = incoming_filename[37:]
-    else:
-      # do not remove anything and proceed with duplicate checking
-      original_filename = incoming_filename
 
     if incoming_s3_path:
-      filename = incoming_s3_path
+      # check if uuid exists in s3_path -- not all s3_paths have uuids!
+      incoming_filename = incoming_s3_path.split('/')[-1]
+      print("Full filename: ", incoming_filename)
+      pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
+                          re.I)  # uuid V4 pattern, and v4 only.
+      if bool(pattern.search(incoming_filename)):
+        # uuid pattern exists -- remove the uuid and proceed with duplicate checking
+        original_filename = incoming_filename[37:]
+      else:
+        # do not remove anything and proceed with duplicate checking
+        original_filename = incoming_filename
+      print("Filename after removing uuid: ", original_filename)
+      
       supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
           'course_name', course_name).like('s3_path', '%' + original_filename + '%').order('id', desc=True).execute()
       supabase_contents = supabase_contents.data
+      print("No. of S3 path based records retrieved: ", len(supabase_contents)) # multiple records can be retrieved: 3.pdf and 453.pdf
+
     elif url:
-      filename = url
-      supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
+      original_filename = url
+      supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 'url').eq(
           'course_name', course_name).eq('url', url).order('id', desc=True).execute()
       supabase_contents = supabase_contents.data
+      print("No. of URL-based records retrieved: ", len(supabase_contents))
     else:
-      filename = None
+      original_filename = None
       supabase_contents = []
 
     supabase_whole_text = ""
-    if len(supabase_contents) > 0:  # if a doc with same filename exists in Supabase
-      # concatenate texts
-      supabase_contexts = supabase_contents[0]
-      for text in supabase_contexts['contexts']:
-        supabase_whole_text += text['text']
+    exact_doc_exists = False
+    if len(supabase_contents) > 0:  # a doc with same filename exists in Supabase
+      for record in supabase_contents:
+        if incoming_s3_path:  
+          curr_filename = record['s3_path'].split('/')[-1]
+          older_s3_path = record['s3_path']
+          if bool(pattern.search(curr_filename)):
+            # uuid pattern exists -- remove the uuid and proceed with duplicate checking
+            sql_filename = curr_filename[37:]
+          else:
+            # do not remove anything and proceed with duplicate checking
+            sql_filename = curr_filename
+        elif url:
+          print("URL retrieved from SQL: ", record.keys())
+          sql_filename = record['url']
+        else: 
+          continue
+        print("Original filename: ", original_filename, "Current SQL filename: ", sql_filename)
+        
+        if original_filename == sql_filename: # compare og s3_path/url with incoming s3_path/url
+          supabase_contexts = record
+          
+          exact_doc_exists = True
+          print("Exact doc exists in Supabase:", sql_filename)
+          break
 
-      current_whole_text = ""
-      for text in texts:
-        current_whole_text += text['input']
+      if exact_doc_exists:
+        # concatenate og texts
+        for text in supabase_contexts['contexts']:
+          supabase_whole_text += text['text']
 
-      if supabase_whole_text == current_whole_text:  # matches the previous file
-        print(f"Duplicate ingested! 📄 s3_path: {filename}.")
-        return True
+        current_whole_text = ""
+        for text in texts:
+          current_whole_text += text['input']
 
-      else:  # the file is updated
-        print(f"Updated file detected! Same filename, new contents. 📄 s3_path: {filename}")
+        if supabase_whole_text == current_whole_text:  # matches the previous file
+          print(f"Duplicate ingested! 📄 s3_path/url: {original_filename}.")
+          return True
 
-        # call the delete function on older docs
-        for content in supabase_contents:
-          print("older s3_path to be deleted: ", content['s3_path'])
-          delete_status = self.delete_data(course_name, content['s3_path'], '')
+        else:  # the file is updated
+          print(f"Updated file detected! Same filename, new contents. 📄s3_path/url: {original_filename}")
+
+          # call the delete function on older doc
+          print("older s3_path/url to be deleted: ", sql_filename)
+          if incoming_s3_path:
+            delete_status = self.delete_data(course_name, older_s3_path, '')
+          else:
+            delete_status = self.delete_data(course_name, '', url)
           print("delete_status: ", delete_status)
+          return False
+      else:
+        print(f"NOT a duplicate! 📄s3_path: {original_filename}")
         return False
 
     else:  # filename does not already exist in Supabase, so its a brand new file
-      print(f"NOT a duplicate! 📄s3_path: {filename}")
+      print(f"NOT a duplicate! 📄s3_path: {original_filename}")
       return False
 
   def delete_data(self, course_name: str, s3_path: str, source_url: str):

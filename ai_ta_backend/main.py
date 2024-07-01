@@ -18,6 +18,7 @@ from flask_executor import Executor
 from flask_injector import FlaskInjector, RequestScope
 from injector import Binder, SingletonScope
 
+from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
@@ -62,8 +63,7 @@ sentry_sdk.init(
     # We recommend adjusting this value in production.
     profiles_sample_rate=1.0,
     enable_tracing=True)
-
-from ai_ta_backend.beam.nomic_logging import create_document_map
+from ai_ta_backend.service.workflow_service import WorkflowService
 
 app = Flask(__name__)
 CORS(app)
@@ -91,23 +91,24 @@ def index() -> Response:
   return response
 
 
-@app.route('/getTopContexts', methods=['GET'])
+@app.route('/getTopContexts', methods=['POST'])
 def getTopContexts(service: RetrievalService) -> Response:
   """Get most relevant contexts for a given search query.
   
   Return value
 
-  ## GET arguments
+  ## POST body
   course name (optional) str
       A json response with TBD fields.
   search_query
-  top_n
+  token_limit
+  doc_groups
   
   Returns
   -------
   JSON
       A json response with TBD fields.
-  Metadata fileds
+  Metadata fields
   * pagenumber_or_timestamp
   * readable_filename
   * s3_pdf_path
@@ -127,10 +128,12 @@ def getTopContexts(service: RetrievalService) -> Response:
   Exception
       Testing how exceptions are handled.
   """
-  search_query: str = request.args.get('search_query', default='', type=str)
-  course_name: str = request.args.get('course_name', default='', type=str)
-  token_limit: int = request.args.get('token_limit', default=3000, type=int)
-  doc_groups_str: str = request.args.get('doc_groups', default='[]', type=str)
+  data = request.get_json()
+  search_query: str = data.get('search_query', '')
+  course_name: str = data.get('course_name', '')
+  token_limit: int = data.get('token_limit', 3000)
+  doc_groups: List[str] = data.get('doc_groups', [])
+
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
     abort(
@@ -138,11 +141,6 @@ def getTopContexts(service: RetrievalService) -> Response:
         description=
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
-
-  doc_groups: List[str] = []
-
-  if doc_groups_str != '[]':
-    doc_groups = json.loads(doc_groups_str)
 
   found_documents = service.getTopContexts(search_query, course_name, token_limit, doc_groups)
 
@@ -230,6 +228,7 @@ def createDocumentMap(service: NomicService):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/createConversationMap', methods=['GET'])
 def createConversationMap(service: NomicService):
   course_name: str = request.args.get('course_name', default='', type=str)
@@ -243,6 +242,7 @@ def createConversationMap(service: NomicService):
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/logToConversationMap', methods=['GET'])
 def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
@@ -312,6 +312,7 @@ def export_convo_history(service: ExportService):
     os.remove(export_status['response'][0])
 
   return response
+
 
 @app.route('/export-conversations-custom', methods=['GET'])
 def export_conversations_custom(service: ExportService):
@@ -404,6 +405,103 @@ def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogSer
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+
+@app.route('/getworkflows', methods=['GET'])
+def get_all_workflows(service: WorkflowService) -> Response:
+  """
+  Get all workflows from user.
+  """
+
+  api_key = request.args.get('api_key', default='', type=str)
+  limit = request.args.get('limit', default=100, type=int)
+  pagination = request.args.get('pagination', default=True, type=bool)
+  active = request.args.get('active', default=False, type=bool)
+  name = request.args.get('workflow_name', default='', type=str)
+  print(request.args)
+
+  print("In get_all_workflows.. api_key: ", api_key)
+
+  # if no API Key, return empty set.
+  # if api_key == '':
+  #   # proper web error "400 Bad request"
+  #   abort(400, description=f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`")
+
+  try:
+    response = service.get_workflows(limit, pagination, api_key, active, name)
+    response = jsonify(response)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+  except Exception as e:
+    if "unauthorized" in str(e).lower():
+      print("Unauthorized error in get_all_workflows: ", e)
+      abort(401, description=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
+    else:
+      print("Error in get_all_workflows: ", e)
+      abort(500, description=f"Failed to fetch n8n workflows: {e}")
+
+
+@app.route('/switch_workflow', methods=['GET'])
+def switch_workflow(service: WorkflowService) -> Response:
+  """
+  Activate or deactivate flow for user.
+  """
+
+  api_key = request.args.get('api_key', default='', type=str)
+  activate = request.args.get('activate', default='', type=str)
+  id = request.args.get('id', default='', type=str)
+
+  print(request.args)
+
+  if api_key == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`")
+
+  try:
+    print("activation!!!!!!!!!!!", activate)
+    response = service.switch_workflow(id, api_key, activate)
+    response = jsonify(response)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+  except Exception as e:
+    if e == "Unauthorized":
+      abort(401, description=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
+    else:
+      abort(400, description=f"Bad request: {e}")
+
+
+@app.route('/run_flow', methods=['POST'])
+def run_flow(service: WorkflowService) -> Response:
+  """
+  Run flow for a user and return results.
+  """
+
+  api_key = request.json.get('api_key', '')
+  name = request.json.get('name', '')
+  data = request.json.get('data', '')
+
+  print("Got /run_flow request:", request.json)
+
+  if api_key == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing N8N API_KEY: 'api_key' must be provided. Search query: `{api_key}`")
+
+  try:
+    response = service.main_flow(name, api_key, data)
+    response = jsonify(response)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+  except Exception as e:
+    if e == "Unauthorized":
+      response = jsonify(error=str(e), message=f"Unauthorized: 'api_key' is invalid. Search query: `{api_key}`")
+      response.status_code = 401
+      response.headers.add('Access-Control-Allow-Origin', '*')
+      return response
+    else:
+      response = jsonify(error=str(e), message=f"Internal Server Error {e}")
+      response.status_code = 500
+      response.headers.add('Access-Control-Allow-Origin', '*')
+      return response
 
 @app.route('/get-arxiv-fulltext', methods=['GET'])
 def get_arxiv_data():
@@ -603,6 +701,7 @@ def configure(binder: Binder) -> None:
   binder.bind(SentryService, to=SentryService, scope=SingletonScope)
   binder.bind(NomicService, to=NomicService, scope=SingletonScope)
   binder.bind(ExportService, to=ExportService, scope=SingletonScope)
+  binder.bind(WorkflowService, to=WorkflowService, scope=SingletonScope)
   binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
   binder.bind(SQLDatabase, to=SQLDatabase, scope=SingletonScope)
   binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)

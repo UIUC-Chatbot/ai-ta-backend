@@ -34,24 +34,25 @@ class RetrievalService:
     self.posthog = posthog
     self.nomicService = nomicService
 
-    openai.api_key = os.environ["OPENAI_API_KEY"]
+    openai.api_key = os.environ["VLADS_OPENAI_KEY"]
 
     self.embeddings = OpenAIEmbeddings(
         model='text-embedding-ada-002',
-        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        openai_api_type=os.environ['OPENAI_API_TYPE'],
-        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        openai_api_version=os.environ["OPENAI_API_VERSION"],
+        openai_api_key=os.environ["VLADS_OPENAI_KEY"],
+        # openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+        # openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+        # openai_api_type=os.environ['OPENAI_API_TYPE'],
+        # openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
 
-    self.llm = AzureChatOpenAI(
-        temperature=0,
-        deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
-        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        openai_api_version=os.environ["OPENAI_API_VERSION"],
-        openai_api_type=os.environ['OPENAI_API_TYPE'],
-    )
+    # self.llm = AzureChatOpenAI(
+    #     temperature=0,
+    #     deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
+    #     openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+    #     openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+    #     openai_api_version=os.environ["OPENAI_API_VERSION"],
+    #     openai_api_type=os.environ['OPENAI_API_TYPE'],
+    # )
 
   def getTopContexts(self,
                      search_query: str,
@@ -348,15 +349,43 @@ class RetrievalService:
       self.sentry.capture_exception(e)
 
   def vector_search(self, search_query, course_name, doc_groups: List[str] | None = None):
+    """
+    Search the vector database for a given query, course name, and document groups.
+    """
+    # Fetch disabled doc groups from the database
+    disabled_doc_groups = self.sqlDb.getDisabledDocGroups(course_name)
+    disabled_doc_groups = [doc_group['name'] for doc_group in disabled_doc_groups.data]
+    # print(f"Disabled doc groups: {disabled_doc_groups}")
+
+    # Return empty list if no search query is provided
     if doc_groups is None:
       doc_groups = []
+
+    if disabled_doc_groups is None:
+      disabled_doc_groups = []
+
+    # Max number of search results to return
     top_n = 80
-    # EMBED
+    # Embed the user query and measure the latency
+    user_query_embedding = self._embed_query_and_measure_latency(search_query)
+    # Capture the search invoked event to PostHog
+    self._capture_search_invoked_event(search_query, course_name, doc_groups)
+    # Perform the vector search
+    search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                                 disabled_doc_groups)
+    # Process the search results by extracting the page content and metadata
+    found_docs = self._process_search_results(search_results, course_name)
+    # Capture the search succeeded event to PostHog with the vector scores
+    self._capture_search_succeeded_event(search_query, course_name, search_results)
+    return found_docs
+
+  def _embed_query_and_measure_latency(self, search_query):
     openai_start_time = time.monotonic()
     user_query_embedding = self.embeddings.embed_query(search_query)
-    openai_embedding_latency = time.monotonic() - openai_start_time
+    self.openai_embedding_latency = time.monotonic() - openai_start_time
+    return user_query_embedding
 
-    # SEARCH
+  def _capture_search_invoked_event(self, search_query, course_name, doc_groups):
     self.posthog.capture(
         event_name="vector_search_invoked",
         properties={
@@ -365,35 +394,58 @@ class RetrievalService:
             "doc_groups": doc_groups,
         },
     )
-    qdrant_start_time = time.monotonic()
-    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n)
 
+  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n,
+                             disabled_doc_groups):
+    qdrant_start_time = time.monotonic()
+    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                            disabled_doc_groups)
+    self.qdrant_latency_sec = time.monotonic() - qdrant_start_time
+    return search_results
+
+  def _process_search_results(self, search_results, course_name):
     found_docs: list[Document] = []
     for d in search_results:
       try:
         metadata = d.payload
-        page_content = metadata["page_content"]  # type: ignore
-        del metadata["page_content"]  # type: ignore
-        if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys():  # type: ignore
-          # aiding in the database migration...
-          metadata["pagenumber"] = metadata["pagenumber_or_timestamp"]  # type: ignore
+        page_content = metadata["page_content"]
+        del metadata["page_content"]
+        if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys():
+          metadata["pagenumber"] = metadata["pagenumber_or_timestamp"]
 
-        found_docs.append(Document(page_content=page_content, metadata=metadata))  # type: ignore
+        found_docs.append(Document(page_content=page_content, metadata=metadata))
       except Exception as e:
         print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
         self.sentry.capture_exception(e)
+    return found_docs
 
+  def _capture_search_succeeded_event(self, search_query, course_name, search_results):
+    vector_score_calc_latency_sec = time.monotonic()
+    max_vector_score, min_vector_score, avg_vector_score = self._calculate_vector_scores(search_results)
     self.posthog.capture(
-        event_name="vector_search_succeded",
+        event_name="vector_search_succeeded",
         properties={
             "user_query": search_query,
             "course_name": course_name,
-            "qdrant_latency_sec": time.monotonic() - qdrant_start_time,
-            "openai_embedding_latency_sec": openai_embedding_latency,
+            "qdrant_latency_sec": self.qdrant_latency_sec,
+            "openai_embedding_latency_sec": self.openai_embedding_latency,
+            "max_vector_score": max_vector_score,
+            "min_vector_score": min_vector_score,
+            "avg_vector_score": avg_vector_score,
+            "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,
         },
     )
-    # print("found_docs", found_docs)
-    return found_docs
+
+  def _calculate_vector_scores(self, search_results):
+    max_vector_score = 0
+    min_vector_score = 0
+    total_vector_score = 0
+    for result in search_results:
+      max_vector_score = max(max_vector_score, result.score)
+      min_vector_score = min(min_vector_score, result.score)
+      total_vector_score += result.score
+    avg_vector_score = total_vector_score / len(search_results) if search_results else 0
+    return max_vector_score, min_vector_score, avg_vector_score
 
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
     """Formatting only.
