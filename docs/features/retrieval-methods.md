@@ -45,33 +45,37 @@ LLM Guided retrieval thrives with structured data.&#x20;
 
 ### Scientific PDF Parsing
 
-TL;DR
+{% hint style="info" %}
+TL;DR:
 
 1. Start with **Grobid**. Excellent at parsing `sections`, `references`.&#x20;
 2. Re-run with **Unstructured**. Replace all figures and tables from Grobid with Unstructured, we find their `yolox` model is best at parsing tables accurately.
-3. For math, use Nougout.&#x20;
+3. For math (LaTeX), use Nougout.
+{% endhint %}
+
+***
 
 Based on our empirical testing, and conversations with domain experts from NCSA and Argonne, this is our PDF parsing pipeline for Pumbed, Arxiv, and any typical scientific PDFs.&#x20;
 
-[**Grobid**](https://github.com/kermitt2/grobid) **is the best at creating outlines from scientific PDFs.** The [Full-Text module](https://grobid.readthedocs.io/en/latest/training/fulltext/) properly segments articles into sections, like `1. introduction, 1.1 background on LLMs, 2. methods... etc.` Precise outlines is crucial to LLM-guided-retrieval, for the LLM to properly request other sections of the paper.
+* [**Grobid**](https://github.com/kermitt2/grobid) **is the best at creating outlines from scientific PDFs.** The [Full-Text module](https://grobid.readthedocs.io/en/latest/training/fulltext/) properly segments articles into sections, like `1. introduction, 1.1 background on LLMs, 2. methods... etc.` Precise outlines is crucial to LLM-guided-retrieval, for the LLM to properly request other sections of the paper.
+  * We highly recommend the [doc2json wrapper around Grobid](https://github.com/allenai/s2orc-doc2json) to make it easier to use the outputs.
+* [**Unstructured**](https://github.com/Unstructured-IO/unstructured) **is the best at parsing tables.** In our experiments with tricky PDFs, YOLOX is slightly superior to Detectron2.&#x20;
 
-We highly recommend the [doc2json wrapper around Grobid](https://github.com/allenai/s2orc-doc2json) to make it easier to use the outputs.
+<pre class="language-python"><code class="lang-python">from unstructured.partition.auto import partition
 
-
-
-Parsing tables is best done with Unstructured. In our experiments with tricky PDFs, YOLOX is slightly superior to Detectron2.&#x20;
-
-```python
-elements = partition(filename=filename,
-                     strategy="hi_res",
+<strong>elements = partition(filename="path/to/file.pdf",
+</strong>                     strategy="hi_res",
                      hi_res_model_name="yolox")
-```
+</code></pre>
 
 <details>
 
 <summary>Example of a complex table parsed with Unstructured vs Grobid</summary>
 
-Here's a tricky table to parse. We want to capture all this info into a markdown-like format. We find Grobid really struggles with this, Unstructured w/ `yolox` does a near-perfect job. In this case, it's perfect except the +/- symbols are usually parsed into `+` symbols.
+Here's a tricky table to parse. We want to capture all this info into a markdown-like format.&#x20;
+
+* We find Grobid really struggles with this; often misses the table entirerly.
+* Unstructured w/ `yolox` does a near-perfect job. In this case, the only problem is the `+/-` symbols are usually parsed into `+` symbols. Although readability is overall satisfactory.
 
 ![](<../.gitbook/assets/CleanShot 2024-07-01 at 11.01.24.png>)
 
@@ -79,7 +83,24 @@ Here's a tricky table to parse. We want to capture all this info into a markdown
 
 </details>
 
-* [Nougut](https://github.com/facebookresearch/nougat) - **best at parsing mathematical symbols.** Excellent at parsing "rendered LaTeX symbols back raw LaTeX code." This method uses an encoder-decoder Transformer model, so realistically it requires a GPU to run.&#x20;
+* [**Nougut**](https://github.com/facebookresearch/nougat) **is the best at parsing mathematical symbols.** Excellent at parsing "rendered LaTeX symbols back raw LaTeX code." This method uses an encoder-decoder Transformer model, so realistically it requires a GPU to run.&#x20;
+
+### Infrastructure & System Architecture
+
+**Storage infra**
+
+1. Store PDFs in an object store, like Minio (a self-hosted S3 alternative).
+2. Store processed text in SQLite, a phenomenal database for this purpose.
+
+**Processing Infra**
+
+* Python main process
+  * Use a [Queue](https://docs.python.org/3/library/queue.html) of PDFs to process.&#x20;
+  * Use a [`ProcessPoolExecutor`](https://docs.python.org/3/library/concurrent.futures.html#processpoolexecutor) to parallelize processing.
+  * Use TempFile objects to prevent the machine's disk from saturating.
+* Grobid - host an endpoint on a capable server, GPU recommended but not critical.
+* Unstructured - create a Flask/FastAPI endpoint on a capable server.&#x20;
+* Nougat - create a Flask/FastAPI endpoint on a capable server.
 
 ### Data layout in SQLite
 
