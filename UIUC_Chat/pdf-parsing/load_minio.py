@@ -60,52 +60,60 @@ def db_worker(queue, db_path):
                 f.write(f"{data['file_name']}: {str(e)}\n")
     conn.close()
 
+def minio_object_generator(client, bucket_name):
+    processed_files = load_processed_files(LOG_FILE)
+    for obj in client.list_objects(bucket_name, recursive=True):
+        if obj.object_name not in processed_files:
+            yield obj
+
 def main_parallel_upload():
     initialize_database(DB_PATH)
-    # folder_name = '83500000/10.21767/'
-    processed_files = load_processed_files(LOG_FILE)
+    # processed_files = load_processed_files(LOG_FILE)
     
     manager = Manager()
     queue = manager.Queue()
     db_proc = Process(target=db_worker, args=(queue, DB_PATH))
     db_proc.start()
 
-    # processed_count_pubmed = 0
-    # max_count = 50
+    with ProcessPoolExecutor(max_workers=80) as executor:
+        batch_size = 1_000
+        minio_gen = minio_object_generator(client, BUCKET_NAME)
+        
+        while True:
+            futures = {}
+            for _ in range(batch_size):
+                try:
+                    obj = next(minio_gen)
+                    futures[executor.submit(upload_single_pdf, obj.object_name, queue)] = obj
+                except StopIteration:
+                    break
 
-    with ProcessPoolExecutor(max_workers=20) as executor:
-        futures = {}
+            if not futures:
+                break
 
+            for future in as_completed(futures):
+                obj = futures[future]
+                try:
+                    future.result()
+                except Exception as e:
+                    with open(ERR_LOG_FILE, 'a') as f:
+                        f.write(f"{obj.object_name}: {str(e)}\n")
+                    print(f"Error processing {obj.object_name}: {str(e)}")
+            
+            futures.clear()
 
-        for obj in client.list_objects(BUCKET_NAME, recursive=True):
-            # if processed_count_pubmed >= max_count:
-            #     break
-            if obj.object_name not in processed_files:
-                response = client.get_object(BUCKET_NAME, obj.object_name)
-                file_content = response.read()
-                response.close()
-                response.release_conn()
-                # print_memory_usage_before()
-                futures[executor.submit(upload_single_pdf, obj.object_name, file_content, queue)] = obj
-                # processed_count_pubmed += 1
-
-        for future in as_completed(futures):
-            obj = futures[future]
-            try:
-                future.result()
-            except Exception as e:
-                with open(ERR_LOG_FILE, 'a') as f:
-                    f.write(f"{obj.object_name}: {str(e)}\n")
-                print(f"Error processing {obj.object_name}: {str(e)}")
-    
     queue.put(None)
     db_proc.join()
 
-def upload_single_pdf(minio_object_name, file_content, queue):
+def upload_single_pdf(minio_object_name, queue):
     """
     This is the fundamental unit of parallelism: upload a single PDF to SQLite, all or nothing.
     """
     try:
+        response = client.get_object(BUCKET_NAME, minio_object_name)
+        file_content = response.read()
+        response.close()
+        response.release_conn()
         
         with tempfile.NamedTemporaryFile() as tmp_file:
             tmp_file.write(file_content)
@@ -122,8 +130,10 @@ def upload_single_pdf(minio_object_name, file_content, queue):
 
             os.makedirs(temp_path, exist_ok=True)
             os.makedirs(output_path, exist_ok=True)
+            print("After mkdirs", temp_path, "-------", output_path)
             output_data = process_pdf_file(tmp_file.name, temp_path, output_path, grobid_config)
             metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
+            print("After mkdirs processing entire doc, before queue.put", output_path)
 
             
             queue.put({

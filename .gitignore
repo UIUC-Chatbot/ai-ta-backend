@@ -4,6 +4,8 @@ coursera-dl/
 wandb
 *.ipynb
 *.pem
+*.tei.xml
+*.json
 
 # don't expose env files
 .env
