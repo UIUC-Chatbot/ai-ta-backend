@@ -1,9 +1,9 @@
 import json
 import os
 import sqlite3
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-import fastnanoid
+import fastnanoid # type: ignore
 
 
 def initialize_database(db_path):
@@ -82,8 +82,8 @@ def insert_data(metadata: Dict,
                 total_tokens: int,
                 grouped_data: List[Dict],
                 db_path: str,
-                references: Dict = None,
-                ref_num_tokens: Dict = None):
+                references: Optional[Dict] = None,
+                ref_num_tokens: Optional[Dict] = None):
   """
     Inserts article metadata and sections into the database.
 
@@ -92,6 +92,11 @@ def insert_data(metadata: Dict,
     :param grouped_data: List of dictionaries containing section data (tokens, sec_num, sec_title).
     :param db_path: Path to the SQLite database file.
     """
+  if references is None:
+    references = {} 
+  if ref_num_tokens is None:
+    ref_num_tokens = {} 
+
   conn = sqlite3.connect(db_path)
   cur = conn.cursor()
 
@@ -164,11 +169,3 @@ def insert_data(metadata: Dict,
 
   conn.commit()
   conn.close()
-
-  print("Metadata and sections inserted successfully.")
-
-
-# db_path = 'articles.db'
-# initialize_database(db_path)
-
-# insert_data(metadata, total_tokens, grouped_data, db_path)

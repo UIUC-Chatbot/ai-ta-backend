@@ -113,10 +113,8 @@ class GrobidClient(ApiClient):
       time.sleep(self.sleep_time)
       return self.process_pdf_stream(pdf_file, pdf_strm, output, service)
     elif status != 200:
-      # with open(os.path.join(output, "failed.log"), "a+") as failed:
-      #     failed.write(pdf_file.strip(".pdf") + "\n")
-      print('Grobid Failed. Status: ' + str(status))
-      return ""
+      print(f'Grobid Failed. Status: {str(status)}. Output: {output}')
+      raise(ValueError(f"Grobid failed with status {str(status)}"))
     else:
       return res.text
 
@@ -131,13 +129,12 @@ class GrobidClient(ApiClient):
     # print(pdf_file)
     pdf_strm = open(pdf_file, 'rb').read()
     tei_text = self.process_pdf_stream(pdf_file, pdf_strm, output, service)
-    print("filename", filename)
     # writing TEI file
     if tei_text:
       with io.open(output, 'w+', encoding='utf8') as tei_file:
         tei_file.write(tei_text)
 
-  def process_citation(self, bib_string: str, log_file: str) -> str:
+  def process_citation(self, bib_string: str, log_file: str) -> str | None:
     # process citation raw string and return corresponding dict
     the_data = {'citations': bib_string, 'consolidateCitations': '0'}
 
@@ -161,7 +158,7 @@ class GrobidClient(ApiClient):
       except Exception:
         continue
 
-  def process_header_names(self, header_string: str, log_file: str) -> str:
+  def process_header_names(self, header_string: str, log_file: str) -> str | None:
     # process author names from header string
     the_data = {'names': header_string}
 
@@ -181,7 +178,7 @@ class GrobidClient(ApiClient):
     else:
       return res.text
 
-  def process_affiliations(self, aff_string: str, log_file: str) -> str:
+  def process_affiliations(self, aff_string: str, log_file: str) -> str | None:
     # process affiliation from input string
     the_data = {'affiliations': aff_string}
 

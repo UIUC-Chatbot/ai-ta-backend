@@ -8,7 +8,7 @@ import math
 import os
 import tempfile
 import traceback
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 
 import tiktoken
 from bs4 import BeautifulSoup
@@ -18,7 +18,7 @@ from doc2json.tei_to_json import (
     convert_tei_xml_soup_to_s2orc_json,
 )
 from embedding import get_embeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter # type: ignore
 
 ERR_LOG_FILE = f'ERRORS_parsed_files.log'
 grobid_server = os.getenv('GROBID_SERVER')
@@ -27,7 +27,7 @@ BASE_OUTPUT_DIR = 'output'
 BASE_LOG_DIR = 'log'
 
 
-def process_pdf_stream(input_file: str, sha: str, input_stream: bytes, grobid_config: Optional[Dict] = None) -> Dict:
+def process_pdf_stream(input_file: str, sha: str, input_stream: bytes, grobid_config: Optional[Dict] = None) -> Dict | None:
   """
     Process PDF stream
     :param input_file:
@@ -100,7 +100,7 @@ def process_pdf_file(input_file: os.PathLike,
 
   except Exception as e:
     print(f"Error in process_pdf_file (with filename: `{input_file}`): {str(e)}")
-    print_error(e)
+    traceback.print_exc()
 
     with open(ERR_LOG_FILE, 'a') as f:
       f.write(f"process pdf: {input_file}: {str(e)}\n")
@@ -113,7 +113,7 @@ def process_pdf_file(input_file: os.PathLike,
       os.remove(output_file_path)
 
 
-def parse_and_group_by_section(data):
+def parse_and_group_by_section(data) -> Any:
   """
     This parses the output of AllenAI's Grobid wrapper. https://github.com/allenai/s2orc-doc2json
 
@@ -239,6 +239,7 @@ def parse_and_group_by_section(data):
   except Exception as e:
     with open(ERR_LOG_FILE, 'a') as f:
       f.write(f"parse_and_group: {data['paper_id']}: {str(e)}\n")
+    raise(ValueError(f"Failed parse_and_grou_by_section() with error: {e}"))
 
 
 def format_reference(reference):
@@ -261,11 +262,3 @@ def format_reference(reference):
 
   return combined_text
 
-
-def print_error(e):
-  current_frame = inspect.currentframe()
-  if current_frame is not None:
-    print(f"❌❌ Error in {current_frame.f_code.co_name}: {e}\nTraceback:\n")
-  else:
-    print(f"❌❌ Error: {e}\nTraceback:\n")
-  traceback.print_exc()

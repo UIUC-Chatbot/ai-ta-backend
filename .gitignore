@@ -6,6 +6,7 @@ wandb
 *.pem
 *.tei.xml
 *.json
+*articles.db
 
 # don't expose env files
 .env

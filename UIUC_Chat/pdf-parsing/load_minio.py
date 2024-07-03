@@ -6,12 +6,12 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Manager, Process, Queue
 
 from dotenv import load_dotenv
-from minio import Minio
+from minio import Minio # type: ignore
 from pdf_process import parse_and_group_by_section, process_pdf_file
 from urllib3 import PoolManager
 from urllib3.util.retry import Retry
 
-from SQLite import initialize_database, insert_data
+from SQLite import initialize_database, insert_data # type: ignore
 
 load_dotenv(override=True)
 
@@ -83,6 +83,8 @@ def main_parallel_upload():
   os.makedirs(BASE_OUTPUT_DIR, exist_ok=True)
   # processed_files = load_processed_files(LOG_FILE)
 
+  num_processed_this_run = 0
+
   manager = Manager()
   queue = manager.Queue()
   db_proc = Process(target=db_worker, args=(queue, DB_PATH))
@@ -107,6 +109,8 @@ def main_parallel_upload():
         obj = futures[future]
         try:
           future.result()
+          num_processed_this_run += 1
+          if num_processed_this_run % 100 == 0: print("Num processed this run:", num_processed_this_run)
         except Exception as e:
           with open(ERR_LOG_FILE, 'a') as f:
             f.write(f"main: {obj.object_name}: {str(e)}\n")
@@ -142,7 +146,7 @@ def upload_single_pdf(minio_object_name, queue):
             "timeout": 120,
         }
 
-        output_data = process_pdf_file(tmp_file.name, BASE_TEMP_DIR, BASE_OUTPUT_DIR, grobid_config)
+        output_data = process_pdf_file(tmp_file.path, BASE_TEMP_DIR, BASE_OUTPUT_DIR, grobid_config)
         metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
 
         queue.put({
