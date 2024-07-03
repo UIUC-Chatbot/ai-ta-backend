@@ -8,7 +8,7 @@ import math
 import os
 import tempfile
 import traceback
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 import tiktoken
 from bs4 import BeautifulSoup
@@ -18,7 +18,7 @@ from doc2json.tei_to_json import (
     convert_tei_xml_soup_to_s2orc_json,
 )
 from embedding import get_embeddings
-from langchain_text_splitters import RecursiveCharacterTextSplitter # type: ignore
+from langchain_text_splitters import RecursiveCharacterTextSplitter  # type: ignore
 
 ERR_LOG_FILE = f'ERRORS_parsed_files.log'
 grobid_server = os.getenv('GROBID_SERVER')
@@ -27,7 +27,10 @@ BASE_OUTPUT_DIR = 'output'
 BASE_LOG_DIR = 'log'
 
 
-def process_pdf_stream(input_file: str, sha: str, input_stream: bytes, grobid_config: Optional[Dict] = None) -> Dict | None:
+def process_pdf_stream(input_file: str,
+                       sha: str,
+                       input_stream: bytes,
+                       grobid_config: Optional[Dict] = None) -> Dict | None:
   """
     Process PDF stream
     :param input_file:
@@ -239,7 +242,7 @@ def parse_and_group_by_section(data) -> Any:
   except Exception as e:
     with open(ERR_LOG_FILE, 'a') as f:
       f.write(f"parse_and_group: {data['paper_id']}: {str(e)}\n")
-    raise(ValueError(f"Failed parse_and_grou_by_section() with error: {e}"))
+    raise (ValueError(f"Failed parse_and_grou_by_section() with error: {e}"))
 
 
 def format_reference(reference):
@@ -261,4 +264,3 @@ def format_reference(reference):
   combined_text = (f"{raw_text}. {urls}. {links}")
 
   return combined_text
-

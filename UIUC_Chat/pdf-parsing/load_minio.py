@@ -6,12 +6,12 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Manager, Process, Queue
 
 from dotenv import load_dotenv
-from minio import Minio # type: ignore
+from minio import Minio  # type: ignore
 from pdf_process import parse_and_group_by_section, process_pdf_file
 from urllib3 import PoolManager
 from urllib3.util.retry import Retry
 
-from SQLite import initialize_database, insert_data # type: ignore
+from SQLite import initialize_database, insert_data  # type: ignore
 
 load_dotenv(override=True)
 
@@ -110,7 +110,8 @@ def main_parallel_upload():
         try:
           future.result()
           num_processed_this_run += 1
-          if num_processed_this_run % 100 == 0: print("Num processed this run:", num_processed_this_run)
+          if num_processed_this_run % 100 == 0:
+            print("Num processed this run:", num_processed_this_run)
         except Exception as e:
           with open(ERR_LOG_FILE, 'a') as f:
             f.write(f"main: {obj.object_name}: {str(e)}\n")

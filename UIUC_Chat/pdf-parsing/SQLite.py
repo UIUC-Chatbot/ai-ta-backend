@@ -3,7 +3,7 @@ import os
 import sqlite3
 from typing import Dict, List, Optional
 
-import fastnanoid # type: ignore
+import fastnanoid  # type: ignore
 
 
 def initialize_database(db_path):
@@ -93,9 +93,9 @@ def insert_data(metadata: Dict,
     :param db_path: Path to the SQLite database file.
     """
   if references is None:
-    references = {} 
+    references = {}
   if ref_num_tokens is None:
-    ref_num_tokens = {} 
+    ref_num_tokens = {}
 
   conn = sqlite3.connect(db_path)
   cur = conn.cursor()
