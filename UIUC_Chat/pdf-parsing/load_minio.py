@@ -111,7 +111,7 @@ def main_parallel_upload():
           future.result()
           num_processed_this_run += 1
           if num_processed_this_run % 100 == 0:
-            print("Num processed this run:", num_processed_this_run)
+            print("🏎️ Num processed this run:", num_processed_this_run)
         except Exception as e:
           with open(ERR_LOG_FILE, 'a') as f:
             f.write(f"main: {obj.object_name}: {str(e)}\n")

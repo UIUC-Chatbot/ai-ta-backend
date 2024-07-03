@@ -26,7 +26,7 @@ def get_embeddings(prompt, model="nomic-embed-text:v1.5", base_url="https://olla
     else:
       print("Error: 'embeddings' key not found in response")
   else:
-    print(f"Error: {response.status_code}, {response.text}")
+    print(f"Embedding error: {response.status_code}, {response.text}")
 
   return None
 
