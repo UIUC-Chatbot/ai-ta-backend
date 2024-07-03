@@ -1,10 +1,12 @@
-import requests
-import time
-import os
-import supabase
-from urllib.parse import quote
 import json
+import logging
+import os
+import time
+from urllib.parse import quote
+
 from injector import inject
+import requests
+
 from ai_ta_backend.database.supabase import SQLDatabase
 
 
@@ -78,12 +80,7 @@ class WorkflowService:
     else:
       return all_executions
 
-  def get_workflows(self,
-                    limit,
-                    pagination: bool = True,
-                    api_key: str = "",
-                    active: bool = False,
-                    workflow_name: str = ''):
+  def get_workflows(self, limit, pagination: bool = True, api_key: str = "", active: bool = False, workflow_name: str = ''):
     if not api_key:
       raise ValueError('api_key is required')
     headers = {"X-N8N-API-KEY": api_key, "Accept": "application/json"}
@@ -148,7 +145,7 @@ class WorkflowService:
           new_data[data[k]] = v
       return new_data
     except Exception as e:
-      print("Error in format_data: ", e)
+      logging.info("Error in format_data: ", e)
 
   def switch_workflow(self, id, api_key: str = "", activate: 'str' = 'True'):
     if not api_key:
@@ -165,7 +162,7 @@ class WorkflowService:
   def main_flow(self, name: str, api_key: str = "", data: str = ""):
     if not api_key:
       raise ValueError('api_key is required')
-    print("Starting")
+    logging.info("Starting")
     hookId = self.get_hook(name, api_key)
     hook = self.url + f"/form/{hookId}"
 
@@ -179,22 +176,22 @@ class WorkflowService:
 
     if len(ids) > 0:
       id = max(ids) + 1
-      print("Execution found in supabase: ", id)
+      logging.info("Execution found in supabase: ", id)
     else:
       execution = self.get_executions(limit=1, api_key=api_key, pagination=False)
-      print("Got executions")
+      logging.info("Got executions")
       if execution:
-        print(execution)
+        logging.info(execution)
         id = int(execution[0]['id']) + 1
-        print("Execution found through n8n: ", id)
+        logging.info("Execution found through n8n: ", id)
       else:
         raise Exception('No executions found')
     id = str(id)
     try:
       self.sqlDb.lockWorkflow(id)
-      print("inserted flow into supabase")
+      logging.info("inserted flow into supabase")
       self.execute_flow(hook, new_data)
-      print("Executed workflow")
+      logging.info("Executed workflow")
     except Exception as e:
       # TODO: Decrease number by one, is locked false
       # self.supabase_client.table('n8n_workflows').update({"latest_workflow_id": str(int(id) - 1), "is_locked": False}).eq('latest_workflow_id', id).execute()
@@ -208,11 +205,11 @@ class WorkflowService:
       executions = self.get_executions(20, id, True, api_key)
       while executions is None:
         executions = self.get_executions(20, id, True, api_key)
-        print("Can't find id in executions")
+        logging.info("Can't find id in executions")
         time.sleep(1)
-      print("Found id in executions ")
+      logging.info("Found id in executions ")
       self.sqlDb.deleteLatestWorkflowId(id)
-      print("Deleted id")
+      logging.info("Deleted id")
     except Exception as e:
       self.sqlDb.deleteLatestWorkflowId(id)
       return {"error": str(e)}

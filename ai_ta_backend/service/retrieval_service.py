@@ -1,17 +1,19 @@
 import inspect
+import logging
 import os
 import time
 import traceback
 from typing import Dict, List, Optional, Union
 
-import openai
 from injector import inject
 from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
-from ai_ta_backend.database.sql import SQLAlchemyDatabase
+import openai
+
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.qdrant import VectorDatabase
+from ai_ta_backend.database.sql import SQLAlchemyDatabase
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -32,6 +34,8 @@ class RetrievalService:
     self.sentry = sentry
     self.posthog = posthog
     self.nomicService = nomicService
+
+    logging.info(f"Vector DB: {self.vdb}")
 
     openai.api_key = os.environ["OPENAI_API_KEY"]
 
@@ -72,9 +76,7 @@ class RetrievalService:
     try:
       start_time_overall = time.monotonic()
 
-      found_docs: list[Document] = self.vector_search(search_query=search_query,
-                                                      course_name=course_name,
-                                                      doc_groups=doc_groups)
+      found_docs: list[Document] = self.vector_search(search_query=search_query, course_name=course_name, doc_groups=doc_groups)
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
@@ -87,7 +89,7 @@ class RetrievalService:
         doc_string = f"Document: {doc.metadata['readable_filename']}{', page: ' + str(doc.metadata['pagenumber']) if doc.metadata['pagenumber'] else ''}\n{str(doc.page_content)}\n"
         num_tokens, prompt_cost = count_tokens_and_cost(doc_string)  # type: ignore
 
-        print(
+        logging.info(
             f"tokens used/limit: {token_counter}/{token_limit}, tokens in chunk: {num_tokens}, total prompt cost (of these contexts): {prompt_cost}. 📄 File: {doc.metadata['readable_filename']}"
         )
         if token_counter + num_tokens <= token_limit:
@@ -97,9 +99,9 @@ class RetrievalService:
           # filled our token size, time to return
           break
 
-      print(f"Total tokens used: {token_counter}. Docs used: {len(valid_docs)} of {len(found_docs)} docs retrieved")
-      print(f"Course: {course_name} ||| search_query: {search_query}")
-      print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
+      logging.info(f"Total tokens used: {token_counter}. Docs used: {len(valid_docs)} of {len(found_docs)} docs retrieved")
+      logging.info(f"Course: {course_name} ||| search_query: {search_query}")
+      logging.info(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
       if len(valid_docs) == 0:
         return []
 
@@ -121,9 +123,9 @@ class RetrievalService:
     except Exception as e:
       # return full traceback to front end
       # err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
-      err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.print_exc} \n{e}"  # type: ignore
+      err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.print_exc()} \n{e}"  # type: ignore
       traceback.print_exc()
-      print(err)
+      logging.info(err)
       if self.sentry is not None:
         self.sentry.capture_exception(e)
       return err
@@ -138,7 +140,6 @@ class RetrievalService:
     Returns:
         list of dictionaries with distinct s3 path, readable_filename and course_name, url, base_url.
     """
-
     response = self.sqlDb.getAllMaterialsForCourse(course_name)
 
     data = response.data
@@ -155,7 +156,7 @@ class RetrievalService:
 
   def delete_data(self, course_name: str, s3_path: str, source_url: str):
     """Delete file from S3, Qdrant, and Supabase."""
-    print(f"Deleting data for course {course_name}")
+    logging.info(f"Deleting data for course {course_name}")
     # add delete from doc map logic here
     try:
       # Delete file from S3
@@ -164,7 +165,7 @@ class RetrievalService:
         raise ValueError("S3_BUCKET_NAME environment variable is not set")
 
       identifier_key, identifier_value = ("s3_path", s3_path) if s3_path else ("url", source_url)
-      print(f"Deleting {identifier_value} from S3, Qdrant, and Supabase using {identifier_key}")
+      logging.info(f"Deleting {identifier_value} from S3, Qdrant, and Supabase using {identifier_key}")
 
       # Delete from S3
       if identifier_key == "s3_path":
@@ -179,39 +180,36 @@ class RetrievalService:
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
-      print(err)
+      logging.info(err)
       if self.sentry is not None:
         self.sentry.capture_exception(e)
       return err
 
   def delete_from_s3(self, bucket_name: str, s3_path: str):
     try:
-      print("Deleting from S3")
+      logging.info("Deleting from S3")
       response = self.aws.delete_file(bucket_name, s3_path)
-      print(f"AWS response: {response}")
+      logging.info(f"AWS response: {response}")
     except Exception as e:
-      print("Error in deleting file from s3:", e)
+      logging.info("Error in deleting file from s3:", e)
       if self.sentry is not None:
         self.sentry.capture_exception(e)
 
   def delete_from_qdrant(self, identifier_key: str, identifier_value: str):
     try:
-      print("Deleting from Qdrant")
+      logging.info("Deleting from Qdrant")
       response = self.vdb.delete_data(os.environ['QDRANT_COLLECTION_NAME'], identifier_key, identifier_value)
-      print(f"Qdrant response: {response}")
+      logging.info(f"Qdrant response: {response}")
     except Exception as e:
       if "timed out" in str(e):
         # Timed out is fine. Still deletes.
         pass
       else:
-        print("Error in deleting file from Qdrant:", e)
+        logging.info("Error in deleting file from Qdrant:", e)
         if self.sentry is not None:
           self.sentry.capture_exception(e)
 
-  def getTopContextsWithMQR(self,
-                            search_query: str,
-                            course_name: str,
-                            token_limit: int = 4_000) -> Union[List[Dict], str]:
+  def getTopContextsWithMQR(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
     """
     New info-retrieval pipeline that uses multi-query retrieval + filtering + reciprocal rank fusion + context padding.
     1. Generate multiple queries based on the input search query.
@@ -234,7 +232,7 @@ class RetrievalService:
     #   )
 
     #   generated_queries = generate_queries.invoke({"original_query": search_query})
-    #   print("generated_queries", generated_queries)
+    #   logging.info("generated_queries", generated_queries)
 
     #   # 2. VECTOR SEARCH FOR EACH QUERY
     #   batch_found_docs_nested: list[list[Document]] = self.batch_vector_search(search_queries=generated_queries,
@@ -244,10 +242,10 @@ class RetrievalService:
     #   # 3. RANK REMAINING DOCUMENTS -- good for parent doc padding of top 5 at the end.
     #   found_docs = self.reciprocal_rank_fusion(batch_found_docs_nested)
     #   found_docs = [doc for doc, score in found_docs]
-    #   print(f"Num docs after re-ranking: {len(found_docs)}")
+    #   logging.info(f"Num docs after re-ranking: {len(found_docs)}")
     #   if len(found_docs) == 0:
     #     return []
-    #   print(f"⏰ Total multi-query processing runtime: {(time.monotonic() - mq_start_time):.2f} seconds")
+    #   logging.info(f"⏰ Total multi-query processing runtime: {(time.monotonic() - mq_start_time):.2f} seconds")
 
     #   # 4. FILTER DOCS
     #   filtered_docs = filter_top_contexts(contexts=found_docs, user_query=search_query, timeout=30, max_concurrency=180)
@@ -256,7 +254,7 @@ class RetrievalService:
 
     #   # 5. TOP DOC CONTEXT PADDING // parent document retriever
     #   final_docs = context_parent_doc_padding(filtered_docs, search_query, course_name)
-    #   print(f"Number of final docs after context padding: {len(final_docs)}")
+    #   logging.info(f"Number of final docs after context padding: {len(final_docs)}")
 
     #   pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
     #   token_counter, _ = count_tokens_and_cost(pre_prompt + '\n\nNow please respond to my query: ' +
@@ -268,7 +266,7 @@ class RetrievalService:
     #     doc_string = f"Document: {doc['readable_filename']}{', page: ' + str(doc['pagenumber']) if doc['pagenumber'] else ''}\n{str(doc['text'])}\n"
     #     num_tokens, prompt_cost = count_tokens_and_cost(doc_string)  # type: ignore
 
-    #     print(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
+    #     logging.info(f"token_counter: {token_counter}, num_tokens: {num_tokens}, max_tokens: {token_limit}")
     #     if token_counter + num_tokens <= token_limit:
     #       token_counter += num_tokens
     #       valid_docs.append(doc)
@@ -276,9 +274,9 @@ class RetrievalService:
     #       # filled our token size, time to return
     #       break
 
-    #   print(f"Total tokens used: {token_counter} Used {len(valid_docs)} of total unique docs {len(found_docs)}.")
-    #   print(f"Course: {course_name} ||| search_query: {search_query}")
-    #   print(f"⏰ ^^ Runtime of getTopContextsWithMQR: {(time.monotonic() - start_time_overall):.2f} seconds")
+    #   logging.info(f"Total tokens used: {token_counter} Used {len(valid_docs)} of total unique docs {len(found_docs)}.")
+    #   logging.info(f"Course: {course_name} ||| search_query: {search_query}")
+    #   logging.info(f"⏰ ^^ Runtime of getTopContextsWithMQR: {(time.monotonic() - start_time_overall):.2f} seconds")
 
     #   if len(valid_docs) == 0:
     #     return []
@@ -298,7 +296,7 @@ class RetrievalService:
     # except Exception as e:
     #   # return full traceback to front end
     #   err: str = f"ERROR: In /getTopContextsWithMQR. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.format_exc()}❌❌ Error in {inspect.currentframe().f_code.co_name}:\n{e}"  # type: ignore
-    #   print(err)
+    #   logging.info(err)
     #   sentry_sdk.capture_exception(e)
     #   return err
 
@@ -308,7 +306,7 @@ class RetrievalService:
     """
     for found_doc in found_docs:
       if "pagenumber" not in found_doc.keys():
-        print("found no pagenumber")
+        logging.info("found no pagenumber")
         found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
 
     contexts = [
@@ -327,7 +325,7 @@ class RetrievalService:
 
   def delete_from_nomic_and_supabase(self, course_name: str, identifier_key: str, identifier_value: str):
     try:
-      print(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
+      logging.info(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
       response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
       data = response.data
       if not data:
@@ -338,22 +336,22 @@ class RetrievalService:
 
       # delete from Nomic
       response = self.sqlDb.getProjectsMapForCourse(course_name)
-      data, count = response.data, response.count
+      data, _count = response.data, response.count
       if not data:
         raise Exception(f"No document map found for this course: {course_name}")
       project_id = str(data[0].doc_map_id)
       if self.nomicService is not None:
         self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
     except Exception as e:
-      print(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
+      logging.info(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
       if self.sentry is not None:
         self.sentry.capture_exception(e)
 
     try:
-      print(f"Supabase Delete. course: {course_name} using {identifier_key}: {identifier_value}")
+      logging.info(f"Supabase Delete. course: {course_name} using {identifier_key}: {identifier_value}")
       response = self.sqlDb.deleteMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
     except Exception as e:
-      print(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
+      logging.info(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
       if self.sentry is not None:
         self.sentry.capture_exception(e)
 
@@ -413,7 +411,7 @@ class RetrievalService:
 
         found_docs.append(Document(page_content=page_content, metadata=metadata))
       except Exception as e:
-        print(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
+        logging.info(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
         if self.sentry is not None:
           self.sentry.capture_exception(e)
     return found_docs
@@ -432,7 +430,7 @@ class RetrievalService:
               "max_vector_score": max_vector_score,
               "min_vector_score": min_vector_score,
               "avg_vector_score": avg_vector_score,
-              "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,  
+              "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,
           },
       )
 
@@ -462,7 +460,7 @@ class RetrievalService:
         """
     for found_doc in found_docs:
       if "pagenumber" not in found_doc.metadata.keys():
-        print("found no pagenumber")
+        logging.info("found no pagenumber")
         found_doc.metadata["pagenumber"] = found_doc.metadata["pagenumber_or_timestamp"]
 
     contexts = [

@@ -94,7 +94,6 @@
 # # MULTI_QUERY_PROMPT = hub.pull("langchain-ai/rag-fusion-query-generation")
 # OPENAI_API_TYPE = "azure"  # "openai" or "azure"
 
-
 # def loader():
 #   """
 #   The loader function will run once for each worker that starts up. https://docs.beam.cloud/deployment/loaders
@@ -141,10 +140,8 @@
 
 #   return qdrant_client, vectorstore, s3_client, supabase_client, posthog
 
-
 # # autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
 # autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
-
 
 # # Triggers determine how your app is deployed
 # # @app.rest_api(
@@ -167,7 +164,7 @@
 #   readable_filename: List[str] | str = inputs.get('readable_filename', '')
 #   content: str | None = inputs.get('content', None)  # is webtext if content exists
 
-#   print(
+#   logging.info(
 #       f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}"
 #   )
 
@@ -192,11 +189,11 @@
 #   num_retires = 5
 #   for retry_num in range(1, num_retires):
 #     if isinstance(success_fail_dict, str):
-#       print(f"STRING ERROR: {success_fail_dict = }")
+#       logging.info(f"STRING ERROR: {success_fail_dict = }")
 #       success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
 #       time.sleep(13 * retry_num)  # max is 65
 #     elif success_fail_dict['failure_ingest']:
-#       print(f"Ingest failure -- Retry attempt {retry_num}. File: {success_fail_dict}")
+#       logging.info(f"Ingest failure -- Retry attempt {retry_num}. File: {success_fail_dict}")
 #       # s3_paths = success_fail_dict['failure_ingest'] # retry only failed paths.... what if this is a URL instead?
 #       success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
 #       time.sleep(13 * retry_num)  # max is 65
@@ -205,7 +202,7 @@
 
 #   # Final failure / success check
 #   if success_fail_dict['failure_ingest']:
-#     print(f"INGEST FAILURE -- About to send to supabase. success_fail_dict: {success_fail_dict}")
+#     logging.info(f"INGEST FAILURE -- About to send to supabase. success_fail_dict: {success_fail_dict}")
 #     document = {
 #         "course_name":
 #             course_name,
@@ -222,15 +219,14 @@
 #             if isinstance(success_fail_dict['failure_ingest'], dict) else success_fail_dict['failure_ingest']
 #     }
 #     response = supabase_client.table('documents_failed').insert(document).execute()  # type: ignore
-#     print(f"Supabase ingest failure response: {response}")
+#     logging.info(f"Supabase ingest failure response: {response}")
 #   else:
 #     # Success case: rebuild nomic document map after all ingests are done
 #     # rebuild_status = rebuild_map(str(course_name), map_type='document')
 #     pass
 
-#   print(f"Final success_fail_dict: {success_fail_dict}")
+#   logging.info(f"Final success_fail_dict: {success_fail_dict}")
 #   return json.dumps(success_fail_dict)
-
 
 # class Ingest():
 
@@ -285,7 +281,7 @@
 #     }
 #     # 👆👆👆👆 ADD NEW INGEST METHODhe 👆👆👆👆🎉
 
-#     print(f"Top of ingest, Course_name {course_name}. S3 paths {s3_paths}")
+#     logging.info(f"Top of ingest, Course_name {course_name}. S3 paths {s3_paths}")
 #     success_status: Dict[str, None | str | Dict[str, str]] = {"success_ingest": None, "failure_ingest": None}
 #     try:
 #       if isinstance(s3_paths, str):
@@ -304,7 +300,7 @@
 #           _ingest_single(ingest_method, s3_path, course_name, **kwargs)
 #         elif mime_category in mimetype_ingest_methods:
 #           # fallback to MimeType
-#           print("mime category", mime_category)
+#           logging.info("mime category", mime_category)
 #           ingest_method = mimetype_ingest_methods[mime_category]
 #           _ingest_single(ingest_method, s3_path, course_name, **kwargs)
 #         else:
@@ -312,9 +308,9 @@
 #           try:
 #             self._ingest_single_txt(s3_path, course_name)
 #             success_status['success_ingest'] = s3_path
-#             print(f"No ingest methods -- Falling back to UTF-8 INGEST... s3_path = {s3_path}")
+#             logging.info(f"No ingest methods -- Falling back to UTF-8 INGEST... s3_path = {s3_path}")
 #           except Exception as e:
-#             print(
+#             logging.info(
 #                 f"We don't have a ingest method for this filetype: {file_extension}. As a last-ditch effort, we tried to ingest the file as utf-8 text, but that failed too. File is unsupported: {s3_path}. UTF-8 ingest error: {e}"
 #             )
 #             success_status['failure_ingest'] = {
@@ -353,7 +349,7 @@
 #                            })
 
 #       sentry_sdk.capture_exception(e)
-#       print(f"MAJOR ERROR IN /bulk_ingest: {str(e)}")
+#       logging.info(f"MAJOR ERROR IN /bulk_ingest: {str(e)}")
 #       return success_status
 
 #   def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str):
@@ -396,7 +392,7 @@
 #     except Exception as e:
 #       err = f"❌❌ Error in (web text ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )  # type: ignore
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       success_or_failure['failure_ingest'] = {'url': url, 'error': str(err)}
 #       return success_or_failure
@@ -423,17 +419,17 @@
 #           'url': '',
 #           'base_url': '',
 #       } for doc in documents]
-#       #print(texts)
+#       #logging.info(texts)
 #       os.remove(file_path)
 
 #       success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
-#       print("Python ingest: ", success_or_failure)
+#       logging.info("Python ingest: ", success_or_failure)
 #       return success_or_failure
 
 #     except Exception as e:
 #       err = f"❌❌ Error in (Python ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return err
 
@@ -465,12 +461,12 @@
 #     except Exception as e:
 #       err = f"❌❌ Error in (VTT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return err
 
 #   def _ingest_html(self, s3_path: str, course_name: str, **kwargs) -> str:
-#     print(f"IN _ingest_html s3_path `{s3_path}` kwargs: {kwargs}")
+#     logging.info(f"IN _ingest_html s3_path `{s3_path}` kwargs: {kwargs}")
 #     try:
 #       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
 #       raw_html = response['Body'].read().decode('utf-8')
@@ -495,11 +491,11 @@
 #       }]
 
 #       success_or_failure = self.split_and_upload(text, metadata)
-#       print(f"_ingest_html: {success_or_failure}")
+#       logging.info(f"_ingest_html: {success_or_failure}")
 #       return success_or_failure
 #     except Exception as e:
 #       err: str = f"ERROR IN _ingest_html: {e}\nTraceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return err
 
@@ -507,7 +503,7 @@
 #     """
 #     Ingest a single video file from S3.
 #     """
-#     print("Starting ingest video or audio")
+#     logging.info("Starting ingest video or audio")
 #     try:
 #       # Ensure the media directory exists
 #       media_dir = "media"
@@ -582,7 +578,7 @@
 #     except Exception as e:
 #       err = f"❌❌ Error in (VIDEO ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return str(err)
 
@@ -611,7 +607,7 @@
 #     except Exception as e:
 #       err = f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return str(err)
 
@@ -623,10 +619,10 @@
 #       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
 #       raw_text = response['Body'].read().decode('utf-8')
 
-#       print("UTF-8 text to ingest as SRT:", raw_text)
+#       logging.info("UTF-8 text to ingest as SRT:", raw_text)
 #       parsed_info = pysrt.from_string(raw_text)
 #       text = " ".join([t.text for t in parsed_info])  # type: ignore
-#       print(f"Final SRT ingest: {text}")
+#       logging.info(f"Final SRT ingest: {text}")
 
 #       texts = [text]
 #       metadatas: List[Dict[str, Any]] = [{
@@ -647,7 +643,7 @@
 #     except Exception as e:
 #       err = f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return str(err)
 
@@ -678,7 +674,7 @@
 #     except Exception as e:
 #       err = f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return str(err)
 
@@ -695,7 +691,7 @@
 #         """
 
 #         res_str = pytesseract.image_to_string(Image.open(tmpfile.name))
-#         print("IMAGE PARSING RESULT:", res_str)
+#         logging.info("IMAGE PARSING RESULT:", res_str)
 #         documents = [Document(page_content=res_str)]
 
 #         texts = [doc.page_content for doc in documents]
@@ -715,7 +711,7 @@
 #     except Exception as e:
 #       err = f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return str(err)
 
@@ -745,7 +741,7 @@
 #     except Exception as e:
 #       err = f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return str(err)
 
@@ -755,7 +751,7 @@
 #       LangChain `Documents` have .metadata and .page_content attributes.
 #     Be sure to use TemporaryFile() to avoid memory leaks!
 #     """
-#     print("IN PDF ingest: s3_path: ", s3_path, "and kwargs:", kwargs)
+#     logging.info("IN PDF ingest: s3_path: ", s3_path, "and kwargs:", kwargs)
 
 #     try:
 #       with NamedTemporaryFile() as pdf_tmpfile:
@@ -765,7 +761,7 @@
 #         try:
 #           doc = fitz.open(pdf_tmpfile.name)  # type: ignore
 #         except fitz.fitz.EmptyFileError as e:
-#           print(f"Empty PDF file: {s3_path}")
+#           logging.info(f"Empty PDF file: {s3_path}")
 #           return "Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text."
 
 #         # improve quality of the image
@@ -785,7 +781,7 @@
 #               s3_upload_path = str(Path(s3_path)).rsplit('.pdf')[0] + "-pg1-thumb.png"
 #               first_page_png.seek(0)  # Seek the file pointer back to the beginning
 #               with open(first_page_png.name, 'rb') as f:
-#                 print("Uploading image png to S3")
+#                 logging.info("Uploading image png to S3")
 #                 self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
 
 #           # Extract text
@@ -810,14 +806,14 @@
 #         if has_words:
 #           success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
 #         else:
-#           print("⚠️ PDF IS EMPTY -- OCR-ing the PDF.")
+#           logging.info("⚠️ PDF IS EMPTY -- OCR-ing the PDF.")
 #           success_or_failure = self._ocr_pdf(s3_path=s3_path, course_name=course_name, **kwargs)
 
 #         return success_or_failure
 #     except Exception as e:
 #       err = f"❌❌ Error in PDF ingest (no OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )  # type: ignore
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return err
 #     return "Success"
@@ -841,9 +837,9 @@
 #           for i, page in enumerate(pdf.pages):
 #             im = page.to_image()
 #             text = pytesseract.image_to_string(im.original)
-#             print("Page number: ", i, "Text: ", text[:100])
+#             logging.info("Page number: ", i, "Text: ", text[:100])
 #             pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
-      
+
 #       metadatas: List[Dict[str, Any]] = [
 #               {
 #                   'course_name': course_name,
@@ -871,7 +867,7 @@
 #       return success_or_failure
 #     except Exception as e:
 #       err = f"❌❌ Error in PDF ingest (with OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return err
 
@@ -883,12 +879,12 @@
 #     Returns:
 #         str: "Success" or an error message
 #     """
-#     print("In text ingest, UTF-8")
+#     logging.info("In text ingest, UTF-8")
 #     try:
 #       # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
 #       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
 #       text = response['Body'].read().decode('utf-8')
-#       print("UTF-8 text to ignest (from s3)", text)
+#       logging.info("UTF-8 text to ignest (from s3)", text)
 #       text = [text]
 
 #       metadatas: List[Dict[str, Any]] = [{
@@ -901,14 +897,14 @@
 #           'url': '',
 #           'base_url': '',
 #       }]
-#       print("Prior to ingest", metadatas)
+#       logging.info("Prior to ingest", metadatas)
 
 #       success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
 #       return success_or_failure
 #     except Exception as e:
 #       err = f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return str(err)
 
@@ -919,7 +915,7 @@
 #     try:
 #       with NamedTemporaryFile() as tmpfile:
 #         # download from S3 into pdf_tmpfile
-#         #print("in ingest PPTX")
+#         #logging.info("in ingest PPTX")
 #         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=tmpfile)
 
 #         loader = UnstructuredPowerPointLoader(tmpfile.name)
@@ -942,7 +938,7 @@
 #     except Exception as e:
 #       err = f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
 #       )
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return str(err)
 
@@ -983,7 +979,7 @@
 #       return "Success"
 #     except Exception as e:
 #       err = f"❌❌ Error in (GITHUB ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n{traceback.format_exc()}"
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return err
 
@@ -1008,8 +1004,8 @@
 #                              'base_url': metadatas[0].get('base_url', None),
 #                          })
 
-#     print(f"In split and upload. Metadatas: {metadatas}")
-#     print(f"Texts: {texts}")
+#     logging.info(f"In split and upload. Metadatas: {metadatas}")
+#     logging.info(f"Texts: {texts}")
 #     assert len(texts) == len(
 #         metadatas
 #     ), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
@@ -1108,11 +1104,11 @@
 #                                'url': metadatas[0].get('url', None),
 #                                'base_url': metadatas[0].get('base_url', None),
 #                            })
-#       print("successful END OF split_and_upload")
+#       logging.info("successful END OF split_and_upload")
 #       return "Success"
 #     except Exception as e:
 #       err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return err
 
@@ -1164,26 +1160,26 @@
 #         current_whole_text += text['input']
 
 #       if supabase_whole_text == current_whole_text:  # matches the previous file
-#         print(f"Duplicate ingested! 📄 s3_path: {filename}.")
+#         logging.info(f"Duplicate ingested! 📄 s3_path: {filename}.")
 #         return True
 
 #       else:  # the file is updated
-#         print(f"Updated file detected! Same filename, new contents. 📄 s3_path: {filename}")
+#         logging.info(f"Updated file detected! Same filename, new contents. 📄 s3_path: {filename}")
 
 #         # call the delete function on older docs
 #         for content in supabase_contents:
-#           print("older s3_path to be deleted: ", content['s3_path'])
+#           logging.info("older s3_path to be deleted: ", content['s3_path'])
 #           delete_status = self.delete_data(course_name, content['s3_path'], '')
-#           print("delete_status: ", delete_status)
+#           logging.info("delete_status: ", delete_status)
 #         return False
 
 #     else:  # filename does not already exist in Supabase, so its a brand new file
-#       print(f"NOT a duplicate! 📄s3_path: {filename}")
+#       logging.info(f"NOT a duplicate! 📄s3_path: {filename}")
 #       return False
 
 #   def delete_data(self, course_name: str, s3_path: str, source_url: str):
 #     """Delete file from S3, Qdrant, and Supabase."""
-#     print(f"Deleting {s3_path} from S3, Qdrant, and Supabase for course {course_name}")
+#     logging.info(f"Deleting {s3_path} from S3, Qdrant, and Supabase for course {course_name}")
 #     # add delete from doc map logic here
 #     try:
 #       # Delete file from S3
@@ -1194,7 +1190,7 @@
 #         try:
 #           self.s3_client.delete_object(Bucket=bucket_name, Key=s3_path)
 #         except Exception as e:
-#           print("Error in deleting file from s3:", e)
+#           logging.info("Error in deleting file from s3:", e)
 #           sentry_sdk.capture_exception(e)
 #         # Delete from Qdrant
 #         # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
@@ -1215,7 +1211,7 @@
 #             # https://github.com/qdrant/qdrant/issues/3654#issuecomment-1955074525
 #             pass
 #           else:
-#             print("Error in deleting file from Qdrant:", e)
+#             logging.info("Error in deleting file from Qdrant:", e)
 #             sentry_sdk.capture_exception(e)
 #         try:
 #           # delete from Nomic
@@ -1231,14 +1227,14 @@
 #           # delete from Nomic
 #           delete_from_document_map(course_name, nomic_ids_to_delete)
 #         except Exception as e:
-#           print("Error in deleting file from Nomic:", e)
+#           logging.info("Error in deleting file from Nomic:", e)
 #           sentry_sdk.capture_exception(e)
 
 #         try:
 #           self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq('s3_path', s3_path).eq(
 #               'course_name', course_name).execute()
 #         except Exception as e:
-#           print("Error in deleting file from supabase:", e)
+#           logging.info("Error in deleting file from supabase:", e)
 #           sentry_sdk.capture_exception(e)
 
 #       # Delete files by their URL identifier
@@ -1260,7 +1256,7 @@
 #             # https://github.com/qdrant/qdrant/issues/3654#issuecomment-1955074525
 #             pass
 #           else:
-#             print("Error in deleting file from Qdrant:", e)
+#             logging.info("Error in deleting file from Qdrant:", e)
 #             sentry_sdk.capture_exception(e)
 #         try:
 #           # delete from Nomic
@@ -1275,7 +1271,7 @@
 #           # delete from Nomic
 #           delete_from_document_map(course_name, nomic_ids_to_delete)
 #         except Exception as e:
-#           print("Error in deleting file from Nomic:", e)
+#           logging.info("Error in deleting file from Nomic:", e)
 #           sentry_sdk.capture_exception(e)
 
 #         try:
@@ -1283,14 +1279,14 @@
 #           self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq('url', source_url).eq(
 #               'course_name', course_name).execute()
 #         except Exception as e:
-#           print("Error in deleting file from supabase:", e)
+#           logging.info("Error in deleting file from supabase:", e)
 #           sentry_sdk.capture_exception(e)
 
 #       # Delete from Supabase
 #       return "Success"
 #     except Exception as e:
 #       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
-#       print(err)
+#       logging.info(err)
 #       sentry_sdk.capture_exception(e)
 #       return err
 
@@ -1324,11 +1320,11 @@
 #   #     if s3_paths is None:
 #   #       return "Error: No files found in the coursera-dl directory"
 
-#   #     print("starting bulk ingest")
+#   #     logging.info("starting bulk ingest")
 #   #     start_time = time.monotonic()
 #   #     self.bulk_ingest(s3_paths, course_name)
-#   #     print("completed bulk ingest")
-#   #     print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
+#   #     logging.info("completed bulk ingest")
+#   #     logging.info(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
 
 #   #     # Cleanup the coursera downloads
 #   #     shutil.rmtree(dl_results_path)
@@ -1336,7 +1332,7 @@
 #   #     return "Success"
 #   #   except Exception as e:
 #   #     err: str = f"Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
-#   #     print(err)
+#   #     logging.info(err)
 #   #     return err
 
 #   # def list_files_recursively(self, bucket, prefix):
@@ -1363,7 +1359,6 @@
 #   #       break
 
 #   #   return all_files
-
 
 # if __name__ == "__main__":
 #   raise NotImplementedError("This file is not meant to be run directly")

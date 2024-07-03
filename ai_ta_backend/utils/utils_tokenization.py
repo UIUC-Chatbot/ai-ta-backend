@@ -1,13 +1,13 @@
+import logging
 import os
 from typing import Any
 
 import tiktoken
 
 
-def count_tokens_and_cost(
-    prompt: str,
-    completion: str = '',
-    openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
+def count_tokens_and_cost(prompt: str,
+                          completion: str = '',
+                          openai_model_name: str = "gpt-3.5-turbo"):  # -> tuple[int, float] | tuple[int, float, int, float]:
   """
   # TODO: improve w/ extra tokens used by model: https://github.com/openai/openai-cookbook/blob/d00e9a48a63739f5b038797594c81c8bb494fc09/examples/How_to_count_tokens_with_tiktoken.ipynb
   Returns the number of tokens in a text string.
@@ -56,7 +56,7 @@ def count_tokens_and_cost(
     completion_token_cost = 0.0001 / 1_000
   else:
     # no idea of cost
-    print(f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`")
+    logging.info(f"NO IDEA OF COST, pricing not supported for model model: `{openai_model_name}`")
     prompt_token_cost = 0
     completion_token_cost = 0
 
@@ -90,7 +90,7 @@ def analyze_conversations(supabase_client: Any = None):
         supabase_key=os.getenv('SUPABASE_API_KEY'))  # type: ignore
   # Get all conversations
   response = supabase_client.table('llm-convo-monitor').select('convo').execute()
-  # print("total entries", response.data.count)
+  # logging.info("total entries", response.data.count)
 
   total_convos = 0
   total_messages = 0
@@ -101,10 +101,10 @@ def analyze_conversations(supabase_client: Any = None):
   # for convo in response['data']:
   for convo in response.data:
     total_convos += 1
-    # print(convo)
+    # logging.info(convo)
     # prase json from convo
     # parse json into dict
-    # print(type(convo))
+    # logging.info(type(convo))
     # convo = json.loads(convo)
     convo = convo['convo']
     messages = convo['messages']
@@ -122,15 +122,13 @@ def analyze_conversations(supabase_client: Any = None):
       if role == 'user':
         num_tokens, cost = count_tokens_and_cost(prompt=content, openai_model_name=model_name)
         total_prompt_cost += cost
-        print(f'User Prompt: {content}, Tokens: {num_tokens}, cost: {cost}')
+        logging.info(f'User Prompt: {content}, Tokens: {num_tokens}, cost: {cost}')
 
       # If the message is from the assistant, it's a completion
       elif role == 'assistant':
-        num_tokens_completion, cost_completion = count_tokens_and_cost(prompt='',
-                                                                       completion=content,
-                                                                       openai_model_name=model_name)
+        num_tokens_completion, cost_completion = count_tokens_and_cost(prompt='', completion=content, openai_model_name=model_name)
         total_completion_cost += cost_completion
-        print(f'Assistant Completion: {content}\nTokens: {num_tokens_completion}, cost: {cost_completion}')
+        logging.info(f'Assistant Completion: {content}\nTokens: {num_tokens_completion}, cost: {cost_completion}')
   return total_convos, total_messages, total_prompt_cost, total_completion_cost
 
 
@@ -138,7 +136,7 @@ if __name__ == '__main__':
   pass
 
 # if __name__ == '__main__':
-#   print('starting main')
+#   logging.info('starting main')
 #   total_convos, total_messages, total_prompt_cost, total_completion_cost = analyze_conversations()
-#   print(f'total_convos: {total_convos}, total_messages: {total_messages}')
-#   print(f'total_prompt_cost: {total_prompt_cost}, total_completion_cost: {total_completion_cost}')
+#   logging.info(f'total_convos: {total_convos}, total_messages: {total_messages}')
+#   logging.info(f'total_prompt_cost: {total_prompt_cost}, total_completion_cost: {total_completion_cost}')

@@ -33,9 +33,9 @@
 #   Returns:
 #     str: success or failed
 #   """
-#   print("in create_document_map()")
+#   logging.info("in create_document_map()")
 #   nomic.login(os.getenv('NOMIC_API_KEY'))
- 
+
 #   try:
 #     # check if map exists
 #     response = SUPABASE_CLIENT.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
@@ -50,16 +50,16 @@
 #                                                                                               desc=False).execute()
 #     if not response.count:
 #       return "No documents found for this course."
-    
+
 #     total_doc_count = response.count
-#     print("Total number of documents in Supabase: ", total_doc_count)
+#     logging.info("Total number of documents in Supabase: ", total_doc_count)
 
 #     # minimum 20 docs needed to create map
 #     if total_doc_count < 20:
 #       return "Cannot create a map because there are less than 20 documents in the course."
 
 #     first_id = response.data[0]['id']
-    
+
 #     combined_dfs = []
 #     curr_total_doc_count = 0
 #     doc_count = 0
@@ -67,7 +67,7 @@
 
 #     # iteratively query in batches of 25
 #     while curr_total_doc_count < total_doc_count:
-      
+
 #       response = SUPABASE_CLIENT.table("documents").select(
 #             "id, created_at, s3_path, url, base_url, readable_filename, contexts").eq("course_name", course_name).gte(
 #                 'id', first_id).order('id', desc=False).limit(25).execute()
@@ -87,13 +87,13 @@
 
 #         if first_batch:
 #           # create a new map
-#           print("Creating new map...")
+#           logging.info("Creating new map...")
 #           project_name = NOMIC_MAP_NAME_PREFIX + course_name
 #           index_name = course_name + "_doc_index"
 #           topic_label_field = "text"
 #           colorable_fields = ["readable_filename", "text", "base_url", "created_at"]
 #           result = create_map(embeddings, metadata, project_name, index_name, topic_label_field, colorable_fields)
-          
+
 #           if result == "success":
 #             # update flag
 #             first_batch = False
@@ -105,15 +105,14 @@
 #             project_response = SUPABASE_CLIENT.table("projects").select("*").eq("course_name", course_name).execute()
 #             if project_response.data:
 #               update_response = SUPABASE_CLIENT.table("projects").update(project_info).eq("course_name", course_name).execute()
-#               print("Response from supabase: ", update_response)
+#               logging.info("Response from supabase: ", update_response)
 #             else:
 #               insert_response = SUPABASE_CLIENT.table("projects").insert(project_info).execute()
-#               print("Insert Response from supabase: ", insert_response)
-            
+#               logging.info("Insert Response from supabase: ", insert_response)
 
 #         else:
 #           # append to existing map
-#           print("Appending data to existing map...")
+#           logging.info("Appending data to existing map...")
 #           project_name = NOMIC_MAP_NAME_PREFIX + course_name
 #           # add project lock logic here
 #           result = append_to_map(embeddings, metadata, project_name)
@@ -122,12 +121,12 @@
 #             last_id = int(final_df['id'].iloc[-1])
 #             info = {'last_uploaded_doc_id': last_id}
 #             update_response = SUPABASE_CLIENT.table("projects").update(info).eq("course_name", course_name).execute()
-#             print("Response from supabase: ", update_response)
-        
+#             logging.info("Response from supabase: ", update_response)
+
 #         # reset variables
 #         combined_dfs = []
 #         doc_count = 0
-#         print("Records uploaded: ", curr_total_doc_count)
+#         logging.info("Records uploaded: ", curr_total_doc_count)
 
 #       # set first_id for next iteration
 #       first_id = response.data[-1]['id'] + 1
@@ -152,21 +151,20 @@
 #         project = AtlasProject(name=project_name, add_datums_if_exists=True)
 #         project_id = project.id
 #         project_info = {'course_name': course_name, 'doc_map_id': project_id, 'last_uploaded_doc_id': last_id}
-#         print("project_info: ", project_info)
+#         logging.info("project_info: ", project_info)
 #         project_response = SUPABASE_CLIENT.table("projects").select("*").eq("course_name", course_name).execute()
 #         if project_response.data:
 #           update_response = SUPABASE_CLIENT.table("projects").update(project_info).eq("course_name", course_name).execute()
-#           print("Response from supabase: ", update_response)
+#           logging.info("Response from supabase: ", update_response)
 #         else:
 #           insert_response = SUPABASE_CLIENT.table("projects").insert(project_info).execute()
-#           print("Insert Response from supabase: ", insert_response)
-        
-  
+#           logging.info("Insert Response from supabase: ", insert_response)
+
 #     # rebuild the map
 #     rebuild_map(course_name, "document")
-    
+
 #   except Exception as e:
-#     print(e)
+#     logging.info(e)
 #     sentry_sdk.capture_exception(e)
 #     return "failed"
 
@@ -178,7 +176,7 @@
 #     course_name: str
 #     ids: list of str
 #   """
-#   print("in delete_from_document_map()")
+#   logging.info("in delete_from_document_map()")
 
 #   try:
 #     # check if project exists
@@ -192,24 +190,23 @@
 #     project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
 
 #     # delete the ids from Nomic
-#     print("Deleting point from document map:", project.delete_data(ids))
+#     logging.info("Deleting point from document map:", project.delete_data(ids))
 #     with project.wait_for_project_lock():
 #       project.rebuild_maps()
 #     return "success"
 #   except Exception as e:
-#     print(e)
+#     logging.info(e)
 #     sentry_sdk.capture_exception(e)
 #     return "Error in deleting from document map: {e}"
 
-
 # def log_to_document_map(course_name: str):
 #   """
-#   This is a function which appends new documents to an existing document map. It's called 
+#   This is a function which appends new documents to an existing document map. It's called
 #   at the end of split_and_upload() after inserting data to Supabase.
 #   Args:
 #     data: dict - the response data from Supabase insertion
 #   """
-#   print("in add_to_document_map()")
+#   logging.info("in add_to_document_map()")
 
 #   try:
 #   # check if map exists
@@ -227,18 +224,18 @@
 #       # create a map
 #       create_document_map(course_name)
 #       return "Document map not present, triggering map creation."
-      
+
 #     project = AtlasProject(project_id=project_id, add_datums_if_exists=True)
 #     project_name = "Document Map for " + course_name
-    
+
 #     # check if project is LOCKED, if yes -> skip logging
 #     if not project.is_accepting_data:
 #       return "Skipping Nomic logging because project is locked."
-        
+
 #     # fetch count of records greater than last_uploaded_doc_id
-#     print("last uploaded doc id: ", last_uploaded_doc_id)
+#     logging.info("last uploaded doc id: ", last_uploaded_doc_id)
 #     response = SUPABASE_CLIENT.table("documents").select("id", count="exact").eq("course_name", course_name).gt("id", last_uploaded_doc_id).execute()
-#     print("Number of new documents: ", response.count)
+#     logging.info("Number of new documents: ", response.count)
 
 #     total_doc_count = response.count
 #     current_doc_count = 0
@@ -261,24 +258,24 @@
 #         embeddings, metadata = data_prep_for_doc_map(final_df)
 
 #         # append to existing map
-#         print("Appending data to existing map...")
-                               
+#         logging.info("Appending data to existing map...")
+
 #         result = append_to_map(embeddings, metadata, project_name)
 #         if result == "success":
 #           # update the last uploaded id in supabase
 #           last_id = int(final_df['id'].iloc[-1])
 #           info = {'last_uploaded_doc_id': last_id}
 #           update_response = SUPABASE_CLIENT.table("projects").update(info).eq("course_name", course_name).execute()
-#           print("Response from supabase: ", update_response)
-                
+#           logging.info("Response from supabase: ", update_response)
+
 #         # reset variables
 #         combined_dfs = []
 #         doc_count = 0
-#         print("Records uploaded: ", current_doc_count)
-            
+#         logging.info("Records uploaded: ", current_doc_count)
+
 #       # set first_id for next iteration
 #       first_id = response.data[-1]['id'] + 1
-        
+
 #     # upload last set of docs
 #     if doc_count > 0:
 #       final_df = pd.concat(combined_dfs, ignore_index=True)
@@ -291,14 +288,13 @@
 #         last_id = int(final_df['id'].iloc[-1])
 #         project_info = {'last_uploaded_doc_id': last_id}
 #         update_response = SUPABASE_CLIENT.table("projects").update(project_info).eq("course_name", course_name).execute()
-#         print("Response from supabase: ", update_response)
-            
+#         logging.info("Response from supabase: ", update_response)
+
 #     return "success"
 #   except Exception as e:
-#     print(e)
-#     return "failed"        
-                
-    
+#     logging.info(e)
+#     return "failed"
+
 # def create_map(embeddings, metadata, map_name, index_name, topic_label_field, colorable_fields):
 #   """
 #   Generic function to create a Nomic map from given parameters.
@@ -323,7 +319,7 @@
 #     project.create_index(name=index_name, build_topic_model=True)
 #     return "success"
 #   except Exception as e:
-#     print(e)
+#     logging.info(e)
 #     return "Error in creating map: {e}"
 
 # def append_to_map(embeddings, metadata, map_name):
@@ -342,7 +338,7 @@
 #       project.add_embeddings(embeddings=embeddings, data=metadata)
 #     return "success"
 #   except Exception as e:
-#     print(e)
+#     logging.info(e)
 #     return "Error in appending to map: {e}"
 
 # def data_prep_for_doc_map(df: pd.DataFrame):
@@ -354,7 +350,7 @@
 #     embeddings: np.array of embeddings
 #     metadata: pd.DataFrame of metadata
 #   """
-#   print("in data_prep_for_doc_map()")
+#   logging.info("in data_prep_for_doc_map()")
 
 #   metadata = []
 #   embeddings = []
@@ -380,7 +376,7 @@
 #           "created_at": created_at,
 #           "s3_path": row['s3_path'],
 #           "url": row['url'],
-#           "base_url": row['base_url'],  
+#           "base_url": row['base_url'],
 #           "readable_filename": row['readable_filename'],
 #           "modified_at": current_time,
 #           "text": text_row
@@ -391,11 +387,11 @@
 #       texts.append(text_row)
 
 #   embeddings_np = np.array(embeddings, dtype=object)
-#   print("Shape of embeddings: ", embeddings_np.shape)
+#   logging.info("Shape of embeddings: ", embeddings_np.shape)
 
 #   # check dimension if embeddings_np is (n, 1536)
 #   if len(embeddings_np.shape) < 2:
-#     print("Creating new embeddings...")
+#     logging.info("Creating new embeddings...")
 
 #     embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
 #                                         openai_api_base="https://api.openai.com/v1/",
@@ -411,7 +407,7 @@
 #   """
 #   This function rebuilds a given map in Nomic.
 #   """
-#   print("in rebuild_map()")
+#   logging.info("in rebuild_map()")
 #   nomic.login(os.getenv('NOMIC_API_KEY'))
 #   if map_type.lower() == 'document':
 #     NOMIC_MAP_NAME_PREFIX = 'Document Map for '
@@ -427,12 +423,9 @@
 #       project.rebuild_maps()
 #     return "success"
 #   except Exception as e:
-#     print(e)
+#     logging.info(e)
 #     sentry_sdk.capture_exception(e)
 #     return "Error in rebuilding map: {e}"
 
-
-
 # if __name__ == '__main__':
 #   pass
-

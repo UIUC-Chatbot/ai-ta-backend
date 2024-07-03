@@ -14,6 +14,14 @@ Architecture diagram of Flask + Next.js & React hosted on Vercel.
 
 Automatic [API Reference](https://uiuc-chatbot.github.io/ai-ta-backend/reference/)
 
+## Docker Deployment
+
+1. Just run Docker Compose `docker compose up --build`
+
+Works on version: `Docker Compose version v2.27.1-desktop.1`
+
+Works on Apple Silicon M1 `aarch64`, and `x86`.
+
 ## 📣 Development
 
 1. Rename `.env.template` to `.env` and fill in the required variables
@@ -36,3 +44,4 @@ The docs are auto-built and deployed to [our docs website](https://uiuc-chatbot.
 'url': doc.metadata.get('url'), # wouldn't this error out?
 'base_url': doc.metadata.get('base_url'),
 ```
+

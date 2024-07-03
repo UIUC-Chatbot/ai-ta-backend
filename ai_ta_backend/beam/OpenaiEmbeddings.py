@@ -114,7 +114,6 @@
 # # from langchain.vectorstores import Qdrant
 # # from qdrant_client import QdrantClient, models
 
-
 # class OpenAIAPIProcessor:
 
 #   def __init__(self, input_prompts_list, request_url, api_key, max_requests_per_minute, max_tokens_per_minute,
@@ -225,9 +224,9 @@
 #           task_list.append(task)
 #           next_request = None  # reset next_request to empty
 
-#           # print("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
+#           # logging.info("status_tracker.num_tasks_in_progress", status_tracker.num_tasks_in_progress)
 #           # one_task_result = task.result()
-#           # print("one_task_result", one_task_result)
+#           # logging.info("one_task_result", one_task_result)
 
 #       # if all tasks are finished, break
 #       if status_tracker.num_tasks_in_progress == 0:
@@ -263,7 +262,6 @@
 
 #     self.cleaned_results: List[str] = extract_context_from_results(self.results)
 
-
 # def extract_context_from_results(results: List[Any]) -> List[str]:
 #   assistant_contents = []
 #   total_prompt_tokens = 0
@@ -282,9 +280,7 @@
 
 #   return assistant_contents
 
-
 # # dataclasses
-
 
 # @dataclass
 # class StatusTracker:
@@ -298,7 +294,6 @@
 #   num_api_errors: int = 0  # excluding rate limit errors, counted above
 #   num_other_errors: int = 0
 #   time_of_last_rate_limit_error: float = 0  # used to cool off after hitting rate limits
-
 
 # @dataclass
 # class APIRequest:
@@ -360,9 +355,7 @@
 
 #       return data
 
-
 # # functions
-
 
 # def api_endpoint_from_url(request_url: str):
 #   """Extract the API endpoint from the request URL."""
@@ -372,13 +365,11 @@
 #     match = re.search('^https://[^/]+/v\\d+/(.+)$', request_url)
 #     return match[1]  # type: ignore
 
-
 # def append_to_jsonl(data, filename: str) -> None:
 #   """Append a json payload to the end of a jsonl file."""
 #   json_string = json.dumps(data)
 #   with open(filename, "a") as f:
 #     f.write(json_string + "\n")
-
 
 # def num_tokens_consumed_from_request(
 #     request_json: dict,
@@ -432,14 +423,12 @@
 #   else:
 #     raise NotImplementedError(f'API endpoint "{api_endpoint}" not implemented in this script')
 
-
 # def task_id_generator_function():
 #   """Generate integers 0, 1, 2, and so on."""
 #   task_id = 0
 #   while True:
 #     yield task_id
 #     task_id += 1
-
 
 # if __name__ == '__main__':
 #   pass
@@ -496,8 +485,8 @@
 #   #   total_prompt_tokens = 0
 #   #   total_completion_tokens = 0
 
-#   #   print("Results, end of main: ", oai.results)
-#   #   print("-"*50)
+#   #   logging.info("Results, end of main: ", oai.results)
+#   #   logging.info("-"*50)
 
 #   #   # jsonObject = json.loads(oai.results)
 #   #   for element in oai.results:
@@ -509,21 +498,21 @@
 #   #               total_prompt_tokens += item['usage']['prompt_tokens']
 #   #               total_completion_tokens += item['usage']['completion_tokens']
 
-#   #   print("Assistant Contents:", assistant_contents)
-#   #   print("Total Prompt Tokens:", total_prompt_tokens)
-#   #   print("Total Completion Tokens:", total_completion_tokens)
+#   #   logging.info("Assistant Contents:", assistant_contents)
+#   #   logging.info("Total Prompt Tokens:", total_prompt_tokens)
+#   #   logging.info("Total Completion Tokens:", total_completion_tokens)
 #   #   turbo_total_cost = (total_prompt_tokens * 0.0015) + (total_completion_tokens * 0.002)
-#   #   print("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
+#   #   logging.info("Total cost (3.5-turbo):", (total_prompt_tokens * 0.0015), " + Completions: ", (total_completion_tokens * 0.002), " = ", turbo_total_cost)
 
 #   #   gpt4_total_cost = (total_prompt_tokens * 0.03) + (total_completion_tokens * 0.06)
-#   #   print("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
-#   #   print("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
+#   #   logging.info("Hypothetical cost for GPT-4:", (total_prompt_tokens * 0.03), " + Completions: ", (total_completion_tokens * 0.06), " = ", gpt4_total_cost)
+#   #   logging.info("GPT-4 cost premium: ", (gpt4_total_cost / turbo_total_cost), "x")
 #   '''
 #   Pricing:
-#   GPT4: 
+#   GPT4:
 #     * $0.03 prompt
 #     * $0.06 completions
-#   3.5-turbo: 
+#   3.5-turbo:
 #     * $0.0015 prompt
 #     * $0.002 completions
 #   '''

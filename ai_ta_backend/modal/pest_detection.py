@@ -15,15 +15,20 @@ Inspired by https://modal.com/docs/examples/webcam#prediction-function
 """
 import inspect
 import json
+import logging
 import os
-import traceback
-import uuid
 from tempfile import NamedTemporaryFile
+import traceback
 from typing import List
+import uuid
 
-import modal
 from fastapi import Request
-from modal import Secret, Stub, build, enter, web_endpoint
+import modal
+from modal import build
+from modal import enter
+from modal import Secret
+from modal import Stub
+from modal import web_endpoint
 
 # Simpler image, but slower cold starts: modal.Image.from_registry('ultralytics/ultralytics:latest-cpu')
 image = (
@@ -42,16 +47,10 @@ stub = Stub("v2_pest_detection_yolo", image=image)
 
 # Imports needed inside the image
 with image.imports():
-  import inspect
-  import os
-  import traceback
-  import uuid
-  from tempfile import NamedTemporaryFile
-  from typing import List
 
   import boto3
-  import requests
   from PIL import Image
+  import requests
   from ultralytics import YOLO
 
 
@@ -90,20 +89,20 @@ class Model:
     This used to use the method decorator
     Run the pest detection plugin on an image.
     """
-    print("Inside predict() endpoint")
+    logging.info("Inside predict() endpoint")
 
     input = await request.json()
-    print("Request.json(): ", input)
+    logging.info("Request.json(): ", input)
     image_urls = input.get('image_urls', [])
 
     if image_urls and isinstance(image_urls, str):
       image_urls = json.loads(image_urls)
-    print(f"Final image URLs: {image_urls}")
+    logging.info(f"Final image URLs: {image_urls}")
 
     try:
       # Run the plugin
       annotated_images = self._detect_pests(image_urls)
-      print(f"annotated_images found: {len(annotated_images)}")
+      logging.info(f"annotated_images found: {len(annotated_images)}")
       results = []
       # Generate a unique ID for the request
       unique_id = uuid.uuid4()
@@ -132,7 +131,7 @@ class Model:
       return results
     except Exception as e:
       err = f"❌❌ Error in (pest_detection): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n{traceback.format_exc()}"  # type: ignore
-      print(err)
+      logging.info(err)
       # sentry_sdk.capture_exception(e)
       return err
 
