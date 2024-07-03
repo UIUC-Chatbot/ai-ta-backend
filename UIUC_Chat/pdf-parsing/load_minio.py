@@ -51,13 +51,13 @@ def db_worker(queue, db_path):
         if data is None:
             break
         try:
-            insert_data(data['metadata'], data['total_tokens'], data['grouped_data'], data['object_name'], data['references'], data['ref_num_tokens'])
+            insert_data(data['metadata'], data['total_tokens'], data['grouped_data'], data['db_path'], data['references'], data['ref_num_tokens'])
 
             save_processed_file(LOG_FILE, data['file_name'])
             conn.commit()
         except Exception as e:
             with open(ERR_LOG_FILE, 'a') as f:
-                f.write(f"{data['file_name']}: {str(e)}\n")
+                f.write(f"db_worker: {data['file_name']}: {str(e)}\n")
     conn.close()
 
 def minio_object_generator(client, bucket_name):
@@ -68,14 +68,15 @@ def minio_object_generator(client, bucket_name):
 
 def main_parallel_upload():
     initialize_database(DB_PATH)
+    os.makedirs(BASE_TEMP_DIR, exist_ok=True)
+    os.makedirs(BASE_OUTPUT_DIR, exist_ok=True)
     # processed_files = load_processed_files(LOG_FILE)
     
     manager = Manager()
     queue = manager.Queue()
     db_proc = Process(target=db_worker, args=(queue, DB_PATH))
     db_proc.start()
-
-    with ProcessPoolExecutor(max_workers=80) as executor:
+    with ProcessPoolExecutor(max_workers=60) as executor:
         batch_size = 1_000
         minio_gen = minio_object_generator(client, BUCKET_NAME)
         
@@ -97,7 +98,7 @@ def main_parallel_upload():
                     future.result()
                 except Exception as e:
                     with open(ERR_LOG_FILE, 'a') as f:
-                        f.write(f"{obj.object_name}: {str(e)}\n")
+                        f.write(f"main: {obj.object_name}: {str(e)}\n")
                     print(f"Error processing {obj.object_name}: {str(e)}")
             
             futures.clear()
@@ -114,41 +115,45 @@ def upload_single_pdf(minio_object_name, queue):
         file_content = response.read()
         response.close()
         response.release_conn()
+
+        tmp_file_path = None
+
+        try: 
+            with tempfile.NamedTemporaryFile() as tmp_file:
+                tmp_file.write(file_content)
+                tmp_file.flush()
+
+                grobid_config = {
+                    "grobid_server": grobid_server,
+                    "batch_size": 2500,
+                    "sleep_time": 5,
+                    "timeout": 60
+                }
+                temp_path = BASE_TEMP_DIR
+                output_path = BASE_OUTPUT_DIR
+
+                print("After mkdirs", temp_path, "-------", output_path)
+                output_data = process_pdf_file(tmp_file.name, temp_path, output_path, grobid_config)
+                metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
+                print("After mkdirs processing entire doc, before queue.put", output_path)
+
+                queue.put({
+                    'metadata': metadata,
+                    'total_tokens': total_tokens,
+                    'grouped_data': grouped_data,
+                    'references': references,
+                    'db_path': DB_PATH,
+                    'file_name': minio_object_name,
+                    'ref_num_tokens': ref_num_tokens
+                })
         
-        with tempfile.NamedTemporaryFile() as tmp_file:
-            tmp_file.write(file_content)
-            tmp_file.flush()
-
-            grobid_config = {
-                "grobid_server": grobid_server,
-                "batch_size": 2500,
-                "sleep_time": 5,
-                "timeout": 60
-            }
-            temp_path = BASE_TEMP_DIR
-            output_path = BASE_OUTPUT_DIR
-
-            os.makedirs(temp_path, exist_ok=True)
-            os.makedirs(output_path, exist_ok=True)
-            print("After mkdirs", temp_path, "-------", output_path)
-            output_data = process_pdf_file(tmp_file.name, temp_path, output_path, grobid_config)
-            metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
-            print("After mkdirs processing entire doc, before queue.put", output_path)
-
-            
-            queue.put({
-                'metadata': metadata,
-                'total_tokens': total_tokens,
-                'grouped_data': grouped_data,
-                'references': references,
-                'object_name': DB_PATH,
-                'file_name': minio_object_name,
-                'ref_num_tokens': ref_num_tokens
-            })
+        finally:
+            if tmp_file_path and os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
 
     except Exception as e:
         with open(ERR_LOG_FILE, 'a') as f:
-            f.write(f"{minio_object_name}: {str(e)}\n")
+            f.write(f"upload: {minio_object_name}: {str(e)}\n")
             print(f"Error downloading {minio_object_name}: {str(e)}")
 
 if __name__ == '__main__':  

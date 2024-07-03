@@ -42,7 +42,7 @@ def process_pdf_stream(input_file: str, sha: str, input_stream: bytes, grobid_co
     return paper.release_json('pdf')
   except Exception as e:
         with open(ERR_LOG_FILE, 'a') as f:
-            f.write(f"{input_file}: {str(e)}\n")
+            f.write(f" process_stream: {input_file}: {str(e)}\n")
             print(f"Error process pdf stream {input_file}: {str(e)}")
 
 
@@ -60,15 +60,19 @@ def process_pdf_file(
     """
 
   try:
-    os.makedirs(temp_dir, exist_ok=True)
-    os.makedirs(output_dir, exist_ok=True)
+    # os.makedirs(temp_dir, exist_ok=True)
+    # os.makedirs(output_dir, exist_ok=True)
 
     paper_id = '.'.join(str(input_file).split('/')[-1].split('.')[:-1])
-    tei_file = tempfile.NamedTemporaryFile(suffix=f'{paper_id}.tei.xml', dir=temp_dir)
-    output_file = tempfile.NamedTemporaryFile(suffix=f'{paper_id}.json', dir=output_dir)
+    paper_id = '.'.join(os.path.basename(input_file).split('.')[:-1])
+    tei_file = tempfile.NamedTemporaryFile(dir=temp_dir, delete=False, suffix='.tei.xml')
+    output_file = tempfile.NamedTemporaryFile(dir=output_dir, delete=False, suffix='.json')
 
-    if not os.path.exists(input_file):
-      raise FileNotFoundError(f"{input_file} doesn't exist")
+    tei_file_path = tei_file.name
+    output_file_path = output_file.name
+
+    # if not os.path.exists(input_file):
+    #   raise FileNotFoundError(f"{input_file} doesn't exist")
     # if os.path.exists(output_file.name):
     #     print(f'{output_file.name} already exists!')
     grobid_config = {
@@ -94,17 +98,21 @@ def process_pdf_file(
     # Read the content of the output file and delete it
     with open(output_file.name, 'r') as f:
         output_data = json.load(f)
+    
+    os.remove(tei_file_path)
+    os.remove(output_file_path)
 
     return output_data
 
   except Exception as e:
-    tei_file.close()
-    os.remove(tei_file.name)
-    output_file.close()
-    os.remove(output_file.name)
+    print(f"Error in process_pdf_file: {str(e)}")
+    if os.path.exists(tei_file_path):
+        os.remove(tei_file_path)
+    if os.path.exists(output_file_path):
+        os.remove(output_file_path)
 
     with open(ERR_LOG_FILE, 'a') as f:
-        f.write(f"{input_file}: {str(e)}\n")
+        f.write(f"process pdf: {input_file}: {str(e)}\n")
         print(f"Error process pdf file {input_file}: {str(e)}")
   
   # finally:
@@ -247,8 +255,7 @@ def parse_and_group_by_section(data):
     
     except Exception as e:
         with open(ERR_LOG_FILE, 'a') as f:
-            f.write(f"{data['paper_id']}: {str(e)}\n")
-            print(f"Error parsing {data['paper_id']}: {str(e)}")
+            f.write(f"parse_and_group: {data['paper_id']}: {str(e)}\n")
 
 def format_reference(reference):
     # Extract individual fields from the reference

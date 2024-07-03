@@ -120,9 +120,9 @@ class GrobidClient(ApiClient):
             time.sleep(self.sleep_time)
             return self.process_pdf_stream(pdf_file, pdf_strm, output, service)
         elif status != 200:
-            with open(os.path.join(output, "failed.log"), "a+") as failed:
-                failed.write(pdf_file.strip(".pdf") + "\n")
-            print('Processing failed (NOT PRINTING ERROR... TOO LONG ') #  + str(status))
+            # with open(os.path.join(output, "failed.log"), "a+") as failed:
+            #     failed.write(pdf_file.strip(".pdf") + "\n")
+            print('Processing failed (NOT PRINTING ERROR... TOO LONG '  + str(status))
             return ""
         else:
             return res.text
