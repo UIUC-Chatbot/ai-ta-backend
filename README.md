@@ -16,7 +16,12 @@ Automatic [API Reference](https://uiuc-chatbot.github.io/ai-ta-backend/reference
 
 ## Docker Deployment
 
-1. Just run Docker Compose `docker compose up --build`
+1. Duplicate `.env.template` and rename it to `.env`. E.g. `cp .env.template .env`
+2. Customize your env variables. Your vector database can be either Qdrant and Pinecone. The SQL database can be any of SQLite, Postgres, and Supabase. The object storage can be Minio or AWS S3. 
+3. Run Docker Compose `docker compose up --build`
+4. Navitage to `localhost:8000` (or whatever your `$FLASK_PORT` is)
+
+To customize HTTP port used as the main entrypoint, set the `FLASK_PORT` variabel in your `.env`. It defaults to 8000.
 
 Works on version: `Docker Compose version v2.27.1-desktop.1`
 

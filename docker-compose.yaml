@@ -27,12 +27,12 @@ services:
     healthcheck:
       test:
         [
-          CMD,
-          curl,
-          -f,
-          -H,
-          { Authorization: Bearer qd-SbvSWrYpa473J33yPjdL },
-          http://localhost:6333/health,
+          "CMD",
+          "curl",
+          "-f",
+          "-H",
+          "Authorization: Bearer qd-SbvSWrYpa473J33yPjdL",
+          "http://localhost:6333/health"
         ]
       interval: 30s
       timeout: 10s
@@ -56,7 +56,9 @@ services:
     build: . # Directory with Dockerfile for Flask app
     # image: kastanday/ai-ta-backend:gunicorn
     ports:
-      - 8000:8000
+      - "${FLASK_PORT}:8000"
+    expose:
+      - "${FLASK_PORT}"
     volumes:
       - ./db:/usr/src/app/db # Mount local directory to store SQLite database
     networks:
