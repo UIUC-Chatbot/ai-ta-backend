@@ -30,6 +30,7 @@ nomic==2.0.14
 openai==0.28.1
 langchain==0.0.331
 langchainhub==0.1.14
+ollama==0.2.1
 
 # Data
 boto3==1.28.79

@@ -16,6 +16,7 @@ from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
+from ai_ta_backend.service.embeddings_service import EmbeddingsService
 from ai_ta_backend.utils.utils_tokenization import count_tokens_and_cost
 
 
@@ -26,24 +27,25 @@ class RetrievalService:
 
   @inject
   def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, posthog: PosthogService,
-               sentry: SentryService, nomicService: NomicService):
+               sentry: SentryService, nomicService: NomicService, ollamaEmbeddings: EmbeddingsService):
     self.vdb = vdb
     self.sqlDb = sqlDb
     self.aws = aws
     self.sentry = sentry
     self.posthog = posthog
     self.nomicService = nomicService
+    self.embeddings = ollamaEmbeddings
 
     openai.api_key = os.environ["VLADS_OPENAI_KEY"]
 
-    self.embeddings = OpenAIEmbeddings(
-        model='text-embedding-ada-002',
-        openai_api_key=os.environ["VLADS_OPENAI_KEY"],
-        # openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        # openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        # openai_api_type=os.environ['OPENAI_API_TYPE'],
-        # openai_api_version=os.environ["OPENAI_API_VERSION"],
-    )
+    # self.embeddings = OpenAIEmbeddings(
+    #     model='text-embedding-ada-002',
+    #     openai_api_key=os.environ["VLADS_OPENAI_KEY"],
+    #     # openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+    #     # openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+    #     # openai_api_type=os.environ['OPENAI_API_TYPE'],
+    #     # openai_api_version=os.environ["OPENAI_API_VERSION"],
+    # )
 
     # self.llm = AzureChatOpenAI(
     #     temperature=0,
@@ -381,7 +383,8 @@ class RetrievalService:
 
   def _embed_query_and_measure_latency(self, search_query):
     openai_start_time = time.monotonic()
-    user_query_embedding = self.embeddings.embed_query(search_query)
+    #user_query_embedding = self.embeddings.embed_query(search_query)
+    user_query_embedding = self.embeddings.create_embeddings(search_query)
     self.openai_embedding_latency = time.monotonic() - openai_start_time
     return user_query_embedding
 
