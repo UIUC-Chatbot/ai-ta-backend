@@ -1,9 +1,10 @@
 import os
 import sqlite3
 import tempfile
-import time
+import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Manager, Process, Queue
+from pathlib import Path
 
 from dotenv import load_dotenv
 from minio import Minio  # type: ignore
@@ -39,49 +40,10 @@ BUCKET_NAME = 'pubmed'
 DB_PATH = 'articles.db'
 
 
-def load_processed_files(log_file):
-  if os.path.exists(log_file):
-    with open(log_file, 'r') as f:
-      return set(line.strip() for line in f)
-  return set()
-
-
-def save_processed_file(log_file, file_path):
-  with open(log_file, 'a') as f:
-    f.write(f"{file_path}\n")
-
-
-def db_worker(queue, db_path):
-  conn = sqlite3.connect(db_path, timeout=30)
-  cursor = conn.cursor()
-  while True:
-    data = queue.get()
-    if data is None:
-      break
-    try:
-      insert_data(data['metadata'], data['total_tokens'], data['grouped_data'], data['db_path'], data['references'],
-                  data['ref_num_tokens'])
-
-      save_processed_file(LOG_FILE, data['file_name'])
-      conn.commit()
-    except Exception as e:
-      with open(ERR_LOG_FILE, 'a') as f:
-        f.write(f"db_worker: {data['file_name']}: {str(e)}\n")
-  conn.close()
-
-
-def minio_object_generator(client, bucket_name):
-  processed_files = load_processed_files(LOG_FILE)
-  for obj in client.list_objects(bucket_name, recursive=True):
-    if obj.object_name not in processed_files:
-      yield obj
-
-
 def main_parallel_upload():
   initialize_database(DB_PATH)
   os.makedirs(BASE_TEMP_DIR, exist_ok=True)
   os.makedirs(BASE_OUTPUT_DIR, exist_ok=True)
-  # processed_files = load_processed_files(LOG_FILE)
 
   num_processed_this_run = 0
 
@@ -133,42 +95,76 @@ def upload_single_pdf(minio_object_name, queue):
     response.close()
     response.release_conn()
 
-    tmp_file_path = None
+    with tempfile.NamedTemporaryFile() as tmp_file:
+      tmp_file.write(file_content)
+      tmp_file.flush()
 
-    try:
-      with tempfile.NamedTemporaryFile() as tmp_file:
-        tmp_file.write(file_content)
-        tmp_file.flush()
+      grobid_config = {
+          "grobid_server": grobid_server,
+          "batch_size": 100,
+          "sleep_time": 5,
+          "timeout": 120,
+      }
 
-        grobid_config = {
-            "grobid_server": grobid_server,
-            "batch_size": 100,
-            "sleep_time": 5,
-            "timeout": 120,
-        }
+      output_data = process_pdf_file(Path(tmp_file.name), BASE_TEMP_DIR, BASE_OUTPUT_DIR, grobid_config)
+      metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
 
-        output_data = process_pdf_file(tmp_file.path, BASE_TEMP_DIR, BASE_OUTPUT_DIR, grobid_config)
-        metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
-
-        queue.put({
-            'metadata': metadata,
-            'total_tokens': total_tokens,
-            'grouped_data': grouped_data,
-            'references': references,
-            'db_path': DB_PATH,
-            'file_name': minio_object_name,
-            'ref_num_tokens': ref_num_tokens
-        })
-
-    finally:
-      if tmp_file_path and os.path.exists(tmp_file_path):
-        os.remove(tmp_file_path)
+      queue.put({
+          'metadata': metadata,
+          'total_tokens': total_tokens,
+          'grouped_data': grouped_data,
+          'references': references,
+          'db_path': DB_PATH,
+          'file_name': minio_object_name,
+          'ref_num_tokens': ref_num_tokens
+      })
 
   except Exception as e:
     with open(ERR_LOG_FILE, 'a') as f:
       f.write(f"upload: {minio_object_name}: {str(e)}\n")
       print(f"Error downloading {minio_object_name}: {str(e)}")
+      traceback.print_exc()
 
+
+# Start <HELPER UTILS>
+def load_processed_files(log_file):
+  if os.path.exists(log_file):
+    with open(log_file, 'r') as f:
+      return set(line.strip() for line in f)
+  return set()
+
+
+def save_processed_file(log_file, file_path):
+  with open(log_file, 'a') as f:
+    f.write(f"{file_path}\n")
+
+
+def db_worker(queue, db_path):
+  conn = sqlite3.connect(db_path, timeout=30)
+  while True:
+    data = queue.get()
+    if data is None:
+      break
+    try:
+      insert_data(data['metadata'], data['total_tokens'], data['grouped_data'], data['db_path'], data['references'],
+                  data['ref_num_tokens'])
+
+      save_processed_file(LOG_FILE, data['file_name'])
+      conn.commit()
+    except Exception as e:
+      with open(ERR_LOG_FILE, 'a') as f:
+        f.write(f"db_worker: {data['file_name']}: {str(e)}\n")
+  conn.close()
+
+
+def minio_object_generator(client, bucket_name):
+  processed_files = load_processed_files(LOG_FILE)
+  for obj in client.list_objects(bucket_name, recursive=True):
+    if obj.object_name not in processed_files:
+      yield obj
+
+
+# End </HELPER UTILS>
 
 if __name__ == '__main__':
   main_parallel_upload()
