@@ -12,17 +12,19 @@ Architecture diagram of Flask + Next.js & React hosted on Vercel.
 
 ## Documentation
 
-Automatic [API Reference](https://uiuc-chatbot.github.io/ai-ta-backend/reference/)
+* **Extensive usage docs on [UIUC.chat](docs.uiuc.chat/)**
 
-## 📣 Development
+## 🏎️ Quickstart 
 
 1. Rename `.env.template` to `.env` and fill in the required variables
 2. Install Python requirements `pip install -r requirements.txt`
 3. Start the server for development (with live reloads) `cd ai_ta_backend` then `flask --app ai_ta_backend.main:app --debug run --port 8000`
 
-The docs are auto-built and deployed to [our docs website](https://uiuc-chatbot.github.io/ai-ta-backend/) on every push. Or you can build the docs locally when writing:
+## 📣 Development
+Install the Trunk "superlinter" so your commits are formatted. Just one step:
 
-- `mkdocs serve`
+Mac: brew install trunk-io
+Linux: curl https://get.trunk.io -fsSL | bash
 
 ### Course metadata structure
 
