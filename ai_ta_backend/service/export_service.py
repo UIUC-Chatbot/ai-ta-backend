@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import uuid
@@ -109,7 +110,7 @@ class ExportService:
 
     if response.count > 500:
       # call background task to upload to s3
-      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.zip'
+      filename = course_name[0:10] + '-' + str(generate_short_id()) + '_convos.zip'
       s3_filepath = f"courses/{course_name}/{filename}"
       # background task of downloading data - map it with above ID
       executor = ProcessPoolExecutor()
@@ -123,7 +124,7 @@ class ExportService:
       last_id = response.data[-1]['id']
       total_count = response.count
 
-      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.jsonl'
+      filename = course_name[0:10] + '-convos.jsonl'
       file_path = os.path.join(os.getcwd(), filename)
       curr_count = 0
       # Fetch data in batches of 25 from first_id to last_id
@@ -173,7 +174,7 @@ class ExportService:
 
     if response.count > 500:
       # call background task to upload to s3
-      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.zip'
+      filename = course_name[0:10] + '-' + str(generate_short_id()) + '-convos.zip'
       s3_filepath = f"courses/{course_name}/{filename}"
       # background task of downloading data - map it with above ID
       executor = ProcessPoolExecutor()
@@ -187,7 +188,7 @@ class ExportService:
       last_id = response.data[-1]['id']
       total_count = response.count
 
-      filename = course_name + '_' + str(uuid.uuid4()) + '_convo_history.jsonl'
+      filename = course_name[0:10] + '-convos.jsonl'
       file_path = os.path.join(os.getcwd(), filename)
       curr_count = 0
       # Fetch data in batches of 25 from first_id to last_id
@@ -431,3 +432,7 @@ def export_data_in_bg_emails(response, download_type, course_name, s3_path, emai
   except Exception as e:
     print(e)
     return "Error: " + str(e)
+
+
+def generate_short_id():
+  return base64.urlsafe_b64encode(uuid.uuid4().bytes)[:5].decode('utf-8')
