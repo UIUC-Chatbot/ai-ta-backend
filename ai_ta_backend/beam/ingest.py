@@ -48,6 +48,7 @@ from posthog import Posthog
 from pydub import AudioSegment
 from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
+from langchain.embeddings.ollama import OllamaEmbeddings
 
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain.chat_models import AzureChatOpenAI
@@ -98,18 +99,26 @@ def loader():
   """
   openai.api_key = os.getenv("VLADS_OPENAI_KEY")
 
+  # ollama
+  #ollama_client = Client(host='https://ollama.ncsa.ai/api/embeddings')
+
   # vector DB
   qdrant_client = QdrantClient(
       url=os.getenv('QDRANT_URL'),
       api_key=os.getenv('QDRANT_API_KEY'),
   )
 
+  # vectorstore = Qdrant(
+  #     client=qdrant_client,
+  #     collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+  #     embeddings=OpenAIEmbeddings(
+  #         openai_api_type=os.environ['OPENAI_API_TYPE'],  # "openai" or "azure"
+  #         openai_api_key=os.getenv('VLADS_OPENAI_KEY')))
+
   vectorstore = Qdrant(
       client=qdrant_client,
-      collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-      embeddings=OpenAIEmbeddings(
-          openai_api_type=os.environ['OPENAI_API_TYPE'],  # "openai" or "azure"
-          openai_api_key=os.getenv('VLADS_OPENAI_KEY')))
+      collection_name=os.environ['QDRANT_COLLECTION_NAME_V2'],
+      embeddings=OllamaEmbeddings(base_url='https://ollama.ncsa.ai/api/embeddings', model='nomic-embed-text:v1.5'))
 
   # S3
   s3_client = boto3.client(
@@ -121,6 +130,8 @@ def loader():
   # Create a Supabase client
   supabase_client = supabase.create_client(  # type: ignore
       supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
+  
+  
 
   # llm = AzureChatOpenAI(
   #     temperature=0,
@@ -131,14 +142,15 @@ def loader():
   #     openai_api_type=OPENAI_API_TYPE)
 
   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
-  sentry_sdk.init(
-      dsn=os.getenv("SENTRY_DSN"),
-      # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-      traces_sample_rate=1.0,
-      # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
-      # We recommend adjusting this value in production.
-      profiles_sample_rate=1.0,
-      enable_tracing=True)
+  # sentry_sdk.init(
+  #     dsn=os.getenv("SENTRY_DSN"),
+  #     # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+  #     traces_sample_rate=1.0,
+  #     environment='development',  # 'production'
+  #     # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
+  #     # We recommend adjusting this value in production.
+  #     profiles_sample_rate=1.0,
+  #     enable_tracing=True)
 
   return qdrant_client, vectorstore, s3_client, supabase_client, posthog
 
@@ -1027,10 +1039,13 @@ class Ingest():
           ]  # try to split on paragraphs... fallback to sentences, then chars, ensure we always fit in context window
       )
       contexts: List[Document] = text_splitter.create_documents(texts=texts, metadatas=metadatas)
-      input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
-
+      #input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
+      input_texts = [{'prompt': context.page_content, 'model': 'nomic-embed-text:v1.5'} for context in contexts]
+      print("Input texts: ", input_texts)
+      print("Length of input texts: ", len(input_texts))
       # check for duplicates
-      is_duplicate = self.check_for_duplicates(input_texts, metadatas)
+      #is_duplicate = self.check_for_duplicates(input_texts, metadatas)
+      is_duplicate = False
       if is_duplicate:
         self.posthog.capture('distinct_id_of_the_user',
                              event='split_and_upload_succeeded',
@@ -1050,34 +1065,53 @@ class Ingest():
 
       print("Starting to call embeddings API")
       embeddings_start_time = time.monotonic()
+      # oai = OpenAIAPIProcessor(
+      #     input_prompts_list=input_texts,
+      #     request_url='https://api.openai.com/v1/embeddings',
+      #     api_key=os.getenv('VLADS_OPENAI_KEY'),
+      #     # request_url='https://uiuc-chat-canada-east.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-05-15',
+      #     # api_key=os.getenv('AZURE_OPENAI_KEY'),
+      #     max_requests_per_minute=5_000,
+      #     max_tokens_per_minute=300_000,
+      #     max_attempts=20,
+      #     logging_level=logging.INFO,
+      #     token_encoding_name='cl100k_base')  # nosec -- reasonable bandit error suppression
       oai = OpenAIAPIProcessor(
           input_prompts_list=input_texts,
-          request_url='https://api.openai.com/v1/embeddings',
-          api_key=os.getenv('VLADS_OPENAI_KEY'),
-          # request_url='https://uiuc-chat-canada-east.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-05-15',
-          # api_key=os.getenv('AZURE_OPENAI_KEY'),
+          request_url='https://ollama.ncsa.ai/api/embeddings',
+          api_key='',
           max_requests_per_minute=5_000,
           max_tokens_per_minute=300_000,
           max_attempts=20,
           logging_level=logging.INFO,
-          token_encoding_name='cl100k_base')  # nosec -- reasonable bandit error suppression
+          token_encoding_name='cl100k_base')  
       asyncio.run(oai.process_api_requests_from_file())
       print(f"⏰ embeddings tuntime: {(time.monotonic() - embeddings_start_time):.2f} seconds")
       # parse results into dict of shape page_content -> embedding
+      #print("Results: ", oai.results)
+      
+      # embeddings_dict: dict[str, List[float]] = {
+      #     item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results
+      # }
       embeddings_dict: dict[str, List[float]] = {
-          item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results
+          item[0]['prompt']: item[1]['embedding'] for item in oai.results
       }
-
+      # print("Embeddings dict length: ", len(embeddings_dict))
+      # print("Embeddings:", embeddings_dict)
+      # exit()
       ### BULK upload to Qdrant ###
       vectors: list[PointStruct] = []
       for context in contexts:
         # !DONE: Updated the payload so each key is top level (no more payload.metadata.course_name. Instead, use payload.course_name), great for creating indexes.
         upload_metadata = {**context.metadata, "page_content": context.page_content}
+        print("Upload metadata: ", upload_metadata)
+        print("Embedding: ", embeddings_dict[context.page_content])
+        #exit()
         vectors.append(
             PointStruct(id=str(uuid.uuid4()), vector=embeddings_dict[context.page_content], payload=upload_metadata))
 
       self.qdrant_client.upsert(
-          collection_name=os.environ['QDRANT_COLLECTION_NAME'],  # type: ignore
+          collection_name=os.environ['QDRANT_COLLECTION_NAME_V2'],  # type: ignore
           points=vectors,  # type: ignore
       )
       ### Supabase SQL ###
@@ -1099,12 +1133,12 @@ class Ingest():
       }
 
       response = self.supabase_client.table(
-          os.getenv('SUPABASE_DOCUMENTS_TABLE')).insert(document).execute()  # type: ignore
+          os.getenv('SUPABASE_DOCUMENTS_TABLE_V2')).insert(document).execute()  # type: ignore
 
       # add to Nomic document map
-      if len(response.data) > 0:
-        course_name = contexts[0].metadata.get('course_name')
-        log_to_document_map(course_name)
+      # if len(response.data) > 0:
+      #   course_name = contexts[0].metadata.get('course_name')
+      #   log_to_document_map(course_name)
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
@@ -1198,7 +1232,7 @@ class Ingest():
 
         current_whole_text = ""
         for text in texts:
-          current_whole_text += text['input']
+          current_whole_text += text['prompt']
 
         if supabase_whole_text == current_whole_text:  # matches the previous file
           print(f"Duplicate ingested! 📄 s3_path/url: {original_filename}.")

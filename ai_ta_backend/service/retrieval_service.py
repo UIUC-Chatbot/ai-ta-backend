@@ -7,7 +7,7 @@ from typing import Dict, List, Union
 import openai
 from injector import inject
 from langchain.chat_models import AzureChatOpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
+#from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 
 from ai_ta_backend.database.aws import AWSStorage

@@ -142,7 +142,8 @@ class OpenAIAPIProcessor:
 
     # infer API endpoint and construct request header
     api_endpoint = api_endpoint_from_url(self.request_url)
-    request_header = {"Authorization": f"Bearer {self.api_key}"}
+    print("api_endpoint", api_endpoint)
+    #request_header = {"Authorization": f"Bearer {self.api_key}"}
 
     # initialize trackers
     queue_of_requests_to_retry = asyncio.Queue()
@@ -218,7 +219,8 @@ class OpenAIAPIProcessor:
           task = asyncio.create_task(
               next_request.call_api(
                   request_url=self.request_url,
-                  request_header=request_header,
+                  #request_header=request_header,
+                  request_header={},
                   retry_queue=queue_of_requests_to_retry,
                   status_tracker=status_tracker,
               ))
@@ -368,6 +370,8 @@ def api_endpoint_from_url(request_url: str):
   """Extract the API endpoint from the request URL."""
   if 'text-embedding-ada-002' in request_url:
     return 'embeddings'
+  elif 'ollama' in request_url:
+    return 'embeddings'
   else:
     match = re.search('^https://[^/]+/v\\d+/(.+)$', request_url)
     return match[1]  # type: ignore
@@ -419,7 +423,8 @@ def num_tokens_consumed_from_request(
         raise TypeError('Expecting either string or list of strings for "prompt" field in completion request')
   # if embeddings request, tokens = input tokens
   elif api_endpoint == "embeddings":
-    input = request_json["input"]
+    print("request_json", request_json)
+    input = request_json["input"] if "input" in request_json else request_json["prompt"]
     if isinstance(input, str):  # single input
       num_tokens = len(encoding.encode(input))
       return num_tokens

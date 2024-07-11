@@ -8,5 +8,5 @@ class EmbeddingsService:
 
     def create_embeddings(self, text: str):
         response = self.client.embeddings(model='nomic-embed-text:v1.5', prompt=text)
-        embeddings = response['embeddings']
+        embeddings = response['embedding']
         return embeddings
