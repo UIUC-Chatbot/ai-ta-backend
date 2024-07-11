@@ -24,7 +24,8 @@ def initialize_database(db_path):
                 Date_published TEXT,
                 Journal TEXT,
                 Authors TEXT,
-                Sections TEXT
+                Outline TEXT,
+                Minio_Path TEXT
             )
         ''')
 
@@ -83,7 +84,8 @@ def insert_data(metadata: Dict,
                 grouped_data: List[Dict],
                 db_path: str,
                 references: Optional[Dict] = None,
-                ref_num_tokens: Optional[Dict] = None):
+                ref_num_tokens: Optional[Dict] = None,
+                minio_path: Optional[str] = None):
   """
     Inserts article metadata and sections into the database.
 
@@ -99,14 +101,16 @@ def insert_data(metadata: Dict,
 
   conn = sqlite3.connect(db_path)
   cur = conn.cursor()
+  
+  outline = '\n'.join([f"{section['sec_num']}: {section['sec_title']}" for section in grouped_data])
 
   article_id = fastnanoid.generate()
   cur.execute(
       '''
-        INSERT INTO articles (ID, Title, Date_published, Journal, Authors, Num_tokens, Sections)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO articles (ID, Title, Date_published, Journal, Authors, Num_tokens, Outline, Minio_Path)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', (article_id, metadata['title'], metadata['date_published'], metadata['journal'], ', '.join(
-          metadata['authors']), total_tokens, ', '.join([section['sec_num'] for section in grouped_data])))
+          metadata['authors']), total_tokens, outline, minio_path))
 
   for key in references:
     ref_id = fastnanoid.generate()

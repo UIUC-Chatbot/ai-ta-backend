@@ -157,7 +157,12 @@ def parse_and_group_by_section(data) -> Any:
       references[key] = format_reference(data["pdf_parse"]["bib_entries"][key])
       ref_num_tokens[key] = len(encoding.encode(references[key]))
     
+    if metadata['abstract']:
+      grouped_texts['0'] = metadata['abstract']
+      grouped_titles['0'] = 'Abstract'
+    
     null_sec = 1
+    cur_sec = null_sec
     for entry in data["pdf_parse"]["body_text"]:
       text = entry["text"]
       section = entry["section"]
@@ -172,6 +177,7 @@ def parse_and_group_by_section(data) -> Any:
       
       if not sec_num and section not in grouped_titles.values():
         sec_num = str(null_sec)
+        cur_sec = str(null_sec)
         null_sec += 1
 
       if sec_num:
@@ -182,12 +188,14 @@ def parse_and_group_by_section(data) -> Any:
           grouped_texts[sec_num] = text
           grouped_titles[sec_num] = section
           # grouped_pages[sec_num] = [page_num]
+      else:
+        grouped_texts[cur_sec] += " " + text
 
       if sec_num:
         all_sections[sec_num] = section
 
     if not all_sections:
-      num = 0
+      num = 1
       for i in data["pdf_parse"]["body_text"]:
         grouped_texts[str(num)] = i["text"]
         num += 1

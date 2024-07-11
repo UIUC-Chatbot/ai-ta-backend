@@ -14,6 +14,9 @@ from urllib3.util.retry import Retry
 
 from SQLite import initialize_database, insert_data  # type: ignore
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 load_dotenv(override=True)
 
 # Create a custom PoolManager with desired settings
@@ -116,7 +119,8 @@ def upload_single_pdf(minio_object_name, queue):
           'references': references,
           'db_path': DB_PATH,
           'file_name': minio_object_name,
-          'ref_num_tokens': ref_num_tokens
+          'ref_num_tokens': ref_num_tokens,
+          'minio_path': f'{BUCKET_NAME}/{minio_object_name}'
       })
 
   except Exception as e:
@@ -147,7 +151,7 @@ def db_worker(queue, db_path):
       break
     try:
       insert_data(data['metadata'], data['total_tokens'], data['grouped_data'], data['db_path'], data['references'],
-                  data['ref_num_tokens'])
+                  data['ref_num_tokens'], data['minio_path'])
 
       save_processed_file(LOG_FILE, data['file_name'])
       conn.commit()
