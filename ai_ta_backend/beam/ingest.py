@@ -154,7 +154,7 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
     callback_url='https://uiuc-chat-git-ingestprogresstracking-kastanday.vercel.app/api/UIUC-api/ingestTaskCallback',
     max_pending_tasks=15_000,
     max_retries=3,
-    timeout=60 * 5,
+    timeout=60 * 15,
     loader=loader,
     autoscaler=autoscaler)
 def ingest(**inputs: Dict[str, Any]):
@@ -1140,7 +1140,7 @@ class Ingest():
       incoming_filename = incoming_s3_path.split('/')[-1]
       print("Full filename: ", incoming_filename)
       pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
-                          re.I)  # uuid V4 pattern, and v4 only.
+                           re.I)  # uuid V4 pattern, and v4 only.
       if bool(pattern.search(incoming_filename)):
         # uuid pattern exists -- remove the uuid and proceed with duplicate checking
         original_filename = incoming_filename[37:]
@@ -1148,11 +1148,12 @@ class Ingest():
         # do not remove anything and proceed with duplicate checking
         original_filename = incoming_filename
       print("Filename after removing uuid: ", original_filename)
-      
+
       supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
           'course_name', course_name).like('s3_path', '%' + original_filename + '%').order('id', desc=True).execute()
       supabase_contents = supabase_contents.data
-      print("No. of S3 path based records retrieved: ", len(supabase_contents)) # multiple records can be retrieved: 3.pdf and 453.pdf
+      print("No. of S3 path based records retrieved: ",
+            len(supabase_contents))  # multiple records can be retrieved: 3.pdf and 453.pdf
 
     elif url:
       original_filename = url
@@ -1168,7 +1169,7 @@ class Ingest():
     exact_doc_exists = False
     if len(supabase_contents) > 0:  # a doc with same filename exists in Supabase
       for record in supabase_contents:
-        if incoming_s3_path:  
+        if incoming_s3_path:
           curr_filename = record['s3_path'].split('/')[-1]
           older_s3_path = record['s3_path']
           if bool(pattern.search(curr_filename)):
@@ -1180,13 +1181,13 @@ class Ingest():
         elif url:
           print("URL retrieved from SQL: ", record.keys())
           sql_filename = record['url']
-        else: 
+        else:
           continue
         print("Original filename: ", original_filename, "Current SQL filename: ", sql_filename)
-        
-        if original_filename == sql_filename: # compare og s3_path/url with incoming s3_path/url
+
+        if original_filename == sql_filename:  # compare og s3_path/url with incoming s3_path/url
           supabase_contexts = record
-          
+
           exact_doc_exists = True
           print("Exact doc exists in Supabase:", sql_filename)
           break
