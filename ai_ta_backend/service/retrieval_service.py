@@ -323,23 +323,23 @@ class RetrievalService:
     return contexts
 
   def delete_from_nomic_and_supabase(self, course_name: str, identifier_key: str, identifier_value: str):
-    try:
-      print(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
-      response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
-      if not response.data:
-        raise Exception(f"No materials found for {course_name} using {identifier_key}: {identifier_value}")
-      data = response.data[0]  # single record fetched
-      nomic_ids_to_delete = [str(data['id']) + "_" + str(i) for i in range(1, len(data['contexts']) + 1)]
+    # try:
+    #   print(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
+    #   response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
+    #   if not response.data:
+    #     raise Exception(f"No materials found for {course_name} using {identifier_key}: {identifier_value}")
+    #   data = response.data[0]  # single record fetched
+    #   nomic_ids_to_delete = [str(data['id']) + "_" + str(i) for i in range(1, len(data['contexts']) + 1)]
 
       # delete from Nomic
-      response = self.sqlDb.getProjectsMapForCourse(course_name)
-      if not response.data:
-        raise Exception(f"No document map found for this course: {course_name}")
-      project_id = response.data[0]['doc_map_id']
-      self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
-    except Exception as e:
-      print(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
-      self.sentry.capture_exception(e)
+      # response = self.sqlDb.getProjectsMapForCourse(course_name)
+      # if not response.data:
+      #   raise Exception(f"No document map found for this course: {course_name}")
+      # project_id = response.data[0]['doc_map_id']
+      # self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
+    # except Exception as e:
+    #   print(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
+    #   self.sentry.capture_exception(e)
 
     try:
       print(f"Supabase Delete. course: {course_name} using {identifier_key}: {identifier_value}")
