@@ -15,9 +15,10 @@ outline = {
 }
 
 chunks_to_keep = []
+is_visited = {}
 
 for chunk_id in chunks:
-    chunks = (evaluate_chunks_with_step(query, chunk_id, 0, chunks_to_keep))
+    chunks = evaluate_chunks_with_step(query, chunk_id, 0, chunks_to_keep, is_visited)
     if chunks is not None:
         chunks_to_keep.append(chunks)
 

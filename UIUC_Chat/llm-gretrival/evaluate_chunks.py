@@ -149,10 +149,15 @@ def evaluate_chunks(query, chunks, outline):
 #     print("true" in tool.function.arguments)
 #     print("---")
 
-def evaluate_chunks_with_step(query, chunk_id, step, chunks_to_keep):
+def evaluate_chunks_with_step(query, chunk_id, step, chunks_to_keep, is_visited):
     if step > 4:
         return
+    if chunk_id in is_visited:
+        print("already visited")
+        return
+    is_visited[chunk_id] = True
     step += 1
+    
     print(chunk_id)
     context_data, current_context, outline = get_context_given_contextID(chunk_id)
     completion = evaluate_chunks(query, current_context, outline)
