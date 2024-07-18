@@ -54,7 +54,7 @@ from qdrant_client.models import PointStruct
 
 requirements = [
     "openai<1.0",
-    "supabase==2.0.2",
+    "supabase==2.5.3",
     "tiktoken==0.5.1",
     "boto3==1.28.79",
     "qdrant-client==1.7.3",
