@@ -302,7 +302,7 @@ class CanvasIngest():
 
       course = self.canvas_client.get_course(api_path.split('/')[-1])
       files = course.get_files()
-
+      
       for file in files:
         # file_name = file['filename']
         file_name = file.filename
@@ -326,7 +326,7 @@ class CanvasIngest():
     try:
       pages_request = requests.get(api_path + "/pages", headers=self.headers)
       pages = pages_request.json()
-
+      print("Pages: ", pages)
       for page in pages:
         if page['html_url'] != '':
           page_name = page['url'] + ".html"
@@ -373,24 +373,56 @@ class CanvasIngest():
       for module in modules:
         module_items = module['items']
         for item in module_items:
-          if item['type'] == 'ExternalUrl': # if any external link is present in the module
+          if item['type'] == 'ExternalUrl': # EXTERNAL LINK
             external_url = item['external_url']
             url_title = item['title']
 
             # Download external url as HTML
             response = requests.get(external_url)
             if response.status_code == 200:
-              html_file_name = url_title + ".html"
+              html_file_name = "external_link_" + url_title.replace(" ", "_") + ".html"
               with open(dest_folder + "/" + html_file_name, 'w') as html_file:
                 html_file.write(response.text)
-          else:
-            print("item type: ", item['type'])
+          
+          elif item['type'] == 'Discussion':  # DISCUSSION
+            discussion_url = item['url']
+            discussion_req = requests.get(discussion_url, headers=self.headers)
+
+            if discussion_req.status_code == 200:
+              discussion_data = discussion_req.json()
+              discussion_message = discussion_data['message']
+              discussion_filename = "Discussion_" + discussion_data['title'].replace(" ", "_") + ".html"
+
+              # write the message to a file
+              with open(dest_folder + "/" + discussion_filename, 'w') as html_file:
+                html_file.write(discussion_message)
+
+          elif item['type'] == 'Assignment':  # ASSIGNMENT
+            print("Assigments are handled via download_assignments()")
+            continue
+
+          elif item['type'] == 'Quiz': 
+            print("Quizzes are not handled at the moment.")
+            continue
+
+          else: # OTHER ITEMS - PAGES
+            if 'url' not in item:
+              print("No URL in item: ", item['type'])
+              continue
+
             item_url = item['url']
             item_request = requests.get(item_url, headers=self.headers)
+            
             if item_request.status_code == 200:
               item_data = item_request.json()
+              if 'body' not in item_data:
+                print("No body in item: ", item_data)
+                continue
+
               item_body = item_data['body']
-              html_file_name = item_data['url'] + ".html"
+              html_file_name = item['type'] + "_" + item_data['url'] + ".html"
+
+              # write page body to a file
               with open(dest_folder + "/" + html_file_name, 'w') as html_file:
                 html_file.write(item_body)
             else:
@@ -430,7 +462,7 @@ class CanvasIngest():
     try:
       discussion_request = requests.get(api_path + "/discussion_topics", headers=self.headers)
       discussions = discussion_request.json()
-
+      #print("Discussions: ", discussions)
       for discussion in discussions:
         discussion_content = discussion['message']
         discussion_name = discussion['title'] + ".html"
