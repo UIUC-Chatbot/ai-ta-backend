@@ -186,7 +186,15 @@ class CanvasIngest():
           elif key == 'discussions':
             self.download_discussions(dest_folder, api_path)
 
-      # at this point, we have all extracted files in the dest_folder.
+      # at this point, we have all canvas files in the dest_folder.
+      # parse all HTML files in dest_folder and extract URLs
+      extract_urls_from_html = self.extract_urls_from_html(dest_folder)
+      print("extract_urls_from_html=", extract_urls_from_html)
+
+      # links - canvas files, external urls, embedded videos
+
+
+      
 
       return "Success"
     except Exception as e:
@@ -473,3 +481,49 @@ class CanvasIngest():
     except Exception as e:
       sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
+    
+  def extract_urls_from_html(self, dir_path: str) -> Dict[str, List[str]]:
+    """
+    Extracts URLs from all HTML files in a directory.
+    """
+    print("In extract_urls_from_html")
+    try:
+      file_links = []
+      video_links = []
+      external_links = []
+      for file_name in os.listdir(dir_path):
+        if file_name.endswith(".html"):
+          file_path = os.path.join(dir_path, file_name)
+          try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+              content = file.read()
+          except UnicodeDecodeError:
+            with open(file_path, 'r', encoding='latin-1') as file:
+              content = file.read()
+          
+          soup = BeautifulSoup(content, 'html.parser')
+
+          # Extracting links from href attributes
+          href_links = soup.find_all('a', href=True)
+          for link in href_links:
+            href = link['href']
+            if re.match(r'https://canvas\.illinois\.edu/courses/\d+/files/.*', href):
+              file_links.append(href)
+            else:
+              external_links.append(href)
+          
+          # Extracting video links from src attributes
+          src_links = soup.find_all('iframe', src=True)
+          for link in src_links:
+            src = link['src']
+            if re.match(r'https://ensemble\.illinois\.edu/hapi/v1/contents/.*', src):
+              video_links.append(src)
+
+      return {
+          'file_links': file_links,
+          'video_links': video_links,
+          'external_links': external_links}  
+
+    except Exception as e:
+      sentry_sdk.capture_exception(e)
+      return {}
