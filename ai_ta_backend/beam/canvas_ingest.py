@@ -364,14 +364,16 @@ class CanvasIngest():
     Rest of the things are covered in other functions.
     """
     print("In download_modules")
+    # need to parse pages through modules
     try:
       module_request = requests.get(api_path + "/modules?include=items", headers=self.headers)
+      
       modules = module_request.json()
 
       for module in modules:
         module_items = module['items']
         for item in module_items:
-          if item['type'] == 'ExternalUrl':
+          if item['type'] == 'ExternalUrl': # if any external link is present in the module
             external_url = item['external_url']
             url_title = item['title']
 
@@ -381,6 +383,19 @@ class CanvasIngest():
               html_file_name = url_title + ".html"
               with open(dest_folder + "/" + html_file_name, 'w') as html_file:
                 html_file.write(response.text)
+          else:
+            print("item type: ", item['type'])
+            item_url = item['url']
+            item_request = requests.get(item_url, headers=self.headers)
+            if item_request.status_code == 200:
+              item_data = item_request.json()
+              item_body = item_data['body']
+              html_file_name = item_data['url'] + ".html"
+              with open(dest_folder + "/" + html_file_name, 'w') as html_file:
+                html_file.write(item_body)
+            else:
+              print("Item request failed with status code: ", item_request.status_code)
+          
       return "Success"
     except Exception as e:
       sentry_sdk.capture_exception(e)
