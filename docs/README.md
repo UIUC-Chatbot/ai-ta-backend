@@ -15,6 +15,10 @@ layout:
 
 # Welcome
 
+{% embed url="https://www.youtube.com/watch?v=IIMCrIoz7LM" %}
+Short and sweet introduction to UIUC.chat
+{% endembed %}
+
 ## Using the Website
 
 1. Go to [uiuc.chat](https://uiuc.chat)
