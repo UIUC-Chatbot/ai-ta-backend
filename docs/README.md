@@ -1,5 +1,7 @@
 ---
-description: Get started using the UIUC.chat
+description: >-
+  UIUC.chat is the fastest and lowest effort way that I can imagine to train a
+  your own LLM.
 layout:
   title:
     visible: true
