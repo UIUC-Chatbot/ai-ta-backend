@@ -192,13 +192,20 @@ class CanvasIngest():
 
       # at this point, we have all canvas files in the dest_folder.
       # parse all HTML files in dest_folder and extract URLs
-      extract_urls_from_html = self.extract_urls_from_html(dest_folder)
-      print("extract_urls_from_html=", extract_urls_from_html)
+      extracted_urls_from_html = self.extract_urls_from_html(dest_folder)
+      #print("extract_urls_from_html=", extract_urls_from_html)
 
       # links - canvas files, external urls, embedded videos
-
-
+      file_links = extracted_urls_from_html.get('file_links', [])
       
+      video_links = extracted_urls_from_html.get('video_links', [])
+      #external_links = extract_urls_from_html.get('external_links', [])
+
+      # download files from URLs
+      file_download_status = self.download_files_from_urls(file_links, canvas_course_id, dest_folder)
+      video_download_status = self.download_videos_from_urls(video_links, canvas_course_id, dest_folder)
+      print("file_download_status=", file_download_status)
+      print("video_download_status=", video_download_status)
 
       return "Success"
     except Exception as e:
@@ -266,11 +273,13 @@ class CanvasIngest():
         uid = str(uuid.uuid4()) + '-'
 
         unique_filename = uid + name_without_extension + extension
+        s3_path = "courses/" + course_name + "/" + unique_filename
         readable_filename = name_without_extension + extension
-        all_s3_paths.append(unique_filename)
+        all_s3_paths.append(s3_path)
         all_readable_filenames.append(readable_filename)
         print("Uploading file: ", readable_filename)
-        self.upload_file(file_path, os.getenv('S3_BUCKET_NAME'), unique_filename)
+        print("Filepath: ", file_path)
+        self.upload_file(file_path, os.getenv('S3_BUCKET_NAME'), s3_path)
 
       # Delete files from local directory
       shutil.rmtree(folder_path)
@@ -338,7 +347,7 @@ class CanvasIngest():
     try:
       pages_request = requests.get(api_path + "/pages", headers=self.headers)
       pages = pages_request.json()
-      print("Pages: ", pages)
+      #print("Pages: ", pages)
       for page in pages:
         if page['html_url'] != '':
           page_name = page['url'] + ".html"
@@ -414,12 +423,12 @@ class CanvasIngest():
             continue
 
           elif item['type'] == 'Quiz': 
-            print("Quizzes are not handled at the moment.")
+            #print("Quizzes are not handled at the moment.")
             continue
 
           else: # OTHER ITEMS - PAGES
             if 'url' not in item:
-              print("No URL in item: ", item['type'])
+              #print("No URL in item: ", item['type'])
               continue
 
             item_url = item['url']
@@ -428,7 +437,7 @@ class CanvasIngest():
             if item_request.status_code == 200:
               item_data = item_request.json()
               if 'body' not in item_data:
-                print("No body in item: ", item_data)
+                #print("No body in item: ", item_data)
                 continue
 
               item_body = item_data['body']
@@ -525,8 +534,7 @@ class CanvasIngest():
 
       return {
           'file_links': file_links,
-          'video_links': video_links,
-          'external_links': external_links}  
+          'video_links': video_links,}  
 
     except Exception as e:
       sentry_sdk.capture_exception(e)
@@ -537,17 +545,25 @@ class CanvasIngest():
     This function downloads files from a given Canvas course using the URLs provided.
     input: urls - list of URLs scraped from Canvas HTML pages.
     """
+    print("In download_files_from_urls")
+    #print("Number of URLs: ", len(urls))
     try:
       for url in urls:
+        #print("Downloading file from URL: ", url)
         with requests.get(url, stream=True) as r:
           content_type = r.headers.get('Content-Type')
-          print("Content type: ", content_type)
+          #print("Content type: ", content_type)
           content_disposition = r.headers.get('Content-Disposition')
+          #print("Content disposition: ", content_disposition)
+          if content_disposition is None:
+            #print("No content disposition")
+            continue
+
           if 'filename=' in content_disposition:
             filename = content_disposition.split('filename=')[1].strip('"')
-            print("local filename: ", filename)
+            #print("local filename: ", filename)
           else:
-            print("No filename in content disposition")
+            #print("No filename in content disposition")
             continue
           
           # write to PDF
@@ -567,26 +583,26 @@ class CanvasIngest():
     """
     This function downloads videos from a given Canvas course using the URLs provided.
     """
+    print("In download_videos_from_urls")
+    #print("Video URLs: ", len(urls))
     try:
+      count = 0
       for url in urls:
+        count += 1
         with requests.get(url, stream=True) as r:
-          content_type = r.headers.get('Content-Type')
-          print("Content type: ", content_type)
-          content_disposition = r.headers.get('Content-Disposition')
-          if 'filename=' in content_disposition:
-            filename = content_disposition.split('filename=')[1].strip('"')
-            print("local filename: ", filename)
-          else:
-            print("No filename in content disposition")
-            continue
+          filename = f"{course_id}_video_{count}.mp4"
           
           # download video
           file_path = os.path.join(dir_path, filename)
           ydl_opts = {
-            'outtmpl': file_path
+                'outtmpl': f'{dir_path}/{course_id}_video_{count}.%(ext)s',  # Dynamic extension
+                'format': 'best',  # Best quality format
           }
           with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
+            info_dict = ydl.extract_info(url, download=True)
+            ext = info_dict.get('ext', 'mp4')  # Get extension from info, default to mp4
+            filename = f"{course_id}_video_{count}.{ext}"
+            
 
           print(f"Video downloaded successfully: {filename}")
 

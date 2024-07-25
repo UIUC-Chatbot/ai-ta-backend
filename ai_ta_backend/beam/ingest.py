@@ -51,6 +51,9 @@ from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
 from supabase.client import ClientOptions
 
+import subprocess
+
+
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain.chat_models import AzureChatOpenAI
 
@@ -79,6 +82,7 @@ requirements = [
     "sentry-sdk==1.39.1",
     "nomic==2.0.14",
     "pdfplumber==0.11.0",  # PDF OCR, better performance than Fitz/PyMuPDF in my Gies PDF testing.
+    
 ]
 
 # TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
@@ -537,8 +541,28 @@ class Ingest():
       with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
         # download from S3 into an video tmpfile
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
-        # extract audio from video tmpfile
-        mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
+        
+        # try with original file first
+        try:
+          mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
+        except Exception as e:
+          print("Applying moov atom fix and retrying...")
+          # Fix the moov atom issue using FFmpeg
+          fixed_video_tmpfile = NamedTemporaryFile(suffix=file_ext, delete=False)
+          try:
+            result = subprocess.run([
+                      'ffmpeg', '-y', '-i', video_tmpfile.name, '-c', 'copy', '-movflags', 'faststart', fixed_video_tmpfile.name
+                  ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            #print(result.stdout.decode())
+            #print(result.stderr.decode())
+          except subprocess.CalledProcessError as e:
+            #print(e.stdout.decode())
+            #print(e.stderr.decode())
+            print("Error in FFmpeg command: ", e)
+            raise e
+          
+          # extract audio from video tmpfile
+          mp4_version = AudioSegment.from_file(fixed_video_tmpfile.name, file_ext[1:])
 
       # save the extracted audio as a temporary webm file
       with NamedTemporaryFile(suffix=".webm", dir=media_dir, delete=False) as webm_tmpfile:
