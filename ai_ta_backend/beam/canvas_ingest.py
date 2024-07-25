@@ -17,12 +17,16 @@ import sentry_sdk
 from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
 from canvasapi import Canvas
 from posthog import Posthog
+from bs4 import BeautifulSoup
+import yt_dlp
 
 requirements = [
     "boto3==1.28.79",
     "posthog==3.1.0",
     "canvasapi==3.2.0",
     "sentry-sdk==1.39.1",
+    "bs4==0.0.2",
+    "yt-dlp==2024.7.16",
 ]
 
 app = App(
@@ -527,3 +531,67 @@ class CanvasIngest():
     except Exception as e:
       sentry_sdk.capture_exception(e)
       return {}
+    
+  def download_files_from_urls(self, urls: List[str], course_id: int, dir_path: str):
+    """
+    This function downloads files from a given Canvas course using the URLs provided.
+    input: urls - list of URLs scraped from Canvas HTML pages.
+    """
+    try:
+      for url in urls:
+        with requests.get(url, stream=True) as r:
+          content_type = r.headers.get('Content-Type')
+          print("Content type: ", content_type)
+          content_disposition = r.headers.get('Content-Disposition')
+          if 'filename=' in content_disposition:
+            filename = content_disposition.split('filename=')[1].strip('"')
+            print("local filename: ", filename)
+          else:
+            print("No filename in content disposition")
+            continue
+          
+          # write to PDF
+          file_path = os.path.join(dir_path, filename)
+          with open(file_path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+              f.write(chunk)
+          print("Downloaded file: ", filename)
+
+      return "Success"
+    except Exception as e:
+      sentry_sdk.capture_exception(e)
+      print("Error downloading files from URLs: ", e)
+      return "Failed! Error: " + str(e)
+    
+  def download_videos_from_urls(self, urls: List[str], course_id: int, dir_path: str):
+    """
+    This function downloads videos from a given Canvas course using the URLs provided.
+    """
+    try:
+      for url in urls:
+        with requests.get(url, stream=True) as r:
+          content_type = r.headers.get('Content-Type')
+          print("Content type: ", content_type)
+          content_disposition = r.headers.get('Content-Disposition')
+          if 'filename=' in content_disposition:
+            filename = content_disposition.split('filename=')[1].strip('"')
+            print("local filename: ", filename)
+          else:
+            print("No filename in content disposition")
+            continue
+          
+          # download video
+          file_path = os.path.join(dir_path, filename)
+          ydl_opts = {
+            'outtmpl': file_path
+          }
+          with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+          print(f"Video downloaded successfully: {filename}")
+
+      return "Success"
+    except Exception as e:
+      sentry_sdk.capture_exception(e)
+      print("Error downloading videos from URLs: ", e)
+      return "Failed! Error: " + str(e)
