@@ -6,6 +6,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 import time
+import crossref_commons
 
 def extract_article_metadata(search_str: str) -> str:
     """
@@ -21,19 +22,51 @@ def extract_article_metadata(search_str: str) -> str:
     search_results = extract_doi(search_results)
 
     # fetch metadata for each DOI using crossref API
-        
+    for article in search_results:
+        doi = article['doi']
+        if doi != "N/A":
+            metadata = get_article_metadata_from_crossref(doi)
+            article['doi_number'] = doi
+            article['publisher'] = metadata['publisher']
+            
+            if 'license' in metadata:
+                print("license: ", metadata['license'])
+            
+                for ele in metadata['license']:
+                    if ele['content-version'] == 'tdm':
+                        article['license'] = ele['URL']
+                        break
+                # if license is still empty, go for vor
+                if 'license' not in article:
+                    for ele in metadata['license']:
+                        if ele['content-version'] == 'vor':
+                            article['license'] = ele['URL']
+                            break
+                else:
+                    article['license'] = "N/A"
+                    
+            else:
+                article['license'] = "N/A"   
 
+            article['metadata'] = metadata   
 
+            print("Article: ", article)
+            
+    print("Full list of articles: ", search_results)        
     return "Article metadata extracted successfully."
 
 
 def get_search_results(query):
     # Set up Selenium with Chrome WebDriver
+    chrome_binary_path = "C:/Program Files/Google/Chrome/Application/chrome.exe"
     chrome_options = Options()
+    chrome_options.binary_location = chrome_binary_path
+
     chrome_options.add_argument("--headless")  # Run in headless mode (no GUI)
     chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
     chrome_options.add_argument("--no-sandbox")  # Required for running as root
     chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+
 
     # Use ChromeDriverManager to automatically manage the driver
     driver_service = Service(ChromeDriverManager().install())
@@ -110,6 +143,17 @@ def extract_doi(article_list: list):
     driver.quit()
 
     return article_list
+
+
+def get_article_metadata_from_crossref(doi: str):
+    """
+    Get article metadata from Crossref API.
+    """
+    # Get metadata from Crossref
+    metadata = crossref_commons.retrieval.get_publication_as_json(doi)
+    print("Metadata: ", metadata)
+    
+    return metadata
 
     
 
