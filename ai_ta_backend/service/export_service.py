@@ -268,7 +268,7 @@ class ExportService:
     try:
       response = self.sql.getDocumentsBetweenDates(course_name, from_date, to_date, 'llm-convo-monitor')
       responseCount = response.count or 0
-      print(f"Fetched documents count: {responseCount}")
+      print(f"Received request to export: {responseCount} conversations")
     except Exception as e:
       error_log.append(f"Error fetching documents: {str(e)}")
       print(f"Error fetching documents: {str(e)}")
@@ -288,12 +288,12 @@ class ExportService:
         first_id = response.data[0]['id']
         last_id = response.data[-1]['id']
         total_count = response.count or 0
-        print(f"Processing documents. First ID: {first_id}, Last ID: {last_id}, Total count: {total_count}")
+        print(f"Processing conversations. First ID: {first_id}, Last ID: {last_id}, Total count: {total_count}")
 
         file_paths = _initialize_file_paths(course_name)
-        print(f"Initialized file paths: {file_paths}")
+        # print(f"Initialized file paths: {file_paths}")
         workbook, worksheet, wrap_format = _initialize_excel(file_paths['excel'])
-        print(f"Initialized Excel workbook at path: {file_paths['excel']}")
+        # print(f"Initialized Excel workbook at path: {file_paths['excel']}")
       except Exception as e:
         error_log.append(f"Error initializing file paths or Excel: {str(e)}")
         print(f"Error initializing file paths or Excel: {str(e)}")
@@ -307,28 +307,30 @@ class ExportService:
           print(f"Fetching conversations from ID: {first_id} to {last_id}")
           response = self.sql.getAllConversationsBetweenIds(course_name, first_id, last_id)
           curr_count += len(response.data)
-          print(f"Fetched {len(response.data)} conversations, current count: {curr_count}")
+          # print(f"Fetched {len(response.data)} conversations, current count: {curr_count}")
 
           for convo in response.data:
-            print(f"Processing conversation ID: {convo['convo_id']}")
+            # print(f"Processing conversation ID: {convo['convo_id']}")
             _process_conversation(self.s3, convo, course_name, file_paths, worksheet, row_num, error_log, wrap_format)
             row_num += len(convo['convo']['messages'])
 
           if len(response.data) > 0:
             first_id = response.data[-1]['id'] + 1
-            print(f"Updated first ID to: {first_id}")
+            # print(f"Updated first ID to: {first_id}")
         except Exception as e:
           error_log.append(f"Error processing conversations: {str(e)}")
           print(f"Error processing conversations: {str(e)}")
           break
 
+      print(f"Processed {curr_count} conversations, ready to finalize export.")
+
       try:
         workbook.close()
         print(f"Closed Excel workbook.")
         zip_file_path = _create_zip(file_paths, error_log)
-        print(f"Created zip file at path: {zip_file_path}")
+        # print(f"Created zip file at path: {zip_file_path}")
         _cleanup(file_paths)
-        print(f"Cleaned up temporary files.")
+        # print(f"Cleaned up temporary files.")
       except Exception as e:
         error_log.append(f"Error finalizing export: {str(e)}")
         print(f"Error finalizing export: {str(e)}")
@@ -377,11 +379,13 @@ def export_data_in_bg_extended(response, download_type, course_name, s3_path):
       # Update first_id for the next batch
       if len(response.data) > 0:
         first_id = response.data[-1]['id'] + 1
-        print(f"Updated first ID to: {first_id}")
+        # print(f"Updated first ID to: {first_id}")
     except Exception as e:
       error_log.append(f"Error processing conversations: {str(e)}")
       print(f"Error processing conversations: {str(e)}")
       break
+
+  print(f"Processed {curr_doc_count} conversations, ready to finalize export.")
 
   try:
     workbook.close()

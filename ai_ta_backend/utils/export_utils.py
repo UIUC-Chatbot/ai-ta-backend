@@ -57,11 +57,12 @@ def _process_conversation(s3, convo, course_name, file_paths, worksheet, row_num
 
     _create_markdown(s3, convo_id, messages, file_paths['markdown_dir'], file_paths['media_dir'], user_email, error_log,
                      timestamp, convo_name)
-    print(f"Created markdown for conversation ID: {convo_id}")
+    # print(f"Created markdown for conversation ID: {convo_id}")
     _write_to_excel(convo_id, course_name, messages, worksheet, row_num, user_email, timestamp, error_log, wrap_format)
-    print(f"Wrote to Excel for conversation ID: {convo_id}")
+    # print(f"Wrote to Excel for conversation ID: {convo_id}")
     _append_to_jsonl(convo_data, file_paths['jsonl'], error_log)
-    print(f"Appended to JSONL for conversation ID: {convo_id}")
+    # print(f"Appended to JSONL for conversation ID: {convo_id}")
+    print(f"Processed conversation ID: {convo_id}")
   except Exception as e:
     print(f"Error processing conversation ID {convo['convo_id']}: {str(e)}")
     error_log.append(f"Error processing conversation ID {convo['convo_id']}: {str(e)}")
