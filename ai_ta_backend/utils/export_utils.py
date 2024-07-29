@@ -70,20 +70,19 @@ def _process_conversation(s3, convo, course_name, file_paths, worksheet, row_num
 
 def _create_markdown(s3, convo_id, messages, markdown_dir, media_dir, user_email, error_log, timestamp, convo_name):
   try:
-
     markdown_filename = f"{timestamp.split('T')[0]}-{convo_name}.md"
     markdown_file_path = os.path.join(markdown_dir, markdown_filename)
     with open(markdown_file_path, 'w') as md_file:
-      md_file.write(f"## **Conversation ID**: {convo_id}\n")
+      md_file.write(f"## Conversation ID: {convo_id}\n")
       md_file.write(f"## **User Email**: {user_email}\n\n")
+      md_file.write(f"### **Timestamp**: {timestamp}\n\n")
 
       for message in messages:
-        if message['role'] == 'user':
-          content = _process_message_content(s3, message['content'], convo_id, media_dir, error_log)
-          md_file.write(f"### **User**: {content}\n\n")
-        elif message['role'] == 'assistant':
-          content = _process_message_content(s3, message['content'], convo_id, media_dir, error_log)
-          md_file.write(f"### **Assistant**: {content}\n\n")
+        role = "User" if message['role'] == 'user' else "Assistant"
+        content = _process_message_content(s3, message['content'], convo_id, media_dir, error_log)
+        md_file.write(f"### {role}:\n")
+        md_file.write(f"{content}\n\n")
+        md_file.write("---\n\n")  # Separator for each message for better readability
 
     print(f"Created markdown file at path: {markdown_file_path}")
   except Exception as e:

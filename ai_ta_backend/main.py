@@ -304,7 +304,7 @@ def export_convo_history_v2(service: ExportService):
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
   export_status = service.export_convo_history(course_name, from_date, to_date)
-  print("EXPORT FILE LINKS: ", export_status)
+  print("Export processing response: ", export_status)
 
   if export_status['response'] == "No data found between the given dates.":
     response = Response(status=204)
