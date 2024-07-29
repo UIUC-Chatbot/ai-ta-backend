@@ -204,7 +204,6 @@ def nomic_map(service: NomicService):
 #   response.headers.add('Access-Control-Allow-Origin', '*')
 #   return response
 
-
 # @app.route('/createConversationMap', methods=['GET'])
 # def createConversationMap(service: NomicService):
 #   course_name: str = request.args.get('course_name', default='', type=str)
@@ -218,7 +217,6 @@ def nomic_map(service: NomicService):
 #   response = jsonify(map_id)
 #   response.headers.add('Access-Control-Allow-Origin', '*')
 #   return response
-
 
 # @app.route('/logToConversationMap', methods=['GET'])
 # def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
@@ -289,10 +287,12 @@ def export_convo_history(service: ExportService):
 
   return response
 
+
 @app.route('/test-process', methods=['GET'])
 def test_process(service: ExportService):
   service.test_process()
   return jsonify({"response": "success"})
+
 
 @app.route('/export-convo-history', methods=['GET'])
 def export_convo_history_v2(service: ExportService):

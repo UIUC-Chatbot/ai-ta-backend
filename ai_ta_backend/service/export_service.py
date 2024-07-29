@@ -1,12 +1,13 @@
 import base64
 import json
 import os
-from urllib.parse import urlparse
 import uuid
 import zipfile
+from urllib.parse import urlparse
 
 import pandas as pd
 import requests
+import xlsxwriter
 from injector import inject
 
 from ai_ta_backend.database.aws import AWSStorage
@@ -14,13 +15,19 @@ from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.executors.process_pool_executor import ProcessPoolExecutorAdapter
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.email.send_transactional_email import send_email
-import xlsxwriter
+from ai_ta_backend.utils.export_utils import (
+    _cleanup,
+    _create_zip,
+    _initialize_excel,
+    _initialize_file_paths,
+    _process_conversation,
+)
 
-from ai_ta_backend.utils.export_utils import _cleanup, _create_zip, _initialize_excel, _initialize_file_paths, _process_conversation
 
 def _task_method(index):
-    print(f"Task {index} is running in process {os.getpid()}", flush=True)
-    return index
+  print(f"Task {index} is running in process {os.getpid()}", flush=True)
+  return index
+
 
 class ExportService:
 
@@ -31,16 +38,14 @@ class ExportService:
     self.sentry = sentry
     self.executor = executor
 
-  
   def test_process(self):
-        """
+    """
         This function is used to test the process.
         """
-        futures = [self.executor.submit(_task_method, i) for i in range(5)]
-        results = [future.result() for future in futures]
-        print(results)
-        return {"response": "Test process successful.", "results": results}
-
+    futures = [self.executor.submit(_task_method, i) for i in range(5)]
+    results = [future.result() for future in futures]
+    print(results)
+    return {"response": "Test process successful.", "results": results}
 
   def export_documents_json(self, course_name: str, from_date='', to_date=''):
     """
@@ -246,7 +251,7 @@ class ExportService:
         return {"response": "Error downloading file!"}
     else:
       return {"response": "No data found between the given dates."}
-    
+
   def export_convo_history(self, course_name: str, from_date='', to_date=''):
     """
     This function exports the conversation history to a zip file containing markdown files, an Excel file, and a JSONL file.
@@ -255,7 +260,9 @@ class ExportService:
         from_date (str, optional): The start date for the data export. Defaults to ''.
         to_date (str, optional): The end date for the data export. Defaults to ''.
     """
-    print(f"Exporting extended conversation history for course: {course_name}, from_date: {from_date}, to_date: {to_date}")
+    print(
+        f"Exporting extended conversation history for course: {course_name}, from_date: {from_date}, to_date: {to_date}"
+    )
     error_log = []
 
     try:
@@ -270,7 +277,9 @@ class ExportService:
     if responseCount > 500:
       filename = course_name[0:10] + '-' + str(generate_short_id()) + '_convos_extended.zip'
       s3_filepath = f"courses/{course_name}/{filename}"
-      print(f"Response count greater than 500, processing in background. Filename: {filename}, S3 filepath: {s3_filepath}")
+      print(
+          f"Response count greater than 500, processing in background. Filename: {filename}, S3 filepath: {s3_filepath}"
+      )
       self.executor.submit(export_data_in_bg_extended, response, "conversations", course_name, s3_filepath)
       return {"response": 'Download from S3', "s3_path": s3_filepath}
 
@@ -329,7 +338,8 @@ class ExportService:
     else:
       print("No data found between the given dates.")
       return {"response": "No data found between the given dates."}
-    
+
+
 def export_data_in_bg_extended(response, download_type, course_name, s3_path):
   """
   This function is called to upload the extended conversation history to S3.
@@ -380,7 +390,7 @@ def export_data_in_bg_extended(response, download_type, course_name, s3_path):
     print(f"Created zip file at path: {zip_file_path}")
     _cleanup(file_paths)
     print(f"Cleaned up temporary files.")
-  
+
     # Upload the zip file to S3
     s3.upload_file(zip_file_path, os.environ['S3_BUCKET_NAME'], s3_path)
     os.remove(zip_file_path)

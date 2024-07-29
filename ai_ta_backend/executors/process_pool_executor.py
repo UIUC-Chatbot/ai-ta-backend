@@ -2,8 +2,9 @@ from concurrent.futures import ProcessPoolExecutor
 
 
 class ProcessPoolExecutorInterface:
-    def submit(self, fn, *args, **kwargs):
-        raise NotImplementedError
+
+  def submit(self, fn, *args, **kwargs):
+    raise NotImplementedError
 
 
 class ProcessPoolExecutorAdapter(ProcessPoolExecutorInterface):
