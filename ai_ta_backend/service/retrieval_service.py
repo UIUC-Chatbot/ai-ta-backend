@@ -331,12 +331,12 @@ class RetrievalService:
     #   data = response.data[0]  # single record fetched
     #   nomic_ids_to_delete = [str(data['id']) + "_" + str(i) for i in range(1, len(data['contexts']) + 1)]
 
-      # delete from Nomic
-      # response = self.sqlDb.getProjectsMapForCourse(course_name)
-      # if not response.data:
-      #   raise Exception(f"No document map found for this course: {course_name}")
-      # project_id = response.data[0]['doc_map_id']
-      # self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
+    # delete from Nomic
+    # response = self.sqlDb.getProjectsMapForCourse(course_name)
+    # if not response.data:
+    #   raise Exception(f"No document map found for this course: {course_name}")
+    # project_id = response.data[0]['doc_map_id']
+    # self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
     # except Exception as e:
     #   print(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
     #   self.sentry.capture_exception(e)
@@ -365,7 +365,7 @@ class RetrievalService:
       disabled_doc_groups = []
 
     # Max number of search results to return
-    top_n = 80
+    top_n = 120
     # Embed the user query and measure the latency
     user_query_embedding = self._embed_query_and_measure_latency(search_query)
     # Capture the search invoked event to PostHog
