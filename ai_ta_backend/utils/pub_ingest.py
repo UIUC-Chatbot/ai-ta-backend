@@ -129,7 +129,7 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
         doi_link = f"https://doi.org/{doi}"
         data = {
             "course_name": course_name,
-            "group": "springer_open",
+            "groups": "springer_open",
             "s3_paths": "courses/" + course_name + "/" + file, # type: ignore
             "readable_filename": file,
             "base_url": "",
@@ -149,22 +149,36 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
         ingest_df.to_csv(csv_file, mode='a', header=False, index=False)
 
 
-    # call ingest
-    # beam_url = "https://41kgx.apps.beam.cloud"
+    # # call ingest
+    # beam_url = "https://3xn8l.apps.beam.cloud"
     # headers = {
     # "Content-Type": "application/json",
     # "Authorization": "Basic " + os.getenv('BEAM_AUTH_TOKEN')    # type: ignore
     # }
-    # for data in ingest_data:
+
+    # pubs_data = pd.read_csv(csv_file)
+
+    # for row in pubs_data.iterrows():
+    #     payload = {
+    #     "course_name": "cropwizard-pro",
+    #     "s3_paths": [row[1]["s3_paths"]],
+    #     "readable_filename": row[1]["readable_filename"],
+    #     "base_url": "",
+    #     "url": row[1]["url"],
+    #     "groups": ["Springer", "CC-BY", "Research Paper"]
+    #     }
+    #     print(payload)
     #     payload = json.dumps(data)
     #     response = requests.post(beam_url, headers=headers, data=payload)
+
     #     if response.status_code == 200:
     #         print("Task status retrieved successfully!")
     #     else:
     #         print(f"Error: {response.status_code}. {response.text}")
 
-    # # Delete files from local directory
+    # Delete files from local directory
     # shutil.rmtree(directory)
+    # os.remove(csv_file)
                                 
     return "success"
 
