@@ -104,9 +104,11 @@ def upload_single_pdf(minio_object_name, queue):
 
       grobid_config = {
           "grobid_server": grobid_server,
-          "batch_size": 100,
+          "concurrency": 18, # slightly more than the 16 threads available, as recommended.
+          "n": 18, # slightly more than the 16 threads available, as recommended.
+          "batch_size": 2000,
           "sleep_time": 5,
-          "timeout": 120,
+          "timeout": 600,
       }
 
       output_data = process_pdf_file(Path(tmp_file.name), BASE_TEMP_DIR, BASE_OUTPUT_DIR, grobid_config)

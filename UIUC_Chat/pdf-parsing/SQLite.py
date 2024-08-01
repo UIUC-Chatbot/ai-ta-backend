@@ -55,7 +55,7 @@ def initialize_database(db_path):
                 Section_Title TEXT,
                 Section_Num TEXT,
                 num_tokens INTEGER,
-                Page INTEGER,
+                context_idx TEXT,
                 `Embedding_nomic_1.5` TEXT,
                 Stop_Reason TEXT
             )
@@ -126,6 +126,8 @@ def insert_data(metadata: Dict,
                 VALUES (?, ?)
             ''', (article_id, ref_id))
 
+  context_idx = 0
+
   for section in grouped_data:
     section_id = fastnanoid.generate()
     cur.execute(
@@ -139,37 +141,41 @@ def insert_data(metadata: Dict,
         context_id = fastnanoid.generate()
         cur.execute(
             '''
-                    INSERT INTO contexts (ID, text, Section_Num, Section_Title, num_tokens, `Embedding_nomic_1.5`, stop_reason)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO contexts (ID, text, Section_Num, Section_Title, num_tokens, `Embedding_nomic_1.5`, stop_reason, context_idx)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
             (context_id, text, section["sec_num"], section["sec_title"], token, json.dumps(
-                section["embedding"][0]), "Token limit"))
+                section["embedding"][0]), "Token limit", context_idx))
 
         cur.execute(
             '''
                     INSERT INTO sections_contexts (Section_ID, Context_ID)
                     VALUES (?, ?)
                 ''', (section_id, context_id))
+        
+        context_idx += 1
 
     else:
       context_id = fastnanoid.generate()
       cur.execute(
           '''
-                INSERT INTO contexts (ID, text, Section_Num, Section_Title, num_tokens, `Embedding_nomic_1.5`, stop_reason)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO contexts (ID, text, Section_Num, Section_Title, num_tokens, `Embedding_nomic_1.5`, stop_reason, context_idx)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (context_id, section["text"], section["sec_num"], section["sec_title"], section["tokens"],
-                  json.dumps(section["embedding"][0]), "Section"))
+                  json.dumps(section["embedding"][0]), "Section", context_idx))
       cur.execute(
           '''
                         INSERT INTO sections_contexts (Section_ID, Context_ID)
                         VALUES (?, ?)
                     ''', (section_id, context_id))
+      context_idx += 1
 
     cur.execute(
         '''
             INSERT INTO article_sections (Article_ID, Section_ID)
             VALUES (?, ?)
         ''', (article_id, section_id))
+    
 
   conn.commit()
   conn.close()

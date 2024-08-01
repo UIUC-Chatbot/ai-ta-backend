@@ -157,10 +157,13 @@ def evaluate_chunks_with_step(query, chunk_id, step, chunks_to_keep, is_visited)
         return
     is_visited[chunk_id] = True
     step += 1
-    
+
     print(chunk_id)
     context_data, current_context, outline = get_context_given_contextID(chunk_id)
     completion = evaluate_chunks(query, current_context, outline)
+    
+    if completion is None:
+        return
     # print(completion)
     
     for tool in completion.choices[0].message.tool_calls:

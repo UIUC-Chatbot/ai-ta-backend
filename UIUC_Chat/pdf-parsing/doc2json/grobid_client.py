@@ -23,14 +23,14 @@ DEFAULT_GROBID_CONFIG = {
     # "grobid_port": "443",
     # "grobid_server": "localhost",
     # "grobid_port": "8070",
-    "batch_size": 1000,
+    "batch_size": 2000,
     "sleep_time": 5,
     "generateIDs": False,
     "consolidate_header": False,
     "consolidate_citations": False,
     "include_raw_citations": True,
     "include_raw_affiliations": False,
-    "max_workers": 2,
+    "max_workers": 18,
 }
 
 
@@ -217,7 +217,7 @@ if __name__ == "__main__":
 
   start_time = time.time()
 
-  client.process(input_path, output_path, service)
+  client.process(input_path, output_path, service, n=18)
 
   runtime = round(time.time() - start_time, 3)
   print("runtime: %s seconds " % (runtime))

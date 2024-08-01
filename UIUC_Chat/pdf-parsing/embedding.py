@@ -5,7 +5,7 @@ from retry import retry
 
 
 @retry(tries=10, delay=.25)
-def get_embeddings(prompt, model="nomic-embed-text:v1.5", base_url="https://ollama.ncsa.ai/api/embeddings"):
+def get_embeddings(prompt, model="nomic-embed-text:v1.5", base_url="https://secret-ollama.ncsa.ai/api/embeddings"):
 
   payload = {"model": model, "prompt": prompt, "options": {"num_ctx": 8192}}
 
