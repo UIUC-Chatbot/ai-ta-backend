@@ -1,4 +1,5 @@
 import os
+import time
 import sqlite3
 import tempfile
 import traceback
@@ -11,6 +12,7 @@ from minio import Minio  # type: ignore
 from pdf_process import parse_and_group_by_section, process_pdf_file
 from urllib3 import PoolManager
 from urllib3.util.retry import Retry
+from posthog import Posthog
 
 from SQLite import initialize_database, insert_data  # type: ignore
 
@@ -18,6 +20,8 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv(override=True)
+
+posthog = Posthog(sync_mode=True, project_api_key=os.environ['LLM_GUIDED_RETRIEVAL_POSTHOG_API_KEY'], host='https://us.i.posthog.com')
 
 # Create a custom PoolManager with desired settings
 http_client = PoolManager(
@@ -33,7 +37,7 @@ client = Minio(
     http_client=http_client,
 )
 
-LOG_FILE = 'successfully_parsed_files.log'
+LOG_FILE = 'SUCCESS_parsed_files.log'
 ERR_LOG_FILE = f'ERRORS_parsed_files.log'
 
 grobid_server = os.getenv('GROBID_SERVER')
@@ -47,6 +51,7 @@ def main_parallel_upload():
   initialize_database(DB_PATH)
   os.makedirs(BASE_TEMP_DIR, exist_ok=True)
   os.makedirs(BASE_OUTPUT_DIR, exist_ok=True)
+  start_time_main_parallel = time.monotonic()
 
   num_processed_this_run = 0
 
@@ -54,8 +59,13 @@ def main_parallel_upload():
   queue = manager.Queue()
   db_proc = Process(target=db_worker, args=(queue, DB_PATH))
   db_proc.start()
-  with ProcessPoolExecutor(max_workers=80) as executor:
-    batch_size = 1_000
+
+  # process to monitor queue size
+  # queue_monitor_proc = Process(target=queue_size_monitor, args=(queue,))
+  # queue_monitor_proc.start()
+
+  with ProcessPoolExecutor(max_workers=18) as executor:
+    batch_size = 18 # 1_000
     minio_gen = minio_object_generator(client, BUCKET_NAME)
 
     while True:
@@ -64,6 +74,8 @@ def main_parallel_upload():
         try:
           obj = next(minio_gen)
           futures[executor.submit(upload_single_pdf, obj.object_name, queue)] = obj
+          # print(f"(while setting jobs) Current queue size: {queue.qsize()}")
+          print(f"(while starting jobs) Current futures size: {len(futures)}")
         except StopIteration:
           break
 
@@ -73,64 +85,89 @@ def main_parallel_upload():
       for future in as_completed(futures):
         obj = futures[future]
         try:
+          # MAIN / ONLY SUCCESS CASE
           future.result()
           num_processed_this_run += 1
+          print(f"✅ num processed this run: {num_processed_this_run}")
+          print_futures_stats(futures)
+          # print(f"(while completing jobs) Current queue size: {queue.qsize()}")
           if num_processed_this_run % 100 == 0:
-            print("🏎️ Num processed this run:", num_processed_this_run)
+            print(f"🏎️ Num processed this run: {num_processed_this_run}. ⏰ Runtime: {(time.monotonic() - start_time_main_parallel):.2f} seconds")
+
+          posthog.capture('llm-guided-ingest',
+                event='success_ingest_running_total',
+                properties={
+                    'pdf-per-sec-running-total': float(num_processed_this_run/(time.monotonic() - start_time_main_parallel)),
+                    'minio_path': f'{BUCKET_NAME}/{obj.object_name}'
+                })
+
         except Exception as e:
+          # MAIN / ONLY FAILURE CASE
           with open(ERR_LOG_FILE, 'a') as f:
-            f.write(f"main: {obj.object_name}: {str(e)}\n")
+            f.write(f"{obj.object_name} --- {str(e)}\n")
+          posthog.capture('llm-guided-ingest',
+                  event='failed_ingest',
+                  properties={
+                      'db_path': DB_PATH,
+                      'minio_path': f'{BUCKET_NAME}/{obj.object_name}'
+                  })
           print(f"Error processing {obj.object_name}: {str(e)}")
+          traceback.print_exc()
 
       futures.clear()
 
   queue.put(None)
   db_proc.join()
-
+  # queue_monitor_proc.terminate()
 
 def upload_single_pdf(minio_object_name, queue):
   """
     This is the fundamental unit of parallelism: upload a single PDF to SQLite, all or nothing.
     """
-  try:
-    response = client.get_object(BUCKET_NAME, minio_object_name)
-    file_content = response.read()
-    response.close()
-    response.release_conn()
+  # try:
+  start_time = time.monotonic()
+  start_time_minio = time.monotonic()
+  response = client.get_object(BUCKET_NAME, minio_object_name)
+  file_content = response.read()
+  response.close()
+  response.release_conn()
+  print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
+  posthog.capture('llm-guided-ingest',
+                  event='minio_download',
+                  properties={
+                      'runtime_sec': float(f"{(time.monotonic() - start_time_minio):.2f}"),
+                      'minio_path': f'{BUCKET_NAME}/{minio_object_name}',
+                      'grobid_using_GPU': False,
+                  })
 
-    with tempfile.NamedTemporaryFile() as tmp_file:
-      tmp_file.write(file_content)
-      tmp_file.flush()
+  with tempfile.NamedTemporaryFile() as tmp_file:
+    tmp_file.write(file_content)
+    tmp_file.flush()
 
-      grobid_config = {
-          "grobid_server": grobid_server,
-          "concurrency": 18, # slightly more than the 16 threads available, as recommended.
-          "n": 18, # slightly more than the 16 threads available, as recommended.
-          "batch_size": 2000,
-          "sleep_time": 5,
-          "timeout": 600,
-      }
+    output_data = process_pdf_file(Path(tmp_file.name), BASE_TEMP_DIR, BASE_OUTPUT_DIR, f"{BUCKET_NAME}/{minio_object_name}")
+    metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
 
-      output_data = process_pdf_file(Path(tmp_file.name), BASE_TEMP_DIR, BASE_OUTPUT_DIR, grobid_config)
-      metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
-
-      queue.put({
-          'metadata': metadata,
-          'total_tokens': total_tokens,
-          'grouped_data': grouped_data,
-          'references': references,
-          'db_path': DB_PATH,
-          'file_name': minio_object_name,
-          'ref_num_tokens': ref_num_tokens,
-          'minio_path': f'{BUCKET_NAME}/{minio_object_name}'
-      })
-
-  except Exception as e:
-    with open(ERR_LOG_FILE, 'a') as f:
-      f.write(f"upload: {minio_object_name}: {str(e)}\n")
-      print(f"Error downloading {minio_object_name}: {str(e)}")
-      traceback.print_exc()
-
+    queue.put({
+        'metadata': metadata,
+        'total_tokens': total_tokens,
+        'grouped_data': grouped_data,
+        'references': references,
+        'db_path': DB_PATH,
+        'file_name': minio_object_name,
+        'ref_num_tokens': ref_num_tokens,
+        'minio_path': f'{BUCKET_NAME}/{minio_object_name}'
+    })
+  
+  print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
+  posthog.capture('llm-guided-ingest',
+                  event='success_ingest_v2',
+                  properties={
+                      'metadata': metadata,
+                      'runtime_sec': float(f"{(time.monotonic() - start_time):.2f}"),
+                      'total_tokens': int(total_tokens),
+                      'db_path': DB_PATH,
+                      'minio_path': f'{BUCKET_NAME}/{minio_object_name}'
+                  })
 
 # Start <HELPER UTILS>
 def load_processed_files(log_file):
@@ -169,6 +206,26 @@ def minio_object_generator(client, bucket_name):
     if obj.object_name not in processed_files:
       yield obj
 
+# def queue_size_monitor(queue):
+#   while True:
+#     print(f"Current queue size: {queue.qsize()}")
+#     time.sleep(10)
+
+
+def print_futures_stats(futures):
+  print(f"(while completing jobs) Current futures size: {len(futures)}")
+  running_count = 0
+  none_count = 0
+  error_count = 0
+  for f in futures:
+    if f.running():
+      running_count += 1
+    elif f.done():
+      if f.result() is None:
+        none_count += 1
+      elif f.exception() is not None:
+        error_count += 1
+  print(f"Batch progress. Running: {running_count}, Done: {none_count}, Errors: {error_count}")
 
 # End </HELPER UTILS>
 

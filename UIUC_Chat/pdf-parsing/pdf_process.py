@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import inspect
+import time
 import json
 import math
 import os
@@ -18,6 +18,7 @@ from doc2json.tei_to_json import (
     convert_tei_xml_soup_to_s2orc_json,
 )
 from embedding import get_embeddings
+from posthog import Posthog
 from langchain_text_splitters import RecursiveCharacterTextSplitter  # type: ignore
 
 ERR_LOG_FILE = f'ERRORS_parsed_files.log'
@@ -26,6 +27,7 @@ BASE_TEMP_DIR = 'temp'
 BASE_OUTPUT_DIR = 'output'
 BASE_LOG_DIR = 'log'
 
+posthog = Posthog(sync_mode=True, project_api_key=os.environ['LLM_GUIDED_RETRIEVAL_POSTHOG_API_KEY'], host='https://us.i.posthog.com')
 
 def process_pdf_stream(input_file: str,
                        sha: str,
@@ -56,7 +58,7 @@ def process_pdf_stream(input_file: str,
 def process_pdf_file(input_file: os.PathLike,
                      temp_dir: str = BASE_TEMP_DIR,
                      output_dir: str = BASE_OUTPUT_DIR,
-                     grobid_config: Optional[Dict] = None) -> Dict | None:
+                     minio_path: str = '') -> Dict | None:
   """
     Process a PDF file and get JSON representation
     :param input_file:
@@ -74,20 +76,38 @@ def process_pdf_file(input_file: os.PathLike,
   try:
     grobid_config = {
         "grobid_server": grobid_server,
-        "batch_size": 100,
+        "batch_size": 2000,
         "sleep_time": 5,
         "generateIDs": False,
         "consolidate_header": False,
-        "consolidate_citations": False,
+        "consolidate_citations": True,
         "include_raw_citations": True,
         "include_raw_affiliations": False,
-        "max_workers": 5,
+        "max_workers": 18,
+        # IDK if concurrency or n work here, but want to try.
+        "concurrency": 18, # slightly more than the 16 threads available, as recommended.
+        "n": 18, # slightly more than the 16 threads available, as recommended.
+        "timeout": 600,
     }
+
+    start_time = time.monotonic()
 
     client = GrobidClient(grobid_config)
     client.process_pdf(str(input_file), tei_file.name, "processFulltextDocument")
+    print(f"⏰ Grobid Runtime: {(time.monotonic() - start_time):.2f} seconds")
+    posthog.capture('llm-guided-ingest',
+                  event='grobid_runtime_v2',
+                  properties={
+                      'runtime_sec': float(f"{(time.monotonic() - start_time):.2f}"),
+                      'minio_file': f'{str(minio_path)}',
+                      'grobid_using_GPU': True,
+                  })
+
+    start_time_convert = time.monotonic()
     assert os.path.exists(tei_file.name)
     paper = convert_tei_xml_file_to_s2orc_json(tei_file.name)
+    print(f"⏰ Convert TEI to JSON Runtime: {(time.monotonic() - start_time_convert):.2f} seconds")
+
 
     with open(output_file.name, 'w') as outf:
       json.dump(paper.release_json(), outf, indent=4, sort_keys=False)
@@ -136,9 +156,9 @@ def parse_and_group_by_section(data) -> Any:
   #     data = json.load(file)
 
   metadata = {
-      "title": data["title"],
-      "authors": [
-          " ".join(filter(None, [author["first"], " ".join(author["middle"]), author["last"]]))
+      "title": data["title"] if data and "title" in data else None,
+      "authors": None if data.get("authors") is None else [
+          " ".join(filter(None, [author.get("first"), " ".join(author.get("middle", [])), author.get("last")]))
           for author in data["authors"]
       ],
       "date_published": data["year"],
