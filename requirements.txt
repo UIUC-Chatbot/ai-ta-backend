@@ -24,6 +24,7 @@ python-dotenv==1.0.0
 pydantic==1.10.13 # pydantic v1 works better for ray
 flask-executor==1.0.0
 retry==0.9.2
+XlsxWriter==3.2.0
 
 # AI & core services
 nomic==2.0.14
