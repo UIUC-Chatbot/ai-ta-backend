@@ -48,6 +48,11 @@ cd path/to/ai-ta-frontend
 
 # install all necessary dependencies 
 npm i 
+
+# Use our linter, Trunk SuperLinter. Just run it once to install it.
+# Now every `git commit` and `git push` will trigger linting. 
+# I suggest accepting the auto-formatting suggestions. 
+npm exec trunk check
 ```
 
 Now you _could_ `npm run dev`, but we need the secrets first...
@@ -86,6 +91,8 @@ sudo apt-get update && sudo apt-get install -y infisical
 
 #### Login
 
+You only have to login once per computer.
+
 ```bash
 infisical login
 # ⭐️ --> select "Self Hosting"
@@ -98,18 +105,18 @@ infisical login
 
 ```bash
 # start dev server (with live reload), using our secrets.
-infisical run --env=dev -- npm run dev
-# 🧠 infisical just adds env vars, nothing more. Otherwise it's normal `npm run dev`.
+npm run dev
 
 # you should see a log of the secrets being injected
 INF Injecting 32 Infisical secrets into your application process
+...
   ▲ Next.js 13.5.6
   - Local:        http://localhost:3000
   
 # cmd + click on the URL to open your browser :) 
 ```
 
-That's the most important command you'll use every dev session.
+`npm run dev` is the most important command you'll use every dev session.
 
 ***
 
@@ -122,12 +129,12 @@ git clone git@github.com:UIUC-Chatbot/ai-ta-backend.git
 
 ### (1/2) Install dev dependencies
 
-Use some python virtual environment, here I'll use `conda`.
+Use a python virtual environment, here I'll use `conda`.
 
 Use <mark style="color:yellow;">python 3.10</mark>.
 
 ```bash
-conda create -n ai-ta-backend python=3.10 -y
+conda create --name ai-ta-backend python=3.10 -y
 
 conda activate ai-ta-backend
 
