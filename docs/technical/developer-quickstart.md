@@ -89,7 +89,7 @@ infisical init
 # ⭐️ --> choose ai-ta-frontend
 ```
 
-#### Last step: Start the dev server!&#x20;
+### Last step: Start the dev server!&#x20;
 
 ```bash
 # start dev server (with live reload), using our secrets.
