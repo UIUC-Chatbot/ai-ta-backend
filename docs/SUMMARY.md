@@ -9,6 +9,7 @@
 * [Web Crawling Details](features/web-crawling-details.md)
 * [Bulk Export Documents or Conversation History](features/bulk-export-documents-or-conversation-history.md)
 * [Duplication in Ingested Documents](features/duplication-in-ingested-documents.md)
+* [CropWizard Document License Information](features/cropwizard-document-license-information.md)
 
 ## API
 
@@ -19,8 +20,7 @@
 
 * [System Architecture](technical/system-architecture.md)
 * [Cost of Service](technical/cost-of-service.md)
-* [Developer Quickstart](technical/developer-quickstart.md)
 
-***
+## Developers
 
-* [CropWizard Document License Information](cropwizard-document-license-information.md)
+* [Developer Quickstart](developers/developer-quickstart.md)
