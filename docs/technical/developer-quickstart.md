@@ -26,7 +26,7 @@ description: Thanks for contributing to UIUC.chat ❤️
 git clone git@github.com:KastanDay/ai-ta-frontend.git
 ```
 
-### (1/2) Set up dev environment&#x20;
+### (1/2) Install dev dependencies
 
 Use Node version `18.xx` LTS
 
