@@ -37,7 +37,7 @@ nvm --version
 # use node version 18
 nvm install 18
 nvm use 18
-node --version  # v18.20.2
+node --version  # v18.20.4
 ```
 
 Install dev dependencies
@@ -63,10 +63,26 @@ Instead of sharing .env files manually, we use Infiscal as a central password ma
 
 See the [CLI install docs](https://infisical.com/docs/cli/overview) for Linux/Windows instructions. Or the [CLI usage docs](https://infisical.com/docs/cli/usage).
 
+{% tabs %}
+{% tab title="brew" %}
 ```bash
 # install
 brew install infisical/get-cli/infisical
 ```
+{% endtab %}
+
+{% tab title="apt-get" %}
+```bash
+# add the repository
+curl -1sLf \
+'https://dl.cloudsmith.io/public/infisical/infisical-cli/setup.deb.sh' \
+| sudo -E bash
+
+# install
+sudo apt-get update && sudo apt-get install -y infisical
+```
+{% endtab %}
+{% endtabs %}
 
 #### Login
 
@@ -74,19 +90,8 @@ brew install infisical/get-cli/infisical
 infisical login
 # ⭐️ --> select "Self Hosting"
 # ⭐️ --> enter "https://env.ncsa.ai"
-# ⭐️ Likely enter your main computer password
-```
-
-#### Initialize and configure
-
-```bash
-# navigate to the root of the github
-cd /path/to/ai-ta-frontend
-
-# initialize infisical
-infisical init
-# ⭐️ --> choose UIUC.chat
-# ⭐️ --> choose ai-ta-frontend
+# ⭐️ click the login link
+# ⭐️ likely enter your main computer password
 ```
 
 ### Last step: start dev server!&#x20;
@@ -155,22 +160,11 @@ brew install infisical/get-cli/infisical
 infisical login
 # ⭐️ --> select "Self Hosting"
 # ⭐️ --> enter "https://env.ncsa.ai"
-# ⭐️ Likely enter your main computer password
+# ⭐️ click the login link
+# ⭐️ likely enter your main computer password
 ```
 
 </details>
-
-#### Configure secrets for backend
-
-```bash
-# navigate to the root of the github
-cd path/to/ai-ta-backend
-
-# initialize infisical
-infisical init
-# ⭐️ --> choose UIUC.chat
-# ⭐️ --> choose ai-ta-frontend
-```
 
 ### Last step: start dev server!
 
