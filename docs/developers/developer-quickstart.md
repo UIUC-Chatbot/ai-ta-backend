@@ -28,10 +28,15 @@ git clone git@github.com:KastanDay/ai-ta-frontend.git
 
 ### (1/2) Install dev dependencies
 
+{% hint style="warning" %}
+follow these instructions _**in order;**_ it's tested to work brilliantly.&#x20;
+{% endhint %}
+
 Use Node version `18.xx` LTS
 
 ```bash
-# ensure nvm is installed (any version). Docs: https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating
+# check that nvm is installed (any version). 
+# easily install here: https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating
 nvm --version 
 
 # use node version 18
