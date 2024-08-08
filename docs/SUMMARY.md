@@ -19,6 +19,7 @@
 
 * [System Architecture](technical/system-architecture.md)
 * [Cost of Service](technical/cost-of-service.md)
+* [Developer Quickstart](technical/developer-quickstart.md)
 
 ***
 
