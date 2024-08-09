@@ -109,7 +109,8 @@ infisical login
 ### Last step: start dev server!&#x20;
 
 ```bash
-# start dev server (with live reload), using our secrets.
+# run server with secrets & live reload
+# as defined in package.json, this actually runs: infisical run --env=dev -- next dev
 npm run dev
 
 # you should see a log of the secrets being injected
