@@ -40,6 +40,7 @@ from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
+from ai_ta_backend.service.project_service import ProjectService
 
 app = Flask(__name__)
 CORS(app)
@@ -512,6 +513,31 @@ def run_flow(service: WorkflowService) -> Response:
       response.status_code = 500
       response.headers.add('Access-Control-Allow-Origin', '*')
       return response
+    
+@app.route('/createProject', methods=['POST'])
+def createProject(service: ProjectService) -> Response:
+  """
+  Create a new project in UIUC.Chat
+  """
+  data = request.get_json()
+  project_name = data['project_name']
+  project_description = data['project_description']
+
+  if project_name == '' or project_description == '':
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'project_name' and 'project_description' must be provided. Name: `{project_name}`, Description: `{project_description}`"
+    )
+  print(f"In /projectCreation for project: {project_name}")
+
+  result = service.create_project(project_name, project_description)
+  response = jsonify(result)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 
 
 def configure(binder: Binder) -> None:
