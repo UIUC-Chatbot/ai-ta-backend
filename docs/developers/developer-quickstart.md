@@ -9,15 +9,16 @@ description: Thanks for contributing to UIUC.chat ❤️
 * [ ] Send me (kvday2@illinois.edu) an email and request to be added to:
   * GitHub Organization, <mark style="color:yellow;">include your GitHub username</mark>.
   * Secrets manager, <mark style="color:yellow;">include your preferred email address</mark>.
+  * Supabase dashboard, <mark style="color:yellow;">include your GitHub's email address</mark>.
 
 👉 Skip to [Frontend](developer-quickstart.md#frontend-setup) or [Backend](developer-quickstart.md#backend-setup) setup instructions.
 
 ### Key accounts
 
 * Google: `caiincsa@gmail.com`
-* Managed services: Vercel, Railway, Beam, Supabase, S3.
-* Self-hosted: Qdrant, Ollama
-* Task management via [our Github Projects board](https://github.com/orgs/UIUC-Chatbot/projects/2)
+* Managed services: Vercel, Railway, Beam, Supabase, S3, Posthog, Sentry.
+* Self-hosted: Qdrant, Ollama.
+* Task management via [our Github Projects board](https://github.com/orgs/UIUC-Chatbot/projects/2).
 
 ## Frontend Setup
 
@@ -55,8 +56,8 @@ cd path/to/ai-ta-frontend
 npm i 
 
 # Use our linter, Trunk SuperLinter. Just run it once to install it.
-# Now every `git commit` and `git push` will trigger linting. 
-# I suggest accepting the auto-formatting suggestions. 
+# Now every `git commit` and `git push` will trigger linting.
+# I suggest accepting the auto-formatting suggestions.
 npm exec trunk check
 ```
 
