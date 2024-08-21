@@ -27,7 +27,10 @@ class ProjectService:
 
     def create_project(self, project_name: str, project_description: str) -> str:
         """
-        Create a new project.
+        This function takes in a project name and description and creates a project in the database.
+        1. Generate metadata schema using project_name and project_description
+        2. Insert project into Supabase
+        3. Insert project into Redis
         """
         print("Inside create_project")
         print("project_name: ", project_name)
@@ -46,6 +49,7 @@ class ProjectService:
         print("Response from insertProject: ", response)
 
         # Insert project into Redis
+
 
 
         return "success"
