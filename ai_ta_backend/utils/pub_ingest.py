@@ -12,10 +12,10 @@ import backoff
 
 SPRINGER_API_KEY = os.environ.get('SPRINGER_API_KEY')
 CC_LICENSES = {
-    "http://creativecommons.org/licenses/by/4.0/": "CC BY",
-    "http://creativecommons.org/licenses/by-nc/4.0/": "CC BY-NC",
-    "http://creativecommons.org/licenses/by-nc-nd/4.0/": "CC BY-NC-ND",
-    "http://creativecommons.org/licenses/by-nc-sa/4.0/": "CC BY-NC-SA"
+    "https://creativecommons.org/licenses/by/4.0/": "CC BY",
+    "https://creativecommons.org/licenses/by-nc/4.0/": "CC BY-NC",
+    "https://creativecommons.org/licenses/by-nc-nd/4.0/": "CC BY-NC-ND",
+    "https://creativecommons.org/licenses/by-nc-sa/4.0/": "CC BY-NC-SA"
 }
 
 OTHER_LICENSES = {
@@ -100,10 +100,17 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
             #         print(f.result())
 
             for i in range(len(data['records'])):
-                status = downloadPDFSpringer(data['records'][i], directory)
-                print("Status: ", status)
-                
+                article_metadata = downloadPDFSpringer(data['records'][i], directory)
+                article_metadata['issn'] = issn
 
+                # write article metadata to CSV file
+                metadata_csv = "springer_metadata.csv"
+                metadata_df = pd.DataFrame([article_metadata])
+                if not os.path.exists(metadata_csv):
+                    metadata_df.to_csv(metadata_csv, index=False)
+                else:
+                    metadata_df.to_csv(metadata_csv, mode='a', header=False, index=False)
+                
             # update current records count
             current_records += int(len(data['records']))
 
@@ -118,35 +125,35 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
         except Exception as e:
             print(e)
 
-    print("Course name: ", course_name)
+    # print("Course name: ", course_name)
     # prep payload for beam ingest
-    ingest_data = []
+    # ingest_data = []
     
     # upload files to S3 bucket
-    for file in os.listdir(directory):
-        doi = file[:-4]
-        doi = doi.replace("_", "/")
-        doi_link = f"https://doi.org/{doi}"
-        data = {
-            "course_name": course_name,
-            "groups": "springer_open",
-            "s3_paths": "courses/" + course_name + "/" + file, # type: ignore
-            "readable_filename": file,
-            "base_url": "",
-            "url": doi_link,
-            "journal": "",
-        }
-        s3_path = "courses/" + course_name + "/" + file # type: ignore
-        s3_client.upload_file(directory + "/" + file, aws_bucket, s3_path)  # type: ignore
-        ingest_data.append(data)
+    # for file in os.listdir(directory):
+    #     doi = file[:-4]
+    #     doi = doi.replace("_", "/")
+    #     doi_link = f"https://doi.org/{doi}"
+    #     data = {
+    #         "course_name": course_name,
+    #         "groups": "springer_open",
+    #         "s3_paths": "courses/" + course_name + "/" + file, # type: ignore
+    #         "readable_filename": file,
+    #         "base_url": "",
+    #         "url": doi_link,
+    #         "journal": "",
+    #     }
+    #     s3_path = "courses/" + course_name + "/" + file # type: ignore
+    #     s3_client.upload_file(directory + "/" + file, aws_bucket, s3_path)  # type: ignore
+    #     ingest_data.append(data)
     
-    # save ingest data to csv
-    ingest_df = pd.DataFrame(ingest_data)
-    csv_file = "publications_data.csv"
-    if not os.path.exists(csv_file):
-        ingest_df.to_csv(csv_file, index=False)
-    else:
-        ingest_df.to_csv(csv_file, mode='a', header=False, index=False)
+    # # save ingest data to csv
+    # ingest_df = pd.DataFrame(ingest_data)
+    # csv_file = "publications_data.csv"
+    # if not os.path.exists(csv_file):
+    #     ingest_df.to_csv(csv_file, index=False)
+    # else:
+    #     ingest_df.to_csv(csv_file, mode='a', header=False, index=False)
 
 
     # # call ingest
@@ -190,6 +197,7 @@ def downloadPDFSpringer(record: dict, directory: str):
         record: dictionary containing DOI and other metadata
         directory: local directory to save the files
     """
+    print("in downloadPDFSpringer")
     headers = {'Accept': 'application/json'}
 
     if len(record['url']) < 1:
@@ -197,10 +205,19 @@ def downloadPDFSpringer(record: dict, directory: str):
 
     # extract URL
     url = record['url'][0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
+    print("URL: ", url)
     url_response = requests.get(url, headers=headers)
     if url_response.status_code != 200:
         return "Error in accessing article link: " + str(url_response.status_code) + " - " + url_response.text
     url_data = url_response.json()
+
+    if 'license' in url_data:
+        license_url = url_data['license'][0]['URL']
+        license = CC_LICENSES.get(license_url, license_url)
+        print("License: ", license)
+    else:
+        license = "unknown"
+        license_url = "unknown"
 
     # extract PDF link
     pdf_link = None
@@ -208,15 +225,22 @@ def downloadPDFSpringer(record: dict, directory: str):
     for link in links:
         if link['content-type'] == 'application/pdf' and link['intended-application'] == 'text-mining':
             pdf_link = link['URL']
-            #print("PDF Link: ", pdf_link)
+            print("PDF Link: ", pdf_link)
             break
+        
     if not pdf_link:
-        return "No PDF link found for DOI: " + record['doi']
+        pdf_link = links[0]['URL']
+        print("PDF Link: ", pdf_link)
+        if not pdf_link:
+            return "No PDF link found for DOI: " + record['doi']
     
     # download PDF
-    filename = record['doi'].replace("/", "_")
-    if filename in ['10.1186_2196-5641-1-1', '10.1186_s40538-014-0009-x']:
-        return "Skipping: " + filename
+    print("Downloading PDF: ", record['doi'])
+    if 'doi' in record:
+        filename = record['doi'].replace("/", "_")
+    else:
+        filename = url_data['DOI'].replace("/", "_")
+
     try:
         response = requests.get(pdf_link)
         if response.status_code != 200:
@@ -226,7 +250,17 @@ def downloadPDFSpringer(record: dict, directory: str):
             for chunk in response.iter_content(chunk_size=1024):  # Download in chunks
                 f.write(chunk)
         print("Downloaded: ", filename)
-        return "success"
+
+        # form metadata
+        metadata = {
+            "doi": record['doi'],
+            "publisher": record['publisher'],
+            "issn": record['issn'],
+            "license": license,
+            "license_url": license_url,
+            "metadata": url_data,
+        }
+        return metadata
     except Exception as e:
         return "Error in downloading PDF: " + str(e)
 
