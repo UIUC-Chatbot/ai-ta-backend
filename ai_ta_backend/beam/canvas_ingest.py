@@ -104,9 +104,9 @@ def canvas_ingest(**inputs: Dict[str, Any]):
       'assignments': str(assignments).lower() == 'true',
       'discussions': str(discussions).lower() == 'true',
   }
-  print(f"{course_name}=")
-  print(f"{canvas_url}=")
-  print("Download options: ", options)
+  print("Course Name: ", course_name)
+  print("Canvas URL: ", canvas_url)
+  print("Download Options: ", options)
 
   try:
     # canvas.illinois.edu/courses/COURSE_CODE
@@ -182,7 +182,8 @@ class CanvasIngest():
           elif key == 'pages':
             self.download_pages(dest_folder, api_path)
           elif key == 'modules':
-            self.download_modules(dest_folder, api_path)
+            status = self.download_modules(dest_folder, api_path)
+            print("status=", status)
           elif key == 'syllabus':
             self.download_syllabus(dest_folder, api_path)
           elif key == 'assignments':
@@ -237,7 +238,7 @@ class CanvasIngest():
             'discussions': True
         }
 
-      print("{content_ingest_dict}=")
+      print("Content Dictionary: ", content_ingest_dict)
       # Create a canvas directory with a course folder inside it.
       canvas_dir = "canvas_materials"
       folder_name = "canvas_course_" + str(canvas_course_id) + "_ingest"
@@ -387,11 +388,14 @@ class CanvasIngest():
     print("In download_modules")
     # need to parse pages through modules
     try:
-      module_request = requests.get(api_path + "/modules?include=items", headers=self.headers)
-      
+      module_request = requests.get(api_path + "/modules?include=items&per_page=50", headers=self.headers)
+      print(api_path + "/modules?include=items&per_page=50")
       modules = module_request.json()
+      print("Length of modules: ", len(modules))
 
       for module in modules:
+        module_number  = str(module['position'])
+        #print("Downloading module: ", module_number)
         module_items = module['items']
         for item in module_items:
           if item['type'] == 'ExternalUrl': # EXTERNAL LINK
@@ -401,7 +405,7 @@ class CanvasIngest():
             # Download external url as HTML
             response = requests.get(external_url)
             if response.status_code == 200:
-              html_file_name = "external_link_" + url_title.replace(" ", "_") + ".html"
+              html_file_name = "Module_" + module_number + "_external_link_" + url_title.replace(" ", "_") + ".html"
               with open(dest_folder + "/" + html_file_name, 'w') as html_file:
                 html_file.write(response.text)
           
@@ -412,7 +416,7 @@ class CanvasIngest():
             if discussion_req.status_code == 200:
               discussion_data = discussion_req.json()
               discussion_message = discussion_data['message']
-              discussion_filename = "Discussion_" + discussion_data['title'].replace(" ", "_") + ".html"
+              discussion_filename = "Module_" + module_number + "_Discussion_" + discussion_data['title'].replace(" ", "_") + ".html"
 
               # write the message to a file
               with open(dest_folder + "/" + discussion_filename, 'w') as html_file:
@@ -423,7 +427,7 @@ class CanvasIngest():
             continue
 
           elif item['type'] == 'Quiz': 
-            #print("Quizzes are not handled at the moment.")
+            print("Quizzes are not handled at the moment.")
             continue
 
           else: # OTHER ITEMS - PAGES
@@ -441,7 +445,7 @@ class CanvasIngest():
                 continue
 
               item_body = item_data['body']
-              html_file_name = item['type'] + "_" + item_data['url'] + ".html"
+              html_file_name = "Module_" + module_number + "_" + item['type'] + "_" + item_data['url'] + ".html"
 
               # write page body to a file
               with open(dest_folder + "/" + html_file_name, 'w') as html_file:
@@ -520,6 +524,7 @@ class CanvasIngest():
           href_links = soup.find_all('a', href=True)
           for link in href_links:
             href = link['href']
+            
             if re.match(r'https://canvas\.illinois\.edu/courses/\d+/files/.*', href):
               file_links.append(href)
             else:
@@ -546,10 +551,12 @@ class CanvasIngest():
     input: urls - list of URLs scraped from Canvas HTML pages.
     """
     print("In download_files_from_urls")
-    #print("Number of URLs: ", len(urls))
+    print("Number of URLs: ", len(urls))
     try:
+      count = 0
       for url in urls:
-        #print("Downloading file from URL: ", url)
+        count += 1
+        # print("Downloading file from URL: ", url)
         with requests.get(url, stream=True) as r:
           content_type = r.headers.get('Content-Type')
           #print("Content type: ", content_type)
