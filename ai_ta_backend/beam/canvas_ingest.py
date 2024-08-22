@@ -202,11 +202,16 @@ class CanvasIngest():
       video_links = extracted_urls_from_html.get('video_links', [])
       #external_links = extract_urls_from_html.get('external_links', [])
 
+      data_api_endpoints = extracted_urls_from_html.get('data_api_endpoints', [])
+      print("data_api_endpoints=", data_api_endpoints)
+
       # download files from URLs
       file_download_status = self.download_files_from_urls(file_links, canvas_course_id, dest_folder)
       video_download_status = self.download_videos_from_urls(video_links, canvas_course_id, dest_folder)
-      print("file_download_status=", file_download_status)
-      print("video_download_status=", video_download_status)
+      data_api_endpoints_status = self.download_content_from_api_endpoints(data_api_endpoints, canvas_course_id, dest_folder)
+      print("File download status: ", file_download_status)
+      print("Video download status: ", video_download_status)
+      print("Data API Endpoints download status: ", data_api_endpoints_status)
 
       return "Success"
     except Exception as e:
@@ -440,6 +445,11 @@ class CanvasIngest():
             
             if item_request.status_code == 200:
               item_data = item_request.json()
+              # check if published
+              if 'published' in item_data and not item_data['published']:
+                print("Item not published: ", item_data['title'])
+                continue
+
               if 'body' not in item_data:
                 #print("No body in item: ", item_data)
                 continue
@@ -508,6 +518,7 @@ class CanvasIngest():
       file_links = []
       video_links = []
       external_links = []
+      data_api_endpoints = []
       for file_name in os.listdir(dir_path):
         if file_name.endswith(".html"):
           file_path = os.path.join(dir_path, file_name)
@@ -523,8 +534,11 @@ class CanvasIngest():
           # Extracting links from href attributes
           href_links = soup.find_all('a', href=True)
           for link in href_links:
+            data_api_endpoint = link.get('data-api-endpoint')
+            if data_api_endpoint:
+              data_api_endpoints.append(data_api_endpoint)
+
             href = link['href']
-            
             if re.match(r'https://canvas\.illinois\.edu/courses/\d+/files/.*', href):
               file_links.append(href)
             else:
@@ -539,7 +553,8 @@ class CanvasIngest():
 
       return {
           'file_links': file_links,
-          'video_links': video_links,}  
+          'video_links': video_links,
+          'data_api_endpoints': data_api_endpoints,}  
 
     except Exception as e:
       sentry_sdk.capture_exception(e)
@@ -618,3 +633,32 @@ class CanvasIngest():
       sentry_sdk.capture_exception(e)
       print("Error downloading videos from URLs: ", e)
       return "Failed! Error: " + str(e)
+  
+  def download_content_from_api_endpoints(self, api_endpoints: List[str], course_id: int, dir_path: str):
+    """
+    This function downloads files from given Canvas API endpoints. These API endpoints are extracted along with URLs from 
+    downloaded HTML files. Extracted as a fix because the main URLs don't always point to a downloadable attachment.
+    These endpoints are mostly canvas file links of type - https://canvas.illinois.edu/api/v1/courses/46906/files/12785151
+    """
+    for endpoint in api_endpoints:
+      if re.match(r'https:\/\/canvas\.illinois\.edu\/api\/v1\/courses\/\d+\/files\/\d+', endpoint):
+        # it is a file endpoint!
+        published = False
+        api_response = requests.get(endpoint, headers=self.headers)
+        if api_response.status_code == 200:
+          file_data = api_response.json()
+          
+          if 'published' in file_data and not file_data['published']:
+            print("File not published: ", file_data['filename'])
+            continue
+
+          filename = file_data['filename']
+          file_url = file_data['url']
+          file_download = requests.get(file_url, headers=self.headers)
+          with open(os.path.join(dir_path, filename), 'wb') as f:
+            f.write(file_download.content)
+          print("Downloaded file: ", filename)
+        else:
+          print("Failed to download file from API endpoint: ", endpoint)
+      
+
