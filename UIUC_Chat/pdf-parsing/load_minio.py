@@ -13,6 +13,8 @@ from pdf_process import parse_and_group_by_section, process_pdf_file
 from urllib3 import PoolManager
 from urllib3.util.retry import Retry
 from posthog import Posthog
+import sentry_sdk
+from doc2json.grobid_client import GrobidClient
 
 from SQLite import initialize_database, insert_data  # type: ignore
 
@@ -36,15 +38,42 @@ client = Minio(
     secure=True,
     http_client=http_client,
 )
+sentry_sdk.init(
+    dsn=os.environ['SENTRY_DSN'],
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+)
 
-LOG_FILE = 'SUCCESS_parsed_files.log'
-ERR_LOG_FILE = f'ERRORS_parsed_files.log'
+# LOG_FILE = 'SUCCESS_parsed_files.log'
+# ERR_LOG_FILE = f'ERRORS_parsed_files.log'
+LOG_FILE = 'v2-SUCCESS_parsed_files.log'
+ERR_LOG_FILE = f'v2-ERRORS_parsed_files.log'
+DB_PATH = 'v2-articles.db'
 
 grobid_server = os.getenv('GROBID_SERVER')
 BASE_TEMP_DIR = 'temp'
 BASE_OUTPUT_DIR = 'output'
 BUCKET_NAME = 'pubmed'
-DB_PATH = 'articles.db'
+# DB_PATH = 'articles.db'
+
+NUM_PARALLEL=70
+
+# Configure Grobid
+grobid_config = {
+    "grobid_server": os.getenv('GROBID_SERVER'),
+    "batch_size": 2000,
+    "sleep_time": 3,
+    "generateIDs": False,
+    "consolidate_header": False,
+    "consolidate_citations": False,
+    # "include_raw_citations": True,
+    "include_raw_citations": False,
+    "include_raw_affiliations": False,
+    "timeout": 600,
+    "n": NUM_PARALLEL,
+    "max_workers": NUM_PARALLEL,
+}
+grobidClient = GrobidClient(grobid_config)
 
 
 def main_parallel_upload():
@@ -64,8 +93,8 @@ def main_parallel_upload():
   # queue_monitor_proc = Process(target=queue_size_monitor, args=(queue,))
   # queue_monitor_proc.start()
 
-  with ProcessPoolExecutor(max_workers=18) as executor:
-    batch_size = 18 # 1_000
+  with ProcessPoolExecutor(max_workers=NUM_PARALLEL) as executor:
+    batch_size = 2_000 # 1_000
     minio_gen = minio_object_generator(client, BUCKET_NAME)
 
     while True:
@@ -74,8 +103,6 @@ def main_parallel_upload():
         try:
           obj = next(minio_gen)
           futures[executor.submit(upload_single_pdf, obj.object_name, queue)] = obj
-          # print(f"(while setting jobs) Current queue size: {queue.qsize()}")
-          print(f"(while starting jobs) Current futures size: {len(futures)}")
         except StopIteration:
           break
 
@@ -89,7 +116,7 @@ def main_parallel_upload():
           future.result()
           num_processed_this_run += 1
           print(f"✅ num processed this run: {num_processed_this_run}")
-          print_futures_stats(futures)
+          # print_futures_stats(futures)
           # print(f"(while completing jobs) Current queue size: {queue.qsize()}")
           if num_processed_this_run % 100 == 0:
             print(f"🏎️ Num processed this run: {num_processed_this_run}. ⏰ Runtime: {(time.monotonic() - start_time_main_parallel):.2f} seconds")
@@ -124,14 +151,12 @@ def upload_single_pdf(minio_object_name, queue):
   """
     This is the fundamental unit of parallelism: upload a single PDF to SQLite, all or nothing.
     """
-  # try:
-  start_time = time.monotonic()
   start_time_minio = time.monotonic()
   response = client.get_object(BUCKET_NAME, minio_object_name)
   file_content = response.read()
   response.close()
   response.release_conn()
-  print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
+  print(f"⏰ Minio download: {(time.monotonic() - start_time_minio):.2f} seconds")
   posthog.capture('llm-guided-ingest',
                   event='minio_download',
                   properties={
@@ -144,7 +169,7 @@ def upload_single_pdf(minio_object_name, queue):
     tmp_file.write(file_content)
     tmp_file.flush()
 
-    output_data = process_pdf_file(Path(tmp_file.name), BASE_TEMP_DIR, BASE_OUTPUT_DIR, f"{BUCKET_NAME}/{minio_object_name}")
+    output_data = process_pdf_file(Path(tmp_file.name), BASE_TEMP_DIR, BASE_OUTPUT_DIR, f"{BUCKET_NAME}/{minio_object_name}", grobidClient)
     metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
 
     queue.put({
@@ -158,12 +183,12 @@ def upload_single_pdf(minio_object_name, queue):
         'minio_path': f'{BUCKET_NAME}/{minio_object_name}'
     })
   
-  print(f"⏰ Runtime: {(time.monotonic() - start_time):.2f} seconds")
+  print(f"⭐️ Total ingest runtime: {(time.monotonic() - start_time_minio):.2f} seconds")
   posthog.capture('llm-guided-ingest',
                   event='success_ingest_v2',
                   properties={
                       'metadata': metadata,
-                      'runtime_sec': float(f"{(time.monotonic() - start_time):.2f}"),
+                      'runtime_sec': float(f"{(time.monotonic() - start_time_minio):.2f}"),
                       'total_tokens': int(total_tokens),
                       'db_path': DB_PATH,
                       'minio_path': f'{BUCKET_NAME}/{minio_object_name}'
@@ -213,7 +238,6 @@ def minio_object_generator(client, bucket_name):
 
 
 def print_futures_stats(futures):
-  print(f"(while completing jobs) Current futures size: {len(futures)}")
   running_count = 0
   none_count = 0
   error_count = 0

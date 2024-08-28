@@ -17,17 +17,24 @@ from doc2json.tei_to_json import (
     convert_tei_xml_file_to_s2orc_json,
     convert_tei_xml_soup_to_s2orc_json,
 )
+import sentry_sdk
 from embedding import get_embeddings
 from posthog import Posthog
 from langchain_text_splitters import RecursiveCharacterTextSplitter  # type: ignore
 
 ERR_LOG_FILE = f'ERRORS_parsed_files.log'
-grobid_server = os.getenv('GROBID_SERVER')
 BASE_TEMP_DIR = 'temp'
 BASE_OUTPUT_DIR = 'output'
 BASE_LOG_DIR = 'log'
 
 posthog = Posthog(sync_mode=True, project_api_key=os.environ['LLM_GUIDED_RETRIEVAL_POSTHOG_API_KEY'], host='https://us.i.posthog.com')
+
+
+sentry_sdk.init(
+    dsn=os.environ['SENTRY_DSN'],
+    traces_sample_rate=1.0,
+    profiles_sample_rate=1.0,
+)
 
 def process_pdf_stream(input_file: str,
                        sha: str,
@@ -41,8 +48,7 @@ def process_pdf_stream(input_file: str,
     :return:
     """
   try:
-    client = GrobidClient(grobid_config)
-    tei_text = client.process_pdf_stream(input_file, input_stream, 'temp', "processFulltextDocument")
+    tei_text = grobidClient.process_pdf_stream(input_file, input_stream, 'temp', "processFulltextDocument")
 
     soup = BeautifulSoup(tei_text, "xml")
 
@@ -50,15 +56,16 @@ def process_pdf_stream(input_file: str,
 
     return paper.release_json('pdf')
   except Exception as e:
-    with open(ERR_LOG_FILE, 'a') as f:
-      f.write(f" process_stream: {input_file}: {str(e)}\n")
-      print(f"Error process pdf stream {input_file}: {str(e)}")
+    raise ValueError(f"Error process pdf stream {input_file}: {str(e)}")
+    sentry_client.capture_exception(e)
 
 
 def process_pdf_file(input_file: os.PathLike,
                      temp_dir: str = BASE_TEMP_DIR,
                      output_dir: str = BASE_OUTPUT_DIR,
-                     minio_path: str = '') -> Dict | None:
+                     minio_path: str = '',
+                     grobidClient: any = None,
+                     ) -> Dict | None:
   """
     Process a PDF file and get JSON representation
     :param input_file:
@@ -74,27 +81,9 @@ def process_pdf_file(input_file: os.PathLike,
   output_file_path = output_file.name
 
   try:
-    grobid_config = {
-        "grobid_server": grobid_server,
-        "batch_size": 2000,
-        "sleep_time": 5,
-        "generateIDs": False,
-        "consolidate_header": False,
-        "consolidate_citations": True,
-        "include_raw_citations": True,
-        "include_raw_affiliations": False,
-        "max_workers": 18,
-        # IDK if concurrency or n work here, but want to try.
-        "concurrency": 18, # slightly more than the 16 threads available, as recommended.
-        "n": 18, # slightly more than the 16 threads available, as recommended.
-        "timeout": 600,
-    }
-
     start_time = time.monotonic()
-
-    client = GrobidClient(grobid_config)
-    client.process_pdf(str(input_file), tei_file.name, "processFulltextDocument")
-    print(f"⏰ Grobid Runtime: {(time.monotonic() - start_time):.2f} seconds")
+    grobidClient.process_pdf(str(input_file), tei_file.name, "processFulltextDocument")
+    print(f"📜 Grobid Runtime: {(time.monotonic() - start_time):.2f} seconds")
     posthog.capture('llm-guided-ingest',
                   event='grobid_runtime_v2',
                   properties={
@@ -103,11 +92,8 @@ def process_pdf_file(input_file: os.PathLike,
                       'grobid_using_GPU': True,
                   })
 
-    start_time_convert = time.monotonic()
     assert os.path.exists(tei_file.name)
     paper = convert_tei_xml_file_to_s2orc_json(tei_file.name)
-    print(f"⏰ Convert TEI to JSON Runtime: {(time.monotonic() - start_time_convert):.2f} seconds")
-
 
     with open(output_file.name, 'w') as outf:
       json.dump(paper.release_json(), outf, indent=4, sort_keys=False)
@@ -155,19 +141,23 @@ def parse_and_group_by_section(data) -> Any:
   # with open(filepath, "r") as file:
   #     data = json.load(file)
 
+  # TODO: I think authors and title are maybe not being handled perfectly when data is missing...
   metadata = {
       "title": data["title"] if data and "title" in data else None,
-      "authors": None if data.get("authors") is None else [
-          " ".join(filter(None, [author.get("first"), " ".join(author.get("middle", [])), author.get("last")]))
-          for author in data["authors"]
+      "authors": None if not data or not data.get("authors") else [
+          " ".join(filter(None, [
+              author.get("first"), 
+              " ".join(author.get("middle", [])), 
+              author.get("last")
+          ])) for author in data.get("authors", [])
       ],
-      "date_published": data["year"],
-      "journal": data["venue"],
-      "paper_id": data["paper_id"],
-      "header": data["header"],
-      "year": data["year"],
-      "identifiers": data["identifiers"],
-      "abstract": data["abstract"],
+      "date_published": data["year"] if data and "year" in data else None,
+      "journal": data["venue"] if data and "venue" in data else None,
+      "paper_id": data["paper_id"] if data and "paper_id" in data else None,
+      "header": data["header"] if data and "header" in data else None,
+      "year": data["year"] if data and "year" in data else None,
+      "identifiers": data["identifiers"] if data and "identifiers" in data else None,
+      "abstract": data["abstract"] if data and "abstract" in data else None,
   }
 
   try:
@@ -274,9 +264,11 @@ def parse_and_group_by_section(data) -> Any:
     return metadata, result, total_tokens, references, ref_num_tokens
 
   except Exception as e:
-    with open(ERR_LOG_FILE, 'a') as f:
-      f.write(f"parse_and_group: {data['paper_id']}: {str(e)}\n")
+    # Possibly remove this whole try-except block
+    # with open(ERR_LOG_FILE, 'a') as f:
+    #   f.write(f"{data['paper_id']} -- parse_and_group -- {str(e)}\n")
     raise (ValueError(f"Failed parse_and_grou_by_section() with error: {e}"))
+    sentry_client.capture_exception(e)
 
 
 def format_reference(reference):
