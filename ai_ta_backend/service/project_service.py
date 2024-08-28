@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import requests
 from injector import inject
 
 from ollama import Client
@@ -49,8 +50,27 @@ class ProjectService:
         print("Response from insertProject: ", response)
 
         # Insert project into Redis
+        headers = {
+            "Authorization": f"Bearer {os.environ['KV_REST_API_TOKEN']}",  # Ensure you use the appropriate write-access API key
+            "Content-Type": "application/json"
+        }
+        # Define the key-value pair you want to insert
+        key = project_name  # Replace with your key
+        value = {
+            "project_description": project_description,
+        }  
 
+        # Construct the URL for the HSET request
+        hset_url = str(os.environ['KV_REST_API_URL']) + f"/hset/course_metadatas/{key}"
 
+        # Make the POST request to insert the key-value pair
+        response = requests.post(hset_url, headers=headers, data=json.dumps(value))
+
+        # Check the response status
+        if response.status_code == 200:
+            print("Key-value pair inserted successfully.")
+        else:
+            print(f"Failed to insert key-value pair. Status code: {response.status_code}, Response: {response.text}")
 
         return "success"
         

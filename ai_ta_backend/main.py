@@ -523,7 +523,7 @@ def createProject(service: ProjectService) -> Response:
   project_name = data['project_name']
   project_description = data['project_description']
 
-  if project_name == '' or project_description == '':
+  if project_name == '':
     # proper web error "400 Bad request"
     abort(
         400,
