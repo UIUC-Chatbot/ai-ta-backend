@@ -5,7 +5,6 @@ import requests
 from injector import inject
 
 from ollama import Client
-from langchain_core.prompts import PromptTemplate
 
 
 from ai_ta_backend.database.sql import SQLDatabase
