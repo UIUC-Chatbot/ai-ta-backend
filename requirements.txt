@@ -41,6 +41,10 @@ supabase==2.5.3
 posthog==3.1.0
 sentry-sdk==1.39.1
 
+# Publications
+crossrefapi
+
+
 # Not currently supporting coursera ingest
 # cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
 

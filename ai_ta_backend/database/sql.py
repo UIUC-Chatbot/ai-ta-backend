@@ -11,7 +11,7 @@ class SQLDatabase:
     # Create a Supabase client
     self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
-
+    
   def getAllMaterialsForCourse(self, course_name: str):
     return self.supabase_client.table(
         os.environ['SUPABASE_DOCUMENTS_TABLE']).select('course_name, s3_path, readable_filename, url, base_url').eq(
@@ -134,3 +134,5 @@ class SQLDatabase:
   
   def getDisabledDocGroups(self, course_name: str):
     return self.supabase_client.table("doc_groups").select("name").eq("course_name", course_name).eq("enabled", False).execute()
+  def getCourseDocumentByS3Path(self, course_name: str, s3_path: str):
+    return self.supabase_client.table("documents").select("id, course_name, readable_filename, url, base_url, s3_path, created_at").eq("course_name", course_name).eq("s3_path", s3_path).execute()
