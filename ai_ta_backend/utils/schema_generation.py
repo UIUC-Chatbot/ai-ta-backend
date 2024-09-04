@@ -1,7 +1,10 @@
 import json
+import os
+import re
 from ollama import Client
 
-OLLAMA_CLIENT = Client(host="https://secret-ollama.ncsa.ai")
+OLLAMA_SERVER_URL = os.getenv("OLLAMA_SERVER_URL")
+OLLAMA_CLIENT = Client(host=OLLAMA_SERVER_URL)
 LLM = 'llama3.1:70b'
 
 def generate_schema_from_project_description(project_name: str, project_description: str) -> dict:
@@ -98,11 +101,21 @@ def generate_schema_from_project_description(project_name: str, project_descript
         
         prompt = prompt.format(project_name=project_name, project_description=project_description) + json_schema
         response = OLLAMA_CLIENT.generate(prompt=prompt, model=LLM)
-        json_schema_string = response['response'].strip('```').strip()
-        json_schema = json.loads(json_schema_string)
+        
+        json_schema_string = response['response'].strip()
+        print("Raw JSON Schema: ", json_schema_string)
+
+        if '```' in json_schema_string:
+            json_string = re.search(r'```(.*?)```', json_schema_string, re.DOTALL).group(1).strip()
+            cleaned_json_string = "".join(line.strip() for line in json_string.splitlines())
+            print("Cleaned JSON Schema: ", cleaned_json_string)
+            json_schema = json.loads(cleaned_json_string)
+        else:
+            json_schema = json.loads(json_schema_string)
+        print("Final JSON Schema: ", json_schema)
         return json_schema
        
     except Exception as e:
         print(f"Error in generate_schema_from_project_description: {e}")
-        print("Returning default schema.")
+        print("Returning default schema...")
         return default_schema

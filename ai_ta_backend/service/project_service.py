@@ -4,9 +4,6 @@ import json
 import requests
 from injector import inject
 
-from ollama import Client
-
-
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -22,8 +19,6 @@ class ProjectService:
         self.sqlDb = sql_db
         self.posthog = posthog_service
         self.sentry = sentry_service
-        self.ollama = Client(host="https://secret-ollama.ncsa.ai")
-        self.llm = 'llama3.1:70b'
 
     def create_project(self, project_name: str, project_description: str) -> str:
         """
@@ -33,8 +28,6 @@ class ProjectService:
         3. Insert project into Redis
         """
         print("Inside create_project")
-        print("project_name: ", project_name)
-        print("project_description: ", project_description)
         try:
             # Generate metadata schema using project_name and project_description
             json_schema = generate_schema_from_project_description(project_name, project_description)
@@ -46,7 +39,7 @@ class ProjectService:
                 "metadata_schema": json_schema,
             }
             response = self.sqlDb.insertProject(sql_row)
-            print("Response from insertProject: ", response)
+            #print("Response from insertProject: ", response)
 
             # Insert project into Redis
             headers = {
@@ -74,6 +67,7 @@ class ProjectService:
             return "success"
         except Exception as e:
             print("Error in create_project: ", e)
+            self.sentry.capture_exception(e)
             return "error"
         
 

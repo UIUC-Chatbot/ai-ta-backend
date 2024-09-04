@@ -136,4 +136,4 @@ class SQLDatabase:
     return self.supabase_client.table("doc_groups").select("name").eq("course_name", course_name).eq("enabled", False).execute()
 
   def insertProject(self, project_info):
-    return self.supabase_client.table("projects_duplicate").insert(project_info).execute()
+    return self.supabase_client.table("projects").insert(project_info).execute()

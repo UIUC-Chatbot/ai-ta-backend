@@ -15,5 +15,4 @@ class PosthogService:
     )
 
   def capture(self, event_name, properties):
-    # self.posthog.capture("distinct_id_of_the_user", event=event_name, properties=properties)\
-    pass
+    self.posthog.capture("distinct_id_of_the_user", event=event_name, properties=properties)
