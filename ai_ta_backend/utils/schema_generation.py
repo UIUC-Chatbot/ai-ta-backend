@@ -28,14 +28,14 @@ def generate_schema_from_project_description(project_name: str, project_descript
         "keywords": {
             "type": "array",
             "items": {
-                "type": "string"
+                "type": "string",
             }
         },
         "category": {
-            "type": "string"
+            "type": "string",
         },
         "summary": {
-            "type": "string"
+            "type": "string",
         },
     }
     
@@ -74,27 +74,31 @@ def generate_schema_from_project_description(project_name: str, project_descript
         "keywords": {
             "type": "array",
             "items": {
-                "type": "string"
+                "type": "string,"
             }
         },
         "url": {
             "type": "string",
-            "format": "uri"
+            "format": "uri",
         },
         "language": {
-            "type": "string"
+            "type": "string",
         },
         "source": {
-            "type": "string"
+            "type": "string",
         },
         "license": {
-            "type": "string"
+            "type": "string",
         },
         "category": {
-            "type": "string"
+            "type": "string",
         },
         "sub_category": {
-            "type": "string"
+            "type": "string",
+        }
+        "creation_date": {
+            "type": "string",
+            "format": "date",
         }
         }
         """
