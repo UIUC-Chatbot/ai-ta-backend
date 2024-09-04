@@ -49,7 +49,16 @@ class ProjectService:
             # Define the key-value pair you want to insert
             key = project_name  # Replace with your key
             value = {
+                "is_private": False, 
                 "course_owner": project_owner_email,
+                "course_admins": [],
+                "approved_emails_list": [],
+                "example_questions": [],
+                "banner_image_s3": [],
+                "course_intro_message": "",
+                "openai_api_key": "",
+                "system_prompt": "",
+                "disabled_models": [],
                 "project_description": project_description,
             }  
 
