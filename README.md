@@ -1,8 +1,10 @@
-# AI TA Backend for UIUC's Course Assistant Chatbot
+# UIUC.chat ingest and retrieval
 
-A Flask application hosting endpoints for AI TA backend.
+A Flask application hosting endpoints for UIUC.chat. 
 
-### 👉 See the main app for details: https://github.com/UIUC-Chatbot/ai-teaching-assistant-uiuc
+# [Start with the docs here](https://docs.uiuc.chat)
+
+## 👉 [Developer quickstart here](https://docs.uiuc.chat/developers/developer-quickstart)
 
 ### 🛠️ Technical Architecture
 
