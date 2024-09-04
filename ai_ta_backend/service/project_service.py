@@ -35,42 +35,45 @@ class ProjectService:
         print("Inside create_project")
         print("project_name: ", project_name)
         print("project_description: ", project_description)
+        try:
+            # Generate metadata schema using project_name and project_description
+            json_schema = generate_schema_from_project_description(project_name, project_description)
+            
+            # Insert project into Supabase
+            sql_row = {
+                "course_name": project_name,
+                "description": project_description,
+                "metadata_schema": json_schema,
+            }
+            response = self.sqlDb.insertProject(sql_row)
+            print("Response from insertProject: ", response)
 
-        # Generate metadata schema using project_name and project_description
-        json_schema = generate_schema_from_project_description(project_name, project_description)
+            # Insert project into Redis
+            headers = {
+                "Authorization": f"Bearer {os.environ['KV_REST_API_TOKEN']}",  # Ensure you use the appropriate write-access API key
+                "Content-Type": "application/json"
+            }
+            # Define the key-value pair you want to insert
+            key = project_name  # Replace with your key
+            value = {
+                "project_description": project_description,
+            }  
 
-        # Insert project into Supabase
-        sql_row = {
-            "course_name": project_name,
-            "description": project_description,
-            "metadata_schema": json_schema,
-        }
-        response = self.sqlDb.insertProject(sql_row)
-        print("Response from insertProject: ", response)
+            # Construct the URL for the HSET request
+            hset_url = str(os.environ['KV_REST_API_URL']) + f"/hset/course_metadatas/{key}"
 
-        # Insert project into Redis
-        headers = {
-            "Authorization": f"Bearer {os.environ['KV_REST_API_TOKEN']}",  # Ensure you use the appropriate write-access API key
-            "Content-Type": "application/json"
-        }
-        # Define the key-value pair you want to insert
-        key = project_name  # Replace with your key
-        value = {
-            "project_description": project_description,
-        }  
+            # Make the POST request to insert the key-value pair
+            response = requests.post(hset_url, headers=headers, data=json.dumps(value))
 
-        # Construct the URL for the HSET request
-        hset_url = str(os.environ['KV_REST_API_URL']) + f"/hset/course_metadatas/{key}"
+            # Check the response status
+            if response.status_code == 200:
+                print("Key-value pair inserted successfully.")
+            else:
+                print(f"Failed to insert key-value pair. Status code: {response.status_code}, Response: {response.text}")
 
-        # Make the POST request to insert the key-value pair
-        response = requests.post(hset_url, headers=headers, data=json.dumps(value))
-
-        # Check the response status
-        if response.status_code == 200:
-            print("Key-value pair inserted successfully.")
-        else:
-            print(f"Failed to insert key-value pair. Status code: {response.status_code}, Response: {response.text}")
-
-        return "success"
+            return "success"
+        except Exception as e:
+            print("Error in create_project: ", e)
+            return "error"
         
 

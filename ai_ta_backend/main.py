@@ -520,15 +520,15 @@ def createProject(service: ProjectService) -> Response:
   Create a new project in UIUC.Chat
   """
   data = request.get_json()
-  project_name = data['project_name']
-  project_description = data['project_description']
+  project_name = data.get('project_name', '')
+  project_description = data.get('project_description', '')
 
   if project_name == '':
     # proper web error "400 Bad request"
     abort(
         400,
         description=
-        f"Missing one or more required parameters: 'project_name' and 'project_description' must be provided. Name: `{project_name}`, Description: `{project_description}`"
+        f"Missing one or more required parameters: 'project_name' must be provided."
     )
   print(f"In /projectCreation for project: {project_name}")
 
