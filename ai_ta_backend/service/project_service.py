@@ -20,7 +20,7 @@ class ProjectService:
         self.posthog = posthog_service
         self.sentry = sentry_service
 
-    def create_project(self, project_name: str, project_description: str) -> str:
+    def create_project(self, project_name: str, project_description: str, project_owner_email: str) -> str:
         """
         This function takes in a project name and description and creates a project in the database.
         1. Generate metadata schema using project_name and project_description
@@ -49,6 +49,7 @@ class ProjectService:
             # Define the key-value pair you want to insert
             key = project_name  # Replace with your key
             value = {
+                "course_owner": project_owner_email,
                 "project_description": project_description,
             }  
 

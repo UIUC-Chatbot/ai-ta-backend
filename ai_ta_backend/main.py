@@ -522,6 +522,7 @@ def createProject(service: ProjectService) -> Response:
   data = request.get_json()
   project_name = data.get('project_name', '')
   project_description = data.get('project_description', '')
+  project_owner_email = data.get('project_owner_email', '')
 
   if project_name == '':
     # proper web error "400 Bad request"
@@ -532,7 +533,7 @@ def createProject(service: ProjectService) -> Response:
     )
   print(f"In /projectCreation for project: {project_name}")
 
-  result = service.create_project(project_name, project_description)
+  result = service.create_project(project_name, project_description, project_owner_email)
   response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
