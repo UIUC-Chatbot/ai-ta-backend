@@ -4,7 +4,7 @@ from typing import List
 from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
-from qdrant_client import QdrantClient, models
+from qdrant_client import FieldCondition, MatchAny, MatchValue, QdrantClient, models
 
 OPENAI_API_TYPE = "azure"  # "openai" or "azure"
 
@@ -61,31 +61,45 @@ class VectorDatabase():
       * Main query: (course_name AND doc_groups) OR (public_doc_groups)
       * if 'All Documents' enabled, then add filter to exclude disabled_doc_groups
     """
-    # Match course name
-    must_conditions: list[models.Condition] = [
-        models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name))
-    ]
+    # public_doc_destination_project_name = 'preview-meta-test'
+    public_doc_source_project_name = 'ncsa-hydro'
+    doc_group_id = 18398
+    doc_group_name = 'taiga'
+    public_doc_groups = True
+
+    must_conditions = []
+    should_conditions = []
+
+    if public_doc_groups:
+      # Can match EITHER source OR destination project name
+      should_conditions.append(FieldCondition(key='course_name',
+                                              match=MatchValue(value=public_doc_source_project_name)))  # source
+      should_conditions.append(FieldCondition(key='course_name', match=MatchValue(value=course_name)))  # destination
+
+      # Check for disabled doc_groups
+      # if public doc group, but it's disabled.
+
+      # Match ANY of the public doc_groups
+      should_conditions.append(models.FieldCondition(key='doc_groups', match=MatchAny(value=doc_group_name)))
+
+    else:
+      # MUST match ONLY the destination.
+      must_conditions.append(FieldCondition(key='course_name', match=MatchValue(value=course_name)))  # destination
 
     # Return all documents, except those in disabled doc_groups
     if 'All Documents' in doc_groups:
-      # TODO: get disabled_doc_groups from Supabase...
-      f = models.Filter.must_not(
-          models.FieldCondition(key='doc_groups', match=models.MatchValue(value=disabled_doc_groups)))
-      must_conditions.append(f)
+      must_not_use_disabled_doc_groups = models.Filter(
+          must_not=FieldCondition(key='doc_groups', match=models.MatchValue(value=disabled_doc_groups)))
 
     # Return ONLY documents in specified doc_groups
     if doc_groups and 'All Documents' not in doc_groups:
       # Condition for matching any of the specified doc_groups
-      combined_condition = models.Filter(
-          should=[models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups))])
-      must_conditions.append(combined_condition)
+      docs_from_doc_subset_of_groups = models.Filter(
+          should=[FieldCondition(key='doc_groups', match=MatchAny(any=doc_groups))])
+      must_conditions.append(docs_from_doc_subset_of_groups)
 
     # TODO: get list of public_doc_groups to match from Supabase
     # Additionally, return any matching public doc_groups the project is subscribed to.
-    public_doc_groups_condition = None
-    if public_doc_groups:
-      public_doc_groups_condition = models.FieldCondition(key='doc_groups',
-                                                          match=models.MatchAny(value=public_doc_groups))
 
     # Return all course documents, and public doc groups.
     # Boolean expression: (course_name AND doc_groups) OR (public_doc_groups)
