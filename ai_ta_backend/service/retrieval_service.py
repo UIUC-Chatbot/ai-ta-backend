@@ -34,24 +34,25 @@ class RetrievalService:
     self.posthog = posthog
     self.nomicService = nomicService
 
-    openai.api_key = os.environ["OPENAI_API_KEY"]
+    openai.api_key = os.environ["VLADS_OPENAI_KEY"]
 
     self.embeddings = OpenAIEmbeddings(
         model='text-embedding-ada-002',
-        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        openai_api_type=os.environ['OPENAI_API_TYPE'],
-        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        openai_api_version=os.environ["OPENAI_API_VERSION"],
+        openai_api_key=os.environ["VLADS_OPENAI_KEY"],
+        # openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+        # openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+        # openai_api_type=os.environ['OPENAI_API_TYPE'],
+        # openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
 
-    self.llm = AzureChatOpenAI(
-        temperature=0,
-        deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
-        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        openai_api_version=os.environ["OPENAI_API_VERSION"],
-        openai_api_type=os.environ['OPENAI_API_TYPE'],
-    )
+    # self.llm = AzureChatOpenAI(
+    #     temperature=0,
+    #     deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
+    #     openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+    #     openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+    #     openai_api_version=os.environ["OPENAI_API_VERSION"],
+    #     openai_api_type=os.environ['OPENAI_API_TYPE'],
+    # )
 
   def getTopContexts(self,
                      search_query: str,
@@ -322,23 +323,23 @@ class RetrievalService:
     return contexts
 
   def delete_from_nomic_and_supabase(self, course_name: str, identifier_key: str, identifier_value: str):
-    try:
-      print(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
-      response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
-      if not response.data:
-        raise Exception(f"No materials found for {course_name} using {identifier_key}: {identifier_value}")
-      data = response.data[0]  # single record fetched
-      nomic_ids_to_delete = [str(data['id']) + "_" + str(i) for i in range(1, len(data['contexts']) + 1)]
+    # try:
+    #   print(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
+    #   response = self.sqlDb.getMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
+    #   if not response.data:
+    #     raise Exception(f"No materials found for {course_name} using {identifier_key}: {identifier_value}")
+    #   data = response.data[0]  # single record fetched
+    #   nomic_ids_to_delete = [str(data['id']) + "_" + str(i) for i in range(1, len(data['contexts']) + 1)]
 
-      # delete from Nomic
-      response = self.sqlDb.getProjectsMapForCourse(course_name)
-      if not response.data:
-        raise Exception(f"No document map found for this course: {course_name}")
-      project_id = response.data[0]['doc_map_id']
-      self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
-    except Exception as e:
-      print(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
-      self.sentry.capture_exception(e)
+    # delete from Nomic
+    # response = self.sqlDb.getProjectsMapForCourse(course_name)
+    # if not response.data:
+    #   raise Exception(f"No document map found for this course: {course_name}")
+    # project_id = response.data[0]['doc_map_id']
+    # self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
+    # except Exception as e:
+    #   print(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
+    #   self.sentry.capture_exception(e)
 
     try:
       print(f"Supabase Delete. course: {course_name} using {identifier_key}: {identifier_value}")
@@ -351,17 +352,27 @@ class RetrievalService:
     """
     Search the vector database for a given query, course name, and document groups.
     """
+    # Fetch disabled doc groups from the database
+    disabled_doc_groups = self.sqlDb.getDisabledDocGroups(course_name)
+    disabled_doc_groups = [doc_group['name'] for doc_group in disabled_doc_groups.data]
+    # print(f"Disabled doc groups: {disabled_doc_groups}")
+
     # Return empty list if no search query is provided
     if doc_groups is None:
       doc_groups = []
+
+    if disabled_doc_groups is None:
+      disabled_doc_groups = []
+
     # Max number of search results to return
-    top_n = 80
+    top_n = 120
     # Embed the user query and measure the latency
     user_query_embedding = self._embed_query_and_measure_latency(search_query)
     # Capture the search invoked event to PostHog
     self._capture_search_invoked_event(search_query, course_name, doc_groups)
     # Perform the vector search
-    search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n)
+    search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                                 disabled_doc_groups)
     # Process the search results by extracting the page content and metadata
     found_docs = self._process_search_results(search_results, course_name)
     # Capture the search succeeded event to PostHog with the vector scores
@@ -384,9 +395,11 @@ class RetrievalService:
         },
     )
 
-  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n):
+  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n,
+                             disabled_doc_groups):
     qdrant_start_time = time.monotonic()
-    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n)
+    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                            disabled_doc_groups)
     self.qdrant_latency_sec = time.monotonic() - qdrant_start_time
     return search_results
 
@@ -419,7 +432,7 @@ class RetrievalService:
             "max_vector_score": max_vector_score,
             "min_vector_score": min_vector_score,
             "avg_vector_score": avg_vector_score,
-            "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,  
+            "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,
         },
     )
 

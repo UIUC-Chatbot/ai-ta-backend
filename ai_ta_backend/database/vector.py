@@ -4,9 +4,7 @@ from typing import List
 from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
-from qdrant_client import FieldCondition, MatchAny, MatchValue, QdrantClient, models
-
-OPENAI_API_TYPE = "azure"  # "openai" or "azure"
+from qdrant_client import QdrantClient, models
 
 
 class VectorDatabase():
@@ -26,26 +24,19 @@ class VectorDatabase():
         timeout=20,  # default is 5 seconds. Getting timeout errors w/ document groups.
     )
 
-    self.vectorstore = Qdrant(
-        client=self.qdrant_client,
-        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-        embeddings=OpenAIEmbeddings(openai_api_type=OPENAI_API_TYPE),
-    )
+    self.vectorstore = Qdrant(client=self.qdrant_client,
+                              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+                              embeddings=OpenAIEmbeddings(openai_api_key=os.environ['VLADS_OPENAI_KEY']))
 
-  def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n):
+  def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n,
+                    disabled_doc_groups: List[str]):
     """
     Search the vector database for a given query.
     """
-    myfilter = self._create_search_conditions(course_name, doc_groups)
-
-    # Filter for the must_conditions
-    # myfilter = models.Filter(must=must_conditions)
-    # print(f"Filter: {myfilter}")
-
     # Search the vector database
     search_results = self.qdrant_client.search(
         collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-        query_filter=myfilter,
+        query_filter=self._create_search_filter(course_name, doc_groups, disabled_doc_groups),
         with_vectors=False,
         query_vector=user_query_embedding,
         limit=top_n,  # Return n closest points
@@ -53,60 +44,31 @@ class VectorDatabase():
         search_params=models.SearchParams(quantization=models.QuantizationSearchParams(rescore=False)))
     return search_results
 
-  def _create_search_conditions(self, course_name, doc_groups: List[str]):
+  def _create_search_filter(self, course_name, doc_groups: List[str], disabled_doc_groups: List[str]) -> models.Filter:
     """
     Create search conditions for the vector search.
-
-    The search conditions are as follows:
-      * Main query: (course_name AND doc_groups) OR (public_doc_groups)
-      * if 'All Documents' enabled, then add filter to exclude disabled_doc_groups
     """
-    # public_doc_destination_project_name = 'preview-meta-test'
-    public_doc_source_project_name = 'ncsa-hydro'
-    doc_group_id = 18398
-    doc_group_name = 'taiga'
-    public_doc_groups = True
+    must_conditions: list[models.Condition] = [
+        models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name)),
+    ]
 
-    must_conditions = []
-    should_conditions = []
-
-    if public_doc_groups:
-      # Can match EITHER source OR destination project name
-      should_conditions.append(FieldCondition(key='course_name',
-                                              match=MatchValue(value=public_doc_source_project_name)))  # source
-      should_conditions.append(FieldCondition(key='course_name', match=MatchValue(value=course_name)))  # destination
-
-      # Check for disabled doc_groups
-      # if public doc group, but it's disabled.
-
-      # Match ANY of the public doc_groups
-      should_conditions.append(models.FieldCondition(key='doc_groups', match=MatchAny(value=doc_group_name)))
-
-    else:
-      # MUST match ONLY the destination.
-      must_conditions.append(FieldCondition(key='course_name', match=MatchValue(value=course_name)))  # destination
-
-    # Return all documents, except those in disabled doc_groups
-    if 'All Documents' in doc_groups:
-      must_not_use_disabled_doc_groups = models.Filter(
-          must_not=FieldCondition(key='doc_groups', match=models.MatchValue(value=disabled_doc_groups)))
-
-    # Return ONLY documents in specified doc_groups
     if doc_groups and 'All Documents' not in doc_groups:
       # Condition for matching any of the specified doc_groups
-      docs_from_doc_subset_of_groups = models.Filter(
-          should=[FieldCondition(key='doc_groups', match=MatchAny(any=doc_groups))])
-      must_conditions.append(docs_from_doc_subset_of_groups)
+      match_any_condition = models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups))
+      combined_condition = models.Filter(should=[match_any_condition])
 
-    # TODO: get list of public_doc_groups to match from Supabase
-    # Additionally, return any matching public doc_groups the project is subscribed to.
+      # Add the combined condition to the must_conditions list
+      must_conditions.append(combined_condition)
 
-    # Return all course documents, and public doc groups.
-    # Boolean expression: (course_name AND doc_groups) OR (public_doc_groups)
-    final_filter = models.Filter(should=[models.Filter(must=[must_conditions]), public_doc_groups_condition])
+    must_not_conditions: list[models.Condition] = []
 
-    print(f"Filter: {final_filter}")
-    return final_filter
+    if disabled_doc_groups:
+      # Condition for not matching any of the specified doc_groups
+      must_not_conditions = [models.FieldCondition(key='doc_groups', match=models.MatchAny(any=disabled_doc_groups))]
+
+    vector_search_filter = models.Filter(must=must_conditions, must_not=must_not_conditions)
+    print(f"Vector search filter: {vector_search_filter}")
+    return vector_search_filter
 
   def delete_data(self, collection_name: str, key: str, value: str):
     """
