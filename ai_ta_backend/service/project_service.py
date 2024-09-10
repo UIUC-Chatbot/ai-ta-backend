@@ -77,6 +77,10 @@ class ProjectService:
       else:
         print(f"Failed to insert key-value pair. Status code: {response.status_code}, Response: {response.text}")
 
+      # check if the project owner has pre-assigned API keys
+
+      # key = coursename-llm, value = api_key JSON --> insert into redis
+
       return "success"
     except Exception as e:
       print("Error in create_project: ", e)
