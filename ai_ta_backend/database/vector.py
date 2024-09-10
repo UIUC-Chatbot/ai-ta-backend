@@ -5,6 +5,7 @@ from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
 from qdrant_client import QdrantClient, models
+from qdrant_client.http.models import FieldCondition, MatchAny, MatchValue
 
 
 class VectorDatabase():
@@ -42,16 +43,40 @@ class VectorDatabase():
         limit=top_n,  # Return n closest points
         # In a system with high disk latency, the re-scoring step may become a bottleneck: https://qdrant.tech/documentation/guides/quantization/
         search_params=models.SearchParams(quantization=models.QuantizationSearchParams(rescore=False)))
+    # print(f"Search results: {search_results}")
     return search_results
 
-  def _create_search_filter(self, course_name, doc_groups: List[str], disabled_doc_groups: List[str]) -> models.Filter:
+  def _create_search_filter(self, course_name, doc_groups: List[str], admin_disabled_doc_groups: List[str]) -> models.Filter:
     """
     Create search conditions for the vector search.
+    disabled doc groups are the doc groups disabled by the admin, not the user.
     """
-    must_conditions: list[models.Condition] = [
-        models.FieldCondition(key='course_name', match=models.MatchValue(value=course_name)),
-    ]
 
+    must_conditions = []
+    should_conditions = []
+    # TODO: get list of public_doc_groups from 
+    # public_doc_groups = ['taiga']
+    public_doc_groups = ['Wiley']
+    # public_doc_source_project_name = 'ncsa-hydro'
+    public_doc_source_project_name = 'cropwizard-1.5'
+    
+    if public_doc_groups:
+      # Match documents that belong to the current course
+      should_conditions.append(FieldCondition(key='course_name', match=MatchValue(value=course_name)))  # destination
+      # Match documents that belong to the specific document group of the source project
+      should_conditions.append(models.Filter(
+          must=[
+              FieldCondition(key='course_name', match=MatchValue(value=public_doc_source_project_name)),
+              FieldCondition(key='doc_groups', match=MatchAny(any=public_doc_groups))
+          ]
+      ))
+
+    else:
+      # MUST match ONLY the destination.
+      must_conditions.append(FieldCondition(key='course_name', match=MatchValue(value=course_name)))  # destination
+
+    # Create a common list of doc_groups to match
+    # doc_groups_to_match = doc_groups + public_doc_groups
     if doc_groups and 'All Documents' not in doc_groups:
       # Condition for matching any of the specified doc_groups
       match_any_condition = models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups))
@@ -62,11 +87,11 @@ class VectorDatabase():
 
     must_not_conditions: list[models.Condition] = []
 
-    if disabled_doc_groups:
+    if admin_disabled_doc_groups:
       # Condition for not matching any of the specified doc_groups
-      must_not_conditions = [models.FieldCondition(key='doc_groups', match=models.MatchAny(any=disabled_doc_groups))]
+      must_not_conditions = [models.FieldCondition(key='doc_groups', match=models.MatchAny(any=admin_disabled_doc_groups))]
 
-    vector_search_filter = models.Filter(must=must_conditions, must_not=must_not_conditions)
+    vector_search_filter = models.Filter(must=must_conditions, must_not=must_not_conditions, should=should_conditions)
     print(f"Vector search filter: {vector_search_filter}")
     return vector_search_filter
 
