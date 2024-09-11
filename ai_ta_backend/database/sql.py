@@ -137,3 +137,6 @@ class SQLDatabase:
 
   def insertProject(self, project_info):
     return self.supabase_client.table("projects").insert(project_info).execute()
+  
+  def getPreAssignedAPIKeys(self, email: str):
+    return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails", '["' + email + '"]').execute()
