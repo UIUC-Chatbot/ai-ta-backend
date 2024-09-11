@@ -17,12 +17,16 @@ import sentry_sdk
 from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
 from canvasapi import Canvas
 from posthog import Posthog
+from bs4 import BeautifulSoup
+import yt_dlp
 
 requirements = [
     "boto3==1.28.79",
     "posthog==3.1.0",
     "canvasapi==3.2.0",
     "sentry-sdk==1.39.1",
+    "bs4==0.0.2",
+    "yt-dlp==2024.7.16",
 ]
 
 app = App(
@@ -100,9 +104,9 @@ def canvas_ingest(**inputs: Dict[str, Any]):
       'assignments': str(assignments).lower() == 'true',
       'discussions': str(discussions).lower() == 'true',
   }
-  print(f"{course_name}=")
-  print(f"{canvas_url}=")
-  print("Download options: ", options)
+  print("Course Name: ", course_name)
+  print("Canvas URL: ", canvas_url)
+  print("Download Options: ", options)
 
   try:
     # canvas.illinois.edu/courses/COURSE_CODE
@@ -178,7 +182,8 @@ class CanvasIngest():
           elif key == 'pages':
             self.download_pages(dest_folder, api_path)
           elif key == 'modules':
-            self.download_modules(dest_folder, api_path)
+            status = self.download_modules(dest_folder, api_path)
+            print("status=", status)
           elif key == 'syllabus':
             self.download_syllabus(dest_folder, api_path)
           elif key == 'assignments':
@@ -186,7 +191,27 @@ class CanvasIngest():
           elif key == 'discussions':
             self.download_discussions(dest_folder, api_path)
 
-      # at this point, we have all extracted files in the dest_folder.
+      # at this point, we have all canvas files in the dest_folder.
+      # parse all HTML files in dest_folder and extract URLs
+      extracted_urls_from_html = self.extract_urls_from_html(dest_folder)
+      #print("extract_urls_from_html=", extract_urls_from_html)
+
+      # links - canvas files, external urls, embedded videos
+      file_links = extracted_urls_from_html.get('file_links', [])
+      if file_links:
+        file_download_status = self.download_files_from_urls(file_links, canvas_course_id, dest_folder)
+        print("File download status: ", file_download_status)
+      
+      video_links = extracted_urls_from_html.get('video_links', [])
+      if video_links:
+        video_download_status = self.download_videos_from_urls(video_links, canvas_course_id, dest_folder)
+        print("Video download status: ", video_download_status)
+      #external_links = extract_urls_from_html.get('external_links', []) --> we can webscrape these later
+
+      data_api_endpoints = extracted_urls_from_html.get('data_api_endpoints', [])
+      if data_api_endpoints:
+        data_api_endpoints_status = self.download_content_from_api_endpoints(data_api_endpoints, canvas_course_id, dest_folder)
+        print("Data API Endpoints download status: ", data_api_endpoints_status)
 
       return "Success"
     except Exception as e:
@@ -218,7 +243,7 @@ class CanvasIngest():
             'discussions': True
         }
 
-      print("{content_ingest_dict}=")
+      print("Content Dictionary: ", content_ingest_dict)
       # Create a canvas directory with a course folder inside it.
       canvas_dir = "canvas_materials"
       folder_name = "canvas_course_" + str(canvas_course_id) + "_ingest"
@@ -254,11 +279,13 @@ class CanvasIngest():
         uid = str(uuid.uuid4()) + '-'
 
         unique_filename = uid + name_without_extension + extension
+        s3_path = "courses/" + course_name + "/" + unique_filename
         readable_filename = name_without_extension + extension
-        all_s3_paths.append(unique_filename)
+        all_s3_paths.append(s3_path)
         all_readable_filenames.append(readable_filename)
         print("Uploading file: ", readable_filename)
-        self.upload_file(file_path, os.getenv('S3_BUCKET_NAME'), unique_filename)
+        #print("Filepath: ", file_path)
+        self.upload_file(file_path, os.getenv('S3_BUCKET_NAME'), s3_path)
 
       # Delete files from local directory
       shutil.rmtree(folder_path)
@@ -284,7 +311,7 @@ class CanvasIngest():
       # legacy method
       # ingest = Ingest()
       # canvas_ingest = ingest.bulk_ingest(s3_paths, course_name=course_name)
-      return canvas_ingest
+      return "success"
 
     except Exception as e:
       print(e)
@@ -297,21 +324,26 @@ class CanvasIngest():
     """
     print("In download_files")
     try:
-      # files_request = requests.get(api_path + "/files", headers=self.headers)
-      # files = files_request.json()
+      files_request = requests.get(api_path + "/files", headers=self.headers)
+      files = files_request.json()
 
-      course = self.canvas_client.get_course(api_path.split('/')[-1])
-      files = course.get_files()
-
-      for file in files:
-        # file_name = file['filename']
-        file_name = file.filename
-        print("Downloading file: ", file_name)
-
-        # file_download = requests.get(file['url'], headers=self.headers)
-        file_download = requests.get(file.url, headers=self.headers)
-        with open(os.path.join(dest_folder, file_name), 'wb') as f:
-          f.write(file_download.content)
+      if 'status' in files and files['status'] == 'unauthorized':
+        # Student user probably blocked for Files access
+        return "Unauthorized to access files!"
+      else:
+        # TA user or authorized user will get a JSON of file objects
+        for file in files:
+          try:
+            filename = file['filename']
+            download_url = file['url']
+            #print("Downloading file: ", filename)
+            response = requests.get(download_url, headers=self.headers)
+            with open(os.path.join(dest_folder, filename), 'wb') as f:
+              f.write(response.content)
+          except Exception as e:
+            print("Error downloading file: ", filename)
+            sentry_sdk.capture_exception(e)
+            continue
 
       return "Success"
     except Exception as e:
@@ -327,7 +359,22 @@ class CanvasIngest():
       pages_request = requests.get(api_path + "/pages", headers=self.headers)
       pages = pages_request.json()
 
+      # check if unauthorized
+      if 'status' in pages and pages['status'] == 'unauthorized':
+        # Student user probably blocked for Pages access
+        return "Unauthorized to access pages!"
+      
       for page in pages:
+        # check if published and visible to students
+        if 'published' in page and not page['published']:
+          print("Page not published: ", page['title'])
+          continue
+        
+        if 'hide_from_students' in page and page['hide_from_students']:
+          print("Page hidden from students: ", page['title'])
+          continue
+
+        # page is visible to students
         if page['html_url'] != '':
           page_name = page['url'] + ".html"
           page_content_request = requests.get(api_path + "/pages/" + str(page['page_id']), headers=self.headers)
@@ -364,23 +411,78 @@ class CanvasIngest():
     Rest of the things are covered in other functions.
     """
     print("In download_modules")
+    # need to parse pages through modules
     try:
-      module_request = requests.get(api_path + "/modules?include=items", headers=self.headers)
+      module_request = requests.get(api_path + "/modules?include=items&per_page=50", headers=self.headers)
+      print(api_path + "/modules?include=items&per_page=50")
       modules = module_request.json()
+      print("Length of modules: ", len(modules))
 
       for module in modules:
+        # check if published
+        if 'published' in module and not module['published']:
+          print("Module not published: ", module['name'])
+          continue
+
+        module_number  = str(module['position'])
+        #print("Downloading module: ", module_number)
         module_items = module['items']
         for item in module_items:
-          if item['type'] == 'ExternalUrl':
+          if item['type'] == 'ExternalUrl': # EXTERNAL LINK
             external_url = item['external_url']
             url_title = item['title']
 
             # Download external url as HTML
             response = requests.get(external_url)
             if response.status_code == 200:
-              html_file_name = url_title + ".html"
+              html_file_name = "Module_" + module_number + "_external_link_" + url_title.replace(" ", "_") + ".html"
               with open(dest_folder + "/" + html_file_name, 'w') as html_file:
                 html_file.write(response.text)
+          
+          elif item['type'] == 'Discussion':  # DISCUSSION
+            discussion_url = item['url']
+            discussion_req = requests.get(discussion_url, headers=self.headers)
+
+            if discussion_req.status_code == 200:
+              discussion_data = discussion_req.json()
+              discussion_message = discussion_data['message']
+              discussion_filename = "Module_" + module_number + "_Discussion_" + discussion_data['title'].replace(" ", "_") + ".html"
+
+              # write the message to a file
+              with open(dest_folder + "/" + discussion_filename, 'w') as html_file:
+                html_file.write(discussion_message)
+
+          elif item['type'] in ['Assignment', 'Quiz']:  
+            # Assignments are handled separately
+            # Quizzes are not handled yet
+            continue
+
+          else: # OTHER ITEMS - PAGES
+            if 'url' not in item:
+              continue
+
+            item_url = item['url']
+            item_request = requests.get(item_url, headers=self.headers)
+            
+            if item_request.status_code == 200:
+              item_data = item_request.json()
+              # check if published
+              if 'published' in item_data and not item_data['published']:
+                print("Item not published: ", item_data['url'])
+                continue
+
+              if 'body' not in item_data:
+                continue
+
+              item_body = item_data['body']
+              html_file_name = "Module_" + module_number + "_" + item['type'] + "_" + item_data['url'] + ".html"
+
+              # write page body to a file
+              with open(dest_folder + "/" + html_file_name, 'w') as html_file:
+                html_file.write(item_body)
+            else:
+              print("Item request failed with status code: ", item_request.status_code)
+          
       return "Success"
     except Exception as e:
       sentry_sdk.capture_exception(e)
@@ -396,6 +498,11 @@ class CanvasIngest():
       assignments = assignment_request.json()
 
       for assignment in assignments:
+        # check if published
+        if 'published' in assignment and not assignment['published']:
+          print("Assignment not published: ", assignment['name'])
+          continue
+
         if assignment['description'] is not None and assignment['description'] != "":
           assignment_name = "assignment_" + str(assignment['id']) + ".html"
           assignment_description = assignment['description']
@@ -415,8 +522,13 @@ class CanvasIngest():
     try:
       discussion_request = requests.get(api_path + "/discussion_topics", headers=self.headers)
       discussions = discussion_request.json()
-
+      
       for discussion in discussions:
+        # check if published
+        if 'published' in discussion and not discussion['published']:
+          print("Discussion not published: ", discussion['title'])
+          continue
+
         discussion_content = discussion['message']
         discussion_name = discussion['title'] + ".html"
 
@@ -426,3 +538,170 @@ class CanvasIngest():
     except Exception as e:
       sentry_sdk.capture_exception(e)
       return "Failed! Error: " + str(e)
+    
+  def extract_urls_from_html(self, dir_path: str) -> Dict[str, List[str]]:
+    """
+    Extracts URLs from all HTML files in a directory.
+    """
+    print("In extract_urls_from_html")
+    try:
+      file_links = []
+      video_links = []
+      external_links = []
+      data_api_endpoints = []
+      for file_name in os.listdir(dir_path):
+        if file_name.endswith(".html"):
+          file_path = os.path.join(dir_path, file_name)
+          try:
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+              content = file.read()
+          except UnicodeDecodeError:
+            with open(file_path, 'r', encoding='latin-1') as file:
+              content = file.read()
+          
+          soup = BeautifulSoup(content, 'html.parser')
+
+          # Extracting links from href attributes
+          href_links = soup.find_all('a', href=True)
+          for link in href_links:
+            data_api_endpoint = link.get('data-api-endpoint')
+            if data_api_endpoint:
+              data_api_endpoints.append(data_api_endpoint)
+
+            href = link['href']
+            if re.match(r'https://canvas\.illinois\.edu/courses/\d+/files/.*', href):
+              file_links.append(href)
+            else:
+              external_links.append(href)
+          
+          # Extracting video links from src attributes
+          src_links = soup.find_all('iframe', src=True)
+          for link in src_links:
+            src = link['src']
+            if re.match(r'https://ensemble\.illinois\.edu/hapi/v1/contents/.*', src):
+              video_links.append(src)
+
+      return {
+          'file_links': list(set(file_links)),
+          'video_links': list(set(video_links)),
+          'data_api_endpoints': list(set(data_api_endpoints)),}  
+
+    except Exception as e:
+      sentry_sdk.capture_exception(e)
+      return {}
+    
+  def download_files_from_urls(self, urls: List[str], course_id: int, dir_path: str):
+    """
+    This function downloads files from a given Canvas course using the URLs provided.
+    input: urls - list of URLs scraped from Canvas HTML pages.
+    """
+    print("In download_files_from_urls")
+    print("Number of URLs: ", len(urls))
+    try:
+      count = 0
+      for url in urls:
+        count += 1
+        # print("Downloading file from URL: ", url)
+        with requests.get(url, stream=True) as r:
+          content_type = r.headers.get('Content-Type')
+          #print("Content type: ", content_type)
+          content_disposition = r.headers.get('Content-Disposition')
+          #print("Content disposition: ", content_disposition)
+          if content_disposition is None:
+            #print("No content disposition")
+            continue
+
+          if 'filename=' in content_disposition:
+            filename = content_disposition.split('filename=')[1].strip('"')
+            #print("local filename: ", filename)
+          else:
+            #print("No filename in content disposition")
+            continue
+          
+          # write to PDF
+          file_path = os.path.join(dir_path, filename)
+          with open(file_path, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+              f.write(chunk)
+          print("Downloaded file: ", filename)
+
+      return "Success"
+    except Exception as e:
+      sentry_sdk.capture_exception(e)
+      print("Error downloading files from URLs: ", e)
+      return "Failed! Error: " + str(e)
+    
+  def download_videos_from_urls(self, urls: List[str], course_id: int, dir_path: str):
+    """
+    This function downloads videos from a given Canvas course using the URLs provided.
+    """
+    print("In download_videos_from_urls")
+    #print("Video URLs: ", len(urls))
+    try:
+      count = 0
+      for url in urls:
+        count += 1
+        with requests.get(url, stream=True) as r:
+          filename = f"{course_id}_video_{count}.mp4"
+          
+          # download video
+          file_path = os.path.join(dir_path, filename)
+          ydl_opts = {
+                'outtmpl': f'{dir_path}/{course_id}_video_{count}.%(ext)s',  # Dynamic extension
+                'format': 'best',  # Best quality format
+          }
+          with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=True)
+            ext = info_dict.get('ext', 'mp4')  # Get extension from info, default to mp4
+            filename = f"{course_id}_video_{count}.{ext}"
+            
+
+          print(f"Video downloaded successfully: {filename}")
+
+      return "Success"
+    except Exception as e:
+      sentry_sdk.capture_exception(e)
+      print("Error downloading videos from URLs: ", e)
+      return "Failed! Error: " + str(e)
+  
+  def download_content_from_api_endpoints(self, api_endpoints: List[str], course_id: int, dir_path: str):
+    """
+    This function downloads files from given Canvas API endpoints. These API endpoints are extracted along with URLs from 
+    downloaded HTML files. Extracted as a fix because the main URLs don't always point to a downloadable attachment.
+    These endpoints are mostly canvas file links of type - https://canvas.illinois.edu/api/v1/courses/46906/files/12785151
+    """
+    print("In download_content_from_api_endpoints")
+    try:
+      for endpoint in api_endpoints:
+        try: 
+          if re.match(r'https:\/\/canvas\.illinois\.edu\/api\/v1\/courses\/\d+\/files\/\d+', endpoint):
+            # it is a file endpoint!
+            published = False
+            api_response = requests.get(endpoint, headers=self.headers)
+            if api_response.status_code == 200:
+              file_data = api_response.json()
+              
+              if 'published' in file_data and not file_data['published']:
+                print("File not published: ", file_data['filename'])
+                continue
+
+              filename = file_data['filename']
+              file_url = file_data['url']
+              file_download = requests.get(file_url, headers=self.headers)
+              with open(os.path.join(dir_path, filename), 'wb') as f:
+                f.write(file_download.content)
+              print("Downloaded file: ", filename)
+            else:
+              print("Failed to download file from API endpoint: ", endpoint)
+        except Exception as e:
+          sentry_sdk.capture_exception(e)
+          print("Error downloading file from API endpoint: ", endpoint)
+          continue
+
+      return "Success"
+    except Exception as e:
+      sentry_sdk.capture_exception(e)
+      print("Error downloading files from API endpoints: ", e)
+      return "Failed! Error: " + str(e)  
+        
+
