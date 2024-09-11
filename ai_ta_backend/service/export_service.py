@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import tempfile
 import uuid
 import zipfile
 from urllib.parse import urlparse
@@ -18,9 +19,12 @@ from ai_ta_backend.utils.email.send_transactional_email import send_email
 from ai_ta_backend.utils.export_utils import (
     _cleanup,
     _create_zip,
+    _create_zip_for_user_convo_export,
+    _initialize_base_name,
     _initialize_excel,
     _initialize_file_paths,
     _process_conversation,
+    _process_conversation_for_user_convo_export,
 )
 
 
@@ -340,6 +344,134 @@ class ExportService:
     else:
       print("No data found between the given dates.")
       return {"response": "No data found between the given dates."}
+
+  def export_convo_history_user(self, user_email: str, project_name: str):
+    """
+    This function exports the conversation history for a specific user and project, used on chat page.
+    Args:
+        user_email (str): The email of the user.
+        project_name (str): The name of the project.
+    """
+    error_log = []
+    print(f"Exporting conversation history for user: {user_email}, project: {project_name}")
+    try:
+      # get all conversations for the user and project
+      response = self.sql.getAllConversationsForUserAndProject(user_email, project_name)
+      print("response: ", response)
+      count = response.count or 0
+      print(f"Received request to export: {count} conversations")
+
+      if count > 500:
+        filename = f"{user_email}_{project_name}_conversations.zip"
+        s3_filepath = f"/conversations/{filename}"
+        self.executor.submit(export_convo_history_user_bg, response.data, count, user_email, s3_filepath, project_name)
+        return {"response": 'Download from S3', "s3_path": s3_filepath}
+
+    except Exception as e:
+      error_log.append(f"Error fetching documents: {str(e)}")
+      print(f"Error fetching documents: {str(e)}")
+      return {"response": "Error fetching documents!"}
+
+    if count > 0:
+      try:
+        print(f"Processing {count} conversations for user: {user_email}, project: {project_name}")
+        row_num = 1
+        # curr_count = 0
+        with tempfile.TemporaryDirectory() as temp_dir:
+          # Create directories for markdown and media
+          markdown_dir = os.path.join(temp_dir, "markdown")
+          media_dir = os.path.join(temp_dir, "media")
+          os.makedirs(markdown_dir, exist_ok=True)
+          os.makedirs(media_dir, exist_ok=True)
+
+          # Fetch conversations in batches
+          # while curr_count < count:
+          # try:
+          # response = self.sql.getAllConversationsForUserAndProject(user_email, project_name)
+          # curr_count += len(response.data)
+          # print("curr_count: ", curr_count)
+          # Process conversations
+          # print("response.data: ", response.data)
+          for convo in response.data:
+            _process_conversation_for_user_convo_export(self.s3, convo, project_name, markdown_dir, media_dir,
+                                                        error_log)
+            row_num += len(convo)
+
+            # except Exception as e:
+            #   error_log.append(f"Error fetching conversations: {str(e)}")
+            #   print(f"Error fetching conversations: {str(e)}")
+            #   return {"response": "Error fetching conversations!"}
+            #   break
+          # Create zip file
+          zip_file_path = _create_zip_for_user_convo_export(markdown_dir, media_dir, error_log)
+
+          return {"response": (zip_file_path, 'user_convo_export.zip', os.getcwd())}
+      except Exception as e:
+        error_log.append(f"Error creating markdown directory: {str(e)}")
+        print(f"Error creating markdown directory: {str(e)}")
+        return {"response": "Error creating markdown directory!"}
+    else:
+      print("No data found for the given user and project.")
+      return {"response": "No data found for the given user and project."}
+
+
+def export_convo_history_user_bg(conversations, count, user_email, s3_path, project_name):
+  """
+  This function is called in export_convo_history_user() to upload the conversations to S3.
+  Args:
+      conversations (list): The list of conversations to be uploaded.
+      user_email (str): The email of the user.
+      s3_path (str): The S3 path where the file will be uploaded.
+  """
+  s3 = AWSStorage()
+  sql = SQLDatabase()
+
+  # create a temporary directory
+  with tempfile.TemporaryDirectory() as temp_dir:
+    # create directories for markdown and media
+    markdown_dir = os.path.join(temp_dir, "markdown")
+    media_dir = os.path.join(temp_dir, "media")
+    os.makedirs(markdown_dir, exist_ok=True)
+    os.makedirs(media_dir, exist_ok=True)
+
+    try:
+      row_num = 1
+      curr_count = 0
+      error_log = []
+      while curr_count < count:
+        try:
+          response = sql.getAllConversationsForUserAndProject(user_email, project_name, curr_count)
+          curr_count += len(response.data)
+
+          for convo in response.data:
+            _process_conversation_for_user_convo_export(s3, convo, project_name, markdown_dir, media_dir, error_log)
+            row_num += len(convo)
+
+        except Exception as e:
+          error_log.append(f"Error fetching conversations: {str(e)}")
+          print(f"Error fetching conversations: {str(e)}")
+          return {"response": "Error fetching conversations!"}
+          break
+
+      # create zip file
+      zip_file_path = _create_zip_for_user_convo_export(markdown_dir, media_dir, error_log)
+
+      # upload to S3
+      s3_file = f"conversations/{os.path.basename('user_convo_export.zip')}"
+      s3.upload_file(zip_file_path, os.environ['S3_BUCKET_NAME'], s3_file)
+      s3_url = s3.generatePresignedUrl('get_object', os.environ['S3_BUCKET_NAME'], s3_file, 172800)
+
+      # send email
+      subject = f"UIUC.chat Conversation History Export Complete for {user_email}"
+      body_text = f"The data export for {user_email} is complete.\n\nYou can download the file from the following link: \n\n{s3_url}\n\nThis link will expire in 48 hours."
+      email_status = send_email(subject, body_text, os.environ['EMAIL_SENDER'], [user_email], [])
+      print(f"Email sent to {user_email}: {email_status}")
+
+      return "File uploaded to S3. Email sent to user."
+    except Exception as e:
+      error_log.append(f"Error finalizing export: {str(e)}")
+      print(f"Error finalizing export: {str(e)}")
+      return {"response": "Error finalizing export!"}
 
 
 def export_data_in_bg_extended(response, download_type, course_name, s3_path):

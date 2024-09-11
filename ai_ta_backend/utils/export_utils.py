@@ -6,8 +6,12 @@ from urllib.parse import urlparse
 import xlsxwriter
 
 
+def _initialize_base_name(course_name):
+  return course_name[0:15] + '-conversation-export'
+
+
 def _initialize_file_paths(course_name):
-  base_name = course_name[0:15] + '-conversation-export'
+  base_name = _initialize_base_name(course_name)
   file_paths = {
       'zip': base_name + '.zip',
       'excel': base_name + '.xlsx',
@@ -68,6 +72,22 @@ def _process_conversation(s3, convo, course_name, file_paths, worksheet, row_num
     error_log.append(f"Error processing conversation ID {convo['convo_id']}: {str(e)}")
 
 
+def _process_conversation_for_user_convo_export(s3, convo, project_name, markdown_dir, media_dir, error_log):
+  try:
+    print("processing convo: ", convo)
+    convo_id = convo['id']
+    name = convo['name']
+    user_email = convo['user_email']
+    timestamp = convo['created_at']
+    messages = convo['messages']
+
+    _create_markdown_for_user_convo_export(s3, convo_id, messages, markdown_dir, media_dir, user_email, error_log,
+                                           timestamp, name)
+  except Exception as e:
+    print(f"Error processing conversation ID {convo.id}: {str(e)}")
+    error_log.append(f"Error processing conversation ID {convo.id}: {str(e)}")
+
+
 def _create_markdown(s3, convo_id, messages, markdown_dir, media_dir, user_email, error_log, timestamp, convo_name):
   try:
     markdown_filename = f"{timestamp.split('T')[0]}-{convo_name}.md"
@@ -80,6 +100,33 @@ def _create_markdown(s3, convo_id, messages, markdown_dir, media_dir, user_email
       for message in messages:
         role = "User" if message['role'] == 'user' else "Assistant"
         content = _process_message_content(s3, message['content'], convo_id, media_dir, error_log)
+        md_file.write(f"### {role}:\n")
+        md_file.write(f"{content}\n\n")
+        md_file.write("---\n\n")  # Separator for each message for better readability
+
+    print(f"Created markdown file at path: {markdown_file_path}")
+  except Exception as e:
+    print(f"Error creating markdown for conversation ID {convo_id}: {str(e)}")
+    error_log.append(f"Error creating markdown for conversation ID {convo_id}: {str(e)}")
+
+
+def _create_markdown_for_user_convo_export(s3, convo_id, messages, markdown_dir, media_dir, user_email, error_log,
+                                           timestamp, name):
+  try:
+    markdown_filename = f"{timestamp.split('T')[0]}-{name}.md"
+    markdown_file_path = os.path.join(markdown_dir, markdown_filename)
+    with open(markdown_file_path, 'w') as md_file:
+      md_file.write(f"## Conversation ID: {convo_id}\n")
+      md_file.write(f"## **User Email**: {user_email}\n\n")
+      md_file.write(f"### **Timestamp**: {timestamp}\n\n")
+
+      for message in messages:
+        role = "User" if message['role'] == 'user' else "Assistant"
+
+        # content = _process_message_content(s3, message['content'], convo_id, media_dir, error_log)
+        content = _process_message_content_for_user_convo_export(s3, message['content_text'],
+                                                                 message['content_image_url'], convo_id, media_dir,
+                                                                 error_log)
         md_file.write(f"### {role}:\n")
         md_file.write(f"{content}\n\n")
         md_file.write("---\n\n")  # Separator for each message for better readability
@@ -115,6 +162,24 @@ def _process_message_content(s3, content, convo_id, media_dir, error_log):
     print(f"Error processing message content for conversation ID {convo_id}: {str(e)}")
     error_log.append(f"Error processing message content for conversation ID {convo_id}: {str(e)}")
     return content
+
+
+def _process_message_content_for_user_convo_export(s3, content_text: str, content_image_url: list, convo_id: str,
+                                                   media_dir: str, error_log: list) -> str:
+  try:
+    content = content_text
+    for url in content_image_url:
+      image_filename = f"{url.split('/')[-1].split('?')[0]}"
+      image_file_path = os.path.join(media_dir, image_filename)
+      image_s3_path = _extract_path_from_url(url)
+      s3.download_file(image_s3_path, os.environ['S3_BUCKET_NAME'], image_file_path)
+      relative_image_path = os.path.join('..', media_dir.split('/')[-1], image_filename)
+      content += f"\n![Image]({relative_image_path})"
+    return content
+  except Exception as e:
+    print(f"Error processing message content for conversation ID {convo_id}: {str(e)}")
+    error_log.append(f"Error processing message content for conversation ID {convo_id}: {str(e)}")
+    return content_text
 
 
 def _extract_path_from_url(url: str) -> str:
@@ -195,6 +260,40 @@ def _create_zip(file_paths, error_log):
     zipf.write(error_log_path, 'error.log')
   print(f"Created zip file at path: {zip_file_path}")
   return zip_file_path
+
+
+def _create_zip_for_user_convo_export(markdown_dir, media_dir, error_log):
+  zip_file_path = os.path.join(os.getcwd(), 'user_convo_export.zip')
+  error_log_path = os.path.join(os.getcwd(), 'error.log')
+  with open(error_log_path, 'w') as log_file:
+    for error in error_log:
+      log_file.write(error + '\n')
+  with zipfile.ZipFile(zip_file_path, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
+    for root, _, files in os.walk(markdown_dir):
+      for file in files:
+        zipf.write(os.path.join(root, file),
+                   os.path.join('markdown export', os.path.relpath(os.path.join(root, file), markdown_dir)))
+    for root, _, files in os.walk(media_dir):
+      for file in files:
+        zipf.write(os.path.join(root, file),
+                   os.path.join(media_dir.split('/')[-1], os.path.relpath(os.path.join(root, file), media_dir)))
+    zipf.write(error_log_path, 'error.log')
+  print(f"Created zip file at path: {zip_file_path}")
+  return zip_file_path
+
+
+# def _process_conversation_for_user_convo_export(s3, convo, project_name, markdown_dir, media_dir, error_log):
+#   try:
+#     convo_id = convo['id']
+#     name = convo['name']
+#     messages = convo['messages']
+#     user_email = convo['user_email']
+#     timestamp = convo['created_at']
+
+#     _create_markdown_for_user_convo_export(s3, convo_id, name, messages, user_email, timestamp, project_name, markdown_dir, media_dir, error_log)
+#   except Exception as e:
+#     print(f"Error processing conversation ID {convo['id']}: {str(e)}")
+#     error_log.append(f"Error processing conversation ID {convo['id']}: {str(e)}")
 
 
 def _cleanup(file_paths):

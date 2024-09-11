@@ -324,6 +324,43 @@ def export_convo_history_v2(service: ExportService):
   return response
 
 
+@app.route('/export-convo-history-user', methods=['GET'])
+def export_convo_history_user(service: ExportService):
+  user_email: str = request.args.get('user_email', default='', type=str)
+  project_name: str = request.args.get('project_name', default='', type=str)
+
+  if user_email == '' or project_name == '':
+    abort(400, description=f"Missing required parameters: 'user_email' and 'project_name' must be provided.")
+
+  print("user_email: ", user_email)
+  print("project_name: ", project_name)
+  export_status = service.export_convo_history_user(user_email, project_name)
+  print("Export processing response: ", export_status)
+
+  if export_status['response'] == "No data found for the given user and project.":
+    response = Response(status=204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  elif export_status['response'] == "Download from S3":
+    response = jsonify({"response": "Download from S3", "s3_path": export_status['s3_path']})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+  elif export_status['response'] == "Error fetching conversations!":
+    response = jsonify({'response': 'Error fetching conversations'})
+    response.status_code = 500
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  else:
+    print("export_status['response'][2]: ", export_status['response'][2])
+    print("export_status['response'][1]: ", export_status['response'][1])
+    response = make_response(
+        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
+    os.remove(export_status['response'][0])
+
+  return response
+
+
 @app.route('/export-conversations-custom', methods=['GET'])
 def export_conversations_custom(service: ExportService):
   course_name: str = request.args.get('course_name', default='', type=str)
