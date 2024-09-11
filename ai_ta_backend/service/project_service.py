@@ -66,7 +66,7 @@ class ProjectService:
       }
 
       # Construct the URL for the HSET request
-      hset_url = str(os.environ['KV_REST_API_URL']) + f"/set/course_metadatas:{key}"
+      hset_url = str(os.environ['KV_REST_API_URL']) + f"/hset/course_metadatas/{key}"
 
       # Make the POST request to insert the key-value pair
       response = requests.post(hset_url, headers=headers, data=json.dumps(value))
@@ -81,7 +81,7 @@ class ProjectService:
       if project_owner_email:
         pre_assigned_response = self.sqlDb.getPreAssignedAPIKeys(project_owner_email)
         if len(pre_assigned_response.data) > 0:
-          llm_key = project_name + "-llm"
+          llm_key = project_name + "-llms"
           llm_val = {
             "defaultModel": None,
             "defaultTemp": None,
@@ -91,11 +91,11 @@ class ProjectService:
             llm_val[row['provider_name']] = row['api_key']
           
           # Insert the pre-assigned API keys into Redis
-          hset_llm_url = str(os.environ['KV_REST_API_URL']) + f"/set/courseName-llms:{llm_key}"
-          hset_response = requests.post(hset_llm_url, headers=headers, data=json.dumps(llm_val))
+          set_llm_url = str(os.environ['KV_REST_API_URL']) + f"/set/{llm_key}"
+          set_response = requests.post(set_llm_url, headers=headers, data=json.dumps(llm_val))
 
           # Check the response status
-          if hset_response.status_code == 200:
+          if set_response.status_code == 200:
             print("LLM key-value pair inserted successfully.")
           else:
             print(f"Failed to insert LLM key-value pair. Status code: {response.status_code}, Response: {response.text}")
