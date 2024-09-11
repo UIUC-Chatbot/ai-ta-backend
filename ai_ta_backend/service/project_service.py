@@ -73,13 +73,31 @@ class ProjectService:
 
       # Check the response status
       if response.status_code == 200:
-        print("Key-value pair inserted successfully.")
+        print("Course metadata inserted successfully.")
       else:
-        print(f"Failed to insert key-value pair. Status code: {response.status_code}, Response: {response.text}")
+        print(f"Failed to insert course metadata. Status code: {response.status_code}, Response: {response.text}")
 
       # check if the project owner has pre-assigned API keys
+      pre_assigned_response = self.sqlDb.getPreAssignedAPIKeys(project_owner_email)
+      if len(pre_assigned_response.data) > 0:
+        llm_key = project_name + "-llm"
+        llm_val = {
+          "defaultModel": "gpt-4o",
+          "defaultTemp": 0.1,
+        }
+        # pre-assigned key exists
+        for row in pre_assigned_response.data:
+          llm_val[row['provider_name']] = row['api_key']
+        
+        # Insert the pre-assigned API keys into Redis
+        hset_llm_url = str(os.environ['KV_REST_API_URL']) + f"/hset/course_metadatas/{llm_key}"
+        hset_response = requests.post(hset_llm_url, headers=headers, data=json.dumps(llm_val))
 
-      # key = coursename-llm, value = api_key JSON --> insert into redis
+        # Check the response status
+        if hset_response.status_code == 200:
+          print("LLM key-value pair inserted successfully.")
+        else:
+          print(f"Failed to insert LLM key-value pair. Status code: {response.status_code}, Response: {response.text}")
 
       return "success"
     except Exception as e:
