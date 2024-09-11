@@ -155,14 +155,13 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
 
 # Triggers determine how your app is deployed
 # @app.rest_api(
-@app.task_queue(
-    workers=4,
-    max_pending_tasks=15_000,
-    callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
-    timeout=60 * 15,
-    max_retries=0,  # change to 3
-    loader=loader,
-    autoscaler=autoscaler)
+@app.task_queue(workers=4,
+                max_pending_tasks=15_000,
+                callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
+                timeout=60 * 25,
+                max_retries=1,
+                loader=loader,
+                autoscaler=autoscaler)
 def ingest(**inputs: Dict[str, Any]):
 
   qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
@@ -439,8 +438,8 @@ class Ingest():
                                           Path(s3_path).name[37:]),
           'pagenumber': '',
           'timestamp': '',
-          'url': '',
-          'base_url': '',
+          'url': kwargs.get('url', ''),
+          'base_url': kwargs.get('base_url', ''),
       } for doc in documents]
       #print(texts)
       os.remove(file_path)
@@ -475,8 +474,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -616,8 +615,8 @@ class Ingest():
                                           Path(s3_path).name[37:]),
           'pagenumber': '',
           'timestamp': text.index(txt),
-          'url': '',
-          'base_url': '',
+          'url': kwargs.get('url', ''),
+          'base_url': kwargs.get('base_url', ''),
       } for txt in text]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
@@ -645,8 +644,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -679,8 +678,8 @@ class Ingest():
                                           Path(s3_path).name[37:]),
           'pagenumber': '',
           'timestamp': '',
-          'url': '',
-          'base_url': '',
+          'url': kwargs.get('url', ''),
+          'base_url': kwargs.get('base_url', ''),
       }]
       if len(text) == 0:
         return "Error: SRT file appears empty. Skipping."
@@ -712,8 +711,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -749,8 +748,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -779,8 +778,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -943,8 +942,8 @@ class Ingest():
                                           Path(s3_path).name[37:]),
           'pagenumber': '',
           'timestamp': '',
-          'url': '',
-          'base_url': '',
+          'url': kwargs.get('url', ''),
+          'base_url': kwargs.get('base_url', '')
       }]
       print("Prior to ingest", metadatas)
 
@@ -978,8 +977,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', '')
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
