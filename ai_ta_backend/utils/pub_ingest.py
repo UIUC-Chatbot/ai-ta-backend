@@ -98,8 +98,12 @@ def downloadSpringerFulltext(issn=None, subject=None, journal=None, title=None, 
             #         results.extend(batch_results)
             #     for f in concurrent.futures.as_completed(results):
             #         print(f.result())
-
+            print("Total records: ", len(data['records']))
+            
             for i in range(len(data['records'])):
+                print("i: ", i)
+                print("Processing record: ", data['records'][i])
+                print("\n")
                 article_metadata = downloadPDFSpringer(data['records'][i], directory)
                 article_metadata['issn'] = issn
 
@@ -207,8 +211,10 @@ def downloadPDFSpringer(record: dict, directory: str):
     url = record['url'][0]['value'] + "?api_key=" + str(SPRINGER_API_KEY)
     print("URL: ", url)
     url_response = requests.get(url, headers=headers)
+    print("URL response: ", url_response.status_code)
     if url_response.status_code != 200:
         return "Error in accessing article link: " + str(url_response.status_code) + " - " + url_response.text
+    
     url_data = url_response.json()
 
     if 'license' in url_data:
@@ -343,9 +349,9 @@ def downloadWileyFulltext(course_name=None, issn=[]):
 
 
     # fetch metadata
-    # for item in issn:
-    #     metadata_status = getCrossrefMetadata(item)
-    #     print("Metadata status: ", metadata_status)
+    for item in issn:
+        metadata_status = getCrossrefMetadata(item)
+        print("Metadata status: ", metadata_status)
     
     # download PDFs based on metadata
     metadata_csv = "wiley_metadata.csv"
