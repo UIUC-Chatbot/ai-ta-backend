@@ -144,8 +144,3 @@ class SQLDatabase:
                           user_email).eq('project_name',
                                          project_name).order('updated_at',
                                                              desc=True).limit(500).offset(curr_count).execute()
-
-  def deleteConversationsForUserAndProject(self, user_email: str, project_name: str):
-    return self.supabase_client.table('conversations').delete().eq('user_email',
-                                                                   user_email).eq('project_name',
-                                                                                  project_name).execute()
