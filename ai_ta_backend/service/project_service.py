@@ -54,7 +54,7 @@ class ProjectService:
       value = {
           "is_private": False,
           "course_owner": project_owner_email,
-          "course_admins": None,
+          "course_admins": ['kvday2@illinois.edu'],
           "approved_emails_list": None,
           "example_questions": None,
           "banner_image_s3": None,
@@ -83,13 +83,13 @@ class ProjectService:
         if len(pre_assigned_response.data) > 0:
           llm_key = project_name + "-llms"
           llm_val = {
-            "defaultModel": None,
-            "defaultTemp": None,
+              "defaultModel": None,
+              "defaultTemp": None,
           }
           # pre-assigned key exists
           for row in pre_assigned_response.data:
             llm_val[row['provider_name']] = row['api_key']
-          
+
           # Insert the pre-assigned API keys into Redis
           set_llm_url = str(os.environ['KV_REST_API_URL']) + f"/set/{llm_key}"
           set_response = requests.post(set_llm_url, headers=headers, data=json.dumps(llm_val))
@@ -98,7 +98,8 @@ class ProjectService:
           if set_response.status_code == 200:
             print("LLM key-value pair inserted successfully.")
           else:
-            print(f"Failed to insert LLM key-value pair. Status code: {response.status_code}, Response: {response.text}")
+            print(
+                f"Failed to insert LLM key-value pair. Status code: {response.status_code}, Response: {response.text}")
 
       return "success"
     except Exception as e:
