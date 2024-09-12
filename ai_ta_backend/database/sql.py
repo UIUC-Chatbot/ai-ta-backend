@@ -139,7 +139,7 @@ class SQLDatabase:
 
   def getAllConversationsForUserAndProject(self, user_email: str, project_name: str, curr_count: int = 0):
     return self.supabase_client.table('conversations').select(
-        '*, messages(content_text, content_image_url).order(created_at, desc=True)',
+        '*, messages(content_text, content_image_url, role, image_description, created_at).order(created_at, desc=True)',
         count='exact').eq('user_email',
                           user_email).eq('project_name',
                                          project_name).order('updated_at',

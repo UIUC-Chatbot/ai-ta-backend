@@ -375,7 +375,7 @@ class ExportService:
     if count > 0:
       try:
         print(f"Processing {count} conversations for user: {user_email}, project: {project_name}")
-        row_num = 1
+        # row_num = 1
         # curr_count = 0
         with tempfile.TemporaryDirectory() as temp_dir:
           # Create directories for markdown and media
@@ -395,7 +395,8 @@ class ExportService:
           for convo in response.data:
             _process_conversation_for_user_convo_export(self.s3, convo, project_name, markdown_dir, media_dir,
                                                         error_log)
-            row_num += len(convo)
+
+            # row_num += 1
 
             # except Exception as e:
             #   error_log.append(f"Error fetching conversations: {str(e)}")
@@ -435,7 +436,7 @@ def export_convo_history_user_bg(conversations, count, user_email, s3_path, proj
     os.makedirs(media_dir, exist_ok=True)
 
     try:
-      row_num = 1
+      # row_num = 1
       curr_count = 0
       error_log = []
       while curr_count < count:
@@ -445,7 +446,7 @@ def export_convo_history_user_bg(conversations, count, user_email, s3_path, proj
 
           for convo in response.data:
             _process_conversation_for_user_convo_export(s3, convo, project_name, markdown_dir, media_dir, error_log)
-            row_num += len(convo)
+            # row_num += len(convo)
 
         except Exception as e:
           error_log.append(f"Error fetching conversations: {str(e)}")

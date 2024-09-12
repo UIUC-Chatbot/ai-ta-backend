@@ -82,7 +82,9 @@ def _process_conversation_for_user_convo_export(s3, convo, project_name, markdow
     messages = convo['messages']
 
     _create_markdown_for_user_convo_export(s3, convo_id, messages, markdown_dir, media_dir, user_email, error_log,
-                                           timestamp, name)
+                                           timestamp, name, project_name)
+
+    print(f"Processed conversation ID {convo_id}")
   except Exception as e:
     print(f"Error processing conversation ID {convo.id}: {str(e)}")
     error_log.append(f"Error processing conversation ID {convo.id}: {str(e)}")
@@ -111,17 +113,25 @@ def _create_markdown(s3, convo_id, messages, markdown_dir, media_dir, user_email
 
 
 def _create_markdown_for_user_convo_export(s3, convo_id, messages, markdown_dir, media_dir, user_email, error_log,
-                                           timestamp, name):
+                                           timestamp, name, project_name):
   try:
-    markdown_filename = f"{timestamp.split('T')[0]}-{name}.md"
+    print(f"Creating markdown file for conversation ID {convo_id}")
+    markdown_filename = f"{name}-{timestamp.split('T')}.md"
     markdown_file_path = os.path.join(markdown_dir, markdown_filename)
+
     with open(markdown_file_path, 'w') as md_file:
-      md_file.write(f"## Conversation ID: {convo_id}\n")
+      # md_file.write(f"Conversation ID: {convo_id}\n")
+      md_file.write(f"## **UIUC Chat Conversation for Project**: {project_name}\n\n")
       md_file.write(f"## **User Email**: {user_email}\n\n")
-      md_file.write(f"### **Timestamp**: {timestamp}\n\n")
+      md_file.write(f"Date: {timestamp.split('T')[0]}\n\n")
 
       for message in messages:
-        role = "User" if message['role'] == 'user' else "Assistant"
+        text = message['content_text']
+        img_urls = message['content_image_url']
+        img_desc = message['image_description']
+        print(f"text: {text}")
+        print(f"img_urls: {img_urls}")
+        role = "User" if message['role'] == 'user' else "Assistant" if message['role'] == 'assistant' else "System"
 
         # content = _process_message_content(s3, message['content'], convo_id, media_dir, error_log)
         content = _process_message_content_for_user_convo_export(s3, message['content_text'],
@@ -129,6 +139,9 @@ def _create_markdown_for_user_convo_export(s3, convo_id, messages, markdown_dir,
                                                                  error_log)
         md_file.write(f"### {role}:\n")
         md_file.write(f"{content}\n\n")
+        if img_desc:
+          md_file.write(f"### Image Description:\n")
+          md_file.write(f"{img_desc}\n\n")
         md_file.write("---\n\n")  # Separator for each message for better readability
 
     print(f"Created markdown file at path: {markdown_file_path}")
