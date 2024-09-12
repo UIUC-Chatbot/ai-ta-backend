@@ -137,10 +137,15 @@ class SQLDatabase:
     return self.supabase_client.table("doc_groups").select("name").eq("course_name", course_name).eq("enabled",
                                                                                                      False).execute()
 
-  def getAllConversationsForUserAndProject(self, user_email: str, project_name: str, curr_count: int):
+  def getAllConversationsForUserAndProject(self, user_email: str, project_name: str, curr_count: int = 0):
     return self.supabase_client.table('conversations').select(
         '*, messages(content_text, content_image_url).order(created_at, desc=True)',
         count='exact').eq('user_email',
                           user_email).eq('project_name',
                                          project_name).order('updated_at',
                                                              desc=True).limit(500).offset(curr_count).execute()
+
+  def deleteConversationsForUserAndProject(self, user_email: str, project_name: str):
+    return self.supabase_client.table('conversations').delete().eq('user_email',
+                                                                   user_email).eq('project_name',
+                                                                                  project_name).execute()
