@@ -144,3 +144,9 @@ class SQLDatabase:
                           user_email).eq('project_name',
                                          project_name).order('updated_at',
                                                              desc=True).limit(500).offset(curr_count).execute()
+
+  def insertProject(self, project_info):
+    return self.supabase_client.table("projects").insert(project_info).execute()
+  
+  def getPreAssignedAPIKeys(self, email: str):
+    return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails", '["' + email + '"]').execute()

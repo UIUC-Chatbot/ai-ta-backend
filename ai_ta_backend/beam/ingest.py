@@ -10,6 +10,7 @@ import mimetypes
 import os
 import re
 import shutil
+import subprocess
 import time
 import traceback
 import uuid
@@ -51,9 +52,6 @@ from qdrant_client import QdrantClient, models
 from qdrant_client.models import PointStruct
 from supabase.client import ClientOptions
 
-import subprocess
-
-
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain.chat_models import AzureChatOpenAI
 
@@ -82,7 +80,6 @@ requirements = [
     "sentry-sdk==1.39.1",
     "nomic==2.0.14",
     "pdfplumber==0.11.0",  # PDF OCR, better performance than Fitz/PyMuPDF in my Gies PDF testing.
-    
 ]
 
 # TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
@@ -158,14 +155,13 @@ autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
 
 # Triggers determine how your app is deployed
 # @app.rest_api(
-@app.task_queue(
-    workers=4,
-    max_pending_tasks=15_000,
-    callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
-    timeout=60 * 15,
-    max_retries=0,  # change to 3
-    loader=loader,
-    autoscaler=autoscaler)
+@app.task_queue(workers=4,
+                max_pending_tasks=15_000,
+                callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
+                timeout=60 * 25,
+                max_retries=1,
+                loader=loader,
+                autoscaler=autoscaler)
 def ingest(**inputs: Dict[str, Any]):
 
   qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
@@ -442,8 +438,8 @@ class Ingest():
                                           Path(s3_path).name[37:]),
           'pagenumber': '',
           'timestamp': '',
-          'url': '',
-          'base_url': '',
+          'url': kwargs.get('url', ''),
+          'base_url': kwargs.get('base_url', ''),
       } for doc in documents]
       #print(texts)
       os.remove(file_path)
@@ -478,8 +474,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -543,7 +539,7 @@ class Ingest():
       with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
         # download from S3 into an video tmpfile
         self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
-        
+
         # try with original file first
         try:
           mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
@@ -553,8 +549,12 @@ class Ingest():
           fixed_video_tmpfile = NamedTemporaryFile(suffix=file_ext, delete=False)
           try:
             result = subprocess.run([
-                      'ffmpeg', '-y', '-i', video_tmpfile.name, '-c', 'copy', '-movflags', 'faststart', fixed_video_tmpfile.name
-                  ], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                'ffmpeg', '-y', '-i', video_tmpfile.name, '-c', 'copy', '-movflags', 'faststart',
+                fixed_video_tmpfile.name
+            ],
+                                    check=True,
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
             #print(result.stdout.decode())
             #print(result.stderr.decode())
           except subprocess.CalledProcessError as e:
@@ -562,7 +562,7 @@ class Ingest():
             #print(e.stderr.decode())
             print("Error in FFmpeg command: ", e)
             raise e
-          
+
           # extract audio from video tmpfile
           mp4_version = AudioSegment.from_file(fixed_video_tmpfile.name, file_ext[1:])
 
@@ -615,8 +615,8 @@ class Ingest():
                                           Path(s3_path).name[37:]),
           'pagenumber': '',
           'timestamp': text.index(txt),
-          'url': '',
-          'base_url': '',
+          'url': kwargs.get('url', ''),
+          'base_url': kwargs.get('base_url', ''),
       } for txt in text]
 
       self.split_and_upload(texts=text, metadatas=metadatas)
@@ -644,8 +644,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -678,8 +678,8 @@ class Ingest():
                                           Path(s3_path).name[37:]),
           'pagenumber': '',
           'timestamp': '',
-          'url': '',
-          'base_url': '',
+          'url': kwargs.get('url', ''),
+          'base_url': kwargs.get('base_url', ''),
       }]
       if len(text) == 0:
         return "Error: SRT file appears empty. Skipping."
@@ -711,8 +711,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -748,8 +748,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -778,8 +778,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -942,8 +942,8 @@ class Ingest():
                                           Path(s3_path).name[37:]),
           'pagenumber': '',
           'timestamp': '',
-          'url': '',
-          'base_url': '',
+          'url': kwargs.get('url', ''),
+          'base_url': kwargs.get('base_url', '')
       }]
       print("Prior to ingest", metadatas)
 
@@ -977,8 +977,8 @@ class Ingest():
                                             Path(s3_path).name[37:]),
             'pagenumber': '',
             'timestamp': '',
-            'url': '',
-            'base_url': '',
+            'url': kwargs.get('url', ''),
+            'base_url': kwargs.get('base_url', '')
         } for doc in documents]
 
         self.split_and_upload(texts=texts, metadatas=metadatas)
@@ -1098,11 +1098,11 @@ class Ingest():
           # api_key=os.getenv('AZURE_OPENAI_KEY'),
           max_requests_per_minute=10_000,
           max_tokens_per_minute=10_000_000,
-          max_attempts=500,
+          max_attempts=1_000,
           logging_level=logging.INFO,
           token_encoding_name='cl100k_base')
       asyncio.run(oai.process_api_requests_from_file())
-      print(f"⏰ embeddings tuntime: {(time.monotonic() - embeddings_start_time):.2f} seconds")
+      print(f"⏰ embeddings runtime: {(time.monotonic() - embeddings_start_time):.2f} seconds")
       # parse results into dict of shape page_content -> embedding
       embeddings_dict: dict[str, List[float]] = {
           item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results
@@ -1123,8 +1123,9 @@ class Ingest():
         )
       except Exception as e:
         # it's fine if this gets timeout error. it will still post, according to devs: https://github.com/qdrant/qdrant/issues/3654
-        print("Warning: all update and/or upsert timouts are fine (completed in background), but errors might not be: ",
-              e)
+        print(
+            "Warning: all update and/or upsert timeouts are fine (completed in background), but errors might not be: ",
+            e)
         pass
 
       ### Supabase SQL ###
