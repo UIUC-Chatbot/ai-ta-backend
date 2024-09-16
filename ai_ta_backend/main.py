@@ -552,7 +552,7 @@ def run_flow(service: WorkflowService) -> Response:
       return response
     
 @app.route('/createProject', methods=['POST'])
-def createProject(service: ProjectService) -> Response:
+def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> Response:
   """
   Create a new project in UIUC.Chat
   """
@@ -569,9 +569,9 @@ def createProject(service: ProjectService) -> Response:
         f"Missing one or more required parameters: 'project_name' must be provided."
     )
   print(f"In /projectCreation for project: {project_name}")
-
-  result = service.create_project(project_name, project_description, project_owner_email)
-  response = jsonify(result)
+  result = flaskExecutor.submit(service.create_project, project_name, project_description, project_owner_email)
+  #result = service.create_project(project_name, project_description, project_owner_email)
+  response = jsonify({'outcome': 'success'})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
