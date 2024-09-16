@@ -7,6 +7,7 @@ from injector import inject
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
+from ai_ta_backend.utils.crypto import encrypt_if_needed
 from ai_ta_backend.utils.schema_generation import (
     generate_schema_from_project_description,)
 
@@ -81,17 +82,19 @@ class ProjectService:
       if project_owner_email:
         pre_assigned_response = self.sqlDb.getPreAssignedAPIKeys(project_owner_email)
         if len(pre_assigned_response.data) > 0:
-          llm_key = project_name + "-llms"
+          redis_key = project_name + "-llms"
           llm_val = {
               "defaultModel": None,
               "defaultTemp": None,
           }
           # pre-assigned key exists
           for row in pre_assigned_response.data:
-            llm_val[row['provider_name']] = row['api_key']
+            # encrypt JUST the API keys field, which is row['providerBodyNoModels']['apiKey]
+            row['providerBodyNoModels']['apiKey'] = encrypt_if_needed(row['providerBodyNoModels']['apiKey'])
+            llm_val[row['providerName']] = row['providerBodyNoModels']
 
           # Insert the pre-assigned API keys into Redis
-          set_llm_url = str(os.environ['KV_REST_API_URL']) + f"/set/{llm_key}"
+          set_llm_url = str(os.environ['KV_REST_API_URL']) + f"/set/{redis_key}"
           set_response = requests.post(set_llm_url, headers=headers, data=json.dumps(llm_val))
 
           # Check the response status
