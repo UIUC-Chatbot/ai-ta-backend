@@ -1,56 +1,63 @@
 """
-To deploy: beam deploy ingest.py --profile caii-ncsa
+To deploy: beam deploy ingest.py:ingest
 Use CAII gmail to auth.
 """
-import asyncio
-import inspect
-import json
-import logging
-import mimetypes
-import os
-import re
-import shutil
-import subprocess
-import time
-import traceback
-import uuid
-from pathlib import Path
-from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Dict, List, Optional, Union
+
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import beam
-import boto3
-import fitz
-import openai
-import pdfplumber
-import pytesseract
-import sentry_sdk
-import supabase
-from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
-from bs4 import BeautifulSoup
-from git.repo import Repo
-from langchain.document_loaders import (
-    Docx2txtLoader,
-    GitLoader,
-    PythonLoader,
-    TextLoader,
-    UnstructuredExcelLoader,
-    UnstructuredPowerPointLoader,
-)
-from langchain.document_loaders.csv_loader import CSVLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.schema import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Qdrant
+from beam import QueueDepthAutoscaler  # RequestLatencyAutoscaler,
 
-#from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
-from OpenaiEmbeddings import OpenAIAPIProcessor
-from PIL import Image
-from posthog import Posthog
-from pydub import AudioSegment
-from qdrant_client import QdrantClient, models
-from qdrant_client.models import PointStruct
-from supabase.client import ClientOptions
+if beam.env.is_remote():
+  # Only import these in the Cloud container, not when building the container.
+  import asyncio
+  import inspect
+  import json
+  import logging
+  import mimetypes
+  import os
+  import re
+  import shutil
+  import subprocess
+  import time
+  import traceback
+  import uuid
+  from pathlib import Path
+  from tempfile import NamedTemporaryFile
+
+  # from typing import Any, Callable, Dict, List, Optional, Union
+  import beam
+  import boto3
+  import fitz
+  import openai
+  import pdfplumber
+  import pytesseract
+  import sentry_sdk
+  import supabase
+  from bs4 import BeautifulSoup
+  from git.repo import Repo
+  from langchain.document_loaders import (
+      Docx2txtLoader,
+      GitLoader,
+      PythonLoader,
+      TextLoader,
+      UnstructuredExcelLoader,
+      UnstructuredPowerPointLoader,
+  )
+  from langchain.document_loaders.csv_loader import CSVLoader
+  from langchain.embeddings.openai import OpenAIEmbeddings
+  from langchain.schema import Document
+  from langchain.text_splitter import RecursiveCharacterTextSplitter
+  from langchain.vectorstores import Qdrant
+
+  #from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
+  from OpenaiEmbeddings import OpenAIAPIProcessor
+  from PIL import Image
+  from posthog import Posthog
+  from pydub import AudioSegment
+  from qdrant_client import QdrantClient, models
+  from qdrant_client.models import PointStruct
+  from supabase.client import ClientOptions
 
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain.chat_models import AzureChatOpenAI
@@ -83,17 +90,29 @@ requirements = [
 ]
 
 # TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
-app = App(
-    "ingest",
-    runtime=Runtime(
-        cpu=1,
-        memory="3Gi",  # 3
-        image=beam.Image(
-            python_version="python3.10",
-            python_packages=requirements,
-            commands=["apt-get update && apt-get install -y ffmpeg tesseract-ocr"],
-        ),
-    ))
+# app = App(
+#     "ingest",
+#     runtime=Runtime(
+#         cpu=1,
+#         memory="3Gi",  # 3
+#         image=beam.Image(
+#             python_version="python3.10",
+#             python_packages=requirements,
+#             commands=["apt-get update && apt-get install -y ffmpeg tesseract-ocr"],
+#         ),
+#     ))
+
+# image = (
+#   beam.Image(python_version=="python3.10")
+#   .add_commands(["apt-get update && apt-get install -y ffmpeg tesseract-ocr"])
+#   .add_python_packages=(requirements)
+#   )
+
+image = (beam.Image(
+    python_version="python3.10",
+    commands=(["apt-get update && apt-get install -y ffmpeg tesseract-ocr"]),
+    python_packages=requirements,
+))
 
 
 def loader():
@@ -150,28 +169,51 @@ def loader():
 
 
 # autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
-autoscaler = QueueDepthAutoscaler(max_tasks_per_replica=300, max_replicas=3)
+autoscaler = QueueDepthAutoscaler(tasks_per_container=300, max_containers=3)
+
+ourSecrets = [
+    "SUPABASE_URL",
+    "SUPABASE_API_KEY",
+    "VLADS_OPENAI_KEY",
+    "REFACTORED_MATERIALS_SUPABASE_TABLE",
+    "S3_BUCKET_NAME",
+    "QDRANT_URL",
+    "QDRANT_API_KEY",
+    "QDRANT_COLLECTION_NAME",
+    "OPENAI_API_TYPE",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "POSTHOG_API_KEY",
+    # "AZURE_OPENAI_KEY",
+    # "AZURE_OPENAI_ENGINE",
+    # "AZURE_OPENAI_KEY",
+    # "AZURE_OPENAI_ENDPOINT",
+]
 
 
 # Triggers determine how your app is deployed
 # @app.rest_api(
-@app.task_queue(workers=4,
-                max_pending_tasks=15_000,
-                callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
-                timeout=60 * 25,
-                max_retries=1,
-                loader=loader,
-                autoscaler=autoscaler)
-def ingest(**inputs: Dict[str, Any]):
-
-  qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
+@beam.task_queue(name='ingest_task_queue',
+                 workers=4,
+                 cpu=1,
+                 memory=3_072,
+                 max_pending_tasks=15_000,
+                 callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
+                 timeout=60 * 25,
+                 retries=1,
+                 secrets=ourSecrets,
+                 on_start=loader,
+                 image=image,
+                 autoscaler=autoscaler)
+def ingest(context, **inputs: Dict[str | List[str], Any]):
+  qdrant_client, vectorstore, s3_client, supabase_client, posthog = context.on_start_value
 
   course_name: List[str] | str = inputs.get('course_name', '')
   s3_paths: List[str] | str = inputs.get('s3_paths', '')
   url: List[str] | str | None = inputs.get('url', None)
   base_url: List[str] | str | None = inputs.get('base_url', None)
   readable_filename: List[str] | str = inputs.get('readable_filename', '')
-  content: str | None = inputs.get('content', None)  # is webtext if content exists
+  content: str | List[str] | None = cast(str | List[str] | None, inputs.get('url'))  # defined if ingest type is webtext
 
   print(
       f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}"
@@ -1151,7 +1193,7 @@ class Ingest():
       print(f"Document size: {document_size_mb:.2f} MB")
 
       response = self.supabase_client.table(
-          os.getenv('SUPABASE_DOCUMENTS_TABLE')).insert(document).execute()  # type: ignore
+          os.getenv('REFACTORED_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
 
       # add to Nomic document map
       # if len(response.data) > 0:
@@ -1182,7 +1224,7 @@ class Ingest():
     For given metadata, fetch docs from Supabase based on S3 path or URL.
     If docs exists, concatenate the texts and compare with current texts, if same, return True.
     """
-    doc_table = os.getenv('SUPABASE_DOCUMENTS_TABLE', '')
+    doc_table = os.getenv('REFACTORED_MATERIALS_SUPABASE_TABLE')
     course_name = metadatas[0]['course_name']
     incoming_s3_path = metadatas[0]['s3_path']
     url = metadatas[0]['url']
@@ -1315,7 +1357,7 @@ class Ingest():
         # try:
         #   # delete from Nomic
         #   response = self.supabase_client.from_(
-        #       os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq('s3_path', s3_path).eq(
+        #       os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).select("id, s3_path, contexts").eq('s3_path', s3_path).eq(
         #           'course_name', course_name).execute()
         #   data = response.data[0]  #single record fetched
         #   nomic_ids_to_delete = []
@@ -1330,8 +1372,8 @@ class Ingest():
         #   sentry_sdk.capture_exception(e)
 
         try:
-          self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq('s3_path', s3_path).eq(
-              'course_name', course_name).execute()
+          self.supabase_client.from_(os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).delete().eq(
+              's3_path', s3_path).eq('course_name', course_name).execute()
         except Exception as e:
           print("Error in deleting file from supabase:", e)
           sentry_sdk.capture_exception(e)
@@ -1359,7 +1401,7 @@ class Ingest():
             sentry_sdk.capture_exception(e)
         # try:
         #   # delete from Nomic
-        #   response = self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, url, contexts").eq(
+        #   response = self.supabase_client.from_(os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).select("id, url, contexts").eq(
         #       'url', source_url).eq('course_name', course_name).execute()
         #   data = response.data[0]  #single record fetched
         #   nomic_ids_to_delete = []
@@ -1375,8 +1417,8 @@ class Ingest():
 
         try:
           # delete from Supabase
-          self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).delete().eq('url', source_url).eq(
-              'course_name', course_name).execute()
+          self.supabase_client.from_(os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).delete().eq(
+              'url', source_url).eq('course_name', course_name).execute()
         except Exception as e:
           print("Error in deleting file from supabase:", e)
           sentry_sdk.capture_exception(e)
