@@ -23,6 +23,18 @@ class ProjectService:
     self.posthog = posthog_service
     self.sentry = sentry_service
 
+  def generate_json_schema(self, project_name: str, project_description: str | None) -> None:
+    # Generate metadata schema using project_name and project_description
+    json_schema = generate_schema_from_project_description(project_name, project_description)
+
+    # Insert project into Supabase
+    sql_row = {
+        "course_name": project_name,
+        "description": project_description,
+        "metadata_schema": json_schema,
+    }
+    self.sqlDb.insertProject(sql_row)
+
   def create_project(self, project_name: str, project_description: str | None, project_owner_email: str) -> str:
     """
         This function takes in a project name and description and creates a project in the database.
@@ -30,20 +42,7 @@ class ProjectService:
         2. Insert project into Supabase
         3. Insert project into Redis
         """
-    print("Inside create_project")
     try:
-      # Generate metadata schema using project_name and project_description
-      json_schema = generate_schema_from_project_description(project_name, project_description)
-
-      # Insert project into Supabase
-      sql_row = {
-          "course_name": project_name,
-          "description": project_description,
-          "metadata_schema": json_schema,
-      }
-      response = self.sqlDb.insertProject(sql_row)
-      #print("Response from insertProject: ", response)
-
       # Insert project into Redis
       headers = {
           "Authorization":
@@ -108,4 +107,4 @@ class ProjectService:
     except Exception as e:
       print("Error in create_project: ", e)
       self.sentry.capture_exception(e)
-      return "error"
+      return f"Error while creating project: {e}"
