@@ -59,9 +59,6 @@ if beam.env.is_remote():
   from qdrant_client.models import PointStruct
   from supabase.client import ClientOptions
 
-# from langchain.schema.output_parser import StrOutputParser
-# from langchain.chat_models import AzureChatOpenAI
-
 requirements = [
     "openai<1.0",
     "supabase==2.5.3",
@@ -89,30 +86,33 @@ requirements = [
     "pdfplumber==0.11.0",  # PDF OCR, better performance than Fitz/PyMuPDF in my Gies PDF testing.
 ]
 
-# TODO: consider adding workers. They share CPU and memory https://docs.beam.cloud/deployment/autoscaling#worker-use-cases
-# app = App(
-#     "ingest",
-#     runtime=Runtime(
-#         cpu=1,
-#         memory="3Gi",  # 3
-#         image=beam.Image(
-#             python_version="python3.10",
-#             python_packages=requirements,
-#             commands=["apt-get update && apt-get install -y ffmpeg tesseract-ocr"],
-#         ),
-#     ))
-
-# image = (
-#   beam.Image(python_version=="python3.10")
-#   .add_commands(["apt-get update && apt-get install -y ffmpeg tesseract-ocr"])
-#   .add_python_packages=(requirements)
-#   )
-
 image = (beam.Image(
     python_version="python3.10",
     commands=(["apt-get update && apt-get install -y ffmpeg tesseract-ocr"]),
     python_packages=requirements,
 ))
+
+# autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
+autoscaler = QueueDepthAutoscaler(tasks_per_container=300, max_containers=3)
+
+ourSecrets = [
+    "SUPABASE_URL",
+    "SUPABASE_API_KEY",
+    "VLADS_OPENAI_KEY",
+    "REFACTORED_MATERIALS_SUPABASE_TABLE",
+    "S3_BUCKET_NAME",
+    "QDRANT_URL",
+    "QDRANT_API_KEY",
+    "QDRANT_COLLECTION_NAME",
+    "OPENAI_API_TYPE",
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "POSTHOG_API_KEY",
+    # "AZURE_OPENAI_KEY",
+    # "AZURE_OPENAI_ENGINE",
+    # "AZURE_OPENAI_KEY",
+    # "AZURE_OPENAI_ENDPOINT",
+]
 
 
 def loader():
@@ -166,29 +166,6 @@ def loader():
       enable_tracing=True)
 
   return qdrant_client, vectorstore, s3_client, supabase_client, posthog
-
-
-# autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
-autoscaler = QueueDepthAutoscaler(tasks_per_container=300, max_containers=3)
-
-ourSecrets = [
-    "SUPABASE_URL",
-    "SUPABASE_API_KEY",
-    "VLADS_OPENAI_KEY",
-    "REFACTORED_MATERIALS_SUPABASE_TABLE",
-    "S3_BUCKET_NAME",
-    "QDRANT_URL",
-    "QDRANT_API_KEY",
-    "QDRANT_COLLECTION_NAME",
-    "OPENAI_API_TYPE",
-    "AWS_ACCESS_KEY_ID",
-    "AWS_SECRET_ACCESS_KEY",
-    "POSTHOG_API_KEY",
-    # "AZURE_OPENAI_KEY",
-    # "AZURE_OPENAI_ENGINE",
-    # "AZURE_OPENAI_KEY",
-    # "AZURE_OPENAI_ENDPOINT",
-]
 
 
 # Triggers determine how your app is deployed
