@@ -70,8 +70,8 @@ class ExportService:
       filename = course_name + '_' + str(uuid.uuid4()) + '_documents.zip'
       s3_filepath = f"courses/{course_name}/{filename}"
       # background task of downloading data - map it with above ID
-      executor = ProcessPoolExecutor()
-      executor.submit(export_data_in_bg, response, "documents", course_name, s3_filepath)
+      #executor = ProcessPoolExecutor()
+      self.executor.submit(export_data_in_bg, response, "documents", course_name, s3_filepath)
       return {"response": 'Download from S3', "s3_path": s3_filepath}
 
     else:
@@ -141,8 +141,8 @@ class ExportService:
       filename = course_name[0:10] + '-' + str(generate_short_id()) + '_convos.zip'
       s3_filepath = f"courses/{course_name}/{filename}"
       # background task of downloading data - map it with above ID
-      executor = ProcessPoolExecutor()
-      executor.submit(export_data_in_bg, response, "conversations", course_name, s3_filepath)
+      #executor = ProcessPoolExecutor()
+      self.executor.submit(export_data_in_bg, response, "conversations", course_name, s3_filepath)
       return {"response": 'Download from S3', "s3_path": s3_filepath}
 
     # Fetch data
@@ -205,8 +205,8 @@ class ExportService:
       filename = course_name[0:10] + '-' + str(generate_short_id()) + '-convos.zip'
       s3_filepath = f"courses/{course_name}/{filename}"
       # background task of downloading data - map it with above ID
-      executor = ProcessPoolExecutor()
-      executor.submit(export_data_in_bg_emails, response, "conversations", course_name, s3_filepath, emails)
+      #executor = ProcessPoolExecutor()
+      self.executor.submit(export_data_in_bg_emails, response, "conversations", course_name, s3_filepath, emails)
       return {"response": 'Download from S3', "s3_path": s3_filepath}
 
     # Fetch data
