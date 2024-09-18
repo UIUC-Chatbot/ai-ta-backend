@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Welcome](README.md)
+* [Quick start](README.md)
 
 ## Features
 
