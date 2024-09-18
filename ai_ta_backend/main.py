@@ -37,10 +37,10 @@ from ai_ta_backend.executors.thread_pool_executor import (
 from ai_ta_backend.service.export_service import ExportService
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
+from ai_ta_backend.service.project_service import ProjectService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
-from ai_ta_backend.service.project_service import ProjectService
 
 app = Flask(__name__)
 CORS(app)
@@ -325,6 +325,43 @@ def export_convo_history_v2(service: ExportService):
   return response
 
 
+@app.route('/export-convo-history-user', methods=['GET'])
+def export_convo_history_user(service: ExportService):
+  user_email: str = request.args.get('user_email', default='', type=str)
+  project_name: str = request.args.get('project_name', default='', type=str)
+
+  if user_email == '' or project_name == '':
+    abort(400, description=f"Missing required parameters: 'user_email' and 'project_name' must be provided.")
+
+  print("user_email: ", user_email)
+  print("project_name: ", project_name)
+  export_status = service.export_convo_history_user(user_email, project_name)
+  print("Export processing response: ", export_status)
+
+  if export_status['response'] == "No data found for the given user and project.":
+    response = Response(status=204)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  elif export_status['response'] == "Download from S3":
+    response = jsonify({"response": "Download from S3", "s3_path": export_status['s3_path']})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+  elif export_status['response'] == "Error fetching conversations!":
+    response = jsonify({'response': 'Error fetching conversations'})
+    response.status_code = 500
+    response.headers.add('Access-Control-Allow-Origin', '*')
+
+  else:
+    print("export_status['response'][2]: ", export_status['response'][2])
+    print("export_status['response'][1]: ", export_status['response'][1])
+    response = make_response(
+        send_from_directory(export_status['response'][2], export_status['response'][1], as_attachment=True))
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers["Content-Disposition"] = f"attachment; filename={export_status['response'][1]}"
+    os.remove(export_status['response'][0])
+
+  return response
+
+
 @app.route('/export-conversations-custom', methods=['GET'])
 def export_conversations_custom(service: ExportService):
   course_name: str = request.args.get('course_name', default='', type=str)
@@ -513,9 +550,10 @@ def run_flow(service: WorkflowService) -> Response:
       response.status_code = 500
       response.headers.add('Access-Control-Allow-Origin', '*')
       return response
-    
+
+
 @app.route('/createProject', methods=['POST'])
-def createProject(service: ProjectService) -> Response:
+def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> Response:
   """
   Create a new project in UIUC.Chat
   """
@@ -526,19 +564,16 @@ def createProject(service: ProjectService) -> Response:
 
   if project_name == '':
     # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'project_name' must be provided."
-    )
-  print(f"In /projectCreation for project: {project_name}")
-
+    abort(400, description=f"Missing one or more required parameters: 'project_name' must be provided.")
+  print(f"In /createProject for: {project_name}")
   result = service.create_project(project_name, project_description, project_owner_email)
+
+  # Do long-running LLM task in the background.
+  flaskExecutor.submit(service.generate_json_schema, project_name, project_description)
+
   response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
-
-
 
 
 def configure(binder: Binder) -> None:
