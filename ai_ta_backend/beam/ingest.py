@@ -78,7 +78,7 @@ requirements = [
     "openpyxl==3.1.2",  # excel"
     "networkx==3.2.1",  # unused part of excel partitioning :("
     "python-pptx==0.6.23",
-    "unstructured==0.10.29",
+    "unstructured==0.15.12",
     "GitPython==3.1.40",
     "beautifulsoup4==4.12.2",
     "sentry-sdk==1.39.1",
@@ -349,7 +349,7 @@ class Ingest():
         else:
           # No supported ingest... Fallback to attempting utf-8 decoding, otherwise fail.
           try:
-            self._ingest_single_txt(s3_path, course_name)
+            self._ingest_single_txt(s3_path, course_name, **kwargs)
             success_status['success_ingest'] = s3_path
             print(f"No ingest methods -- Falling back to UTF-8 INGEST... s3_path = {s3_path}")
           except Exception as e:
@@ -443,7 +443,8 @@ class Ingest():
   def _ingest_single_py(self, s3_path: str, course_name: str, **kwargs):
     try:
       file_name = s3_path.split("/")[-1]
-      file_path = "media/" + file_name  # download from s3 to local folder for ingest
+      os.makedirs("../media", exist_ok=True)
+      file_path = "../media/" + file_name  # download from s3 to local folder for ingest
 
       self.s3_client.download_file(os.getenv('S3_BUCKET_NAME'), s3_path, file_path)
 
@@ -949,6 +950,7 @@ class Ingest():
         str: "Success" or an error message
     """
     print("In text ingest, UTF-8")
+    print("kwargs", kwargs)
     try:
       # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
