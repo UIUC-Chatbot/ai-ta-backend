@@ -2,7 +2,6 @@
 To deploy: beam deploy ingest.py:ingest
 Use CAII gmail to auth.
 """
-<<<<<<< Updated upstream
 
 from typing import Any, Callable, Dict, List, Optional, Union, cast
 
@@ -19,6 +18,7 @@ if beam.env.is_remote():
   import os
   import re
   import shutil
+  import subprocess
   import subprocess
   import time
   import traceback
@@ -51,56 +51,6 @@ if beam.env.is_remote():
   from langchain.text_splitter import RecursiveCharacterTextSplitter
   from langchain.vectorstores import Qdrant
 
-  #from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
-  from OpenaiEmbeddings import OpenAIAPIProcessor
-  from PIL import Image
-  from posthog import Posthog
-  from pydub import AudioSegment
-  from qdrant_client import QdrantClient, models
-  from qdrant_client.models import PointStruct
-  from supabase.client import ClientOptions
-=======
-import asyncio
-import inspect
-import json
-import logging
-import mimetypes
-import os
-import re
-import shutil
-import subprocess
-import time
-import traceback
-import uuid
-from pathlib import Path
-from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Dict, List, Optional, Union
-
-import beam
-import boto3
-import fitz
-import openai
-import pdfplumber
-import pytesseract
-import sentry_sdk
-import supabase
-from beam import App, QueueDepthAutoscaler, Runtime  # RequestLatencyAutoscaler,
-from bs4 import BeautifulSoup
-from git.repo import Repo
-from langchain.document_loaders import (
-    Docx2txtLoader,
-    GitLoader,
-    PythonLoader,
-    TextLoader,
-    UnstructuredExcelLoader,
-    UnstructuredPowerPointLoader,
-)
-from langchain.document_loaders.csv_loader import CSVLoader
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.schema import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Qdrant
-
 #from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
 from OpenaiEmbeddings import OpenAIAPIProcessor
 from PIL import Image
@@ -112,7 +62,6 @@ from supabase.client import ClientOptions
 
 # from langchain.schema.output_parser import StrOutputParser
 # from langchain.chat_models import AzureChatOpenAI
->>>>>>> Stashed changes
 
 requirements = [
     "openai<1.0",
@@ -225,7 +174,6 @@ def loader():
 
 # Triggers determine how your app is deployed
 # @app.rest_api(
-<<<<<<< Updated upstream
 @beam.task_queue(name='ingest_task_queue',
                  workers=4,
                  cpu=1,
@@ -240,30 +188,13 @@ def loader():
                  autoscaler=autoscaler)
 def ingest(context, **inputs: Dict[str | List[str], Any]):
   qdrant_client, vectorstore, s3_client, supabase_client, posthog = context.on_start_value
-=======
-@app.task_queue(workers=4,
-                max_pending_tasks=15_000,
-                callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
-                timeout=60 * 25,
-                max_retries=1,
-                loader=loader,
-                autoscaler=autoscaler)
-def ingest(**inputs: Dict[str, Any]):
-
-  qdrant_client, vectorstore, s3_client, supabase_client, posthog = inputs["context"]
->>>>>>> Stashed changes
 
   course_name: List[str] | str = inputs.get('course_name', '')
   s3_paths: List[str] | str = inputs.get('s3_paths', '')
   url: List[str] | str | None = inputs.get('url', None)
   base_url: List[str] | str | None = inputs.get('base_url', None)
   readable_filename: List[str] | str = inputs.get('readable_filename', '')
-<<<<<<< Updated upstream
   content: str | List[str] | None = cast(str | List[str] | None, inputs.get('url'))  # defined if ingest type is webtext
-=======
-  content: str | None = inputs.get('content', None)  # is webtext if content exists
-  doc_groups: List[str] | str = inputs.get('groups', [])
->>>>>>> Stashed changes
 
   print(
       f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, dpc_groups: {doc_groups}"
@@ -1246,15 +1177,7 @@ class Ingest():
       print(f"Document size: {document_size_mb:.2f} MB")
 
       response = self.supabase_client.table(
-<<<<<<< Updated upstream
           os.getenv('REFACTORED_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
-=======
-          os.getenv('SUPABASE_DOCUMENTS_TABLE')).insert(document).execute()  # type: ignore
-      
-      # need to update Supabase tables with doc group info
-      
-
->>>>>>> Stashed changes
 
       # add to Nomic document map
       # if len(response.data) > 0:
