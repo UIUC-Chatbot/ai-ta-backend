@@ -15,23 +15,31 @@ layout:
     visible: true
 ---
 
-# Welcome
+# Quick start
 
 {% embed url="https://www.youtube.com/watch?v=IIMCrIoz7LM" %}
 Short and sweet introduction to UIUC.chat
 {% endembed %}
 
-## Using the Website
+## Creating a new project
 
-1. Go to [uiuc.chat](https://uiuc.chat)
-2. Click on New Project
-3. Upload your documents, web scrape your favorite websites or use one of our many integrations to pull in the most useful content
-4. Start chatting on the Chat tab
-5. Manage your documents on the Materials tab
-6. Visualize the conversations in your project on the Analysis tab
-7. Build your own applications using the API provided on the API tab
+{% embed url="https://youtu.be/m0y6xRABGvI" %}
 
+## Connecting canvas&#x20;
 
+Connect canvas on the materials page&#x20;
+
+{% hint style="warning" %}
+You must invite our bot for your course as a TA. The email address is `uiuc.chat@ad.illinois.edu`
+{% endhint %}
+
+{% embed url="https://youtu.be/OOy0JD0Gf9g" %}
+
+## Setting up OpenAI API key
+
+For a great experience bring your own OpenAI API key. We also support Azure OpenAI, and Anthropic.&#x20;
+
+{% embed url="https://www.youtube.com/watch?v=XNf1zBywDRo" %}
 
 ## Using the API
 

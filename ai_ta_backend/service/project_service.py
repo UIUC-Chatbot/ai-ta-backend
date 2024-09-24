@@ -7,6 +7,7 @@ from injector import inject
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
+from ai_ta_backend.utils.crypto import encrypt_if_needed
 from ai_ta_backend.utils.schema_generation import (
     generate_schema_from_project_description,)
 
@@ -22,6 +23,18 @@ class ProjectService:
     self.posthog = posthog_service
     self.sentry = sentry_service
 
+  def generate_json_schema(self, project_name: str, project_description: str | None) -> None:
+    # Generate metadata schema using project_name and project_description
+    json_schema = generate_schema_from_project_description(project_name, project_description)
+
+    # Insert project into Supabase
+    sql_row = {
+        "course_name": project_name,
+        "description": project_description,
+        "metadata_schema": json_schema,
+    }
+    self.sqlDb.insertProject(sql_row)
+
   def create_project(self, project_name: str, project_description: str | None, project_owner_email: str) -> str:
     """
         This function takes in a project name and description and creates a project in the database.
@@ -29,20 +42,7 @@ class ProjectService:
         2. Insert project into Supabase
         3. Insert project into Redis
         """
-    print("Inside create_project")
     try:
-      # Generate metadata schema using project_name and project_description
-      json_schema = generate_schema_from_project_description(project_name, project_description)
-
-      # Insert project into Supabase
-      sql_row = {
-          "course_name": project_name,
-          "description": project_description,
-          "metadata_schema": json_schema,
-      }
-      response = self.sqlDb.insertProject(sql_row)
-      #print("Response from insertProject: ", response)
-
       # Insert project into Redis
       headers = {
           "Authorization":
@@ -54,7 +54,7 @@ class ProjectService:
       value = {
           "is_private": False,
           "course_owner": project_owner_email,
-          "course_admins": None,
+          "course_admins": ['kvday2@illinois.edu'],
           "approved_emails_list": None,
           "example_questions": None,
           "banner_image_s3": None,
@@ -73,12 +73,38 @@ class ProjectService:
 
       # Check the response status
       if response.status_code == 200:
-        print("Key-value pair inserted successfully.")
+        print("Course metadata inserted successfully.")
       else:
-        print(f"Failed to insert key-value pair. Status code: {response.status_code}, Response: {response.text}")
+        print(f"Failed to insert course metadata. Status code: {response.status_code}, Response: {response.text}")
+
+      # check if the project owner has pre-assigned API keys
+      if project_owner_email:
+        pre_assigned_response = self.sqlDb.getPreAssignedAPIKeys(project_owner_email)
+        if len(pre_assigned_response.data) > 0:
+          redis_key = project_name + "-llms"
+          llm_val = {
+              "defaultModel": None,
+              "defaultTemp": None,
+          }
+          # pre-assigned key exists
+          for row in pre_assigned_response.data:
+            # encrypt JUST the API keys field, which is row['providerBodyNoModels']['apiKey]
+            row['providerBodyNoModels']['apiKey'] = encrypt_if_needed(row['providerBodyNoModels']['apiKey'])
+            llm_val[row['providerName']] = row['providerBodyNoModels']
+
+          # Insert the pre-assigned API keys into Redis
+          set_llm_url = str(os.environ['KV_REST_API_URL']) + f"/set/{redis_key}"
+          set_response = requests.post(set_llm_url, headers=headers, data=json.dumps(llm_val))
+
+          # Check the response status
+          if set_response.status_code == 200:
+            print("LLM key-value pair inserted successfully.")
+          else:
+            print(
+                f"Failed to insert LLM key-value pair. Status code: {response.status_code}, Response: {response.text}")
 
       return "success"
     except Exception as e:
       print("Error in create_project: ", e)
       self.sentry.capture_exception(e)
-      return "error"
+      return f"Error while creating project: {e}"
