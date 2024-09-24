@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import time
@@ -37,10 +38,10 @@ from ai_ta_backend.executors.thread_pool_executor import (
 from ai_ta_backend.service.export_service import ExportService
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
+from ai_ta_backend.service.project_service import ProjectService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
-from ai_ta_backend.service.project_service import ProjectService
 
 app = Flask(__name__)
 CORS(app)
@@ -110,6 +111,7 @@ def getTopContexts(service: RetrievalService) -> Response:
   course_name: str = data.get('course_name', '')
   token_limit: int = data.get('token_limit', 3000)
   doc_groups: List[str] = data.get('doc_groups', [])
+  start_time = time.monotonic()
 
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
@@ -119,8 +121,8 @@ def getTopContexts(service: RetrievalService) -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  found_documents = service.getTopContexts(search_query, course_name, token_limit, doc_groups)
-
+  found_documents = asyncio.run(service.getTopContexts(search_query, course_name, token_limit, doc_groups))
+  print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -513,7 +515,8 @@ def run_flow(service: WorkflowService) -> Response:
       response.status_code = 500
       response.headers.add('Access-Control-Allow-Origin', '*')
       return response
-    
+
+
 @app.route('/createProject', methods=['POST'])
 def createProject(service: ProjectService) -> Response:
   """
@@ -526,11 +529,7 @@ def createProject(service: ProjectService) -> Response:
 
   if project_name == '':
     # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'project_name' must be provided."
-    )
+    abort(400, description=f"Missing one or more required parameters: 'project_name' must be provided.")
   print(f"In /projectCreation for project: {project_name}")
 
   result = service.create_project(project_name, project_description, project_owner_email)
@@ -539,11 +538,9 @@ def createProject(service: ProjectService) -> Response:
   return response
 
 
-
-
 def configure(binder: Binder) -> None:
-  binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter, scope=SingletonScope)
-  binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
+  binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
+  binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
   binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)
   binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
   binder.bind(SentryService, to=SentryService, scope=SingletonScope)
