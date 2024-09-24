@@ -23,7 +23,7 @@ Short and sweet introduction to UIUC.chat
 
 ## Creating a new project
 
-* Go to [uiuc.chat/new](http://uiuc.chat/new)
+{% embed url="https://youtu.be/m0y6xRABGvI" %}
 
 ## Connecting canvas&#x20;
 
