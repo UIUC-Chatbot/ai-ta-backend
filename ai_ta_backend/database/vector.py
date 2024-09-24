@@ -35,8 +35,7 @@ class VectorDatabase():
     """
     # Search the vector database
     search_results = self.qdrant_client.search(
-        # collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-        collection_name=self.vectorstore.collection_name,
+        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
         query_filter=self._create_search_filter(course_name, doc_groups, disabled_doc_groups),
         with_vectors=False,
         query_vector=user_query_embedding,
