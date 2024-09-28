@@ -291,9 +291,9 @@ class CanvasIngest():
       shutil.rmtree(folder_path)
 
       # Ingest files
-      url = 'https://41kgx.apps.beam.cloud'
+      url = 'https://ingest-773c58e-v7.app.beam.cloud'
       headers = {
-          'Authorization': f"Basic {os.getenv('BEAM_API_KEY')}",
+          'Authorization': f"Bearer {os.getenv('BEAM_API_KEY')}",
       }
 
       print("Number of docs to ingest: ", len(all_s3_paths))
