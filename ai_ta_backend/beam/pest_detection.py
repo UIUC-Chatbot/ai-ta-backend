@@ -53,8 +53,6 @@ def loader():
   """Model weights are downloaded once at image build time using the @build hook and saved into the image. 'Baking' models into the modal.Image at build time provided the fastest cold start. """
   print("Inside loader")
 
-  volume_path = "./models"
-
   model_url = "https://assets.kastan.ai/pest_detection_model_weights.pt"
   model_path = f'{volume_path}/pest_detection_model_weights.pt'
   start_time = time.monotonic()
