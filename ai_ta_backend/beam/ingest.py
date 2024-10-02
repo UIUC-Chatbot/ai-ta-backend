@@ -1190,7 +1190,7 @@ class Ingest():
         if groups:
           # call the supabase function to add the document to the group
           if contexts[0].metadata.get('url'):
-            data, count = self.supabase_client.rpc('add_document_to_group', {
+            data, count = self.supabase_client.rpc('add_document_to_group_url', {
               "p_course_name": contexts[0].metadata.get('course_name'),
               "p_s3_path": contexts[0].metadata.get('s3_path'),
               "p_url": contexts[0].metadata.get('url'),
@@ -1198,7 +1198,7 @@ class Ingest():
               "p_doc_groups": groups,
             }).execute()
           else:
-            data, count = self.supabase_client.rpc('add_document_to_group_url', {
+            data, count = self.supabase_client.rpc('add_document_to_group', {
               "p_course_name": contexts[0].metadata.get('course_name'),
               "p_s3_path": contexts[0].metadata.get('s3_path'),
               "p_url": contexts[0].metadata.get('url'),
