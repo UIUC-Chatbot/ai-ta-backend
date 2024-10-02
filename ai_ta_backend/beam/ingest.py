@@ -19,6 +19,7 @@ if beam.env.is_remote():
   import re
   import shutil
   import subprocess
+  import subprocess
   import time
   import traceback
   import uuid
@@ -50,14 +51,17 @@ if beam.env.is_remote():
   from langchain.text_splitter import RecursiveCharacterTextSplitter
   from langchain.vectorstores import Qdrant
 
-  #from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
-  from OpenaiEmbeddings import OpenAIAPIProcessor
-  from PIL import Image
-  from posthog import Posthog
-  from pydub import AudioSegment
-  from qdrant_client import QdrantClient, models
-  from qdrant_client.models import PointStruct
-  from supabase.client import ClientOptions
+#from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
+from OpenaiEmbeddings import OpenAIAPIProcessor
+from PIL import Image
+from posthog import Posthog
+from pydub import AudioSegment
+from qdrant_client import QdrantClient, models
+from qdrant_client.models import PointStruct
+from supabase.client import ClientOptions
+
+# from langchain.schema.output_parser import StrOutputParser
+# from langchain.chat_models import AzureChatOpenAI
 
 requirements = [
     "openai<1.0",
@@ -193,37 +197,38 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
   content: str | List[str] | None = cast(str | List[str] | None, inputs.get('url'))  # defined if ingest type is webtext
 
   print(
-      f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}"
+      f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, dpc_groups: {doc_groups}"
   )
 
   ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
 
-  def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content):
+  def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
     if content:
-      return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename)
+      return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=groups)
     elif readable_filename == '':
-      return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url)
+      return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=groups)
     else:
       return ingester.bulk_ingest(course_name,
                                   s3_paths,
                                   readable_filename=readable_filename,
                                   base_url=base_url,
-                                  url=url)
+                                  url=url,
+                                  groups=groups)
 
   # First try
-  success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
+  success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
 
   # retries
   num_retires = 3
   for retry_num in range(1, num_retires):
     if isinstance(success_fail_dict, str):
       print(f"STRING ERROR: {success_fail_dict = }")
-      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
+      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
       time.sleep(13 * retry_num)  # max is 65
     elif success_fail_dict['failure_ingest']:
       print(f"Ingest failure -- Retry attempt {retry_num}. File: {success_fail_dict}")
       # s3_paths = success_fail_dict['failure_ingest'] # retry only failed paths.... what if this is a URL instead?
-      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
+      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
       time.sleep(13 * retry_num)  # max is 65
     else:
       break
@@ -1050,7 +1055,7 @@ class Ingest():
       sentry_sdk.capture_exception(e)
       return err
 
-  def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
+  def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]], **kwargs):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
     Takes in Text and Metadata (from Langchain doc loaders) and splits / uploads to Qdrant.
 
@@ -1104,8 +1109,10 @@ class Ingest():
         return "Success"
 
       # adding chunk index to metadata for parent doc retrieval
+      print("GROUPS: ", kwargs.get('groups', ''))
       for i, context in enumerate(contexts):
         context.metadata['chunk_index'] = i
+        context.metadata['doc_groups'] = kwargs.get('groups', [])
 
       print("Starting to call embeddings API")
       embeddings_start_time = time.monotonic()
