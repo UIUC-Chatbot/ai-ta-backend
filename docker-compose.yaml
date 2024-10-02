@@ -40,9 +40,13 @@ services:
 
   minio:
     image: minio/minio:RELEASE.2024-06-13T22-53-53Z
-    environment:
-      MINIO_ROOT_USER: minioadmin # Customize access key
-      MINIO_ROOT_PASSWORD: minioadmin # Customize secret key
+    # Environment variables for MinIO
+    # Uncomment and set these for production use
+    # MINIO_ROOT_USER: Custom username for MinIO root user
+    # MINIO_ROOT_PASSWORD: Secure password for MinIO root user
+    # environment:
+    #   MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+    #   MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data
     ports:
       - 9000:9000 # Console access
