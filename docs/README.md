@@ -23,7 +23,7 @@ Short and sweet introduction to UIUC.chat
 
 ## Creating a new project
 
-* Go to [uiuc.chat/new](http://uiuc.chat/new)
+{% embed url="https://youtu.be/m0y6xRABGvI" %}
 
 ## Connecting canvas&#x20;
 
@@ -33,15 +33,13 @@ Connect canvas on the materials page&#x20;
 You must invite our bot for your course as a TA. The email address is `uiuc.chat@ad.illinois.edu`
 {% endhint %}
 
-{% embed url="https://www.youtube.com/watch?v=DIO0xhtkwaw" %}
+{% embed url="https://youtu.be/OOy0JD0Gf9g" %}
 
 ## Setting up OpenAI API key
 
 For a great experience bring your own OpenAI API key. We also support Azure OpenAI, and Anthropic.&#x20;
 
 {% embed url="https://www.youtube.com/watch?v=XNf1zBywDRo" %}
-
-
 
 ## Using the API
 
