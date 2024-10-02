@@ -1065,6 +1065,7 @@ class Ingest():
         metadatas (List[Dict[str, Any]]): _description_
     """
     # return "Success"
+    print(f"In split and upload. Metadatas: {metadatas}")
     self.posthog.capture('distinct_id_of_the_user',
                          event='split_and_upload_invoked',
                          properties={
@@ -1075,8 +1076,8 @@ class Ingest():
                              'base_url': metadatas[0].get('base_url', None),
                          })
 
-    print(f"In split and upload. Metadatas: {metadatas}")
-    print(f"Texts: {texts}")
+    #print(f"In split and upload. Metadatas: {metadatas}")
+    #print(f"Texts: {texts}")
     assert len(texts) == len(
         metadatas
     ), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
