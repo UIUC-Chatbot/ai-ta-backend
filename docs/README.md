@@ -41,9 +41,23 @@ For a great experience bring your own OpenAI API key. We also support Azure Open
 
 {% embed url="https://www.youtube.com/watch?v=XNf1zBywDRo" %}
 
+## Why UIUC.chat?
+
+* Control Over Your Information Sources: Unlike vendor-driven sites like ChatGPT.com, all API interactions are contractually hidden and do not train on your data. You have full control over your information sources.&#x20;
+* Source Citation: Our chatbot provides source citations, allowing you to click through and trace back to the documents you uploaded.
+* Robust Features: Enjoy robust authentication, sharing, monitoring, and support for many different language models.
+
+### Top Use Cases
+
+1. **AI Teaching Assistant**: Create a virtual assistant for your courses that provides expert answers, cites sources, and encourages students to explore primary documents. It even integrates with Canvas.&#x20;
+2. **Literature Review**: Upload your academic PDFs or research papers, and let the chatbot help you identify relevant information and citations for your writing projects.
+3. **Project Onboarding Companion**: Integrate resources like GitHub repos and PDFs to efficiently onboard team members—the chatbot becomes a helpful guide through your project materials.
+4. **Advanced Search Tool**: Enhance your search capabilities by using Illinois Chat over your curated content, making information retrieval fast and reliable.
+5. **User Analytics**: When you share your AI assistant as a learning tool, Illinois Chat provides analytics on how users interact with it. This helps you better understand your audience’s needs, allowing you to tailor your content and improve their learning experience.
+
 ## Using the API
 
-For using the API, you need to perform the following steps:&#x20;
+We have a full API that developers can use to interact with the website. Get started in these docs:
 
 1. [Generate the API Key](./#api-keys)
 2. [Use the API authenticated with api key](api/endpoints.md#chat-chat-api-endpoint)
