@@ -99,7 +99,8 @@ class LlmConvoMonitor(Base):
 
     __table_args__ = (
         Index('llm_convo_monitor_course_name_idx', 'course_name', postgresql_using='hash'),
-        Index('llm_convo_monitor_convo_id_idx', 'convo_id', postgresql_using='hash'),
+        Index('llm-convo-monitor_convo_id_key', 'convo_id', postgresql_using='btree'),
+        Index('llm-convo-monitor_pkey', 'id', postgresql_using='btree'),
     )
 
 class Conversations(Base):
@@ -117,8 +118,28 @@ class Conversations(Base):
     folder_id = Column(UUID(as_uuid=True))
 
     __table_args__ = (
-        Index('conversations_project_name_idx', 'project_name', postgresql_using='hash'),
-        Index('conversations_user_email_idx', 'user_email', postgresql_using='hash'),
+        Index('conversations_pkey', 'id', postgresql_using='btree'),
+        Index('idx_user_email_updated_at', 'user_email', 'updated_at', postgresql_using='btree'),
+    )
+
+class Messages(Base):
+    __tablename__ = 'messages'
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    conversation_id = Column(UUID(as_uuid=True), ForeignKey('conversations.id', ondelete='CASCADE'))
+    role = Column(Text)
+    created_at = Column(DateTime, default=func.now())
+    contexts = Column(JSON)
+    tools = Column(JSON)
+    latest_system_message = Column(Text)
+    final_prompt_engineered_message = Column(Text)
+    response_time_sec = Column(BigInteger)
+    content_text = Column(Text)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+    content_image_url = Column(Text)
+    image_description = Column(Text)
+
+    __table_args__ = (
+        Index('messages_pkey', 'id', postgresql_using='btree'),
     )
 
 class PreAuthAPIKeys(Base):
