@@ -393,7 +393,7 @@ class Ingest():
       print(f"MAJOR ERROR IN /bulk_ingest: {str(e)}")
       return success_status
 
-  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str):
+  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str, **kwargs):
     """Crawlee integration
     """
     self.posthog.capture('distinct_id_of_the_user',
@@ -418,7 +418,7 @@ class Ingest():
           'url': url,
           'base_url': base_url,
       }]
-      self.split_and_upload(texts=text, metadatas=metadatas)
+      self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
       self.posthog.capture('distinct_id_of_the_user',
                            event='ingest_single_web_text_succeeded',
                            properties={
@@ -463,7 +463,7 @@ class Ingest():
       #print(texts)
       os.remove(file_path)
 
-      success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+      success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
       print("Python ingest: ", success_or_failure)
       return success_or_failure
 
