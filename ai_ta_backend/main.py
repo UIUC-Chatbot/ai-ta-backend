@@ -21,6 +21,7 @@ from injector import Binder, SingletonScope
 from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
+from ai_ta_backend.database.sql_alchemy import SQLAlchemyDatabase
 from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.executors.flask_executor import (
     ExecutorInterface,
@@ -42,6 +43,10 @@ from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
 
+from ai_ta_backend.extensions import db
+from urllib.parse import quote_plus
+
+
 app = Flask(__name__)
 CORS(app)
 executor = Executor(app)
@@ -51,6 +56,17 @@ executor = Executor(app)
 # load API keys from globally-availabe .env file
 load_dotenv()
 
+
+database_url = os.environ.get("SUPABASE_URL")
+database_key = os.environ.get("SUPABASE_API_KEY")
+
+password = ''
+encoded_password = quote_plus('--password--')
+
+db_uri = ""
+app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
+
+db.init_app(app)
 
 @app.route('/')
 def index() -> Response:
@@ -576,6 +592,18 @@ def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> 
   return response
 
 
+@app.route('/db-test', methods=['GET'])
+def db_test(db: SQLAlchemyDatabase) -> Response:
+  """
+  Test database connection.
+  """
+  try:
+    response = db.getDisabledDocGroups('cropwizard-1.5')
+    return jsonify(response)
+  except Exception as e:
+    return jsonify({"response": str(e)})
+
+
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter, scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
@@ -587,6 +615,7 @@ def configure(binder: Binder) -> None:
   binder.bind(WorkflowService, to=WorkflowService, scope=SingletonScope)
   binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
   binder.bind(SQLDatabase, to=SQLDatabase, scope=SingletonScope)
+  binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase, scope=SingletonScope)
   binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
   binder.bind(ExecutorInterface, to=FlaskExecutorAdapter(executor), scope=SingletonScope)
 

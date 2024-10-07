@@ -1,6 +1,7 @@
 """
 Convert all Supabase queries to SQLAlchemy queries.
 """
+import os
 import logging
 from typing import List
 
@@ -9,11 +10,12 @@ from injector import inject
 
 import ai_ta_backend.model.models as models
 from ai_ta_backend.model.response import DatabaseResponse
+from ai_ta_backend.extensions import db 
 
 class SQLAlchemyDatabase:
 
     @inject
-    def __init__(self, db: SQLAlchemy):
+    def __init__(self, db: db):
         logging.info("Initializing SQLAlchemyDatabase")
         self.db = db
     
