@@ -52,7 +52,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 
 
-
 class Ingest:
 
     def __init__(self):

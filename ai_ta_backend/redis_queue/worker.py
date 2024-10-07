@@ -1,3 +1,7 @@
+# this script is used to start multiple workers for the redis queue
+# it will be running on Kastan's server
+
+
 from multiprocessing import Process
 from rq import Worker, Queue, Connection
 from redis import Redis
