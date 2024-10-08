@@ -51,42 +51,54 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 
+from OpenaiEmbeddings import OpenAIAPIProcessor
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Ingest:
 
     def __init__(self):
-        # Initialize OpenAI
+        # Store configuration values, not client objects
         self.openai_api_key = os.getenv('VLADS_OPENAI_KEY')
+        self.qdrant_url = os.getenv('QDRANT_URL')
+        self.qdrant_api_key = os.getenv('QDRANT_API_KEY')
+        self.qdrant_collection_name = os.getenv('QDRANT_COLLECTION_NAME')
+        self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+        self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+        self.supabase_url = os.environ['SUPABASE_URL']
+        self.supabase_api_key = os.environ['SUPABASE_API_KEY']
+        self.posthog_api_key = os.environ['POSTHOG_API_KEY']
+    
+    def initialize_resources(self):
+        # Initialize clients and resources when needed
+        from qdrant_client import QdrantClient
+        import boto3
+        import supabase
+        from supabase.client import ClientOptions
+        from posthog import Posthog
 
-        # Intialize vector DB
-        self.qdrant_client = QdrantClient(url=os.getenv('QDRANT_URL'), 
-                                          api_key=os.getenv('QDRANT_API_KEY'),
-                                          )
-        self.vectorstore = Qdrant(client=self.qdrant_client, collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-                                  embeddings=OpenAIEmbeddings(openai_api_type=os.environ['OPENAI_API_TYPE'],  # "openai" or "azure"
-                                                              api_key=os.getenv('VLADS_OPENAI_KEY')))
+        self.qdrant_client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key)
+        self.vectorstore = Qdrant(
+            client=self.qdrant_client,
+            collection_name=self.qdrant_collection_name,
+            embeddings=OpenAIEmbeddings(openai_api_type='openai', openai_api_key=self.openai_api_key)
+        )
+        self.s3_client = boto3.client('s3', aws_access_key_id=self.aws_access_key_id, aws_secret_access_key=self.aws_secret_access_key)
+        self.supabase_client = supabase.create_client(
+            supabase_url=self.supabase_url,
+            supabase_key=self.supabase_api_key,
+            options=ClientOptions(postgrest_client_timeout=60)
+        )
+        self.posthog = Posthog(sync_mode=True, project_api_key=self.posthog_api_key, host='https://app.posthog.com')
 
-        # Initialize S3
-        self.s3_client = boto3.client('s3', aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'), aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'))
-
-        # Initialize Supabase
-        self.supabase_client = supabase.create_client(supabase_url=os.environ['SUPABASE_URL'], 
-                                                      supabase_key=os.environ['SUPABASE_API_KEY'],
-                                                      options=ClientOptions(postgrest_client_timeout=60,))
-        
-        # Initalize PostHog
-        self.posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
-        
-        # Initialize Sentry
-        sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"),
-                        traces_sample_rate=1.0,
-                        profiles_sample_rate=1.0,
-                        enable_tracing=True)
     
     def main_ingest(self, **inputs: Dict[str | List[str], Any]):
         """
         Main ingest function.
         """
+        self.initialize_resources()
+        
         course_name: List[str] | str = inputs.get('course_name', '')
         s3_paths: List[str] | str = inputs.get('s3_paths', '')
         url: List[str] | str | None = inputs.get('url', None)
@@ -96,7 +108,7 @@ class Ingest:
         doc_groups: List[str] | str = inputs.get('doc_groups', '')
 
         print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}")
-
+        return "Success"
         # First try
         success_fail_dict = self.run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
 
@@ -659,11 +671,11 @@ class Ingest:
 
                 with pdfplumber.open(pdf_tmpfile.name) as pdf:
                 # for page in :
-                for i, page in enumerate(pdf.pages):
-                    im = page.to_image()
-                    text = pytesseract.image_to_string(im.original)
-                    print("Page number: ", i, "Text: ", text[:100])
-                    pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
+                    for i, page in enumerate(pdf.pages):
+                        im = page.to_image()
+                        text = pytesseract.image_to_string(im.original)
+                        print("Page number: ", i, "Text: ", text[:100])
+                        pdf_pages_OCRed.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
 
             metadatas: List[Dict[str, Any]] = [
                 {
