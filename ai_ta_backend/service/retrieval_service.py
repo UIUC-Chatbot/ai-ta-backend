@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 import os
 import time
@@ -13,6 +14,7 @@ from langchain.schema import Document
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
+from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapter
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -26,14 +28,14 @@ class RetrievalService:
 
   @inject
   def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, posthog: PosthogService,
-               sentry: SentryService, nomicService: NomicService):
+               sentry: SentryService, nomicService: NomicService, thread_pool_executor: ThreadPoolExecutorAdapter):
     self.vdb = vdb
     self.sqlDb = sqlDb
     self.aws = aws
     self.sentry = sentry
     self.posthog = posthog
     self.nomicService = nomicService
-
+    self.thread_pool_executor = thread_pool_executor
     openai.api_key = os.environ["VLADS_OPENAI_KEY"]
 
     self.embeddings = OpenAIEmbeddings(
@@ -54,11 +56,11 @@ class RetrievalService:
     #     openai_api_type=os.environ['OPENAI_API_TYPE'],
     # )
 
-  def getTopContexts(self,
-                     search_query: str,
-                     course_name: str,
-                     token_limit: int = 4_000,
-                     doc_groups: List[str] | None = None) -> Union[List[Dict], str]:
+  async def getTopContexts(self,
+                           search_query: str,
+                           course_name: str,
+                           token_limit: int = 4_000,
+                           doc_groups: List[str] | None = None) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
         /GET arguments
@@ -73,10 +75,51 @@ class RetrievalService:
       doc_groups = []
     try:
       start_time_overall = time.monotonic()
+      # Improvement of performance by parallelizing independent operations:
 
+      # Old:
+      # time to fetch disabledDocGroups: 0.2 seconds
+      # time to fetch publicDocGroups: 0.2 seconds
+      # time to embed query: 0.4 seconds
+      # Total time: 0.8 seconds
+      # time to vector search: 0.48 seconds
+      # Total time: 1.5 seconds
+
+      # New:
+      # time to fetch disabledDocGroups: 0.2 seconds
+      # time to fetch publicDocGroups: 0.2 seconds
+      # time to embed query: 0.4 seconds
+      # Total time: 0.5 seconds
+      # time to vector search: 0.48 seconds
+      # Total time: 0.9 seconds
+
+      # Create tasks for parallel execution
+      with self.thread_pool_executor as executor:
+        loop = asyncio.get_event_loop()
+        tasks = [
+            loop.run_in_executor(executor, self.sqlDb.getDisabledDocGroups, course_name),
+            loop.run_in_executor(executor, self.sqlDb.getPublicDocGroups, course_name),
+            loop.run_in_executor(executor, self._embed_query_and_measure_latency, search_query)
+        ]
+
+      disabled_doc_groups_response, public_doc_groups_response, user_query_embedding = await asyncio.gather(*tasks)
+
+      disabled_doc_groups = [doc_group['name'] for doc_group in disabled_doc_groups_response.data]
+      public_doc_groups = [doc_group['doc_groups'] for doc_group in public_doc_groups_response.data]
+
+      time_for_parallel_operations = time.monotonic() - start_time_overall
+
+      start_time_vector_search = time.monotonic()
+      # Perform vector search
       found_docs: list[Document] = self.vector_search(search_query=search_query,
                                                       course_name=course_name,
-                                                      doc_groups=doc_groups)
+                                                      doc_groups=doc_groups,
+                                                      user_query_embedding=user_query_embedding,
+                                                      disabled_doc_groups=disabled_doc_groups,
+                                                      public_doc_groups=public_doc_groups)
+
+      time_to_retrieve_docs = time.monotonic() - start_time_vector_search
+      start_time_count_tokens = time.monotonic()
 
       pre_prompt = "Please answer the following question. Use the context below, called your documents, only if it's helpful and don't use parts that are very irrelevant. It's good to quote from your documents directly, when you do always use Markdown footnotes for citations. Use react-markdown superscript to number the sources at the end of sentences (1, 2, 3...) and use react-markdown Footnotes to list the full document names for each number. Use ReactMarkdown aka 'react-markdown' formatting for super script citations, use semi-formal style. Feel free to say you don't know. \nHere's a few passages of the high quality documents:\n"
       # count tokens at start and end, then also count each context.
@@ -99,9 +142,13 @@ class RetrievalService:
           # filled our token size, time to return
           break
 
+      time_to_count_tokens = time.monotonic() - start_time_count_tokens
+
       print(f"Total tokens used: {token_counter}. Docs used: {len(valid_docs)} of {len(found_docs)} docs retrieved")
       print(f"Course: {course_name} ||| search_query: {search_query}")
-      print(f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds")
+      print(
+          f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds, time to count tokens: {time_to_count_tokens:.2f} seconds, time for parallel operations: {time_for_parallel_operations:.2f} seconds, time to retrieve docs: {time_to_retrieve_docs:.2f} seconds"
+      )
       if len(valid_docs) == 0:
         return []
 
@@ -348,36 +395,57 @@ class RetrievalService:
       print(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
       self.sentry.capture_exception(e)
 
-  def vector_search(self, search_query, course_name, doc_groups: List[str] | None = None):
+  def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, disabled_doc_groups,
+                    public_doc_groups):
     """
     Search the vector database for a given query, course name, and document groups.
     """
-    # Fetch disabled doc groups from the database
-    disabled_doc_groups = self.sqlDb.getDisabledDocGroups(course_name)
-    disabled_doc_groups = [doc_group['name'] for doc_group in disabled_doc_groups.data]
-    # print(f"Disabled doc groups: {disabled_doc_groups}")
+    start_time_overall = time.monotonic()
 
-    # Return empty list if no search query is provided
     if doc_groups is None:
       doc_groups = []
 
     if disabled_doc_groups is None:
       disabled_doc_groups = []
 
+    if public_doc_groups is None:
+      public_doc_groups = []
+
     # Max number of search results to return
     top_n = 120
-    # Embed the user query and measure the latency
-    user_query_embedding = self._embed_query_and_measure_latency(search_query)
+
     # Capture the search invoked event to PostHog
     self._capture_search_invoked_event(search_query, course_name, doc_groups)
+
     # Perform the vector search
+    start_time_vector_search = time.monotonic()
     search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
-                                                 disabled_doc_groups)
+                                                 disabled_doc_groups, public_doc_groups)
+    time_for_vector_search = time.monotonic() - start_time_vector_search
+
     # Process the search results by extracting the page content and metadata
+    start_time_process_search_results = time.monotonic()
     found_docs = self._process_search_results(search_results, course_name)
+    time_for_process_search_results = time.monotonic() - start_time_process_search_results
+
     # Capture the search succeeded event to PostHog with the vector scores
+    start_time_capture_search_succeeded_event = time.monotonic()
     self._capture_search_succeeded_event(search_query, course_name, search_results)
+    time_for_capture_search_succeeded_event = time.monotonic() - start_time_capture_search_succeeded_event
+
+    print(
+        f"time for vector search: {time_for_vector_search:.2f} seconds, time for process search results: {time_for_process_search_results:.2f} seconds, time for capture search succeeded event: {time_for_capture_search_succeeded_event:.2f} seconds"
+    )
+    print(f"time for embedding query: {self.openai_embedding_latency:.2f} seconds")
     return found_docs
+
+  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n,
+                             disabled_doc_groups, public_doc_groups):
+    qdrant_start_time = time.monotonic()
+    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                            disabled_doc_groups, public_doc_groups)
+    self.qdrant_latency_sec = time.monotonic() - qdrant_start_time
+    return search_results
 
   def _embed_query_and_measure_latency(self, search_query):
     openai_start_time = time.monotonic()
@@ -395,19 +463,12 @@ class RetrievalService:
         },
     )
 
-  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n,
-                             disabled_doc_groups):
-    qdrant_start_time = time.monotonic()
-    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
-                                            disabled_doc_groups)
-    self.qdrant_latency_sec = time.monotonic() - qdrant_start_time
-    return search_results
-
   def _process_search_results(self, search_results, course_name):
     found_docs: list[Document] = []
     for d in search_results:
       try:
         metadata = d.payload
+        # print(f"Metadata: {metadata}")
         page_content = metadata["page_content"]
         del metadata["page_content"]
         if "pagenumber" not in metadata.keys() and "pagenumber_or_timestamp" in metadata.keys():
@@ -475,6 +536,7 @@ class RetrievalService:
             # OPTIONAL PARAMS...
             "url": doc.metadata.get("url"),  # wouldn't this error out?
             "base_url": doc.metadata.get("base_url"),
+            "doc_groups": doc.metadata.get("doc_groups"),
         } for doc in found_docs
     ]
 
