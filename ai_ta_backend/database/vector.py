@@ -46,59 +46,44 @@ class VectorDatabase():
     # print(f"Search results: {search_results}")
     return search_results
 
-  def _create_search_filter(self, course_name, doc_groups: List[str], admin_disabled_doc_groups: List[str],
+  def _create_search_filter(self, course_name: str, doc_groups: List[str], admin_disabled_doc_groups: List[str],
                             public_doc_groups: List[dict]) -> models.Filter:
     """
     Create search conditions for the vector search.
-    disabled doc groups are the doc groups disabled by the admin, not the user.
     """
 
     must_conditions = []
     should_conditions = []
-    # TODO: get list of public_doc_groups from
-    # public_doc_groups = ['taiga']
-    # public_doc_groups = ['Wiley']
-    # Extract public_doc_source_project_names and doc_group_names from public_doc_groups and put it in a dict
-    # public_doc_groups_dict = [{'source_project_name': doc_group['doc_groups']['source_project_name'], 'doc_group_name': doc_group['doc_groups']['name']} for doc_group in public_doc_groups]
-    # Example public_doc_groups_dict:
-    # [{'source_project_name': 'ncsa-hydro', 'doc_group_name': 'Wiley'}, {'source_project_name': 'cropwizard-1.5', 'doc_group_name': 'Wiley'}]
-    # public_doc_source_project_name = 'ncsa-hydro'
-    # public_doc_source_project_name = 'cropwizard-1.5'
-    # If public doc groups exist, then we match the source project name and doc group name and the destination course name.
+
+    # Exclude admin-disabled doc_groups
+    must_not_conditions = []
+    if admin_disabled_doc_groups:
+      must_not_conditions.append(FieldCondition(key='doc_groups', match=MatchAny(any=admin_disabled_doc_groups)))
+
+    # Handle public_doc_groups
     if public_doc_groups:
       for public_doc_group in public_doc_groups:
         if public_doc_group['enabled']:
-          # Match documents that belong to the current course
-          should_conditions.append(
-              FieldCondition(key='course_name', match=MatchValue(value=public_doc_group['course_name'])))  # destination
-          # Match documents that belong to the specific document group of the source project
-          should_conditions.append(FieldCondition(key='doc_groups', match=MatchAny(any=[public_doc_group['name']])))
-          # Match documents that belong to destination project
-          should_conditions.append(FieldCondition(key='course_name', match=MatchValue(value=course_name)))
+          # Create a combined condition for each public_doc_group
+          combined_condition = models.Filter(must=[
+              FieldCondition(key='course_name', match=MatchValue(value=public_doc_group['course_name'])),
+              FieldCondition(key='doc_groups', match=MatchAny(any=[public_doc_group['name']]))
+          ])
+          should_conditions.append(combined_condition)
 
-    else:
-      # MUST match ONLY the destination.
-      must_conditions.append(FieldCondition(key='course_name', match=MatchValue(value=course_name)))  # destination
+    # Handle user's own course documents
+    own_course_condition = models.Filter(must=[FieldCondition(key='course_name', match=MatchValue(value=course_name))])
 
-    # Create a common list of doc_groups to match
-    # doc_groups_to_match = doc_groups + public_doc_groups
+    # If specific doc_groups are specified
     if doc_groups and 'All Documents' not in doc_groups:
-      # Condition for matching any of the specified doc_groups
-      match_any_condition = models.FieldCondition(key='doc_groups', match=models.MatchAny(any=doc_groups))
-      combined_condition = models.Filter(should=[match_any_condition])
+      own_course_condition.must.append(FieldCondition(key='doc_groups', match=MatchAny(any=doc_groups)))
 
-      # Add the combined condition to the must_conditions list
-      must_conditions.append(combined_condition)
+    # Add the own_course_condition to should_conditions
+    should_conditions.append(own_course_condition)
 
-    must_not_conditions: list[models.Condition] = []
+    # Construct the final filter
+    vector_search_filter = models.Filter(should=should_conditions, must_not=must_not_conditions)
 
-    if admin_disabled_doc_groups:
-      # Condition for not matching any of the specified doc_groups
-      must_not_conditions = [
-          models.FieldCondition(key='doc_groups', match=models.MatchAny(any=admin_disabled_doc_groups))
-      ]
-
-    vector_search_filter = models.Filter(must=must_conditions, must_not=must_not_conditions, should=should_conditions)
     print(f"Vector search filter: {vector_search_filter}")
     return vector_search_filter
 
