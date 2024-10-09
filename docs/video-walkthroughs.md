@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # Video walkthroughs
 
 ## How to create a project
