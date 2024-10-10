@@ -72,12 +72,7 @@ class Ingest:
     
     def initialize_resources(self):
         # Initialize clients and resources when needed
-        from qdrant_client import QdrantClient
-        import boto3
-        import supabase
-        from supabase.client import ClientOptions
-        from posthog import Posthog
-
+    
         self.qdrant_client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key)
         self.vectorstore = Qdrant(
             client=self.qdrant_client,
