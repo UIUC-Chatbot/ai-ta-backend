@@ -26,6 +26,7 @@ class SQLAlchemyDatabase:
             query = self.db.select(models.Document).where(models.Document.course_name == course_name)
             result = self.db.session.execute(query).scalars().all()
             documents: List[models.Document] = [doc for doc in result]
+            print(len(documents))
             return DatabaseResponse[models.Document](data=documents, count=len(result))
         finally:
             self.db.session.close()
