@@ -137,6 +137,12 @@ class SQLDatabase:
     return self.supabase_client.table("doc_groups").select("name").eq("course_name", course_name).eq("enabled",
                                                                                                      False).execute()
 
+  def getPublicDocGroups(self, course_name: str):
+    return self.supabase_client.from_("doc_groups_sharing") \
+        .select("doc_groups(name, course_name, enabled, private, doc_count)") \
+        .eq("destination_project_name", course_name) \
+        .execute()
+
   def getAllConversationsForUserAndProject(self, user_email: str, project_name: str, curr_count: int = 0):
     return self.supabase_client.table('conversations').select(
         '*, messages(content_text, content_image_url, role, image_description, created_at).order(created_at, desc=True)',
