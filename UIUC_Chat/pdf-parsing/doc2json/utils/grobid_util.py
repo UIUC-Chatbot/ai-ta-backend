@@ -321,13 +321,14 @@ def get_publication_datetime_from_grobid_xml(raw_xml: BeautifulSoup) -> str:
     :param raw_xml:
     :return:
     """
-  if raw_xml.publicationStmt:
-    for child in raw_xml.publicationstmt:
-      if child.name == "date" \
-              and child.has_attr("type") \
-              and child["type"] == "published" \
-              and child.has_attr("when"):
-        return child["when"]
+  submission_note = raw_xml.find('note', {'type': 'submission'})
+  
+  if submission_note:
+      text = submission_note.get_text()
+      if 'Accepted:' in text:
+        accepted_date = text.split('Accepted:')[1].strip()
+        return accepted_date
+  
   return ""
 
 

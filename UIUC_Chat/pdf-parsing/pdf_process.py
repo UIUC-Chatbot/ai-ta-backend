@@ -22,10 +22,10 @@ from embedding import get_embeddings
 from posthog import Posthog
 from langchain_text_splitters import RecursiveCharacterTextSplitter  # type: ignore
 
-ERR_LOG_FILE = f'ERRORS_parsed_files.log'
+# ERR_LOG_FILE = f'ERRORS_parsed_files.log'
+# BASE_LOG_DIR = 'log'
 BASE_TEMP_DIR = 'temp'
 BASE_OUTPUT_DIR = 'output'
-BASE_LOG_DIR = 'log'
 
 posthog = Posthog(sync_mode=True, project_api_key=os.environ['LLM_GUIDED_RETRIEVAL_POSTHOG_API_KEY'], host='https://us.i.posthog.com')
 
@@ -56,7 +56,7 @@ def process_pdf_stream(input_file: str,
 
     return paper.release_json('pdf')
   except Exception as e:
-    raise ValueError(f"Error process pdf stream {input_file}: {str(e)}")
+    raise ValueError(f"{input_file} --- Error process pdf stream: {str(e)}")
     sentry_client.capture_exception(e)
 
 
@@ -82,7 +82,7 @@ def process_pdf_file(input_file: os.PathLike,
 
   try:
     start_time = time.monotonic()
-    grobidClient.process_pdf(str(input_file), tei_file.name, "processFulltextDocument")
+    grobidClient.process_pdf(str(input_file), tei_file.name, "processHeaderDocument")
     print(f"📜 Grobid Runtime: {(time.monotonic() - start_time):.2f} seconds")
     posthog.capture('llm-guided-ingest',
                   event='grobid_runtime_v2',
@@ -93,6 +93,10 @@ def process_pdf_file(input_file: os.PathLike,
                   })
 
     assert os.path.exists(tei_file.name)
+
+    with open(tei_file.name, 'r', encoding='utf-8') as tei_content:
+      tei_data = tei_content.read()
+
     paper = convert_tei_xml_file_to_s2orc_json(tei_file.name)
 
     with open(output_file.name, 'w') as outf:
@@ -108,12 +112,14 @@ def process_pdf_file(input_file: os.PathLike,
     return output_data
 
   except Exception as e:
-    print(f"Error in process_pdf_file (with filename: `{input_file}`): {str(e)}")
+    print(f"Error in process_pdf_file(): {str(e)}")
     traceback.print_exc()
 
-    with open(ERR_LOG_FILE, 'a') as f:
-      f.write(f"process pdf: {input_file}: {str(e)}\n")
-      print(f"Error process pdf file {input_file}: {str(e)}")
+    raise ValueError(f"Error in process_pdf_file(): {str(e)}")
+
+    # with open(os.environ['ERR_LOG_FILE'], 'a') as f:
+    #   f.write(f"process pdf: {str(minio_path)}: {str(e)}\n")
+    #   print(f"Error process pdf file {str(minio_path)}: {str(e)}")
 
   finally:
     if tei_file_path and os.path.exists(tei_file_path):
@@ -137,6 +143,8 @@ def parse_and_group_by_section(data) -> Any:
   references = {}
   ref_num_tokens = {}
   failed_secs = 0
+
+  # print(f"Dataaaa: {data}")
 
   # with open(filepath, "r") as file:
   #     data = json.load(file)

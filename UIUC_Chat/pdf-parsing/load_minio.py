@@ -15,15 +15,17 @@ from urllib3.util.retry import Retry
 from posthog import Posthog
 import sentry_sdk
 from doc2json.grobid_client import GrobidClient
+from qdrant_client import QdrantClient, models
 
-from SQLite import initialize_database, insert_data  # type: ignore
+from SQLite import initialize_database, insert_data
+from qdrant import create_qdrant, store_embeddings_in_qdrant
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv(override=True)
 
-posthog = Posthog(sync_mode=True, project_api_key=os.environ['LLM_GUIDED_RETRIEVAL_POSTHOG_API_KEY'], host='https://us.i.posthog.com')
+posthog = Posthog(sync_mode=False, project_api_key=os.environ['LLM_GUIDED_RETRIEVAL_POSTHOG_API_KEY'], host='https://us.i.posthog.com')
 
 # Create a custom PoolManager with desired settings
 http_client = PoolManager(
@@ -44,19 +46,20 @@ sentry_sdk.init(
     profiles_sample_rate=1.0,
 )
 
-# LOG_FILE = 'SUCCESS_parsed_files.log'
-# ERR_LOG_FILE = f'ERRORS_parsed_files.log'
-LOG_FILE = 'v2-SUCCESS_parsed_files.log'
-ERR_LOG_FILE = f'v2-ERRORS_parsed_files.log'
-DB_PATH = 'v2-articles.db'
+LOG_FILE = os.environ['SUCCESS_LOG_FILE']
+ERR_LOG_FILE = os.environ['ERR_LOG_FILE']
+DB_PATH = os.environ['DB_PATH']
 
 grobid_server = os.getenv('GROBID_SERVER')
 BASE_TEMP_DIR = 'temp'
 BASE_OUTPUT_DIR = 'output'
 BUCKET_NAME = 'pubmed'
-# DB_PATH = 'articles.db'
 
-NUM_PARALLEL=70
+NUM_PARALLEL=80
+
+QDRANT_URL = os.getenv('QDRANT_URL')
+QDRANT_PORT = os.getenv('QDRANT_PORT')
+QDRANT_API_KEY = os.getenv('QDRANT_API')
 
 # Configure Grobid
 grobid_config = {
@@ -75,9 +78,12 @@ grobid_config = {
 }
 grobidClient = GrobidClient(grobid_config)
 
+qdrant_client = QdrantClient(url=QDRANT_URL, port=QDRANT_PORT, https=True, api_key=QDRANT_API_KEY)
+
 
 def main_parallel_upload():
   initialize_database(DB_PATH)
+  create_qdrant(qdrant_client)
   os.makedirs(BASE_TEMP_DIR, exist_ok=True)
   os.makedirs(BASE_OUTPUT_DIR, exist_ok=True)
   start_time_main_parallel = time.monotonic()
@@ -86,15 +92,19 @@ def main_parallel_upload():
 
   manager = Manager()
   queue = manager.Queue()
-  db_proc = Process(target=db_worker, args=(queue, DB_PATH))
+  db_proc = Process(target=db_worker, args=(queue, DB_PATH, qdrant_client))
   db_proc.start()
 
   # process to monitor queue size
   # queue_monitor_proc = Process(target=queue_size_monitor, args=(queue,))
   # queue_monitor_proc.start()
 
+  # qdb_proc = Process(target=qdb_worker, args=(qdrant_client, DB_PATH))
+  # qdb_proc.start()
+
+
   with ProcessPoolExecutor(max_workers=NUM_PARALLEL) as executor:
-    batch_size = 2_000 # 1_000
+    batch_size = 2_000
     minio_gen = minio_object_generator(client, BUCKET_NAME)
 
     while True:
@@ -115,7 +125,7 @@ def main_parallel_upload():
           # MAIN / ONLY SUCCESS CASE
           future.result()
           num_processed_this_run += 1
-          print(f"✅ num processed this run: {num_processed_this_run}")
+          # print(f"✅ num processed this run: {num_processed_this_run}")
           # print_futures_stats(futures)
           # print(f"(while completing jobs) Current queue size: {queue.qsize()}")
           if num_processed_this_run % 100 == 0:
@@ -146,6 +156,7 @@ def main_parallel_upload():
   queue.put(None)
   db_proc.join()
   # queue_monitor_proc.terminate()
+  # qdb_proc.join()
 
 def upload_single_pdf(minio_object_name, queue):
   """
@@ -207,7 +218,7 @@ def save_processed_file(log_file, file_path):
     f.write(f"{file_path}\n")
 
 
-def db_worker(queue, db_path):
+def db_worker(queue, db_path, client):
   conn = sqlite3.connect(db_path, timeout=30)
   while True:
     data = queue.get()
@@ -215,7 +226,8 @@ def db_worker(queue, db_path):
       break
     try:
       insert_data(data['metadata'], data['total_tokens'], data['grouped_data'], data['db_path'], data['references'],
-                  data['ref_num_tokens'], data['minio_path'])
+                  data['ref_num_tokens'], data['minio_path'], client)
+      # store_embeddings_in_qdrant(client, db_path)
 
       save_processed_file(LOG_FILE, data['file_name'])
       conn.commit()
@@ -223,6 +235,16 @@ def db_worker(queue, db_path):
       with open(ERR_LOG_FILE, 'a') as f:
         f.write(f"db_worker: {data['file_name']}: {str(e)}\n")
   conn.close()
+
+# def qdb_worker(client, db_path):
+#   while True:
+#     try:
+#       store_embeddings_in_qdrant(client, db_path)
+#       save_processed_file(LOG_FILE, data['file_name'])
+#     except Exception as e:
+#       with open(ERR_LOG_FILE, 'a') as f:
+#         f.write(f"qdb_worker: {data['file_name']}: {str(e)}\n")
+#   conn.close()
 
 
 def minio_object_generator(client, bucket_name):

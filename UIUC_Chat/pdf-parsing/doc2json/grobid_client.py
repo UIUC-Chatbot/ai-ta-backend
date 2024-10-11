@@ -17,9 +17,13 @@ We are moving from first batch to the second one only when the first is entirely
 slightly sub-optimal, but should scale better. However acquiring a list of million of files in directories would
 require something scalable too, which is not implemented for the moment.
 '''
+# from dotenv import load_dotenv
+# load_dotenv(path="../.env", override=True)
 
 DEFAULT_GROBID_CONFIG = {
-    "grobid_server": "https://grobid.kastan.ai",
+    # "grobid_server": "https://grobid.kastan.ai",
+    # "grobid_server": os.environ["GROBID_SERVER"],
+    "grobid_server": "http://localhost:6969/",
     # "grobid_port": "443",
     # "grobid_server": "localhost",
     # "grobid_port": "8070",
@@ -106,17 +110,19 @@ class GrobidClient(ApiClient):
     # print(f"Right before post to Grobid. URL: {the_url}, files: {files}, data: {the_data}")
     res, status = self.post(url=the_url, files=files, data=the_data, headers={'Accept': 'text/plain'})
 
-    if status == 503:
+    if status == 200:
+      return res.text
+    elif status == 503:
+      # No more threads available - let's silently retry
       time.sleep(self.sleep_time)
       return self.process_pdf_stream(pdf_file, pdf_strm, output, service)
     elif status == 524:
+      # Timeout - let's silently retry
       time.sleep(self.sleep_time)
       return self.process_pdf_stream(pdf_file, pdf_strm, output, service)
-    elif status != 200:
+    else:
       print(f'Grobid Failed. Status: {str(status)}. Output: {output}')
       raise(ValueError(f"Grobid failed with status {str(status)}"))
-    else:
-      return res.text
 
   def process_pdf(self, pdf_file: str, output: str, service: str) -> None:
     # check if TEI file is already produced
