@@ -45,6 +45,7 @@ from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
+from ai_ta_backend.service.sql_alchemy_service import SQLAlchemyService
 
 app = Flask(__name__)
 CORS(app)
@@ -505,9 +506,10 @@ def configure(binder: Binder) -> None:
   storage_bound = False
 
   # Define database URLs with conditional checks for environment variables
+  encoded_password = quote_plus(os.getenv('SUPABASE_PASSWORD'))
   DB_URLS = {
       'supabase':
-          f"postgresql://{os.getenv('SUPABASE_USER')}:{os.getenv('SUPABASE_PASSWORD')}@{os.getenv('SUPABASE_URL')}",
+          f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_URL')}",
       'sqlite':
           f"sqlite:///{os.getenv('SQLITE_DB_NAME')}" if os.getenv('SQLITE_DB_NAME') else None,
       'postgres':
@@ -597,21 +599,15 @@ def configure(binder: Binder) -> None:
 
 
 @app.route('/getAllMaterialsForCourse', methods=['GET'])
-def get_all_materials_for_course(db: SQLAlchemyDatabase):
+def get_all_materials_for_course(db: SQLAlchemyDatabase, service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   if not course_name:
     abort(400, description="Missing required parameter: 'course_name'")
 
-  result = db.getAllMaterialsForCourse(course_name)
-  # print(result.count)
-  # return result
-  print(f"result of get_all_materials_for_course: {result.to_json()}")
-  # response = {
-  #    "data": result.data,
-  #    "count": result.count
-  # }
-  # print(f"result of get_all_materials_for_course: {result.data}")
-  return make_response(jsonify(result.to_json()), 200)
+  result = service.getAllMaterialsForCourse(course_name=course_name)
+  print(f"result of get_all_materials_for_course: {result}")
+
+  return make_response(jsonify(result), 200)
 
 
 @app.route('/getMaterialsForCourseAndS3Path', methods=['GET'])

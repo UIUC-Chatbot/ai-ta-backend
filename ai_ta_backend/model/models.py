@@ -38,6 +38,18 @@ class Document(Base):
         Index('idx_doc_s3_path', 's3_path', postgresql_using='btree'),
     )
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "created_at": self.created_at,
+            "s3_path": self.s3_path,
+            "readable_filename": self.readable_filename,
+            "course_name": self.course_name,
+            "url": self.url,
+            "contexts": self.contexts,
+            "base_url": self.base_url
+        }
+
 class DocumentDocGroup(Base):
     __tablename__ = 'documents_doc_groups'
     document_id = Column(BigInteger, primary_key=True)
