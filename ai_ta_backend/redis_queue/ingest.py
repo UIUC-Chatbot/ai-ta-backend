@@ -51,7 +51,6 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 
-from OpenaiEmbeddings import OpenAIAPIProcessor
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -103,7 +102,7 @@ class Ingest:
         doc_groups: List[str] | str = inputs.get('doc_groups', '')
 
         print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}")
-        return "Success"
+        #return "Success"
         # First try
         success_fail_dict = self.run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
 
@@ -134,13 +133,17 @@ class Ingest:
         """
         Routes ingest jobs to the appropriate function based on the input data -> webscrape, url, readable_filename
         """
+        print("Document groups: ", document_groups)
         if content:
-            return self.ingest_single_web_text(course_name, base_url, url, content, readable_filename, document_groups)
+            print("Ingesting web text")
+            return self.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=document_groups)
         elif readable_filename == '':
             # use URL
+            print("Ingesting URL")
             return self.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=document_groups)
         else:
             # use readable_filename
+            print("Ingesting readable_filename")
             return self.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, readable_filename=readable_filename, groups=document_groups)
 
     
@@ -150,7 +153,7 @@ class Ingest:
         Bulk ingest a list of s3 paths into the vectorstore, and also into the supabase database.
         -> Dict[str, str | Dict[str, str]]
         """
-
+        print(f"Top of bulk_ingest: ", **kwargs)
         def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
             """Handle running an arbitrary ingest function for an individual file."""
             # RUN INGEST METHOD
@@ -223,7 +226,7 @@ class Ingest:
                 else:
                     # No supported ingest... Fallback to attempting utf-8 decoding, otherwise fail.
                     try:
-                        self._ingest_single_txt(s3_path, course_name)
+                        self._ingest_single_txt(s3_path, course_name, **kwargs)
                         success_status['success_ingest'] = s3_path
                         print(f"No ingest methods -- Falling back to UTF-8 INGEST... s3_path = {s3_path}")
                     except Exception as e:
@@ -269,7 +272,7 @@ class Ingest:
             return success_status
 
     
-    def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str, groups: list) -> Dict[str, None | str | Dict[str, str]]:
+    def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str, **kwargs) -> Dict[str, None | str | Dict[str, str]]:
         """Crawlee integration
         """
         self.posthog.capture('distinct_id_of_the_user',
@@ -294,7 +297,7 @@ class Ingest:
                 'url': url,
                 'base_url': base_url,
             }]
-            self.split_and_upload(texts=text, metadatas=metadatas)
+            self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
             self.posthog.capture('distinct_id_of_the_user',
                                 event='ingest_single_web_text_succeeded',
                                 properties={
@@ -871,6 +874,7 @@ class Ingest:
                 return "Success"
 
             # adding chunk index to metadata for parent doc retrieval
+            print("kwargs: ", kwargs)
             print("GROUPS: ", kwargs.get('groups', ''))
             for i, context in enumerate(contexts):
                 context.metadata['chunk_index'] = i
