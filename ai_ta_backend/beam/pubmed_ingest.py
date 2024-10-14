@@ -16,7 +16,8 @@ if beam.env.is_remote():
     import xml.etree.ElementTree as ET
     import ftplib
     from urllib.parse import urlparse
-    import urllib.parse
+    from urllib.parse import quote
+
 
 requirements = [
     "supabase==2.5.3",
@@ -29,10 +30,13 @@ image = beam.Image(
     python_packages=requirements,
 )
 
+volume_path = "./pubmed_ingest"
+
 ourSecrets = [
     "S3_BUCKET_NAME",
     "AWS_ACCESS_KEY_ID",
     "AWS_SECRET_ACCESS_KEY",
+    "BEAM_API_KEY",
 ]
 
 def loader():
@@ -64,7 +68,8 @@ def loader():
                keep_warm_seconds=60 * 3,
                secrets=ourSecrets,
                on_start=loader,
-               image=image,)
+               image=image,
+               volumes=[beam.Volume(name="pubmed_ingest", mount_path=volume_path)])
 def pubmed_ingest(context, **inputs: Dict[str, Any]):
     """
     Main function
@@ -76,6 +81,7 @@ def pubmed_ingest(context, **inputs: Dict[str, Any]):
     course_name: str = inputs.get('course_name', '')
     search_query: str = inputs.get('search_query', '')
     journal_name: str = inputs.get('journal_name', '')
+    journal_abbr: str = inputs.get('journal_abbr', '')
     article_title: str = inputs.get('article_title', '')
     from_date: str = inputs.get('from_date', '')
     to_date: str = inputs.get('to_date', '')
@@ -88,7 +94,7 @@ def pubmed_ingest(context, **inputs: Dict[str, Any]):
     
     if search_query or journal_name or article_title:
         # use EUtils API to fetch articles by journal, article title, text query, etc.
-        return fetch_articles_by_query(search_query, journal_name, article_title, course_name, s3_client, from_date=from_date, to_date=to_date)
+        return fetch_articles_by_query(search_query, journal_name, article_title, course_name, s3_client, from_date=from_date, to_date=to_date, journal_abbr=journal_abbr)
 
 
 def fetch_articles_by_query(search_query, journal_name, article_title, course_name, s3_client, **kwargs):
@@ -104,27 +110,35 @@ def fetch_articles_by_query(search_query, journal_name, article_title, course_na
 
     from_date = kwargs.get('from_date', '')
     to_date = kwargs.get('to_date', '')
+    journal_abbr = kwargs.get('journal_abbr', '')
 
     # create a directory to store the downloaded files
-    directory = os.path.join(os.getcwd(), 'pubmed_papers')
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    #directory = '/tmp/pubmed_papers'
+    directory = os.path.join(volume_path, "pubmed_papers")
+    print("Directory: ", directory)
+    os.makedirs(directory, exist_ok=True)
+
 
     # URL construction
     base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?"
     database = "db=pubmed"
-    final_query = "term="
+    final_query = ""
     query_parts = []
     if journal_name:
-        journal_query = journal_name.replace(" ", "+") + "[ta]"
+        journal_query = journal_name.replace(" ", "+") + "[journal]"
         query_parts.append(journal_query)
+
+    if journal_abbr:
+        journal_abbr_query = journal_abbr(" ", "+") + "[ta]"
+        query_parts.append(journal_abbr_query)
     
     if article_title:
-        title_query = article_title.replace(" ", "+") + "[Title]"
+        title_query = article_title + "[Title]"
+        title_query = quote(title_query)
         query_parts.append(title_query)
     
     if search_query:
-        search_query = search_query.replace(" ", "+")
+        search_query = search_query
         query_parts.append(search_query)
 
     # Join the queries with "+AND+" only if 2 or more are present
@@ -139,8 +153,11 @@ def fetch_articles_by_query(search_query, journal_name, article_title, course_na
     if to_date:
         final_query += "&maxdate=" + to_date
     
-    final_url = base_url + database + "&" + final_query + "&retmode=json&retmax=100"
+    print("Final Query: ", final_query)
+    
+    final_url = base_url + database + "&term=" + final_query + "&retmode=json&retmax=100"
     print("Final URL: ", final_url)
+    
 
     # Query the EUtils API
     response = requests.get(final_url)
@@ -152,7 +169,7 @@ def fetch_articles_by_query(search_query, journal_name, article_title, course_na
     total_records = int(data['esearchresult']['count'])
     print("Total Records: ", total_records)
     current_records = 0
-
+    
     while current_records < total_records:
         # extract PubMed IDs and convert them to PMC IDs
         pubmed_id_list = data['esearchresult']['idlist']
@@ -198,9 +215,9 @@ def fech_articles_by_pmc_id(pmci_id, course_name, s3_client, **kwargs):
     to_date = kwargs.get('to_date', '')
 
     # create a directory to store the downloaded files
-    directory = os.path.join(os.getcwd(), 'pubmed_papers')
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+    directory = os.path.join(volume_path, "pubmed_papers")
+    print("Directory: ", directory)
+    os.makedirs(directory, exist_ok=True)
 
     # URL construction
     main_url = "https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?"
@@ -257,15 +274,19 @@ def fech_articles_by_pmc_id(pmci_id, course_name, s3_client, **kwargs):
             "s3_paths": [s3_path],
             "base_url": "",
             "url": doi_url,
-            "groups": [journal_name],
         }
+
+        if journal_name:
+            payload["doc_groups"] = [journal_name]
         print("Ingest Payload: ", payload)
 
-        beam_url = "https://3xn8l.apps.beam.cloud"
-
+        beam_url = 'https://app.beam.cloud/taskqueue/ingest_task_queue/latest'
+        print("Beam API key: ", os.getenv('BEAM_API_KEY'))
         headers = {
-            "Content-Type": "application/json",
-            "Authorization": "Basic " + os.environ.get('BEAM_AUTH_TOKEN')   # type: ignore
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate',
+            'Authorization': f"Bearer {os.environ['BEAM_API_KEY']}",
+            'Content-Type': 'application/json',
         }
 
         response = requests.post(beam_url, headers=headers, json=payload)
