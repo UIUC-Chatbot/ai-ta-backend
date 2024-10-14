@@ -12,6 +12,8 @@ from sqlalchemy import Text
 from sqlalchemy import VARCHAR
 from sqlalchemy import Float
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB
+
 from sqlalchemy.sql import func
 
 from uuid import uuid4
@@ -61,6 +63,14 @@ class DocumentDocGroup(Base):
         Index('documents_doc_groups_document_id_idx', 'document_id', postgresql_using='btree'),
     )
 
+    def to_dict(self):
+        return {
+            "document_id": self.document_id,
+            "doc_group_id": self.doc_group_id,
+            "created_at": self.created_at
+        }
+
+
 class DocGroup(Base):
     __tablename__ = 'doc_groups'
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -73,6 +83,17 @@ class DocGroup(Base):
 
     __table_args__ = (Index('doc_groups_enabled_course_name_idx', 'enabled', 'course_name', postgresql_using='btree'),)
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "course_name": self.course_name,
+            "created_at": self.created_at,
+            "enabled": self.enabled,
+            "private": self.private,
+            "doc_count": self.doc_count
+        }
+    
 class Project(Base):
     __tablename__ = 'projects'
     id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -92,6 +113,21 @@ class Project(Base):
         Index('projects_pkey', 'id', postgresql_using='btree'),
     )
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "created_at": self.created_at,
+            "course_name": self.course_name,
+            "doc_map_id": self.doc_map_id,
+            "convo_map_id": self.convo_map_id,
+            "n8n_api_key": self.n8n_api_key,
+            "last_uploaded_doc_id": self.last_uploaded_doc_id,
+            "last_uploaded_convo_id": self.last_uploaded_convo_id,
+            "subscribed": self.subscribed,
+            "description": self.description,
+            "metadata_schema": self.metadata_schema
+        }
+
 class N8nWorkflows(Base):
     __tablename__ = 'n8n_workflows'
     latest_workflow_id = Column(BigInteger, primary_key=True, autoincrement=True)
@@ -100,8 +136,14 @@ class N8nWorkflows(Base):
     def __init__(self, is_locked: bool):
         self.is_locked = is_locked
 
+    def to_dict(self):
+        return {
+            "latest_workflow_id": self.latest_workflow_id,
+            "is_locked": self.is_locked
+        }
+
 class LlmConvoMonitor(Base):
-    __tablename__ = 'llm_convo_monitor'
+    __tablename__ = 'llm-convo-monitor'
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     created_at = Column(DateTime, default=func.now())
     convo = Column(JSON)
@@ -114,6 +156,16 @@ class LlmConvoMonitor(Base):
         Index('llm-convo-monitor_convo_id_key', 'convo_id', postgresql_using='btree'),
         Index('llm-convo-monitor_pkey', 'id', postgresql_using='btree'),
     )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "created_at": self.created_at,
+            "convo": self.convo,
+            "convo_id": self.convo_id,
+            "course_name": self.course_name,
+            "user_email": self.user_email
+        }
 
 class Conversations(Base):
     __tablename__ = 'conversations'
@@ -133,6 +185,21 @@ class Conversations(Base):
         Index('conversations_pkey', 'id', postgresql_using='btree'),
         Index('idx_user_email_updated_at', 'user_email', 'updated_at', postgresql_using='btree'),
     )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "model": self.model,
+            "prompt": self.prompt,
+            "temperature": self.temperature,
+            "user_email": self.user_email,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "project_name": self.project_name,
+            "messages": self.messages,
+            "folder_id": self.folder_id
+        }
 
 class Messages(Base):
     __tablename__ = 'messages'
@@ -154,11 +221,28 @@ class Messages(Base):
         Index('messages_pkey', 'id', postgresql_using='btree'),
     )
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "conversation_id": self.conversation_id,
+            "role": self.role,
+            "created_at": self.created_at,
+            "contexts": self.contexts,
+            "tools": self.tools,
+            "latest_system_message": self.latest_system_message,
+            "final_prompt_engineered_message": self.final_prompt_engineered_message,
+            "response_time_sec": self.response_time_sec,
+            "content_text": self.content_text,
+            "updated_at": self.updated_at,
+            "content_image_url": self.content_image_url,
+            "image_description": self.image_description
+        }
+
 class PreAuthAPIKeys(Base):
     __tablename__ = 'pre_authorized_api_keys'
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     created_at = Column(DateTime, default=func.now())  
-    emails = Column(JSON)
+    emails = Column(JSONB)
     providerBodyNoModels = Column(JSON)
     providerName = Column(Text)
     notes = Column(Text)   
@@ -166,3 +250,13 @@ class PreAuthAPIKeys(Base):
     __table_args__ = (
         Index('pre-authorized-api-keys_pkey', 'id', postgresql_using='btree'),
     )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "created_at": self.created_at,
+            "emails": self.emails,
+            "providerBodyNoModels": self.providerBodyNoModels,
+            "providerName": self.providerName,
+            "notes": self.notes
+        }

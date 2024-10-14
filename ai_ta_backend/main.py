@@ -599,261 +599,140 @@ def configure(binder: Binder) -> None:
 
 
 @app.route('/getAllMaterialsForCourse', methods=['GET'])
-def get_all_materials_for_course(db: SQLAlchemyDatabase, service: SQLAlchemyService):
+def get_all_materials_for_course(service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   if not course_name:
     abort(400, description="Missing required parameter: 'course_name'")
-
   result = service.getAllMaterialsForCourse(course_name=course_name)
-  print(f"result of get_all_materials_for_course: {result}")
-
   return make_response(jsonify(result), 200)
 
 
 @app.route('/getMaterialsForCourseAndS3Path', methods=['GET'])
-def get_materials_for_course_and_s3_path(db: SQLAlchemyDatabase):
+def get_materials_for_course_and_s3_path(service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   s3_path = request.args.get('s3_path', '')
   if not course_name or not s3_path:
     abort(400, description="Missing required parameters: 'course_name' and 's3_path'")
-  result = db.getMaterialsForCourseAndS3Path(course_name, s3_path)
+  result = service.getMaterialsForCourseAndS3Path(course_name, s3_path)
   return jsonify(result)
-
-
-@app.route('/getMaterialsForCourseAndKeyAndValue', methods=['GET'])
-def get_materials_for_course_and_key_and_value(db: SQLAlchemyDatabase):
-  course_name = request.args.get('course_name', '')
-  key = request.args.get('key', '')
-  value = request.args.get('value', '')
-  if not course_name or not key or not value:
-    abort(400, description="Missing required parameters: 'course_name', 'key', and 'value'")
-  result = db.getMaterialsForCourseAndKeyAndValue(course_name, key, value)
-  return jsonify(result)
-
-
-@app.route('/deleteMaterialsForCourseAndKeyAndValue', methods=['DELETE'])
-def delete_materials_for_course_and_key_and_value(db: SQLAlchemyDatabase):
-  course_name = request.args.get('course_name', '')
-  key = request.args.get('key', '')
-  value = request.args.get('value', '')
-  if not course_name or not key or not value:
-    abort(400, description="Missing required parameters: 'course_name', 'key', and 'value'")
-  db.deleteMaterialsForCourseAndKeyAndValue(course_name, key, value)
-  return jsonify({"status": "success"})
 
 
 @app.route('/deleteMaterialsForCourseAndS3Path', methods=['DELETE'])
-def delete_materials_for_course_and_s3_path(db: SQLAlchemyDatabase):
+def delete_materials_for_course_and_s3_path(service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   s3_path = request.args.get('s3_path', '')
   if not course_name or not s3_path:
     abort(400, description="Missing required parameters: 'course_name' and 's3_path'")
-  db.deleteMaterialsForCourseAndS3Path(course_name, s3_path)
+  service.deleteMaterialsForCourseAndS3Path(course_name, s3_path)
   return jsonify({"status": "success"})
 
 
 @app.route('/getDocumentsBetweenDates', methods=['GET'])
-def get_documents_between_dates(db: SQLAlchemyDatabase):
+def get_documents_between_dates(service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   from_date = request.args.get('from_date', '')
   to_date = request.args.get('to_date', '')
-  table_name = request.args.get('table_name', '')
-  if not course_name or not table_name:
-    abort(400, description="Missing required parameters: 'course_name' and 'table_name'")
-  result = db.getDocumentsBetweenDates(course_name, from_date, to_date, table_name)
-  return jsonify(result)
-
-
-@app.route('/getAllDocumentsForDownload', methods=['GET'])
-def get_all_documents_for_download(db: SQLAlchemyDatabase):
-  course_name = request.args.get('course_name', '')
-  first_id = request.args.get('first_id', type=int)
-  if not course_name or first_id is None:
-    abort(400, description="Missing required parameters: 'course_name' and 'first_id'")
-  result = db.getAllDocumentsForDownload(course_name, first_id)
-  return jsonify(result)
-
-
-@app.route('/getDocsForIdsGte', methods=['GET'])
-def get_docs_for_ids_gte(db: SQLAlchemyDatabase):
-  course_name = request.args.get('course_name', '')
-  first_id = request.args.get('first_id', type=int)
-  fields = request.args.get('fields', '*')
-  limit = request.args.get('limit', 100, type=int)
-  if not course_name or first_id is None:
-    abort(400, description="Missing required parameters: 'course_name' and 'first_id'")
-  result = db.getDocsForIdsGte(course_name, first_id, fields, limit)
+  if not course_name:
+    abort(400, description="Missing required parameters: 'course_name'")
+  result = service.getDocumentsBetweenDates(course_name, from_date, to_date)
   return jsonify(result)
 
 
 @app.route('/getProjectsMapForCourse', methods=['GET'])
-def get_projects_map_for_course(db: SQLAlchemyDatabase):
+def get_projects_map_for_course(service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   if not course_name:
     abort(400, description="Missing required parameter: 'course_name'")
-  result = db.getProjectsMapForCourse(course_name)
+  result = service.getProjectsMapForCourse(course_name)
   return jsonify(result)
 
 
 @app.route('/insertProjectInfo', methods=['POST'])
-def insert_project_info(db: SQLAlchemyDatabase):
+def insert_project_info(service: SQLAlchemyService):
   project_info = request.json
   if not project_info:
     abort(400, description="Missing project information in request body")
-  db.insertProjectInfo(project_info)
+  service.insertProjectInfo(project_info)
   return jsonify({"status": "success"})
 
 
-@app.route('/getDocMapFromProjects', methods=['GET'])
-def get_doc_map_from_projects(db: SQLAlchemyDatabase):
-  course_name = request.args.get('course_name', '')
-  if not course_name:
-    abort(400, description="Missing required parameter: 'course_name'")
-  result = db.getDocMapFromProjects(course_name)
-  return jsonify(result)
-
-
 @app.route('/getConvoMapFromProjects', methods=['GET'])
-def get_convo_map_from_projects(db: SQLAlchemyDatabase):
+def get_convo_map_from_projects(service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   if not course_name:
     abort(400, description="Missing required parameter: 'course_name'")
-  result = db.getConvoMapFromProjects(course_name)
+  result = service.getConvoMapFromProjects(course_name)
   return jsonify(result)
 
 
 @app.route('/updateProjects', methods=['PUT'])
-def update_projects(db: SQLAlchemyDatabase):
+def update_projects(service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   data = request.json
   if not course_name or not data:
     abort(400, description="Missing required parameter: 'course_name' or update data")
-  db.updateProjects(course_name, data)
+  service.updateProjects(course_name, data)
   return jsonify({"status": "success"})
 
 
 @app.route('/insertProject', methods=['POST'])
-def insert_project(db: SQLAlchemyDatabase):
+def insert_project(service: SQLAlchemyService):
   project_info = request.json
   if not project_info:
     abort(400, description="Missing project information in request body")
-  db.insertProject(project_info)
+  service.insertProject(project_info)
   return jsonify({"status": "success"})
 
 
-@app.route('/getAllConversationsForDownload', methods=['GET'])
-def get_all_conversations_for_download(db: SQLAlchemyDatabase):
-  course_name = request.args.get('course_name', '')
-  first_id = request.args.get('first_id', type=int)
-  if not course_name or first_id is None:
-    abort(400, description="Missing required parameters: 'course_name' and 'first_id'")
-  result = db.getAllConversationsForDownload(course_name, first_id)
-  return jsonify(result)
-
-
-@app.route('/getAllConversationsBetweenIds', methods=['GET'])
-def get_all_conversations_between_ids(db: SQLAlchemyDatabase):
-  course_name = request.args.get('course_name', '')
-  first_id = request.args.get('first_id', type=int)
-  last_id = request.args.get('last_id', type=int)
-  limit = request.args.get('limit', 50, type=int)
-  if not course_name or first_id is None:
-    abort(400, description="Missing required parameters: 'course_name' and 'first_id'")
-  result = db.getAllConversationsBetweenIds(course_name, first_id, last_id, limit)
-  return jsonify(result)
-
-
-@app.route('/getAllFromLLMConvoMonitor', methods=['GET'])
-def get_all_from_llm_convo_monitor(db: SQLAlchemyDatabase):
-  course_name = request.args.get('course_name', '')
-  if not course_name:
-    abort(400, description="Missing required parameter: 'course_name'")
-  result = db.getAllFromLLMConvoMonitor(course_name)
-  return jsonify(result)
-
-
 @app.route('/getCountFromLLMConvoMonitor', methods=['GET'])
-def get_count_from_llm_convo_monitor(db: SQLAlchemyDatabase):
+def get_count_from_llm_convo_monitor(service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   last_id = request.args.get('last_id', 0, type=int)
   if not course_name:
     abort(400, description="Missing required parameter: 'course_name'")
-  result = db.getCountFromLLMConvoMonitor(course_name, last_id)
+  result = service.getCountFromLLMConvoMonitor(course_name, last_id)
   return jsonify(result)
 
 
 @app.route('/getConversation', methods=['GET'])
-def get_conversation(db: SQLAlchemyDatabase):
+def get_conversation(service: SQLAlchemyService):
   course_name = request.args.get('course_name', '')
   key = request.args.get('key', '')
   value = request.args.get('value', '')
   if not course_name or not key or not value:
     abort(400, description="Missing required parameters: 'course_name', 'key', and 'value'")
-  result = db.getConversation(course_name, key, value)
-  return jsonify(result)
-
-
-@app.route('/getAllConversationsForUserAndProject', methods=['GET'])
-def get_all_conversations_for_user_and_project(db: SQLAlchemyDatabase):
-  user_email = request.args.get('user_email', '')
-  project_name = request.args.get('project_name', '')
-  curr_count = request.args.get('curr_count', 0, type=int)
-  if not user_email or not project_name:
-    abort(400, description="Missing required parameters: 'user_email' and 'project_name'")
-  result = db.getAllConversationsForUserAndProject(user_email, project_name, curr_count)
-  return jsonify(result)
-
-
-@app.route('/getDisabledDocGroups', methods=['GET'])
-def get_disabled_doc_groups(db: SQLAlchemyDatabase):
-  course_name = request.args.get('course_name', '')
-  if not course_name:
-    abort(400, description="Missing required parameter: 'course_name'")
-  result = db.getDisabledDocGroups(course_name)
+  result = service.getConversation(course_name, key, value)
   return jsonify(result)
 
 
 @app.route('/getLatestWorkflowId', methods=['GET'])
-def get_latest_workflow_id(db: SQLAlchemyDatabase):
-  result = db.getLatestWorkflowId()
+def get_latest_workflow_id(service: SQLAlchemyService):
+  result = service.getLatestWorkflowId()
   return jsonify(result)
 
-
-@app.route('/lockWorkflow', methods=['POST'])
-def lock_workflow(db: SQLAlchemyDatabase):
-  id = request.args.get('id', type=int)
-  if id is None:
-    abort(400, description="Missing required parameter: 'id'")
-  db.lockWorkflow(id)
-  return jsonify({"status": "success"})
-
-
-@app.route('/deleteLatestWorkflowId', methods=['DELETE'])
-def delete_latest_workflow_id(db: SQLAlchemyDatabase):
-  id = request.args.get('id', type=int)
-  if id is None:
-    abort(400, description="Missing required parameter: 'id'")
-  db.deleteLatestWorkflowId(id)
-  return jsonify({"status": "success"})
-
-
-@app.route('/unlockWorkflow', methods=['POST'])
-def unlock_workflow(db: SQLAlchemyDatabase):
-  id = request.args.get('id', type=int)
-  if id is None:
-    abort(400, description="Missing required parameter: 'id'")
-  db.unlockWorkflow(id)
-  return jsonify({"status": "success"})
-
-
 @app.route('/getPreAssignedAPIKeys', methods=['GET'])
-def get_pre_assigned_api_keys(db: SQLAlchemyDatabase):
+def get_pre_assigned_api_keys(service: SQLAlchemyService):
   email = request.args.get('email', '')
   if not email:
     abort(400, description="Missing required parameter: 'email'")
-  result = db.getPreAssignedAPIKeys(email)
+  result = service.getPreAssignedAPIKeys(email)
   return jsonify(result)
 
+@app.route('/getDisabledDocGroups', methods=['GET'])
+def get_disabled_doc_groups(service: SQLAlchemyService):
+  course_name = request.args.get('course_name', '')
+  if not course_name:
+    abort(400, description="Missing required parameter: 'course_name'")
+  result = service.getDisabledDocGroups(course_name)
+  return jsonify(result)
+
+@app.route('/check_and_lock_flow', methods=['GET'])
+def check_and_lock_flow(service: SQLAlchemyService):
+  id = request.args.get('id', 0, type=int)
+  if not id:
+    abort(400, description="Missing required parameter: 'id'")
+  result = service.check_and_lock_flow(id)
+  return jsonify(result)
 
 # ... (rest of the code remains unchanged)
 

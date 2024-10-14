@@ -6,6 +6,8 @@ import logging
 from typing import List
 
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
+
 from injector import inject
 
 import ai_ta_backend.model.models as models
@@ -25,9 +27,6 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.Document).where(models.Document.course_name == course_name)
             result = self.db.session.execute(query).scalars().all()
-            # documents: List[models.Document] = [doc for doc in result]
-            # print(len(documents))
-            # return DatabaseResponse[models.Document](data=documents, count=len(result))
             documents = [doc.to_dict() for doc in result]  # Convert each document to a dict
             return DatabaseResponse(data=documents, count=len(result)).to_dict()
         finally:
@@ -37,8 +36,8 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.Document).where(models.Document.course_name == course_name, models.Document.s3_path == s3_path)
             result = self.db.session.execute(query).scalars().all()
-            documents: List[models.Document] = [doc for doc in result]
-            return DatabaseResponse[models.Document](data=documents, count=len(result))
+            documents: List[models.Document] = [doc.to_dict() for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -46,8 +45,8 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.Document).where(models.Document.course_name == course_name, getattr(models.Document, key) == value)
             result = self.db.session.execute(query).scalars().all()
-            documents: List[models.Document] = [doc for doc in result]
-            return DatabaseResponse[models.Document](data=documents, count=len(result))
+            documents: List[models.Document] = [doc.to_dict() for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -67,7 +66,7 @@ class SQLAlchemyDatabase:
         finally:
             self.db.session.close()
     
-    def getDocumentsBetweenDates(self, course_name: str, from_date: str, to_date: str, table_name: str):
+    def getDocumentsBetweenDates(self, course_name: str, from_date: str, to_date: str):
         try:
             query = self.db.select(models.Document).where(models.Document.course_name == course_name)
             if from_date:
@@ -75,8 +74,8 @@ class SQLAlchemyDatabase:
             if to_date:
                 query = query.filter(models.Document.created_at <= to_date)
             result = self.db.session.execute(query).scalars().all()
-            documents: List[models.Document] = [doc for doc in result]
-            return DatabaseResponse[models.Document](data=documents, count=len(result))
+            documents: List[models.Document] = [doc.to_dict() for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result)).to_dict()
         finally:
             self.db.session.close()
 
@@ -84,8 +83,8 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.Document).where(models.Document.course_name == course_name, models.Document.id >= first_id)
             result = self.db.session.execute(query).scalars().all()
-            documents: List[models.Document] = [doc for doc in result]
-            return DatabaseResponse[models.Document](data=documents, count=len(result))
+            documents: List[models.Document] = [doc.to_dict() for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -94,8 +93,8 @@ class SQLAlchemyDatabase:
             fields_to_select = [getattr(models.Document, field) for field in fields.split(", ")]    
             query = self.db.select(*fields_to_select).where(models.Document.course_name == course_name, models.Document.id >= first_id).limit(limit)
             result = self.db.session.execute(query).scalars().all()
-            documents: List[models.Document] = [doc for doc in result]
-            return DatabaseResponse[models.Document](data=documents, count=len(result))
+            documents: List[models.Document] = [doc.to_dict() for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -105,8 +104,7 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.Project.doc_map_id).where(models.Project.course_name == course_name)
             result = self.db.session.execute(query).scalars().all()
-            projects: List[models.Project] = [project for project in result]
-            return DatabaseResponse[models.Project](data=projects, count=len(result))
+            return DatabaseResponse[models.Project](data=result, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -121,8 +119,7 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.Project.doc_map_id).where(models.Project.course_name == course_name)
             result = self.db.session.execute(query).scalars().all()
-            projects: List[models.Project] = [project for project in result]
-            return DatabaseResponse[models.Project](data=projects, count=len(result))
+            return DatabaseResponse[models.Project](data=result, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -130,8 +127,8 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.Project).where(models.Project.course_name == course_name)
             result = self.db.session.execute(query).scalars().all()
-            projects: List[models.Project] = [project for project in result]
-            return DatabaseResponse[models.Project](data=projects, count=len(result))
+            projects: List[models.Project] = [project.to_dict() for project in result]
+            return DatabaseResponse[models.Project](data=projects, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -155,8 +152,8 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.LlmConvoMonitor).where(models.LlmConvoMonitor.course_name == course_name, models.LlmConvoMonitor.id >= first_id)
             result = self.db.session.execute(query).scalars().all()
-            conversations: List[models.LlmConvoMonitor] = [convo for convo in result]
-            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result))
+            conversations: List[models.LlmConvoMonitor] = [convo.to_dict() for convo in result]
+            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -167,8 +164,8 @@ class SQLAlchemyDatabase:
                 query = query.filter(models.LlmConvoMonitor.id <= last_id)
             query = query.limit(limit)
             result = self.db.session.execute(query).scalars().all()
-            conversations: List[models.LlmConvoMonitor] = [doc for doc in result]
-            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result))
+            conversations: List[models.LlmConvoMonitor] = [doc.to_dict() for doc in result]
+            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -176,28 +173,44 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.LlmConvoMonitor).where(models.LlmConvoMonitor.course_name == course_name)
             result = self.db.session.execute(query).scalars().all()
-            conversations: List[models.LlmConvoMonitor] = [convo for convo in result]
-            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result))
+            conversations: List[models.LlmConvoMonitor] = [convo.to_dict() for convo in result]
+            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
     def getCountFromLLMConvoMonitor(self, course_name: str, last_id: int):
         try:
-            query = self.db.select(models.LlmConvoMonitor.id).where(models.LlmConvoMonitor.course_name == course_name)
+            # Base query
+            query = self.db.session.query(models.LlmConvoMonitor.id).filter(
+                models.LlmConvoMonitor.course_name == course_name
+            )
+            
+            # Add condition based on last_id
             if last_id != 0:
                 query = query.filter(models.LlmConvoMonitor.id > last_id)
-            count_query = self.db.select(self.db.func.count()).select_from(query.subquery())
-            self.db.session.execute(count_query).scalar()
-            return DatabaseResponse[models.LlmConvoMonitor](data=[], count=1)
+            
+            # Order by 'id' ascending
+            query = query.order_by(models.LlmConvoMonitor.id.asc())
+            
+            # Execute the query and count the results
+            count = query.count()  # Equivalent to count='exact' in Supabase
+            
+            # Fetch the results (only 'id' column)
+            result = query.all()
+            
+            return {
+                'count': count,
+                'data': []
+            }
         finally:
             self.db.session.close()
-    
+
     def getConversation(self, course_name: str, key: str, value: str):
         try:
             query = self.db.select(models.LlmConvoMonitor).where(getattr(models.LlmConvoMonitor, key) == value, models.LlmConvoMonitor.course_name == course_name)
             result = self.db.session.execute(query).scalars().all()
-            conversations: List[models.LlmConvoMonitor] = [convo for convo in result]
-            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result))
+            conversations: List[models.LlmConvoMonitor] = [convo.to_dict() for convo in result]
+            return DatabaseResponse[models.LlmConvoMonitor](data=conversations, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -229,8 +242,7 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.DocGroup.name).where(models.DocGroup.course_name == course_name, models.DocGroup.enabled == False)
             result = self.db.session.execute(query).scalars().all()
-            document_groups: List[models.DocGroup] = [doc_group for doc_group in result]
-            return DatabaseResponse[models.DocGroup](data=document_groups, count=len(result))
+            return DatabaseResponse[models.DocGroup](data=result, count=len(result)).to_dict()
         finally:
             self.db.session.close()
 
@@ -239,8 +251,8 @@ class SQLAlchemyDatabase:
     def getLatestWorkflowId(self):
         try:
             query = self.db.select(models.N8nWorkflows.latest_workflow_id)
-            result = self.db.session.execute(query).fetchone()
-            return result
+            result = self.db.session.execute(query).scalars().all()
+            return DatabaseResponse[models.N8nWorkflows](data=result, count=len(result)).to_dict()
         finally:
             self.db.session.close()
     
@@ -268,22 +280,30 @@ class SQLAlchemyDatabase:
         finally:
             self.db.session.close()
 
-    # TODO: verify that this syntax is correct        
-    
-    # def check_and_lock_flow(self, id):
-    #     try:
-    #         result = self.db.session.query(
-    #             func.check_and_lock_flows_v2(id)
-    #         ).scalar()
-    #         return result
-    #     finally:
-    #         self.db.session.close()
+    def check_and_lock_flow(self, id):
+        try:
+            # Call the stored procedure using execute()
+            result = self.db.session.execute(
+                text("SELECT check_and_lock_flows_v2(:id)"), {'id': id}
+            )
+            # Fetch result if necessary (for a procedure returning results)
+            row = result.scalars().all()
+
+            return row  # Adjust as needed based on the procedure's return type
+        finally:
+            self.db.session.close()
+
 
     # Pre-Authorized API Key-related queries
 
     def getPreAssignedAPIKeys(self, email: str):
         try:
-            result = models.PreAuthAPIKeys.query.filter(models.PreAuthAPIKeys.emails.contains(f'["{email}"]')).all()
-            return result
+            # Use the `contains` operator with JSONB
+            result = models.PreAuthAPIKeys.query.filter(
+                models.PreAuthAPIKeys.emails.contains([email])  # Ensure this is a JSON array
+            ).all()
+            
+            data = [row.to_dict() for row in result]
+            return DatabaseResponse[models.PreAuthAPIKeys](data=data, count=len(result)).to_dict()
         finally:
             self.db.session.close()
