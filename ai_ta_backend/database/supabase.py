@@ -136,3 +136,30 @@ class SQLDatabase():
 
   def getConversation(self, course_name: str, key: str, value: str):
     return self.supabase_client.table("llm-convo-monitor").select("*").eq(key, value).eq("course_name", course_name).execute()
+
+  def check_and_lock_flow(self, id):
+    return self.supabase_client.rpc('check_and_lock_flows_v2', {'id': id}).execute()
+  
+  def getDisabledDocGroups(self, course_name: str):
+    return self.supabase_client.table("doc_groups").select("name").eq("course_name", course_name).eq("enabled",
+                                                                                                     False).execute()
+
+  def getPublicDocGroups(self, course_name: str):
+    return self.supabase_client.from_("doc_groups_sharing") \
+        .select("doc_groups(name, course_name, enabled, private, doc_count)") \
+        .eq("destination_project_name", course_name) \
+        .execute()
+
+  def getAllConversationsForUserAndProject(self, user_email: str, project_name: str, curr_count: int = 0):
+    return self.supabase_client.table('conversations').select(
+        '*, messages(content_text, content_image_url, role, image_description, created_at).order(created_at, desc=True)',
+        count='exact').eq('user_email',
+                          user_email).eq('project_name',
+                                         project_name).order('updated_at',
+                                                             desc=True).limit(500).offset(curr_count).execute()
+
+  def insertProject(self, project_info):
+    return self.supabase_client.table("projects").insert(project_info).execute()
+  
+  def getPreAssignedAPIKeys(self, email: str):
+    return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails", '["' + email + '"]').execute()

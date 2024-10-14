@@ -2,7 +2,8 @@ import logging
 import os
 import time
 from typing import List
-from ai_ta_backend.database.poi_sql import POISQLDatabase
+from urllib.parse import quote_plus
+
 from dotenv import load_dotenv
 from flask import abort
 from flask import Flask
@@ -17,6 +18,10 @@ from flask_injector import FlaskInjector
 from flask_injector import RequestScope
 from injector import Binder
 from injector import SingletonScope
+from langchain_core.messages import HumanMessage
+from langchain_core.messages import SystemMessage
+from sqlalchemy import inspect
+import urllib3
 
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.qdrant import VectorDatabase
@@ -34,14 +39,10 @@ from ai_ta_backend.executors.thread_pool_executor import \
 from ai_ta_backend.extensions import db
 from ai_ta_backend.service.export_service import ExportService
 from ai_ta_backend.service.nomic_service import NomicService
-from ai_ta_backend.service.poi_agent_service_v2 import POIAgentService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
-
-
-from langchain_core.messages import HumanMessage, SystemMessage
 
 app = Flask(__name__)
 CORS(app)
@@ -51,6 +52,7 @@ executor = Executor(app)
 
 # load API keys from globally-availabe .env file
 load_dotenv(override=True)
+
 
 @app.route('/')
 def index() -> Response:
@@ -64,6 +66,7 @@ def index() -> Response:
   """
   response = jsonify({"hi there, this is a 404": "Welcome to UIUC.chat backend 🚅 Read the docs here: https://docs.uiuc.chat/ "})
   response.headers.add('Access-Control-Allow-Origin', '*')
+
   return response
 
 
@@ -220,24 +223,6 @@ def createConversationMap(service: NomicService):
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
-
-
-@app.route('/query_sql_agent', methods=['POST'])
-def query_sql_agent(service: POIAgentService):
-    data = request.get_json()
-    user_input = data["query"]
-    system_message = SystemMessage(content="you are a helpful assistant and need to provide answers in text format about the plants found in India. If the Question is not related to plants in India answer 'I do not have any information on this.'")
-   
-    if not user_input:
-        return jsonify({"error": "No query provided"}), 400
-
-    try:
-        user_01 = HumanMessage(content=user_input)
-        inputs = {"messages": [system_message,user_01]}
-        response = service.run_workflow(inputs)
-        return  str(response), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/logToConversationMap', methods=['GET'])
@@ -497,10 +482,10 @@ def configure(binder: Binder) -> None:
   storage_bound = False
 
   # Define database URLs with conditional checks for environment variables
+  encoded_password = quote_plus(os.getenv('SUPABASE_PASSWORD'))
   DB_URLS = {
       'supabase':
-          f"postgresql://{os.getenv('SUPABASE_KEY')}@{os.getenv('SUPABASE_URL')}"
-          if os.getenv('SUPABASE_KEY') and os.getenv('SUPABASE_URL') else None,
+          f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_URL')}",
       'sqlite':
           f"sqlite:///{os.getenv('SQLITE_DB_NAME')}" if os.getenv('SQLITE_DB_NAME') else None,
       'postgres':
@@ -511,19 +496,25 @@ def configure(binder: Binder) -> None:
   # Bind to the first available SQL database configuration
   for db_type, url in DB_URLS.items():
     if url:
-        logging.info(f"Binding to {db_type} database with URL: {url}")
-        with app.app_context():
-          app.config['SQLALCHEMY_DATABASE_URI'] = url
-          db.init_app(app)
+      logging.info(f"Binding to {db_type} database with URL: {url}")
+      with app.app_context():
+        app.config['SQLALCHEMY_DATABASE_URI'] = url
+        db.init_app(app)
+
+        # Check if tables exist before creating them
+        inspector = inspect(db.engine)
+        existing_tables = inspector.get_table_names()
+
+        if not existing_tables:
+          logging.info("Creating tables as the database is empty")
           db.create_all()
-        binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
-        sql_bound = True
-        break
-      
-  if os.getenv("POI_SQL_DB_NAME"):
-      logging.info(f"Binding to POI SQL database with URL: {os.getenv('POI_SQL_DB_NAME')}")
-      binder.bind(POISQLDatabase, to=POISQLDatabase(db), scope=SingletonScope)
-      binder.bind(POIAgentService, to=POIAgentService, scope=SingletonScope)
+        else:
+          logging.info("Tables already exist, skipping creation")
+
+      binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
+      sql_bound = True
+      break
+
   # Conditionally bind databases based on the availability of their respective secrets
   if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(
       os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
@@ -574,7 +565,6 @@ def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter, scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
   logging.info("Configured all services and adapters", binder._bindings)
-
 
 FlaskInjector(app=app, modules=[configure])
 
