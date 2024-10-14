@@ -24,7 +24,6 @@ from sqlalchemy import inspect
 import urllib3
 
 from ai_ta_backend.database.aws import AWSStorage
-from ai_ta_backend.database.poi_sql import POISQLDatabase
 from ai_ta_backend.database.qdrant import VectorDatabase
 from ai_ta_backend.database.sql import SQLAlchemyDatabase
 from ai_ta_backend.executors.flask_executor import ExecutorInterface
@@ -40,7 +39,6 @@ from ai_ta_backend.executors.thread_pool_executor import \
 from ai_ta_backend.extensions import db
 from ai_ta_backend.service.export_service import ExportService
 from ai_ta_backend.service.nomic_service import NomicService
-from ai_ta_backend.service.poi_agent_service_v2 import POIAgentService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -225,27 +223,6 @@ def createConversationMap(service: NomicService):
   response = jsonify(map_id)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
-
-
-@app.route('/query_sql_agent', methods=['POST'])
-def query_sql_agent(service: POIAgentService):
-  data = request.get_json()
-  user_input = data["query"]
-  system_message = SystemMessage(
-      content=
-      "you are a helpful assistant and need to provide answers in text format about the plants found in India. If the Question is not related to plants in India answer 'I do not have any information on this.'"
-  )
-
-  if not user_input:
-    return jsonify({"error": "No query provided"}), 400
-
-  try:
-    user_01 = HumanMessage(content=user_input)
-    inputs = {"messages": [system_message, user_01]}
-    response = service.run_workflow(inputs)
-    return str(response), 200
-  except Exception as e:
-    return jsonify({"error": str(e)}), 500
 
 
 @app.route('/logToConversationMap', methods=['GET'])
@@ -538,10 +515,6 @@ def configure(binder: Binder) -> None:
       sql_bound = True
       break
 
-  if os.getenv("POI_SQL_DB_NAME"):
-    logging.info(f"Binding to POI SQL database with URL: {os.getenv('POI_SQL_DB_NAME')}")
-    binder.bind(POISQLDatabase, to=POISQLDatabase(db), scope=SingletonScope)
-    binder.bind(POIAgentService, to=POIAgentService, scope=SingletonScope)
   # Conditionally bind databases based on the availability of their respective secrets
   if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(
       os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
