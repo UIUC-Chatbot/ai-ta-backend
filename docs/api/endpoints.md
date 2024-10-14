@@ -37,7 +37,7 @@ headers = {
     'Content-Type': 'application/json',
 }
 data = {
-    "model": "gpt-4",
+    "model": "gpt-4o-mini",
     "messages": [
         {
             "role": "system",
@@ -61,6 +61,8 @@ print(response.text)
 
 ### Non-Streaming Response Example
 
+The non- streaming response will contain BOTH the LLM response and the relevant contexts
+
 ```python
 import requests
 
@@ -69,7 +71,7 @@ headers = {
     'Content-Type': 'application/json'
 }
 data = {
-    "model": "gpt-4",
+    "model": "gpt-4o-mini",
     "messages": [
         {
             "role": "system",
@@ -88,7 +90,43 @@ data = {
 }
 
 response = requests.post(url, headers=headers, json=data)
-print(response.text)
+print(response.message)
+print(response.contexts)
+```
+
+### Retrieval Only
+
+{% hint style="info" %}
+Note: This API response is free of cost provided by UIUC chat and will NOT invoke LLM and ONLY return relevant contexts
+{% endhint %}
+
+```python
+import requests
+
+url = "https://uiuc.chat/api/chat-api/chat"
+headers = {
+    'Content-Type': 'application/json'
+}
+data = {
+    "model": "gpt-4o-mini",
+    "messages": [
+        {
+            "role": "system",
+            "content": "Your system prompt here"
+        },
+        {
+            "role": "user",
+            "content": "What is in these documents?"
+        }
+    ],
+    "openai_key": "YOUR-OPENAI-KEY-HERE",
+    "temperature": 0.1,
+    "course_name": "your-course-name",
+    "retrieval_only": true
+}
+
+response = requests.post(url, headers=headers, json=data)
+print(response.contexts)
 ```
 
 ### Image Input Example
@@ -236,6 +274,8 @@ For superior instruction following, GPT-4o model is always used for tool selecti
 {% hint style="info" %}
 Note: Available tools can be viewed under settings on the chat page.
 {% endhint %}
+
+
 
 #### Coming soon
 

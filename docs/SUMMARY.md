@@ -1,6 +1,8 @@
 # Table of contents
 
 * [Quick start](README.md)
+* [Video walkthroughs](video-walkthroughs.md)
+* [FAQs](faqs.md)
 
 ## Features
 

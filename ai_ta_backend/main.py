@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import time
@@ -110,6 +111,7 @@ def getTopContexts(service: RetrievalService) -> Response:
   course_name: str = data.get('course_name', '')
   token_limit: int = data.get('token_limit', 3000)
   doc_groups: List[str] = data.get('doc_groups', [])
+  start_time = time.monotonic()
 
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
@@ -119,8 +121,8 @@ def getTopContexts(service: RetrievalService) -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  found_documents = service.getTopContexts(search_query, course_name, token_limit, doc_groups)
-
+  found_documents = asyncio.run(service.getTopContexts(search_query, course_name, token_limit, doc_groups))
+  print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
@@ -577,8 +579,8 @@ def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> 
 
 
 def configure(binder: Binder) -> None:
-  binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter, scope=SingletonScope)
-  binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
+  binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
+  binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
   binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)
   binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
   binder.bind(SentryService, to=SentryService, scope=SingletonScope)

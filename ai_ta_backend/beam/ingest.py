@@ -78,7 +78,7 @@ requirements = [
     "openpyxl==3.1.2",  # excel"
     "networkx==3.2.1",  # unused part of excel partitioning :("
     "python-pptx==0.6.23",
-    "unstructured==0.10.29",
+    "unstructured==0.15.12",
     "GitPython==3.1.40",
     "beautifulsoup4==4.12.2",
     "sentry-sdk==1.39.1",
@@ -191,39 +191,41 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
   base_url: List[str] | str | None = inputs.get('base_url', None)
   readable_filename: List[str] | str = inputs.get('readable_filename', '')
   content: str | List[str] | None = cast(str | List[str] | None, inputs.get('url'))  # defined if ingest type is webtext
+  doc_groups: List[str] | str = inputs.get('groups', [])
 
   print(
-      f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}"
+      f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}"
   )
 
   ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
 
-  def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content):
+  def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
     if content:
-      return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename)
+      return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=groups)
     elif readable_filename == '':
-      return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url)
+      return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=groups)
     else:
       return ingester.bulk_ingest(course_name,
                                   s3_paths,
                                   readable_filename=readable_filename,
                                   base_url=base_url,
-                                  url=url)
+                                  url=url,
+                                  groups=groups)
 
   # First try
-  success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
+  success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
 
   # retries
   num_retires = 3
   for retry_num in range(1, num_retires):
     if isinstance(success_fail_dict, str):
       print(f"STRING ERROR: {success_fail_dict = }")
-      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
+      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
       time.sleep(13 * retry_num)  # max is 65
     elif success_fail_dict['failure_ingest']:
       print(f"Ingest failure -- Retry attempt {retry_num}. File: {success_fail_dict}")
       # s3_paths = success_fail_dict['failure_ingest'] # retry only failed paths.... what if this is a URL instead?
-      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content)
+      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
       time.sleep(13 * retry_num)  # max is 65
     else:
       break
@@ -347,7 +349,7 @@ class Ingest():
         else:
           # No supported ingest... Fallback to attempting utf-8 decoding, otherwise fail.
           try:
-            self._ingest_single_txt(s3_path, course_name)
+            self._ingest_single_txt(s3_path, course_name, **kwargs)
             success_status['success_ingest'] = s3_path
             print(f"No ingest methods -- Falling back to UTF-8 INGEST... s3_path = {s3_path}")
           except Exception as e:
@@ -393,7 +395,7 @@ class Ingest():
       print(f"MAJOR ERROR IN /bulk_ingest: {str(e)}")
       return success_status
 
-  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str):
+  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str, **kwargs):
     """Crawlee integration
     """
     self.posthog.capture('distinct_id_of_the_user',
@@ -418,7 +420,7 @@ class Ingest():
           'url': url,
           'base_url': base_url,
       }]
-      self.split_and_upload(texts=text, metadatas=metadatas)
+      self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
       self.posthog.capture('distinct_id_of_the_user',
                            event='ingest_single_web_text_succeeded',
                            properties={
@@ -441,7 +443,8 @@ class Ingest():
   def _ingest_single_py(self, s3_path: str, course_name: str, **kwargs):
     try:
       file_name = s3_path.split("/")[-1]
-      file_path = "media/" + file_name  # download from s3 to local folder for ingest
+      os.makedirs("../media", exist_ok=True)
+      file_path = "../media/" + file_name  # download from s3 to local folder for ingest
 
       self.s3_client.download_file(os.getenv('S3_BUCKET_NAME'), s3_path, file_path)
 
@@ -463,7 +466,7 @@ class Ingest():
       #print(texts)
       os.remove(file_path)
 
-      success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+      success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
       print("Python ingest: ", success_or_failure)
       return success_or_failure
 
@@ -497,7 +500,7 @@ class Ingest():
             'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
-        success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas)
+        success_or_failure = self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return success_or_failure
     except Exception as e:
       err = f"❌❌ Error in (VTT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -531,7 +534,7 @@ class Ingest():
           'timestamp': '',
       }]
 
-      success_or_failure = self.split_and_upload(text, metadata)
+      success_or_failure = self.split_and_upload(text, metadata, **kwargs)
       print(f"_ingest_html: {success_or_failure}")
       return success_or_failure
     except Exception as e:
@@ -638,7 +641,7 @@ class Ingest():
           'base_url': kwargs.get('base_url', ''),
       } for txt in text]
 
-      self.split_and_upload(texts=text, metadatas=metadatas)
+      self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
       return "Success"
     except Exception as e:
       err = f"❌❌ Error in (VIDEO ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -667,7 +670,7 @@ class Ingest():
             'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (DOCX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -703,7 +706,7 @@ class Ingest():
       if len(text) == 0:
         return "Error: SRT file appears empty. Skipping."
 
-      self.split_and_upload(texts=texts, metadatas=metadatas)
+      self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
       return "Success"
     except Exception as e:
       err = f"❌❌ Error in (SRT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -734,7 +737,7 @@ class Ingest():
             'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (Excel/xlsx ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -771,7 +774,7 @@ class Ingest():
             'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (png/jpg ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -801,7 +804,7 @@ class Ingest():
             'base_url': kwargs.get('base_url', ''),
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (CSV ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -869,7 +872,7 @@ class Ingest():
         # count the total number of words in the pdf_texts. If it's less than 100, we'll OCR the PDF
         has_words = any(text.strip() for text in pdf_texts)
         if has_words:
-          success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+          success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas, **kwargs)
         else:
           print("⚠️ PDF IS EMPTY -- OCR-ing the PDF.")
           success_or_failure = self._ocr_pdf(s3_path=s3_path, course_name=course_name, **kwargs)
@@ -929,7 +932,7 @@ class Ingest():
         raise ValueError(
             "Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text.")
 
-      success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas)
+      success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas, **kwargs)
       return success_or_failure
     except Exception as e:
       err = f"❌❌ Error in PDF ingest (with OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -947,6 +950,7 @@ class Ingest():
         str: "Success" or an error message
     """
     print("In text ingest, UTF-8")
+    print("kwargs", kwargs)
     try:
       # NOTE: slightly different method for .txt files, no need for download. It's part of the 'body'
       response = self.s3_client.get_object(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path)
@@ -966,7 +970,7 @@ class Ingest():
       }]
       print("Prior to ingest", metadatas)
 
-      success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas)
+      success_or_failure = self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
       return success_or_failure
     except Exception as e:
       err = f"❌❌ Error in (TXT ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -1000,7 +1004,7 @@ class Ingest():
             'base_url': kwargs.get('base_url', '')
         } for doc in documents]
 
-        self.split_and_upload(texts=texts, metadatas=metadatas)
+        self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
         return "Success"
     except Exception as e:
       err = f"❌❌ Error in (PPTX ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
@@ -1050,7 +1054,7 @@ class Ingest():
       sentry_sdk.capture_exception(e)
       return err
 
-  def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]]):
+  def split_and_upload(self, texts: List[str], metadatas: List[Dict[str, Any]], **kwargs):
     """ This is usually the last step of document ingest. Chunk & upload to Qdrant (and Supabase.. todo).
     Takes in Text and Metadata (from Langchain doc loaders) and splits / uploads to Qdrant.
 
@@ -1061,6 +1065,7 @@ class Ingest():
         metadatas (List[Dict[str, Any]]): _description_
     """
     # return "Success"
+    print(f"In split and upload. Metadatas: {metadatas}")
     self.posthog.capture('distinct_id_of_the_user',
                          event='split_and_upload_invoked',
                          properties={
@@ -1071,8 +1076,8 @@ class Ingest():
                              'base_url': metadatas[0].get('base_url', None),
                          })
 
-    print(f"In split and upload. Metadatas: {metadatas}")
-    print(f"Texts: {texts}")
+    #print(f"In split and upload. Metadatas: {metadatas}")
+    #print(f"Texts: {texts}")
     assert len(texts) == len(
         metadatas
     ), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
@@ -1104,8 +1109,10 @@ class Ingest():
         return "Success"
 
       # adding chunk index to metadata for parent doc retrieval
+      print("GROUPS: ", kwargs.get('groups', ''))
       for i, context in enumerate(contexts):
         context.metadata['chunk_index'] = i
+        context.metadata['doc_groups'] = kwargs.get('groups', [])
 
       print("Starting to call embeddings API")
       embeddings_start_time = time.monotonic()
@@ -1176,6 +1183,33 @@ class Ingest():
       # if len(response.data) > 0:
       #   course_name = contexts[0].metadata.get('course_name')
       #   log_to_document_map(course_name)
+
+      # need to update Supabase tables with doc group info
+      if len(response.data) > 0:
+        # get groups from kwargs
+        groups = kwargs.get('groups', '')
+        if groups:
+          # call the supabase function to add the document to the group
+          if contexts[0].metadata.get('url'):
+            data, count = self.supabase_client.rpc('add_document_to_group_url', {
+              "p_course_name": contexts[0].metadata.get('course_name'),
+              "p_s3_path": contexts[0].metadata.get('s3_path'),
+              "p_url": contexts[0].metadata.get('url'),
+              "p_readable_filename": contexts[0].metadata.get('readable_filename'),
+              "p_doc_groups": groups,
+            }).execute()
+          else:
+            data, count = self.supabase_client.rpc('add_document_to_group', {
+              "p_course_name": contexts[0].metadata.get('course_name'),
+              "p_s3_path": contexts[0].metadata.get('s3_path'),
+              "p_url": contexts[0].metadata.get('url'),
+              "p_readable_filename": contexts[0].metadata.get('readable_filename'),
+              "p_doc_groups": groups,
+            }).execute()
+          
+          if len(data) == 0:
+            print("Error in adding to doc groups")
+            raise ValueError("Error in adding to doc groups")
 
       self.posthog.capture('distinct_id_of_the_user',
                            event='split_and_upload_succeeded',
