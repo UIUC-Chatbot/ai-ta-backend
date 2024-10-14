@@ -24,7 +24,7 @@ import pytesseract
 import fitz
 
 import openai
-from OpenaiEmbeddings import OpenAIAPIProcessor
+from .OpenaiEmbeddings import OpenAIAPIProcessor
 
 import boto3
 

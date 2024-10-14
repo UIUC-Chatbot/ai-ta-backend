@@ -1,7 +1,7 @@
 # tasks.py
 
 import time
-from ingest import Ingest
+from .ingest import Ingest
 
 
 def background_task(duration):
