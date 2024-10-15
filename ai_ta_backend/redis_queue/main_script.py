@@ -1,5 +1,7 @@
 # main_script.py --- this sends the task to the queue
 # after calling the ingest API, the ingest function can be called here and the task can be sent to the queue
+import os
+
 from redis import Redis
 from rq import Queue
 
@@ -7,8 +9,9 @@ from ai_ta_backend.redis_queue.task import (  # Correct import path
     background_task, ingest_wrapper,
 )
 
-# redis_conn = Redis(port=6969, host='localhost')
-redis_conn = Redis()
+redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
+                   host=os.environ["INGEST_REDIS_URL"],
+                   password=os.environ["INGEST_REDIS_PASSWORD"])
 task_queue = Queue(connection=redis_conn)
 
 

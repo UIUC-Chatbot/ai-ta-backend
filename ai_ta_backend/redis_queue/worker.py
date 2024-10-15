@@ -12,16 +12,17 @@ logging.basicConfig(level=logging.INFO)
 
 # sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
-# Add the project root to the Python path
+# For some crazy reason, all 3 of these below lines are needed to get imports working.
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(project_root)
-
 from ai_ta_backend.redis_queue.task import ingest_wrapper  # Add this import
 
 
 def start_worker():
   logging.info("Starting Redis worker...")
-  redis_conn = Redis(host='localhost', port=6379, db=0)
+  redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
+                     host=os.environ["INGEST_REDIS_URL"],
+                     password=os.environ["INGEST_REDIS_PASSWORD"])
   with Connection(redis_conn):
     worker = Worker([Queue("default")])
     worker.work()
