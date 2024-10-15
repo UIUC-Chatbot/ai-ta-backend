@@ -20,5 +20,5 @@ export PYTHONPATH=${PYTHONPATH}:$(pwd)/ai_ta_backend
 infisical run --env=dev -- bash -c 'echo "REDIS URL -- redis://:$INGEST_REDIS_PASSWORD@$INGEST_REDIS_URL:$INGEST_REDIS_PORT"'
 infisical run --env=dev -- bash -c 'rq-dashboard --redis-url "redis://:$INGEST_REDIS_PASSWORD@$INGEST_REDIS_URL:$INGEST_REDIS_PORT"' &
 
-infisical run --env=dev -- python ai_ta_backend/redis_queue/worker.py &
+infisical run --env=dev -- python3 ai_ta_backend/redis_queue/worker.py &
 infisical run --env=dev -- flask --app ai_ta_backend.main:app --debug run --port 8000
