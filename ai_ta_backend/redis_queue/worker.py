@@ -7,10 +7,11 @@ from multiprocessing import Process
 
 from redis import Redis
 from rq import Connection, Queue, Worker
+from dotenv import load_dotenv
+load_dotenv()
 
-#logging.basicConfig(level=logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
-
+logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.DEBUG)
 
 # sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
@@ -33,7 +34,7 @@ def start_worker():
 
 
 if __name__ == "__main__":
-  worker_count = 4  # Number of workers you want to start
+  worker_count = os.cpu_count() or 4 # Dynamically set worker count based on CPU cores
   workers = []
 
   # Start multiple worker processes

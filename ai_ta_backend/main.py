@@ -46,6 +46,9 @@ from ai_ta_backend.service.workflow_service import WorkflowService
 from ai_ta_backend.redis_queue.main_script import queue_ingest_task
 import warnings
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Suppress all DeprecationWarnings from langchain
 warnings.filterwarnings("ignore")
 

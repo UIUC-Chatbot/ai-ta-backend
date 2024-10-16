@@ -74,7 +74,6 @@ class Ingest:
     
     def initialize_resources(self):
         # Initialize clients and resources when needed
-    
         self.qdrant_client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key)
         self.vectorstore = Qdrant(
             client=self.qdrant_client,
@@ -94,51 +93,53 @@ class Ingest:
         """
         Main ingest function.
         """
-        self.initialize_resources()
-        
-        course_name: List[str] | str = inputs.get('course_name', '')
-        s3_paths: List[str] | str = inputs.get('s3_paths', '')
-        url: List[str] | str | None = inputs.get('url', None)
-        base_url: List[str] | str | None = inputs.get('base_url', None)
-        readable_filename: List[str] | str = inputs.get('readable_filename', '')
-        content: str | List[str] | None = inputs.get('content', None)  # defined if ingest type is webtext
-        doc_groups: List[str] | str = inputs.get('groups', '')
-
-        print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}")
-        logging.debug("Entered bulk_ingest")
-
-        #return "Success"
-        # First try
-        success_fail_dict = self.run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-
-        num_retries = 3
-        for retry_num in range(1, num_retries):
-            if isinstance(success_fail_dict, str):
-                print(f"STRING ERROR: {success_fail_dict = }")
-                success_fail_dict = self.run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-                time.sleep(13 * retry_num)  # max is 65
+        try:
+            self.initialize_resources()
             
-            elif success_fail_dict['failure_ingest']:
-                print(f"Ingest failure -- Retry attempt {retry_num}. File: {success_fail_dict}")
-                success_fail_dict = self.run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-                time.sleep(13 * retry_num)  # max is 65
-            
-            else:
-                break
-        
-        # Final failure / success check
-        if success_fail_dict['failure_ingest']:
-            print(f"INGEST FAILURE -- About to send to supabase. success_fail_dict: {success_fail_dict}")
-        
-        sentry_sdk.flush(timeout=20)
-        return json.dumps(success_fail_dict)
+            course_name: List[str] | str = inputs.get('course_name', '')
+            s3_paths: List[str] | str = inputs.get('s3_paths', '')
+            url: List[str] | str | None = inputs.get('url', None)
+            base_url: List[str] | str | None = inputs.get('base_url', None)
+            readable_filename: List[str] | str = inputs.get('readable_filename', '')
+            content: str | List[str] | None = inputs.get('content', None)  # defined if ingest type is webtext
+            doc_groups: List[str] | str = inputs.get('groups', '')
 
+            print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}")
+            logging.debug("Entered bulk_ingest")
+
+            # First try
+            success_fail_dict = self.run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+
+            num_retries = 3
+            for retry_num in range(1, num_retries):
+                if isinstance(success_fail_dict, str):
+                    print(f"STRING ERROR: {success_fail_dict = }")
+                    success_fail_dict = self.run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+                    time.sleep(13 * retry_num)  # max is 65
+                
+                elif success_fail_dict['failure_ingest']:
+                    print(f"Ingest failure -- Retry attempt {retry_num}. File: {success_fail_dict}")
+                    success_fail_dict = self.run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+                    time.sleep(13 * retry_num)  # max is 65
+                
+                else:
+                    break
+            
+            # Final failure / success check
+            if success_fail_dict['failure_ingest']:
+                print(f"INGEST FAILURE -- About to send to supabase. success_fail_dict: {success_fail_dict}")
+
+            sentry_sdk.flush(timeout=20)
+            return json.dumps(success_fail_dict)
+        except Exception as e:
+            print("Error in main_ingest: ", e)
+            sentry_sdk.capture_exception(e)
+            return json.dumps(success_fail_dict)
     
     def run_ingest(self, course_name, s3_paths, base_url, url, readable_filename, content, document_groups):
         """
         Routes ingest jobs to the appropriate function based on the input data -> webscrape, url, readable_filename
         """
-        print("Document groups: ", document_groups)
         if content:
             print("Ingesting web text")
             return self.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=document_groups)
@@ -159,7 +160,6 @@ class Ingest:
         -> Dict[str, str | Dict[str, str]]
         """
         print(f"Top of bulk_ingest: ", kwargs)
-        print("s3_paths: ", s3_paths)
 
         def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
             """Handle running an arbitrary ingest function for an individual file."""
