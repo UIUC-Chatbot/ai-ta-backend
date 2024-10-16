@@ -1,17 +1,19 @@
 # main_script.py --- this sends the task to the queue
 # after calling the ingest API, the ingest function can be called here and the task can be sent to the queue
 import os
-
 from redis import Redis
 from rq import Queue
-
 from ai_ta_backend.redis_queue.task import (  # Correct import path
     background_task, ingest_wrapper,
 )
+from dotenv import load_dotenv
+load_dotenv()
 
 redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
                    host=os.environ["INGEST_REDIS_URL"],
-                   password=os.environ["INGEST_REDIS_PASSWORD"])
+                   password=os.environ["INGEST_REDIS_PASSWORD"],
+                   socket_timeout=None,
+                   )
 task_queue = Queue(connection=redis_conn)
 
 
@@ -19,6 +21,9 @@ def queue_ingest_task(inputs):
   print(f"Queueing ingest task for {inputs['course_name']}")
   print("Inputs: ", inputs)
 
+  job2 = task_queue.enqueue(background_task, 5)
+  print(f"Job {job2.id} enqueued, status: {job2.get_status()}")
+  
   job = task_queue.enqueue(ingest_wrapper, inputs)
   print(f"Job {job.id} enqueued, status: {job.get_status()}")
 

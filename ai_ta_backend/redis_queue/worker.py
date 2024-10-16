@@ -8,7 +8,9 @@ from multiprocessing import Process
 from redis import Redis
 from rq import Connection, Queue, Worker
 
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+
 
 # sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
@@ -22,7 +24,9 @@ def start_worker():
   logging.info("Starting Redis worker...")
   redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
                      host=os.environ["INGEST_REDIS_URL"],
-                     password=os.environ["INGEST_REDIS_PASSWORD"])
+                     password=os.environ["INGEST_REDIS_PASSWORD"],
+                     socket_timeout=None,
+                     )
   with Connection(redis_conn):
     worker = Worker([Queue("default")])
     worker.work()

@@ -6,7 +6,8 @@ import numpy as np
 import pandas as pd
 import sentry_sdk
 import supabase
-from langchain.embeddings import OpenAIEmbeddings
+#from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.embeddings import OpenAIEmbeddings
 from nomic import AtlasProject, atlas
 
 OPENAI_API_TYPE = "azure"

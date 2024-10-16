@@ -52,8 +52,11 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 class Ingest:
 
@@ -99,9 +102,11 @@ class Ingest:
         base_url: List[str] | str | None = inputs.get('base_url', None)
         readable_filename: List[str] | str = inputs.get('readable_filename', '')
         content: str | List[str] | None = cast(str | List[str] | None, inputs.get('url'))  # defined if ingest type is webtext
-        doc_groups: List[str] | str = inputs.get('doc_groups', '')
+        doc_groups: List[str] | str = inputs.get('groups', '')
 
         print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}")
+        logging.debug("Entered bulk_ingest")
+
         #return "Success"
         # First try
         success_fail_dict = self.run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
@@ -153,7 +158,9 @@ class Ingest:
         Bulk ingest a list of s3 paths into the vectorstore, and also into the supabase database.
         -> Dict[str, str | Dict[str, str]]
         """
-        print(f"Top of bulk_ingest: ", **kwargs)
+        print(f"Top of bulk_ingest: ", kwargs)
+        print("s3_paths: ", s3_paths)
+
         def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
             """Handle running an arbitrary ingest function for an individual file."""
             # RUN INGEST METHOD
@@ -417,6 +424,114 @@ class Ingest:
             print(err)
             sentry_sdk.capture_exception(e)
             return err
+        
+    def _ingest_single_video(self, s3_path: str, course_name: str, **kwargs) -> str:
+        """
+        Ingest a single video file from S3.
+        """
+        print("Starting ingest video or audio")
+        try:
+            # Ensure the media directory exists
+            media_dir = "media"
+            if not os.path.exists(media_dir):
+                os.makedirs(media_dir)
+
+            # check for file extension
+            file_ext = Path(s3_path).suffix
+            openai.api_key = os.getenv('VLADS_OPENAI_KEY')
+            transcript_list = []
+            with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
+                # download from S3 into an video tmpfile
+                self.s3_client.download_fileobj(Bucket=os.environ['S3_BUCKET_NAME'], Key=s3_path, Fileobj=video_tmpfile)
+
+                # try with original file first
+                try:
+                    mp4_version = AudioSegment.from_file(video_tmpfile.name, file_ext[1:])
+                except Exception as e:
+                    print("Applying moov atom fix and retrying...")
+                    # Fix the moov atom issue using FFmpeg
+                    fixed_video_tmpfile = NamedTemporaryFile(suffix=file_ext, delete=False)
+                    try:
+                        result = subprocess.run([
+                            'ffmpeg', '-y', '-i', video_tmpfile.name, '-c', 'copy', '-movflags', 'faststart',
+                            fixed_video_tmpfile.name
+                        ],
+                                                check=True,
+                                                stdout=subprocess.PIPE,
+                                                stderr=subprocess.PIPE)
+                        #print(result.stdout.decode())
+                        #print(result.stderr.decode())
+                    except subprocess.CalledProcessError as e:
+                        #print(e.stdout.decode())
+                        #print(e.stderr.decode())
+                        print("Error in FFmpeg command: ", e)
+                        raise e
+
+                    # extract audio from video tmpfile
+                    mp4_version = AudioSegment.from_file(fixed_video_tmpfile.name, file_ext[1:])
+
+            # save the extracted audio as a temporary webm file
+            with NamedTemporaryFile(suffix=".webm", dir=media_dir, delete=False) as webm_tmpfile:
+                mp4_version.export(webm_tmpfile, format="webm")
+
+            # check file size
+            file_size = os.path.getsize(webm_tmpfile.name)
+            # split the audio into 25MB chunks
+            if file_size > 26214400:
+                # load the webm file into audio object
+                full_audio = AudioSegment.from_file(webm_tmpfile.name, "webm")
+                file_count = file_size // 26214400 + 1
+                split_segment = 35 * 60 * 1000
+                start = 0
+                count = 0
+
+                while count < file_count:
+                    with NamedTemporaryFile(suffix=".webm", dir=media_dir, delete=False) as split_tmp:
+                        if count == file_count - 1:
+                            # last segment
+                            audio_chunk = full_audio[start:]
+                        else:
+                            audio_chunk = full_audio[start:split_segment]
+
+                        audio_chunk.export(split_tmp.name, format="webm")
+
+                        # transcribe the split file and store the text in dictionary
+                        with open(split_tmp.name, "rb") as f:
+                            transcript = openai.Audio.transcribe("whisper-1", f)
+                        transcript_list.append(transcript['text'])  # type: ignore
+                    start += split_segment
+                    split_segment += split_segment
+                    count += 1
+                    os.remove(split_tmp.name)
+            else:
+                # transcribe the full audio
+                with open(webm_tmpfile.name, "rb") as f:
+                    transcript = openai.Audio.transcribe("whisper-1", f)
+                transcript_list.append(transcript['text'])  # type: ignore
+
+            os.remove(webm_tmpfile.name)
+
+            text = [txt for txt in transcript_list]
+            metadatas: List[Dict[str, Any]] = [{
+                'course_name': course_name,
+                's3_path': s3_path,
+                'readable_filename': kwargs.get('readable_filename',
+                                                Path(s3_path).name[37:]),
+                'pagenumber': '',
+                'timestamp': text.index(txt),
+                'url': kwargs.get('url', ''),
+                'base_url': kwargs.get('base_url', ''),
+            } for txt in text]
+
+            self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
+            return "Success"
+        except Exception as e:
+            err = f"❌❌ Error in (VIDEO ingest): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+            )
+            print(err)
+            sentry_sdk.capture_exception(e)
+            return str(err)
+
     
     def _ingest_single_docx(self, s3_path: str, course_name: str, **kwargs) -> str:
         try:
@@ -831,6 +946,8 @@ class Ingest:
         """
         # return "Success"
         print(f"In split and upload. Metadatas: {metadatas}")
+        print("KWARGS: ", kwargs)
+
         self.posthog.capture('distinct_id_of_the_user',
                             event='split_and_upload_invoked',
                             properties={
@@ -881,6 +998,7 @@ class Ingest:
                 context.metadata['doc_groups'] = kwargs.get('groups', [])
 
             print("Starting to call embeddings API")
+            
             embeddings_start_time = time.monotonic()
             oai = OpenAIAPIProcessor(
                 input_prompts_list=input_texts,
@@ -899,7 +1017,8 @@ class Ingest:
             embeddings_dict: dict[str, List[float]] = {
                 item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results
             }
-
+            print("post embeddings API call")
+            
             ### BULK upload to Qdrant ###
             vectors: list[PointStruct] = []
             for context in contexts:
