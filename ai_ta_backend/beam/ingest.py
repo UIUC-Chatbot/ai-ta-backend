@@ -190,7 +190,7 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
   url: List[str] | str | None = inputs.get('url', None)
   base_url: List[str] | str | None = inputs.get('base_url', None)
   readable_filename: List[str] | str = inputs.get('readable_filename', '')
-  content: str | List[str] | None = cast(str | List[str] | None, inputs.get('url'))  # defined if ingest type is webtext
+  content: str | List[str] | None = inputs.get('content', None)  # defined if ingest type is webtext
   doc_groups: List[str] | str = inputs.get('groups', [])
 
   print(
@@ -201,10 +201,13 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
 
   def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
     if content:
+      print("in web text ingest")
       return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=groups)
     elif readable_filename == '':
+      print("in filename ingest")
       return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=groups)
     else:
+      print("in else ingest")
       return ingester.bulk_ingest(course_name,
                                   s3_paths,
                                   readable_filename=readable_filename,

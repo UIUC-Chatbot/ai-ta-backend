@@ -101,7 +101,7 @@ class Ingest:
         url: List[str] | str | None = inputs.get('url', None)
         base_url: List[str] | str | None = inputs.get('base_url', None)
         readable_filename: List[str] | str = inputs.get('readable_filename', '')
-        content: str | List[str] | None = cast(str | List[str] | None, inputs.get('url'))  # defined if ingest type is webtext
+        content: str | List[str] | None = inputs.get('content', None)  # defined if ingest type is webtext
         doc_groups: List[str] | str = inputs.get('groups', '')
 
         print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}")
