@@ -44,6 +44,11 @@ sentry-sdk==1.39.1
 
 ollama==0.2.1
 
+#RQ
+redis==5.1.1
+rq==1.16.2
+
+
 # Not currently supporting coursera ingest
 # cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
 
