@@ -190,7 +190,7 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
   url: List[str] | str | None = inputs.get('url', None)
   base_url: List[str] | str | None = inputs.get('base_url', None)
   readable_filename: List[str] | str = inputs.get('readable_filename', '')
-  content: str | List[str] | None = cast(str | List[str] | None, inputs.get('url'))  # defined if ingest type is webtext
+  content: str | List[str] | None = inputs.get('content', None)  # defined if ingest type is webtext
   doc_groups: List[str] | str = inputs.get('groups', [])
 
   print(
