@@ -37,7 +37,7 @@ client = Minio(
     os.environ['MINIO_API_ENDPOINT'],
     access_key=os.getenv('MINIO_ACCESS_KEY'),
     secret_key=os.getenv('MINIO_SECRET_KEY'),
-    secure=True,
+    secure=False,
     http_client=http_client,
 )
 sentry_sdk.init(

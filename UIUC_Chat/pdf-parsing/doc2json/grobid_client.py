@@ -21,9 +21,9 @@ require something scalable too, which is not implemented for the moment.
 # load_dotenv(path="../.env", override=True)
 
 DEFAULT_GROBID_CONFIG = {
-    # "grobid_server": "https://grobid.kastan.ai",
+    "grobid_server": "https://grobid.kastan.ai",
     # "grobid_server": os.environ["GROBID_SERVER"],
-    "grobid_server": "http://localhost:6969/",
+    # "grobid_server": "http://localhost:6969/",
     # "grobid_port": "443",
     # "grobid_server": "localhost",
     # "grobid_port": "8070",

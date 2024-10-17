@@ -82,7 +82,7 @@ def process_pdf_file(input_file: os.PathLike,
 
   try:
     start_time = time.monotonic()
-    grobidClient.process_pdf(str(input_file), tei_file.name, "processHeaderDocument")
+    grobidClient.process_pdf(str(input_file), tei_file.name, "processFulltextDocument")
     print(f"📜 Grobid Runtime: {(time.monotonic() - start_time):.2f} seconds")
     posthog.capture('llm-guided-ingest',
                   event='grobid_runtime_v2',
@@ -181,6 +181,9 @@ def parse_and_group_by_section(data) -> Any:
     
     null_sec = 1
     cur_sec = null_sec
+    # for entry in data["pdf_parse"]["body_text"]:
+    #   print(f"Entry: {entry}")
+
     for entry in data["pdf_parse"]["body_text"]:
       text = entry["text"]
       section = entry["section"]
