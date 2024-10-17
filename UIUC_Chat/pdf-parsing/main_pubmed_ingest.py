@@ -13,7 +13,7 @@ from doc2json.grobid_client import GrobidClient
 from dotenv import load_dotenv
 from pdf_process import parse_and_group_by_section, process_pdf_file
 from posthog import Posthog
-from qdrant import create_qdrant, store_embeddings_in_qdrant
+from qdrant import create_qdrant
 from qdrant_client import QdrantClient, models
 from SQLite import initialize_database, insert_data
 from urllib3 import PoolManager

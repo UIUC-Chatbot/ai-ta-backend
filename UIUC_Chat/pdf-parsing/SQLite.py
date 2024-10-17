@@ -21,11 +21,6 @@ def initialize_database(db_path):
     cur.execute("PRAGMA journal_mode=WAL;")
     cur.execute("PRAGMA cache_size = 10000;")
     cur.execute("PRAGMA synchronous = NORMAL;")
-    cur.execute(f'''
-      CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-          id INTEGER PRIMARY KEY AUTOINCREMENT
-      );
-      ''')
 
     cur.execute('''
             CREATE TABLE IF NOT EXISTS articles (
@@ -130,24 +125,7 @@ def insert_data(metadata: Dict,
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 ''', (context_id, section_id, text, token, embedding, "Token limit", context_idx))
 
-        points = []
-        qd_embedding = json.loads(embedding if isinstance(embedding, str) else embedding)
-        points.append(
-            models.PointStruct(
-                id=str(uuid4()),
-                payload={
-                    "article_id": article_id,
-                    "section_id": section_id,
-                    "minio_path": minio_path,
-                    "context_id": context_id,
-                },
-                vector=qd_embedding,
-            ))
-
-        client.upsert(
-            collection_name="embedding",
-            points=points,
-        )
+        qdrant_insert(embedding, article_id, section_id, minio_path, context_id, client)
 
         context_idx += 1
 
@@ -159,7 +137,14 @@ def insert_data(metadata: Dict,
                 INSERT INTO contexts (ID, Section_ID, text, num_tokens, `Embedding_nomic_1.5`, stop_reason, context_idx)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (context_id, section_id, section["text"], section["tokens"], embedding, "Section", context_idx))
-      points = []
+      qdrant_insert(embedding, article_id, section_id, minio_path, context_id, client)
+      context_idx += 1
+
+  conn.commit()
+  conn.close()
+
+def qdrant_insert(embedding, article_id, section_id, minio_path, context_id, client):
+  points = []
       qd_embedding = json.loads(embedding if isinstance(embedding, str) else embedding)
       points.append(
           models.PointStruct(
@@ -177,7 +162,3 @@ def insert_data(metadata: Dict,
           collection_name="embedding",
           points=points,
       )
-      context_idx += 1
-
-  conn.commit()
-  conn.close()
