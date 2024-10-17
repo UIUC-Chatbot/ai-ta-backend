@@ -43,24 +43,30 @@ supabase==2.0.2
 posthog==3.1.0
 sentry-sdk==1.39.1
 
+#RQ
+redis==5.1.1
+rq==1.16.2
+
 # Not currently supporting coursera ingest
 # cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
 
 # removed due to /ingest in Beam
-# canvasapi==3.2.0
-# GitPython==3.1.40
-# pysrt==1.1.2
-# docx2txt==0.8
-# pydub==0.25.1
-# ffmpeg-python==0.2.0
-# ffprobe==0.5
-# ffmpeg==1.4
-# beautifulsoup4==4.12.2
-# PyMuPDF==1.23.6
-# pytesseract==0.3.10 # image OCR
-# openpyxl==3.1.2 # excel
-# networkx==3.2.1 # unused part of excel partitioning :(
-# python-pptx==0.6.23
+canvasapi==3.2.0
+GitPython==3.1.40
+pysrt==1.1.2
+docx2txt==0.8
+pydub==0.25.1
+ffmpeg-python==0.2.0
+ffprobe==0.5
+ffmpeg==1.4
+beautifulsoup4==4.12.2
+PyMuPDF==1.23.6
+pytesseract==0.3.10 # image OCR
+openpyxl==3.1.2 # excel
+networkx==3.2.1 # unused part of excel partitioning :(
+python-pptx==0.6.23
+pdfplumber==0.11.4
+
 # unstructured==0.10.29 # causes huge ~5.3 GB of installs. Probbably from onnx: https://github.com/Unstructured-IO/unstructured/blob/ad14321016533dc03c1782f6ebea00bc9c804846/requirements/extra-pdf-image.in#L4
 
 # pdf packages for unstructured
