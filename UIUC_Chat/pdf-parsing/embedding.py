@@ -29,10 +29,3 @@ def get_embeddings(prompt, model="nomic-embed-text:v1.5", base_url="https://secr
     print(f"Embedding error: {response.status_code}, {response.text}")
 
   return None
-
-
-# prompt = "The sky is blue because of Rayleigh scattering"
-# embeddings = get_embeddings(prompt)
-
-# if embeddings:
-#     print(embeddings)

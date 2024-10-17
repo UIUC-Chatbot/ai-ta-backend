@@ -2,10 +2,10 @@ import json
 import os
 import sqlite3
 from typing import Dict, List, Optional
-from qdrant_client import QdrantClient, models
 from uuid import uuid4
 
 import fastnanoid  # type: ignore
+from qdrant_client import QdrantClient, models
 
 
 def initialize_database(db_path):
@@ -17,6 +17,15 @@ def initialize_database(db_path):
   if not os.path.exists(db_path):
     conn = sqlite3.connect(db_path)
     cur = conn.cursor()
+
+    cur.execute("PRAGMA journal_mode=WAL;")
+    cur.execute("PRAGMA cache_size = 10000;")
+    cur.execute("PRAGMA synchronous = NORMAL;")
+    cur.execute(f'''
+      CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
+          id INTEGER PRIMARY KEY AUTOINCREMENT
+      );
+      ''')
 
     cur.execute('''
             CREATE TABLE IF NOT EXISTS articles (
@@ -86,7 +95,7 @@ def insert_data(metadata: Dict,
 
   conn = sqlite3.connect(db_path)
   cur = conn.cursor()
-  
+
   outline = '\n'.join([f"{section['sec_num']}: {section['sec_title']}" for section in grouped_data])
 
   article_id = fastnanoid.generate()
@@ -98,8 +107,8 @@ def insert_data(metadata: Dict,
       '''
       INSERT INTO articles (ID, Title, Date_published, Journal, Authors, Num_tokens, Outline, Minio_Path)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ''', (article_id, metadata['title'], metadata['date_published'], metadata['journal'], ', '.join(filtered_authors), total_tokens, outline, minio_path)
-  )
+      ''', (article_id, metadata['title'], metadata['date_published'], metadata['journal'], ', '.join(filtered_authors),
+            total_tokens, outline, minio_path))
 
   context_idx = 0
 
@@ -119,9 +128,8 @@ def insert_data(metadata: Dict,
             '''
                     INSERT INTO contexts (ID, Section_ID, text, num_tokens, `Embedding_nomic_1.5`, stop_reason, context_idx)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''',
-            (context_id, section_id, text, token, embedding, "Token limit", context_idx))
-        
+                ''', (context_id, section_id, text, token, embedding, "Token limit", context_idx))
+
         points = []
         qd_embedding = json.loads(embedding if isinstance(embedding, str) else embedding)
         points.append(
@@ -134,14 +142,13 @@ def insert_data(metadata: Dict,
                     "context_id": context_id,
                 },
                 vector=qd_embedding,
-            )
-        )
+            ))
 
         client.upsert(
-          collection_name="embedding",
-          points=points,
+            collection_name="embedding",
+            points=points,
         )
-        
+
         context_idx += 1
 
     else:
@@ -151,8 +158,7 @@ def insert_data(metadata: Dict,
           '''
                 INSERT INTO contexts (ID, Section_ID, text, num_tokens, `Embedding_nomic_1.5`, stop_reason, context_idx)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (context_id, section_id, section["text"], section["tokens"],
-                  embedding, "Section", context_idx))
+            ''', (context_id, section_id, section["text"], section["tokens"], embedding, "Section", context_idx))
       points = []
       qd_embedding = json.loads(embedding if isinstance(embedding, str) else embedding)
       points.append(
@@ -165,15 +171,13 @@ def insert_data(metadata: Dict,
                   "context_id": context_id,
               },
               vector=qd_embedding,
-          )
-      )
+          ))
 
       client.upsert(
-        collection_name="embedding",
-        points=points,
+          collection_name="embedding",
+          points=points,
       )
       context_idx += 1
-    
 
   conn.commit()
   conn.close()

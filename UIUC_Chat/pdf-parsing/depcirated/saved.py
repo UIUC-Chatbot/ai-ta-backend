@@ -9,10 +9,10 @@ import json
 import os
 import tempfile
 
-from minio import Minio
 from pdf_process import parse_and_group_by_section, process_pdf_file
-
 from SQLite import initialize_database, insert_data
+
+from minio import Minio
 
 # files to do list.... but that's stored in minio...
 

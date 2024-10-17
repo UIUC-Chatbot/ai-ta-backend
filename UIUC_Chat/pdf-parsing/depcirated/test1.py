@@ -6,10 +6,10 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Manager, Process
 
 from dotenv import load_dotenv
-from minio import Minio
 from pdf_process import parse_and_group_by_section, process_pdf_file
-
 from SQLite import initialize_database, insert_data
+
+from minio import Minio
 
 # Load environment variables
 load_dotenv()

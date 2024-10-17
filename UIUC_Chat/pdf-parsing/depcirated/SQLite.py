@@ -6,16 +6,11 @@ import backoff
 
 from ai_ta_backend.utils.types import DocumentMetadata, GrobidMetadata
 
-DB_NAME = "science.db"
-TABLE_NAME = "documents11"
-
 
 def insert_grobid_metadata(doc: GrobidMetadata, commit_on_change: bool = True):
-  db = sqlite3.connect(DB_NAME)
+  db = sqlite3.connect(DB_NAME, timeout=30)
   cursor = db.cursor()
   try:
-    create_database_and_table(cursor)
-
     # Todo: how to auto-resume? -- Using minio path names.
 
     # Dynamically get field names from DocumentMetadata
@@ -66,8 +61,6 @@ def insert_doc(doc: DocumentMetadata, commit_on_change: bool = True):
   db = sqlite3.connect(DB_NAME)
   cursor = db.cursor()
   try:
-    create_database_and_table(cursor)
-
     # Dynamically get field names from DocumentMetadata
     # ! TODO: have to handle this better. For section titles, need to keep that separate. Adjust in "create_table_if_missing" function.
 
@@ -107,19 +100,6 @@ def insert_doc(doc: DocumentMetadata, commit_on_change: bool = True):
     cursor.close()
     db.close()
     print("SQLite connection is closed")
-
-
-def create_database_and_table(cursor):
-  """
-  Create database and table if not exists.
-  """
-  # Todo make this dynamic from the DocumentMetadata schema
-
-  cursor.execute(f'''
-    CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-        id INTEGER PRIMARY KEY AUTOINCREMENT
-    );
-    ''')
 
 
 @backoff.on_exception(backoff.expo, Exception, max_time=60)

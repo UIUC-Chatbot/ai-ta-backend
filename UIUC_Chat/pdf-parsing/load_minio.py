@@ -1,31 +1,33 @@
 import os
-import time
 import sqlite3
 import tempfile
+import time
 import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import Manager, Process, Queue
 from pathlib import Path
 
+import sentry_sdk
+import urllib3
+from doc2json.grobid_client import GrobidClient
 from dotenv import load_dotenv
-from minio import Minio  # type: ignore
 from pdf_process import parse_and_group_by_section, process_pdf_file
+from posthog import Posthog
+from qdrant import create_qdrant, store_embeddings_in_qdrant
+from qdrant_client import QdrantClient, models
+from SQLite import initialize_database, insert_data
 from urllib3 import PoolManager
 from urllib3.util.retry import Retry
-from posthog import Posthog
-import sentry_sdk
-from doc2json.grobid_client import GrobidClient
-from qdrant_client import QdrantClient, models
 
-from SQLite import initialize_database, insert_data
-from qdrant import create_qdrant, store_embeddings_in_qdrant
+from minio import Minio  # type: ignore
 
-import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 load_dotenv(override=True)
 
-posthog = Posthog(sync_mode=False, project_api_key=os.environ['LLM_GUIDED_RETRIEVAL_POSTHOG_API_KEY'], host='https://us.i.posthog.com')
+posthog = Posthog(sync_mode=False,
+                  project_api_key=os.environ['LLM_GUIDED_RETRIEVAL_POSTHOG_API_KEY'],
+                  host='https://us.i.posthog.com')
 
 # Create a custom PoolManager with desired settings
 http_client = PoolManager(
@@ -55,7 +57,7 @@ BASE_TEMP_DIR = 'temp'
 BASE_OUTPUT_DIR = 'output'
 BUCKET_NAME = 'pubmed'
 
-NUM_PARALLEL=80
+NUM_PARALLEL = 80
 
 QDRANT_URL = os.getenv('QDRANT_URL')
 QDRANT_PORT = os.getenv('QDRANT_PORT')
@@ -102,7 +104,6 @@ def main_parallel_upload():
   # qdb_proc = Process(target=qdb_worker, args=(qdrant_client, DB_PATH))
   # qdb_proc.start()
 
-
   with ProcessPoolExecutor(max_workers=NUM_PARALLEL) as executor:
     batch_size = 2_000
     minio_gen = minio_object_generator(client, BUCKET_NAME)
@@ -129,25 +130,29 @@ def main_parallel_upload():
           # print_futures_stats(futures)
           # print(f"(while completing jobs) Current queue size: {queue.qsize()}")
           if num_processed_this_run % 100 == 0:
-            print(f"🏎️ Num processed this run: {num_processed_this_run}. ⏰ Runtime: {(time.monotonic() - start_time_main_parallel):.2f} seconds")
+            print(
+                f"🏎️ Num processed this run: {num_processed_this_run}. ⏰ Runtime: {(time.monotonic() - start_time_main_parallel):.2f} seconds"
+            )
 
           posthog.capture('llm-guided-ingest',
-                event='success_ingest_running_total',
-                properties={
-                    'pdf-per-sec-running-total': float(num_processed_this_run/(time.monotonic() - start_time_main_parallel)),
-                    'minio_path': f'{BUCKET_NAME}/{obj.object_name}'
-                })
+                          event='success_ingest_running_total',
+                          properties={
+                              'pdf-per-sec-running-total':
+                                  float(num_processed_this_run / (time.monotonic() - start_time_main_parallel)),
+                              'minio_path':
+                                  f'{BUCKET_NAME}/{obj.object_name}'
+                          })
 
         except Exception as e:
           # MAIN / ONLY FAILURE CASE
           with open(ERR_LOG_FILE, 'a') as f:
             f.write(f"{obj.object_name} --- {str(e)}\n")
           posthog.capture('llm-guided-ingest',
-                  event='failed_ingest',
-                  properties={
-                      'db_path': DB_PATH,
-                      'minio_path': f'{BUCKET_NAME}/{obj.object_name}'
-                  })
+                          event='failed_ingest',
+                          properties={
+                              'db_path': DB_PATH,
+                              'minio_path': f'{BUCKET_NAME}/{obj.object_name}'
+                          })
           print(f"Error processing {obj.object_name}: {str(e)}")
           traceback.print_exc()
 
@@ -157,6 +162,7 @@ def main_parallel_upload():
   db_proc.join()
   # queue_monitor_proc.terminate()
   # qdb_proc.join()
+
 
 def upload_single_pdf(minio_object_name, queue):
   """
@@ -180,7 +186,8 @@ def upload_single_pdf(minio_object_name, queue):
     tmp_file.write(file_content)
     tmp_file.flush()
 
-    output_data = process_pdf_file(Path(tmp_file.name), BASE_TEMP_DIR, BASE_OUTPUT_DIR, f"{BUCKET_NAME}/{minio_object_name}", grobidClient)
+    output_data = process_pdf_file(Path(tmp_file.name), BASE_TEMP_DIR, BASE_OUTPUT_DIR,
+                                   f"{BUCKET_NAME}/{minio_object_name}", grobidClient)
     metadata, grouped_data, total_tokens, references, ref_num_tokens = parse_and_group_by_section(output_data)
 
     queue.put({
@@ -193,7 +200,7 @@ def upload_single_pdf(minio_object_name, queue):
         'ref_num_tokens': ref_num_tokens,
         'minio_path': f'{BUCKET_NAME}/{minio_object_name}'
     })
-  
+
   print(f"⭐️ Total ingest runtime: {(time.monotonic() - start_time_minio):.2f} seconds")
   posthog.capture('llm-guided-ingest',
                   event='success_ingest_v2',
@@ -204,6 +211,7 @@ def upload_single_pdf(minio_object_name, queue):
                       'db_path': DB_PATH,
                       'minio_path': f'{BUCKET_NAME}/{minio_object_name}'
                   })
+
 
 # Start <HELPER UTILS>
 def load_processed_files(log_file):
@@ -227,7 +235,6 @@ def db_worker(queue, db_path, client):
     try:
       insert_data(data['metadata'], data['total_tokens'], data['grouped_data'], data['db_path'], data['references'],
                   data['ref_num_tokens'], data['minio_path'], client)
-      # store_embeddings_in_qdrant(client, db_path)
 
       save_processed_file(LOG_FILE, data['file_name'])
       conn.commit()
@@ -236,22 +243,13 @@ def db_worker(queue, db_path, client):
         f.write(f"db_worker: {data['file_name']}: {str(e)}\n")
   conn.close()
 
-# def qdb_worker(client, db_path):
-#   while True:
-#     try:
-#       store_embeddings_in_qdrant(client, db_path)
-#       save_processed_file(LOG_FILE, data['file_name'])
-#     except Exception as e:
-#       with open(ERR_LOG_FILE, 'a') as f:
-#         f.write(f"qdb_worker: {data['file_name']}: {str(e)}\n")
-#   conn.close()
-
 
 def minio_object_generator(client, bucket_name):
   processed_files = load_processed_files(LOG_FILE)
   for obj in client.list_objects(bucket_name, recursive=True):
     if obj.object_name not in processed_files:
       yield obj
+
 
 # def queue_size_monitor(queue):
 #   while True:
@@ -272,6 +270,7 @@ def print_futures_stats(futures):
       elif f.exception() is not None:
         error_count += 1
   print(f"Batch progress. Running: {running_count}, Done: {none_count}, Errors: {error_count}")
+
 
 # End </HELPER UTILS>
 
