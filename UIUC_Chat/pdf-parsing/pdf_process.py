@@ -1,14 +1,9 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
-import json
 import math
 import os
 import tempfile
 import time
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import sentry_sdk
 import tiktoken
@@ -18,14 +13,15 @@ from doc2json.tei_to_json import (
     convert_tei_xml_file_to_s2orc_json,
     convert_tei_xml_soup_to_s2orc_json,
 )
+from dotenv import load_dotenv
 from embedding import get_embeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter  # type: ignore
 from posthog import Posthog
 
-# ERR_LOG_FILE = f'ERRORS_parsed_files.log'
-# BASE_LOG_DIR = 'log'
 BASE_TEMP_DIR = 'temp'
 BASE_OUTPUT_DIR = 'output'
+
+load_dotenv(override=True)
 
 posthog = Posthog(sync_mode=True,
                   project_api_key=os.environ['LLM_GUIDED_RETRIEVAL_POSTHOG_API_KEY'],
