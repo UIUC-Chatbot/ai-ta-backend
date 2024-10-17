@@ -59,6 +59,15 @@ if beam.env.is_remote():
   from qdrant_client.models import PointStruct
   from supabase.client import ClientOptions
 
+  sentry_sdk.init(
+      dsn=os.getenv("SENTRY_DSN"),
+      # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+      traces_sample_rate=1.0,
+      # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
+      # We recommend adjusting this value in production.
+      profiles_sample_rate=1.0,
+      enable_tracing=True)
+
 requirements = [
     "openai<1.0",
     "supabase==2.5.3",
@@ -156,14 +165,6 @@ def loader():
   #     openai_api_type=OPENAI_API_TYPE)
 
   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
-  sentry_sdk.init(
-      dsn=os.getenv("SENTRY_DSN"),
-      # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-      traces_sample_rate=1.0,
-      # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
-      # We recommend adjusting this value in production.
-      profiles_sample_rate=1.0,
-      enable_tracing=True)
 
   return qdrant_client, vectorstore, s3_client, supabase_client, posthog
 
@@ -256,6 +257,21 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
     # rebuild_status = rebuild_map(str(course_name), map_type='document')
     pass
 
+  # Success ingest!
+  posthog.capture(
+      'distinct_id_of_the_user',
+      event='ingest_success',
+      properties={
+          'course_name': course_name,
+          's3_path': s3_paths,
+          's3_paths': s3_paths,
+          'url': url,
+          'base_url': base_url,
+          'readable_filename': readable_filename,
+          'content': content,
+          'doc_groups': doc_groups,
+          # TODO: Tokens in entire document
+      })
   print(f"Final success_fail_dict: {success_fail_dict}")
   sentry_sdk.flush(timeout=20)
   return json.dumps(success_fail_dict)
@@ -353,6 +369,7 @@ class Ingest():
             success_status['success_ingest'] = s3_path
             print(f"No ingest methods -- Falling back to UTF-8 INGEST... s3_path = {s3_path}")
           except Exception as e:
+            sentry_sdk.capture_exception(e)
             print(
                 f"We don't have a ingest method for this filetype: {file_extension}. As a last-ditch effort, we tried to ingest the file as utf-8 text, but that failed too. File is unsupported: {s3_path}. UTF-8 ingest error: {e}"
             )
@@ -380,6 +397,7 @@ class Ingest():
     except Exception as e:
       err = f"❌❌ Error in /ingest: `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )  # type: ignore
+      sentry_sdk.capture_exception(e)
 
       success_status['failure_ingest'] = {'s3_path': s3_path, 'error': f"MAJOR ERROR DURING INGEST: {err}"}
       self.posthog.capture('distinct_id_of_the_user',
@@ -395,7 +413,8 @@ class Ingest():
       print(f"MAJOR ERROR IN /bulk_ingest: {str(e)}")
       return success_status
 
-  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str, **kwargs):
+  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str,
+                             **kwargs):
     """Crawlee integration
     """
     self.posthog.capture('distinct_id_of_the_user',
@@ -1191,22 +1210,24 @@ class Ingest():
         if groups:
           # call the supabase function to add the document to the group
           if contexts[0].metadata.get('url'):
-            data, count = self.supabase_client.rpc('add_document_to_group_url', {
-              "p_course_name": contexts[0].metadata.get('course_name'),
-              "p_s3_path": contexts[0].metadata.get('s3_path'),
-              "p_url": contexts[0].metadata.get('url'),
-              "p_readable_filename": contexts[0].metadata.get('readable_filename'),
-              "p_doc_groups": groups,
-            }).execute()
+            data, count = self.supabase_client.rpc(
+                'add_document_to_group_url', {
+                    "p_course_name": contexts[0].metadata.get('course_name'),
+                    "p_s3_path": contexts[0].metadata.get('s3_path'),
+                    "p_url": contexts[0].metadata.get('url'),
+                    "p_readable_filename": contexts[0].metadata.get('readable_filename'),
+                    "p_doc_groups": groups,
+                }).execute()
           else:
-            data, count = self.supabase_client.rpc('add_document_to_group', {
-              "p_course_name": contexts[0].metadata.get('course_name'),
-              "p_s3_path": contexts[0].metadata.get('s3_path'),
-              "p_url": contexts[0].metadata.get('url'),
-              "p_readable_filename": contexts[0].metadata.get('readable_filename'),
-              "p_doc_groups": groups,
-            }).execute()
-          
+            data, count = self.supabase_client.rpc(
+                'add_document_to_group', {
+                    "p_course_name": contexts[0].metadata.get('course_name'),
+                    "p_s3_path": contexts[0].metadata.get('s3_path'),
+                    "p_url": contexts[0].metadata.get('url'),
+                    "p_readable_filename": contexts[0].metadata.get('readable_filename'),
+                    "p_doc_groups": groups,
+                }).execute()
+
           if len(data) == 0:
             print("Error in adding to doc groups")
             raise ValueError("Error in adding to doc groups")
