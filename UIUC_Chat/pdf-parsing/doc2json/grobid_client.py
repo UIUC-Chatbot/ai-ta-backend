@@ -8,7 +8,6 @@ import time
 from typing import List
 
 from doc2json.client import ApiClient
-
 '''
 This version uses the standard ProcessPoolExecutor for parallelizing the concurrent calls to the GROBID services.
 Given the limits of ThreadPoolExecutor (input stored in memory, blocking Executor.map until the whole input
@@ -20,28 +19,28 @@ require something scalable too, which is not implemented for the moment.
 # from dotenv import load_dotenv
 # load_dotenv(path="../.env", override=True)
 
-DEFAULT_GROBID_CONFIG = {
-    "grobid_server": "https://grobid.kastan.ai",
-    # "grobid_server": os.environ["GROBID_SERVER"],
-    # "grobid_server": "http://localhost:6969/",
-    # "grobid_port": "443",
-    # "grobid_server": "localhost",
-    # "grobid_port": "8070",
-    "batch_size": 2000,
-    "sleep_time": 5,
-    "generateIDs": False,
-    "consolidate_header": False,
-    "consolidate_citations": False,
-    "include_raw_citations": True,
-    "include_raw_affiliations": False,
-    "max_workers": 18,
-}
+# DEFAULT_GROBID_CONFIG = {
+#     "grobid_server": "https://grobid.kastan.ai",
+#     # "grobid_server": os.environ["GROBID_SERVER"],
+#     # "grobid_server": "http://localhost:6969/",
+#     # "grobid_port": "443",
+#     # "grobid_server": "localhost",
+#     # "grobid_port": "8070",
+#     "batch_size": 2000,
+#     "sleep_time": 5,
+#     "generateIDs": False,
+#     "consolidate_header": False,
+#     "consolidate_citations": False,
+#     "include_raw_citations": True,
+#     "include_raw_affiliations": False,
+#     "max_workers": 18,
+# }
 
 
 class GrobidClient(ApiClient):
 
-  def __init__(self, config=None):
-    self.config = config or DEFAULT_GROBID_CONFIG
+  def __init__(self, config):
+    self.config = config
     self.generate_ids = self.config["generateIDs"]
     self.consolidate_header = self.config["consolidate_header"]
     self.consolidate_citations = self.config["consolidate_citations"]
@@ -122,7 +121,7 @@ class GrobidClient(ApiClient):
       return self.process_pdf_stream(pdf_file, pdf_strm, output, service)
     else:
       print(f'Grobid Failed. Status: {str(status)}. Output: {output}')
-      raise(ValueError(f"Grobid failed with status {str(status)}"))
+      raise (ValueError(f"Grobid failed with status {str(status)}"))
 
   def process_pdf(self, pdf_file: str, output: str, service: str) -> None:
     # check if TEI file is already produced

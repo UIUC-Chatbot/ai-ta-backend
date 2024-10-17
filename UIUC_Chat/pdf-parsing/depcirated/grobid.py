@@ -13,10 +13,10 @@ from typing import Dict, Optional
 
 import ray
 import tiktoken
-
-from ai_ta_backend.utils.types import GrobidMetadata
 from allenai_grobid_parser import process_pdf_file
 from SQLite import insert_grobid_metadata
+
+from ai_ta_backend.utils.types import GrobidMetadata
 
 
 def main(pdf_dir: PathLike):

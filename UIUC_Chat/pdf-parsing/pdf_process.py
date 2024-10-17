@@ -34,30 +34,6 @@ sentry_sdk.init(
 )
 
 
-def process_pdf_stream(input_file: str,
-                       sha: str,
-                       input_stream: bytes,
-                       grobid_config: Optional[Dict] = None) -> Dict | None:
-  """
-    Process PDF stream
-    :param input_file:
-    :param sha:
-    :param input_stream:
-    :return:
-    """
-  try:
-    tei_text = grobidClient.process_pdf_stream(input_file, input_stream, 'temp', "processFulltextDocument")
-
-    soup = BeautifulSoup(tei_text, "xml")
-
-    paper = convert_tei_xml_soup_to_s2orc_json(soup, input_file, sha)
-
-    return paper.release_json('pdf')
-  except Exception as e:
-    raise ValueError(f"{input_file} --- Error process pdf stream: {str(e)}")
-    sentry_client.capture_exception(e)
-
-
 def process_pdf_file(
     input_file: os.PathLike,
     temp_dir: str = BASE_TEMP_DIR,

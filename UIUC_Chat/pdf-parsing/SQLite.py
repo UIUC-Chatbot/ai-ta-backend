@@ -143,22 +143,23 @@ def insert_data(metadata: Dict,
   conn.commit()
   conn.close()
 
+
 def qdrant_insert(embedding, article_id, section_id, minio_path, context_id, client):
   points = []
-      qd_embedding = json.loads(embedding if isinstance(embedding, str) else embedding)
-      points.append(
-          models.PointStruct(
-              id=str(uuid4()),
-              payload={
-                  "article_id": article_id,
-                  "section_id": section_id,
-                  "minio_path": minio_path,
-                  "context_id": context_id,
-              },
-              vector=qd_embedding,
-          ))
+  qd_embedding = json.loads(embedding if isinstance(embedding, str) else embedding)
+  points.append(
+      models.PointStruct(
+          id=str(uuid4()),
+          payload={
+              "article_id": article_id,
+              "section_id": section_id,
+              "minio_path": minio_path,
+              "context_id": context_id,
+          },
+          vector=qd_embedding,
+      ))
 
-      client.upsert(
-          collection_name="embedding",
-          points=points,
-      )
+  client.upsert(
+      collection_name="embedding",
+      points=points,
+  )
