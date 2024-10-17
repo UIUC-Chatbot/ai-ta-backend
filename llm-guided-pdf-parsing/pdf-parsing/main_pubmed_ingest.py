@@ -59,10 +59,6 @@ BUCKET_NAME = 'pubmed'
 
 NUM_PARALLEL = 80
 
-QDRANT_URL = os.getenv('QDRANT_URL')
-QDRANT_PORT = os.getenv('QDRANT_PORT')
-QDRANT_API_KEY = os.getenv('QDRANT_API')
-
 # Configure Grobid
 grobid_config = {
     "grobid_server": os.getenv('GROBID_SERVER'),
@@ -80,7 +76,7 @@ grobid_config = {
 }
 grobidClient = GrobidClient(grobid_config)
 
-qdrant_client = QdrantClient(url=QDRANT_URL, port=QDRANT_PORT, https=True, api_key=QDRANT_API_KEY)
+qdrant_client = QdrantClient(url=os.environ['QDRANT_URL'], port=os.environ['QDRANT_PORT'], https=True, api_key=os.environ['QDRANT_API_KEY'])
 
 
 def main_parallel_upload():
