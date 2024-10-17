@@ -3,16 +3,11 @@ import os
 import tempfile
 import time
 import traceback
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import sentry_sdk
 import tiktoken
-from bs4 import BeautifulSoup
-from doc2json.grobid_client import GrobidClient
-from doc2json.tei_to_json import (
-    convert_tei_xml_file_to_s2orc_json,
-    convert_tei_xml_soup_to_s2orc_json,
-)
+from doc2json.tei_to_json import convert_tei_xml_file_to_s2orc_json
 from dotenv import load_dotenv
 from embedding import get_embeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter  # type: ignore
