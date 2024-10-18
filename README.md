@@ -4,15 +4,15 @@ A Flask application hosting endpoints for AI TA backend.
 
 ### 👉 See the main app for details: https://github.com/UIUC-Chatbot/ai-teaching-assistant-uiuc
 
-### 🛠️ Technical Architecture
+## License
 
-Hosted (mostly for free) on [Railway](https://railway.app/).
-Architecture diagram of Flask + Next.js & React hosted on Vercel.
-![Architecture diagram](https://github.com/UIUC-Chatbot/ai-ta-backend/assets/13607221/bda7b4d6-79ce-4d12-bf8f-cff9207c37af)
+This project is available under the [CC BY-NC 4.0 License](LICENSE) for non-commercial use.
 
-## Documentation
+### Commercial Use
 
-Automatic [API Reference](https://uiuc-chatbot.github.io/ai-ta-backend/reference/)
+For commercial use of this project, you must obtain a separate commercial license. Please contact [kvday2@illinois.edu](mailto:kvday2@illinois.edu) and [kindrtnk@illinois.edu](mailto:kindrtnk@illinois.edu) to inquire about commercial licensing terms.
+
+Failure to obtain a commercial license for commercial use is a violation of the terms of this project.
 
 ## Docker Deployment
 
@@ -26,6 +26,15 @@ To customize HTTP port used as the main entrypoint, set the `FLASK_PORT` variabe
 Works on version: `Docker Compose version v2.27.1-desktop.1`
 
 Works on Apple Silicon M1 `aarch64`, and `x86`.
+
+
+### 🛠️ Technical Architecture
+
+![Architecture diagram](https://github.com/UIUC-Chatbot/ai-ta-backend/assets/13607221/bda7b4d6-79ce-4d12-bf8f-cff9207c37af)
+
+## Documentation
+
+See docs on https://docs.uiuc.chat
 
 ## 📣 Development
 
