@@ -22,10 +22,10 @@ redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
 
 task_queue = Queue(connection=redis_conn)
 
-supabase_client = supabase.create_client(  # type: ignore
-      supabase_url=os.environ['SUPABASE_URL'],
-      supabase_key=os.environ['SUPABASE_API_KEY'],
-      options=ClientOptions(postgrest_client_timeout=60,))
+# supabase_client = supabase.create_client(  # type: ignore
+#       supabase_url=os.environ['SUPABASE_URL'],
+#       supabase_key=os.environ['SUPABASE_API_KEY'],
+#       options=ClientOptions(postgrest_client_timeout=60,))
 
 # Callback function to update the status after execution
 def update_task_status(job, connection, result, *args, **kwargs):

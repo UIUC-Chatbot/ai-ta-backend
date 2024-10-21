@@ -97,6 +97,28 @@ class SQLAlchemyDatabase:
             return DatabaseResponse[models.Document](data=documents, count=len(result)).to_dict()
         finally:
             self.db.session.close()
+
+    def insertDocsInProgress(self, doc_progress_payload):
+        try:
+            self.db.session.execute(self.db.insert(models.DocumentsInProgress).values(**doc_progress_payload))
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
+
+    def deleteDocsInProgress(self, beam_task_id: int):
+        try:
+            query = self.db.delete(models.DocumentsInProgress).where(models.DocumentsInProgress.beam_task_id == beam_task_id)
+            self.db.session.execute(query)
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
+    
+    def insertDocsFailed(self, doc_failed_payload):
+        try:
+            self.db.session.execute(self.db.insert(models.DocumentsFailed).values(**doc_failed_payload))
+            self.db.session.commit()
+        finally:
+            self.db.session.close()
     
     # Project-related queries
 
