@@ -1,9 +1,8 @@
 import json
-import os
 
-import requests
 from injector import inject
 
+from ai_ta_backend.database.redis import RedisDatabase
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -18,8 +17,10 @@ class ProjectService:
     """
 
   @inject
-  def __init__(self, sql_db: SQLDatabase, posthog_service: PosthogService, sentry_service: SentryService):
+  def __init__(self, sql_db: SQLDatabase, posthog_service: PosthogService, sentry_service: SentryService,
+               redis_db: RedisDatabase):
     self.sqlDb = sql_db
+    self.redisDb = redis_db
     self.posthog = posthog_service
     self.sentry = sentry_service
 
@@ -44,11 +45,11 @@ class ProjectService:
         """
     try:
       # Insert project into Redis
-      headers = {
-          "Authorization":
-              f"Bearer {os.environ['KV_REST_API_TOKEN']}",  # Ensure you use the appropriate write-access API key
-          "Content-Type": "application/json"
-      }
+      # headers = {
+      #     "Authorization":
+      #         f"Bearer {os.environ['KV_REST_API_TOKEN']}",  # Ensure you use the appropriate write-access API key
+      #     "Content-Type": "application/json"
+      # }
       # Define the key-value pair you want to insert
       key = project_name  # Replace with your key
       value = {
@@ -66,16 +67,21 @@ class ProjectService:
       }
 
       # Construct the URL for the HSET request
-      hset_url = str(os.environ['KV_REST_API_URL']) + f"/hset/course_metadatas/{key}"
+      # hset_url = str(os.environ['KV_REST_API_URL']) + f"/hset/course_metadatas/{key}"
 
       # Make the POST request to insert the key-value pair
-      response = requests.post(hset_url, headers=headers, data=json.dumps(value))
+      # response = requests.post(hset_url, headers=headers, data=json.dumps(value))
+      response = self.redisDb.hset(project_name, json.dumps(value))
 
-      # Check the response status
-      if response.status_code == 200:
+      if response == 1:
         print("Course metadata inserted successfully.")
       else:
-        print(f"Failed to insert course metadata. Status code: {response.status_code}, Response: {response.text}")
+        print(f"Failed to insert course metadata. Status code: {response}")
+      # Check the response status
+      # if response.status_code == 200:
+      #   print("Course metadata inserted successfully.")
+      # else:
+      #   print(f"Failed to insert course metadata. Status code: {response.status_code}, Response: {response.text}")
 
       # check if the project owner has pre-assigned API keys
       if project_owner_email:
@@ -93,15 +99,14 @@ class ProjectService:
             llm_val[row['providerName']] = row['providerBodyNoModels']
 
           # Insert the pre-assigned API keys into Redis
-          set_llm_url = str(os.environ['KV_REST_API_URL']) + f"/set/{redis_key}"
-          set_response = requests.post(set_llm_url, headers=headers, data=json.dumps(llm_val))
-
+          # set_llm_url = str(os.environ['KV_REST_API_URL']) + f"/set/{redis_key}"
+          # set_response = requests.post(set_llm_url, headers=headers, data=json.dumps(llm_val))
+          set_response = self.redisDb.hset(redis_key, json.dumps(llm_val))
           # Check the response status
-          if set_response.status_code == 200:
+          if set_response == 1:
             print("LLM key-value pair inserted successfully.")
           else:
-            print(
-                f"Failed to insert LLM key-value pair. Status code: {response.status_code}, Response: {response.text}")
+            print(f"Failed to insert LLM key-value pair. Status code: {set_response}")
 
       return "success"
     except Exception as e:
