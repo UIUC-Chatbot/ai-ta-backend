@@ -43,8 +43,7 @@ from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
-
-from ai_ta_backend.redis_queue.main_script import queue_ingest_task
+from ai_ta_backend.service.queue_service import QueueService
 
 
 app = Flask(__name__)
@@ -479,13 +478,13 @@ def run_flow(service: WorkflowService) -> Response:
       abort(400, description=f"Bad request: {e}")
 
 @app.route('/ingest', methods=['POST'])
-def ingest() -> Response:
+def ingest(service: QueueService) -> Response:
   print("In /ingest")
 
   data = request.get_json()
 
   # send data to redis_queue/main_script.py
-  result = queue_ingest_task(data)
+  result = service.queue_ingest_task(data)
   print("Result from queue_ingest_task: ", result)
 
   response = jsonify({"outcome": 'success'})

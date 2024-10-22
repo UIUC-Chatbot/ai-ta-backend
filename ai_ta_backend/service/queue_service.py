@@ -12,18 +12,23 @@ import traceback as tb
 from typing import Optional
 from injector import inject
 
-from ai_ta_backend.utils.task import ingest_wrapper
+# from ai_ta_backend.utils.task import ingest_wrapper
 from ai_ta_backend.database.sql import SQLAlchemyDatabase
+from ai_ta_backend.database.qdrant import VectorDatabase
+from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
+from ai_ta_backend.service.ingest_service import Ingest
 
 class QueueService:
     """
     Contains all methods for business logic of the queue service.
     """
     @inject
-    def __init__(self, sqlDb: SQLAlchemyDatabase, posthog: Optional[PosthogService], sentry: Optional[SentryService]):
+    def __init__(self, sqlDb: SQLAlchemyDatabase, vectorDb: VectorDatabase, aws: AWSStorage, posthog: PosthogService, sentry: SentryService):
         self.sqlDb = sqlDb
+        self.vectorDb = vectorDb
+        self.aws = aws
         self.sentry = sentry
         self.posthog = posthog
 
@@ -34,6 +39,15 @@ class QueueService:
                                )
         
         self.task_queue = Queue(connection=self.redis_conn)
+
+    def ingest_wrapper(self, inputs):
+        """
+        Wrapper function for the ingest task.
+        """
+        print("Running ingest_wrapper")
+        ingester = Ingest(sqlDb=self.sqlDb, vectorDb=self.vectorDb, aws=self.aws, posthog=self.posthog, sentry=self.sentry)
+        print(f"Inputs in wrapper: {inputs}")
+        return ingester.main_ingest(**inputs)
     
     def queue_ingest_task(self, inputs):
         """
@@ -42,7 +56,7 @@ class QueueService:
         try:
             print(f"Queueing ingest task for {input}")
 
-            job = self.task_queue.enqueue(ingest_wrapper, inputs, on_success=self.update_ingest_success, on_failure=self.update_ingest_failure)
+            job = self.task_queue.enqueue(self.ingest_wrapper, inputs, on_success=self.update_ingest_success, on_failure=self.update_ingest_failure)
             print(f"Job {job.id} enqueued, status: {job.get_status()}")
 
             # Insert into 'documents_in_progress'

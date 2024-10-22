@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 # For some crazy reason, all 3 of these below lines are needed to get imports working.
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(project_root)
-from ai_ta_backend.redis_queue.task import ingest_wrapper  # Add this import
+from ai_ta_backend.utils.task import ingest_wrapper  # Add this import
 
 
 def start_worker():

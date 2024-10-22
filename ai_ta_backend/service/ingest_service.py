@@ -48,7 +48,7 @@ from ai_ta_backend.database.sql import SQLAlchemyDatabase
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
-from ai_ta_backend.redis_queue.OpenaiEmbeddings import OpenAIAPIProcessor
+from ai_ta_backend.utils.OpenaiEmbeddings import OpenAIAPIProcessor
 
 
 load_dotenv()

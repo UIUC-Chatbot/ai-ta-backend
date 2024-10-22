@@ -1,5 +1,5 @@
-import time
-from ai_ta_backend.redis_queue.ingest import Ingest
+from ai_ta_backend.service.ingest_service import Ingest
+
 
 def ingest_wrapper(inputs):
   print("Running ingest_wrapper")
