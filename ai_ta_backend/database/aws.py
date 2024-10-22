@@ -39,3 +39,12 @@ class AWSStorage():
   def generatePresignedUrl(self, object: str, bucket_name: str, s3_path: str, expiration: int = 3600):
     # generate presigned URL
     return self.s3_client.generate_presigned_url('get_object', Params={'Bucket': bucket_name, 'Key': s3_path}, ExpiresIn=expiration)
+
+  def download_fileobj(self, bucket_name: str, s3_path: str, file):
+    return self.s3_client.download_fileobj(Bucket=bucket_name, Key=s3_path, Fileobj=file)
+  
+  def get_object(self, bucket_name: str, s3_path: str):
+    return self.s3_client.get_object(Bucket=bucket_name, Key=s3_path)
+  
+  def upload_fileobj(self, file, bucket_name: str, s3_path: str):
+    return self.s3_client.upload_fileobj(Fileobj=file, Bucket=bucket_name, Key=s3_path)

@@ -12,7 +12,7 @@ import traceback as tb
 from typing import Optional
 from injector import inject
 
-from ai_ta_backend.redis_queue.task import ingest_wrapper
+from ai_ta_backend.utils.task import ingest_wrapper
 from ai_ta_backend.database.sql import SQLAlchemyDatabase
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService

@@ -88,3 +88,12 @@ class VectorDatabase():
             ),
         ]),
     )
+  
+  def upsert(self, collection_name: str, points):
+    """
+    Upsert data into the vector database.
+    """
+    return self.qdrant_client.upsert(
+        collection_name=collection_name,
+        points=points,
+    )

@@ -7,6 +7,7 @@ from typing import List
 
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
+from sqlalchemy import func
 
 from injector import inject
 
@@ -35,6 +36,15 @@ class SQLAlchemyDatabase:
     def getMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
         try:
             query = self.db.select(models.Document).where(models.Document.course_name == course_name, models.Document.s3_path == s3_path)
+            result = self.db.session.execute(query).scalars().all()
+            documents: List[models.Document] = [doc.to_dict() for doc in result]
+            return DatabaseResponse[models.Document](data=documents, count=len(result)).to_dict()
+        finally:
+            self.db.session.close()
+    
+    def getMaterialsLikeCourseAndKeyAndValue(self, course_name: str, key: str, value: str):
+        try:
+            query = self.db.select(models.Document).where(models.Document.course_name == course_name, getattr(models.Document, key).like(f"%{value}%"))
             result = self.db.session.execute(query).scalars().all()
             documents: List[models.Document] = [doc.to_dict() for doc in result]
             return DatabaseResponse[models.Document](data=documents, count=len(result)).to_dict()
@@ -119,7 +129,17 @@ class SQLAlchemyDatabase:
             self.db.session.commit()
         finally:
             self.db.session.close()
-    
+
+    def insertDocs(self, doc_payload):
+        try:
+            result = self.db.session.execute(self.db.insert(models.Document).values(**doc_payload))
+            self.db.session.commit()
+            data = [row.to_dict() for row in result]
+            return DatabaseResponse(data=data, count=len(result)).to_dict()
+        finally:
+            self.db.session.close()
+
+        
     # Project-related queries
 
     def getProjectsMapForCourse(self, course_name: str):
@@ -327,5 +347,37 @@ class SQLAlchemyDatabase:
             
             data = [row.to_dict() for row in result]
             return DatabaseResponse[models.PreAuthAPIKeys](data=data, count=len(result)).to_dict()
+        finally:
+            self.db.session.close()
+
+    # RPC-related queries
+
+    def addToDocGroupURL(self, doc, groups):
+        try:
+            result = self.db.session.execute(func.add_document_to_group_url(
+                p_course_name=doc.metadata.get('course_name'),
+                p_s3_path=doc.metadata.get('s3_path'),
+                p_url=doc.metadata.get('url'),
+                p_readable_filename=doc.metadata.get('readable_filename'),
+                p_doc_groups=groups
+            ))
+            self.db.session.commit()
+            data = [row.to_dict() for row in result]
+            return DatabaseResponse(data=data, count=len(result)).to_dict()
+        finally:
+            self.db.session.close()
+    
+    def addToDocGroupS3Path(self, doc, groups):
+        try:
+            result = self.db.session.execute(func.add_document_to_group(
+                p_course_name=doc.metadata.get('course_name'),
+                p_s3_path=doc.metadata.get('s3_path'),
+                p_url=doc.metadata.get('url'),
+                p_readable_filename=doc.metadata.get('readable_filename'),
+                p_doc_groups=groups
+            ))
+            self.db.session.commit()
+            data = [row.to_dict() for row in result]
+            return DatabaseResponse(data=data, count=len(result)).to_dict()
         finally:
             self.db.session.close()
