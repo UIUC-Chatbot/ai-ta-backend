@@ -501,7 +501,7 @@ def configure(binder: Binder) -> None:
   encoded_password = quote_plus(os.getenv('SUPABASE_PASSWORD'))
   DB_URLS = {
       'supabase':
-          f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_URL')}",
+          f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_PG_URL')}",
       'sqlite':
           f"sqlite:///{os.getenv('SQLITE_DB_NAME')}" if os.getenv('SQLITE_DB_NAME') else None,
       'postgres':

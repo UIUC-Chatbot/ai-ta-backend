@@ -8,6 +8,8 @@ from typing import List
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from sqlalchemy import func
+from sqlalchemy.orm import sessionmaker
+
 
 from injector import inject
 

@@ -50,19 +50,34 @@ from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.OpenaiEmbeddings import OpenAIAPIProcessor
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from urllib.parse import quote_plus
 
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Initialize the database connection
+encoded_password = quote_plus(os.environ['SUPABASE_PASSWORD'])
+
+print(os.getenv('SUPABASE_PG_URL'))
+
+db_url = f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_PG_URL')}"
+print(f"DB URL: {db_url}")
+
+engine = create_engine(db_url)
+Session = sessionmaker(bind=engine)
+db = Session()
 
 class Ingest:
     @inject
-    def __init__(self, sqlDb: SQLAlchemyDatabase, vectorDb: VectorDatabase, aws: AWSStorage, posthog: PosthogService, sentry: SentryService):
-        self.sqlDb = sqlDb
-        self.vectorDb = vectorDb
-        self.aws = aws
-        self.posthog = posthog
-        self.sentry = sentry
+    def __init__(self):
+        self.sqlDb = SQLAlchemyDatabase(db=db)
+        self.vectorDb = VectorDatabase()
+        self.aws = AWSStorage()
+        self.posthog = PosthogService()
+        self.sentry = SentryService(dsn=os.getenv('SENTRY_DSN'))
          
     
     def main_ingest(self, **inputs: Dict[str | List[str], Any]):

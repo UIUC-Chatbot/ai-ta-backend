@@ -8,6 +8,7 @@ from rq.worker import Worker
 from rq.exceptions import NoSuchJobError
 from dotenv import load_dotenv
 import traceback as tb
+import logging
 
 from typing import Optional
 from injector import inject
@@ -19,6 +20,9 @@ from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.ingest_service import Ingest
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 class QueueService:
     """
@@ -40,23 +44,16 @@ class QueueService:
         
         self.task_queue = Queue(connection=self.redis_conn)
 
-    def ingest_wrapper(self, inputs):
-        """
-        Wrapper function for the ingest task.
-        """
-        print("Running ingest_wrapper")
-        ingester = Ingest(sqlDb=self.sqlDb, vectorDb=self.vectorDb, aws=self.aws, posthog=self.posthog, sentry=self.sentry)
-        print(f"Inputs in wrapper: {inputs}")
-        return ingester.main_ingest(**inputs)
+    
     
     def queue_ingest_task(self, inputs):
         """
         Queue an ingest task.
         """
         try:
-            print(f"Queueing ingest task for {input}")
+            print(f"Queueing ingest task for {inputs}")
 
-            job = self.task_queue.enqueue(self.ingest_wrapper, inputs, on_success=self.update_ingest_success, on_failure=self.update_ingest_failure)
+            job = self.task_queue.enqueue(ingest_wrapper, inputs, on_success=update_ingest_success, on_failure=update_ingest_failure)
             print(f"Job {job.id} enqueued, status: {job.get_status()}")
 
             # Insert into 'documents_in_progress'
@@ -77,49 +74,59 @@ class QueueService:
                 self.sentry.capture_exception(e)
             return None
         
-    def update_ingest_success(self, job, result):
-        """
-        Update the status of ingest after successful execution.
-        """
-        try:
-            print("Updating task success...")
-            result_json = json.loads(result)
-            if result_json['failure_ingest']:
-                # call the failure update function here in case task status is success, but ingest has failed :(
-                self.update_ingest_failure(job, Exception, Exception(result_json["failure_ingest"]), None)
-            else:
-                # remove from 'documents_in_progress'
-                self.sqlDb.deleteDocsInProgress(job.id)
-                print(f"Job {job.id} completed successfully!")
-        except Exception as e:
-            print(f"Error updating status for job {job.id}: {str(e)}")
-            if self.sentry:
-                self.sentry.capture_exception(e)
+def update_ingest_success(job, result):
+    """
+    Update the status of ingest after successful execution.
+    """
+    try:
+        print("Updating task success...")
+            
+        result_json = json.loads(result)
+        print(f"Result JSON: {result_json}")
+        print(f"Job ID: {job}")
+        if result_json['failure_ingest']:
+            # call the failure update function here in case task status is success, but ingest has failed :(
+            update_ingest_failure(job, Exception, Exception(result_json["failure_ingest"]), None)
+        else:
+            # remove from 'documents_in_progress'
+            #self.sqlDb.deleteDocsInProgress(job.id)
+            print(f"Job {job.id} completed successfully!")
+    except Exception as e:
+        print(f"Error updating status for job {job.id}: {str(e)}")
     
-    def update_ingest_failure(self, job, exc_type, exc_value, traceback):
-        """
-        Update the status of ingest after failed execution.
-        """
-        try:
-            print("Updating task failure...")
-            error_message = f"{exc_type.__name__}: {str(exc_value)}"
-            full_traceback = ''.join(tb.format_tb(traceback))
-            combined_message = f"{error_message}\nTraceback:\n{full_traceback}"
+def update_ingest_failure(job, exc_type, exc_value, traceback):
+    """
+    Update the status of ingest after failed execution.
+    """
+    try:
+        print("Updating task failure...")
+        print("Job ID: ", job)
+        error_message = f"{exc_type.__name__}: {str(exc_value)}"
+        full_traceback = ''.join(tb.format_tb(traceback))
+        combined_message = f"{error_message}\nTraceback:\n{full_traceback}"
 
-            # Insert into 'documents_failed'
-            failure_payload = {
-                "s3_path": job.args[0]['s3_paths'][0],
-                "readable_filename": job.args[0]['readable_filename'],
-                "course_name": job.args[0]['course_name'],
-                "error": combined_message
-            }
-            self.sqlDb.insertDocsFailed(failure_payload)
+        # Insert into 'documents_failed'
+        failure_payload = {
+            "s3_path": job.args[0]['s3_paths'][0],
+            "readable_filename": job.args[0]['readable_filename'],
+            "course_name": job.args[0]['course_name'],
+            "error": combined_message
+        }
+        self.sqlDb.insertDocsFailed(failure_payload)
 
-            # Remove from 'documents_in_progress'
-            self.sqlDb.deleteDocsInProgress(job.id)
-            print(f"Job {job.id} failed!")
+        # Remove from 'documents_in_progress'
+        self.sqlDb.deleteDocsInProgress(job.id)
+        print(f"Job {job.id} failed!")
 
-        except Exception as e:
-            print(f"Error updating status for job {job.id}: {str(e)}")
-            if self.sentry:
-                self.sentry.capture_exception(e)
+    except Exception as e:
+        print(f"Error updating status for job {job.id}: {str(e)}")
+        
+
+def ingest_wrapper(inputs):
+    """
+    Wrapper function for the ingest task.
+    """
+    print("Running ingest_wrapper")
+    ingester = Ingest()
+    print(f"Inputs in wrapper: {inputs}")
+    return ingester.main_ingest(**inputs)
