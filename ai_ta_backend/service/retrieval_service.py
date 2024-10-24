@@ -3,7 +3,10 @@ import inspect
 import os
 import time
 import traceback
+import pytz
 from typing import Dict, List, Union
+from dateutil import parser
+from collections import defaultdict
 
 import openai
 from injector import inject
@@ -541,3 +544,75 @@ class RetrievalService:
     ]
 
     return contexts
+
+  def getConversationStats(self, course_name: str):
+    """
+    Fetches conversation data from the database and groups them by day, hour, and weekday.
+    """
+    response = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
+
+    central_tz = pytz.timezone('America/Chicago')
+
+    grouped_data = {
+        'per_day': defaultdict(int),
+        'per_hour': defaultdict(int),
+        'per_weekday': defaultdict(int),
+    }
+
+    if response and hasattr(response, 'data') and response.data:
+        for record in response.data:
+            created_at = record['created_at']
+
+            parsed_date = parser.parse(created_at)
+
+            central_time = parsed_date.astimezone(central_tz)
+
+            day = central_time.date()
+            hour = central_time.hour
+            day_of_week = central_time.strftime('%A')
+
+            grouped_data['per_day'][str(day)] += 1
+            grouped_data['per_hour'][hour] += 1
+            grouped_data['per_weekday'][day_of_week] += 1
+    else:
+        print("No valid response data. Check if the query is correct or if the response is empty.")
+        return {}
+
+    return {
+        'per_day': dict(grouped_data['per_day']),
+        'per_hour': dict(grouped_data['per_hour']),
+        'per_weekday': dict(grouped_data['per_weekday']),
+    }
+  
+  def getConversationHeatmapByHour(self, course_name: str):
+    """
+    Fetches conversation data and groups them into a heatmap by day of the week and hour (Central Time).
+    
+    Args:
+        course_name (str): The name of the course.
+
+    Returns:
+        dict: A nested dictionary where the outer key is the day of the week (e.g., "Monday"),
+              and the inner key is the hour of the day (0-23), and the value is the count of conversations.
+    """
+    response = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
+    central_tz = pytz.timezone('America/Chicago')
+
+    heatmap_data = defaultdict(lambda: defaultdict(int))
+
+    if response and hasattr(response, 'data') and response.data:
+        for record in response.data:
+            created_at = record['created_at']
+
+            parsed_date = parser.parse(created_at)
+            central_time = parsed_date.astimezone(central_tz)
+
+            day_of_week = central_time.strftime('%A')
+            hour = central_time.hour
+
+            heatmap_data[day_of_week][hour] += 1
+    else:
+        print("No valid response data. Check if the query is correct or if the response is empty.")
+        return {}
+
+    return dict(heatmap_data)
