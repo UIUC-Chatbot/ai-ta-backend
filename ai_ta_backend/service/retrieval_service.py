@@ -548,6 +548,15 @@ class RetrievalService:
   def getConversationStats(self, course_name: str):
     """
     Fetches conversation data from the database and groups them by day, hour, and weekday.
+
+     Args:
+        course_name (str)
+    
+    Returns:
+        dict: Aggregated conversation counts:
+        - 'per_day': By date (YYYY-MM-DD).
+        - 'per_hour': By hour (0-23).
+        - 'per_weekday': By weekday (Monday-Sunday).   
     """
     response = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
 
@@ -589,11 +598,10 @@ class RetrievalService:
     Fetches conversation data and groups them into a heatmap by day of the week and hour (Central Time).
     
     Args:
-        course_name (str): The name of the course.
+        course_name (str)
 
     Returns:
-        dict: A nested dictionary where the outer key is the day of the week (e.g., "Monday"),
-              and the inner key is the hour of the day (0-23), and the value is the count of conversations.
+        dict: A nested dictionary with days of the week as outer keys and hours (0-23) as inner keys, where values are conversation counts.
     """
     response = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
     central_tz = pytz.timezone('America/Chicago')

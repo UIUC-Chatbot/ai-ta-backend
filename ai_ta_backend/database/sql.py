@@ -158,4 +158,4 @@ class SQLDatabase:
     return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails", '["' + email + '"]').execute()
   
   def getConversationsCreatedAtByCourse(self, course_name: str):
-    return self.supabase_client.table("llm-convo-monitor").select("created_at").eq("course_name", course_name).order("created_at", desc=False).execute()
+    return self.supabase_client.table("llm-convo-monitor").select("created_at").eq("course_name", course_name).execute()
