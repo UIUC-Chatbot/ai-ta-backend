@@ -70,7 +70,7 @@ engine = create_engine(db_url)
 Session = sessionmaker(bind=engine)
 db = Session()
 
-class Ingest:
+class IngestService:
     @inject
     def __init__(self):
         self.sqlDb = SQLAlchemyDatabase(db=db)
