@@ -63,7 +63,7 @@ class Ingest:
 
     def __init__(self):
         # Store configuration values, not client objects
-        self.openai_api_key = os.getenv('VLADS_OPENAI_KEY')
+        self.openai_api_key = os.getenv('OPENAI_API_KEY')
         self.qdrant_url = os.getenv('QDRANT_URL')
         self.qdrant_api_key = os.getenv('QDRANT_API_KEY')
         self.qdrant_collection_name = os.getenv('QDRANT_COLLECTION_NAME')
@@ -80,14 +80,19 @@ class Ingest:
                 collection_name=self.qdrant_collection_name,
                 embeddings=OpenAIEmbeddings(openai_api_type='openai', api_key=self.openai_api_key)
             )
+        else:
+            print("QDRANT API KEY OR URL NOT FOUND!")
+
         if self.aws_access_key_id and self.aws_secret_access_key:
             self.s3_client = boto3.client('s3', aws_access_key_id=self.aws_access_key_id, aws_secret_access_key=self.aws_secret_access_key)
-    
+        else:
+            print("AWS ACCESS KEY ID OR SECRET ACCESS KEY NOT FOUND!")
         self.sql_session = SQLAlchemyIngestDB()
 
         if self.posthog_api_key:
             self.posthog = Posthog(sync_mode=True, project_api_key=self.posthog_api_key, host='https://app.posthog.com')
-
+        else:
+            print("POSTHOG API KEY NOT FOUND!")
     
     def main_ingest(self, **inputs: Dict[str | List[str], Any]):
         """
@@ -438,7 +443,7 @@ class Ingest:
 
             # check for file extension
             file_ext = Path(s3_path).suffix
-            openai.api_key = os.getenv('VLADS_OPENAI_KEY')
+            openai.api_key = os.getenv('OPENAI_API_KEY')
             transcript_list = []
             with NamedTemporaryFile(suffix=file_ext) as video_tmpfile:
                 # download from S3 into an video tmpfile
@@ -991,8 +996,6 @@ class Ingest:
                 return "Success"
 
             # adding chunk index to metadata for parent doc retrieval
-            print("kwargs: ", kwargs)
-            print("GROUPS: ", kwargs.get('groups', ''))
             for i, context in enumerate(contexts):
                 context.metadata['chunk_index'] = i
                 context.metadata['doc_groups'] = kwargs.get('groups', [])
@@ -1059,19 +1062,13 @@ class Ingest:
             document_size_mb = len(json.dumps(document).encode('utf-8')) / (1024 * 1024)
             print(f"Document size: {document_size_mb:.2f} MB")
 
-            # response = self.supabase_client.table(
-            #     os.getenv('REFACTORED_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
-            
             insert_status = self.sql_session.insert_document(document)
-            print("Insert status: ", insert_status)
 
             # need to update Supabase tables with doc group info
             if insert_status:
                 # get groups from kwargs
                 groups = kwargs.get('groups', '')
-                print("Success in inserting document")
                 if groups:
-                    print("Groups: ", groups)
                     # call the supabase function to add the document to the group
                     if contexts[0].metadata.get('url'):
                         count = self.sql_session.add_document_to_group_url(contexts, groups)
@@ -1124,16 +1121,12 @@ class Ingest:
                 original_filename = incoming_filename
             print(f"Filename after removing uuid: {original_filename}")
 
-            # supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 's3_path').eq(
-            #     'course_name', course_name).like('s3_path', '%' + original_filename + '%').order('id', desc=True).execute()
             supabase_contents = self.sql_session.get_like_docs_by_s3_path(course_name, original_filename)
             supabase_contents = supabase_contents['data']
             print(f"No. of S3 path based records retrieved: {len(supabase_contents)}")  # multiple records can be retrieved: 3.pdf and 453.pdf
 
         elif url:
             original_filename = url
-            # supabase_contents = self.supabase_client.table(doc_table).select('id', 'contexts', 'url').eq(
-            #     'course_name', course_name).eq('url', url).order('id', desc=True).execute()
             supabase_contents = self.sql_session.get_like_docs_by_url(course_name, url)
             supabase_contents = supabase_contents['data']
             print(f"No. of URL-based records retrieved: {len(supabase_contents)}")
@@ -1238,8 +1231,6 @@ class Ingest:
                         sentry_sdk.capture_exception(e)
 
                 try:
-                    # self.supabase_client.from_(os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).delete().eq(
-                    # 's3_path', s3_path).eq('course_name', course_name).execute()
                     self.sql_session.delete_document_by_s3_path(course_name=course_name, s3_path=s3_path)
                 except Exception as e:
                     print("Error in deleting file from supabase:", e)
@@ -1269,8 +1260,6 @@ class Ingest:
                 
                 try:
                 # delete from Supabase
-                    # self.supabase_client.from_(os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).delete().eq(
-                    # 'url', source_url).eq('course_name', course_name).execute()
                     self.sql_session.delete_document_by_url(course_name=course_name, url=source_url)
                 except Exception as e:
                     print("Error in deleting file from supabase:", e)
