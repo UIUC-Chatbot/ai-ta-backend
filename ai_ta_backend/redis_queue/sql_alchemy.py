@@ -29,7 +29,7 @@ class DatabaseResponse(Generic[T]):
 
     def to_dict(self):
         return {
-            "data": [row.__dict__ for row in self.data],  # Convert each row to dict
+            "data": self.data,  # Convert each row to dict
             "count": self.count
         }
 
@@ -92,9 +92,9 @@ class SQLAlchemyIngestDB:
         
         try:
             result = self.session.execute(text("SELECT * FROM add_document_to_group_url(:p_course_name, :p_s3_path, :p_url, :p_readable_filename, :p_doc_groups)"), params)
+            self.session.commit()
             count = result.rowcount if result.returns_rows else 0  # Number of affected rows or results
-            data = result.fetchall()  # Fetch the data from the result set if needed
-            return data, count
+            return count
         except Exception as e:
             print(f"Stored procedure execution failed: {e}")
             self.session.rollback()
@@ -111,9 +111,10 @@ class SQLAlchemyIngestDB:
         
         try:
             result = self.session.execute(text("SELECT * FROM add_document_to_group(:p_course_name, :p_s3_path, :p_url, :p_readable_filename, :p_doc_groups)"), params)
+            self.session.commit()
+
             count = result.rowcount if result.returns_rows else 0  # Number of affected rows or results
-            data = result.fetchall()  # Fetch the data from the result set if needed
-            return data, count
+            return count
         except Exception as e:
             print(f"Stored procedure execution failed: {e}")
             self.session.rollback()
@@ -126,10 +127,9 @@ class SQLAlchemyIngestDB:
             .where(models.Document.s3_path.like(f"%{original_filename}%"))
             .order_by(desc(models.Document.id))
         )
-        result = self.session.execute(query).fetchall()
-        print("result: ", result)
-        response = DatabaseResponse(data=result, count=len(result))
-        return response.to_dict()
+        result = self.session.execute(query).mappings().all()
+        response = DatabaseResponse(data=result, count=len(result)).to_dict()
+        return response
     
     def get_like_docs_by_url(self, course_name, url):
         query = (
@@ -138,9 +138,9 @@ class SQLAlchemyIngestDB:
             .where(models.Document.url.like(f"%{url}%"))
             .order_by(desc(models.Document.id))
         )
-        result = self.session.execute(query).fetchall()
-        response = DatabaseResponse(data=result, count=len(result))
-        return response.to_dict()
+        result = self.session.execute(query).mappings().all()
+        response = DatabaseResponse(data=result, count=len(result)).to_dict()
+        return response
     
     def delete_document_by_s3_path(self, course_name: str, s3_path: str):        
         delete_stmt = (

@@ -73,16 +73,20 @@ class Ingest:
     
     def initialize_resources(self):
         # Initialize clients and resources when needed
-        self.qdrant_client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key)
-        self.vectorstore = Qdrant(
-            client=self.qdrant_client,
-            collection_name=self.qdrant_collection_name,
-            embeddings=OpenAIEmbeddings(openai_api_type='openai', api_key=self.openai_api_key)
-        )
-        self.s3_client = boto3.client('s3', aws_access_key_id=self.aws_access_key_id, aws_secret_access_key=self.aws_secret_access_key)
+        if self.qdrant_api_key and self.qdrant_url:
+            self.qdrant_client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key)
+            self.vectorstore = Qdrant(
+                client=self.qdrant_client,
+                collection_name=self.qdrant_collection_name,
+                embeddings=OpenAIEmbeddings(openai_api_type='openai', api_key=self.openai_api_key)
+            )
+        if self.aws_access_key_id and self.aws_secret_access_key:
+            self.s3_client = boto3.client('s3', aws_access_key_id=self.aws_access_key_id, aws_secret_access_key=self.aws_secret_access_key)
     
         self.sql_session = SQLAlchemyIngestDB()
-        self.posthog = Posthog(sync_mode=True, project_api_key=self.posthog_api_key, host='https://app.posthog.com')
+
+        if self.posthog_api_key:
+            self.posthog = Posthog(sync_mode=True, project_api_key=self.posthog_api_key, host='https://app.posthog.com')
 
     
     def main_ingest(self, **inputs: Dict[str | List[str], Any]):
@@ -1000,8 +1004,6 @@ class Ingest:
                 input_prompts_list=input_texts,
                 request_url='https://api.openai.com/v1/embeddings',
                 api_key=os.getenv('VLADS_OPENAI_KEY'),
-                # request_url='https://uiuc-chat-canada-east.openai.azure.com/openai/deployments/text-embedding-ada-002/embeddings?api-version=2023-05-15',
-                # api_key=os.getenv('AZURE_OPENAI_KEY'),
                 max_requests_per_minute=10_000,
                 max_tokens_per_minute=10_000_000,
                 max_attempts=1_000,
@@ -1061,17 +1063,20 @@ class Ingest:
             #     os.getenv('REFACTORED_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
             
             insert_status = self.sql_session.insert_document(document)
+            print("Insert status: ", insert_status)
 
             # need to update Supabase tables with doc group info
             if insert_status:
                 # get groups from kwargs
                 groups = kwargs.get('groups', '')
+                print("Success in inserting document")
                 if groups:
+                    print("Groups: ", groups)
                     # call the supabase function to add the document to the group
                     if contexts[0].metadata.get('url'):
-                        data, count = self.sql_session.add_document_to_group_url(contexts, groups)
+                        count = self.sql_session.add_document_to_group_url(contexts, groups)
                     else:
-                        data, count = self.sql_session.add_document_to_group(contexts, groups)
+                        count = self.sql_session.add_document_to_group(contexts, groups)
                     
                     if count == 0:
                         print("Error in adding to doc groups")
