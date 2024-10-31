@@ -1,6 +1,8 @@
 services:
   redis:
     image: redis:latest
+    restart: always
+    container_name: redis
     ports:
       - 6379:6379
     networks:
@@ -68,6 +70,15 @@ services:
       - qdrant
       - redis
       - minio
+
+  worker:
+    build: . # Use the same build context as the Flask app
+    command: python ai_ta_backend/redis_queue/worker.py
+    networks:
+      - my-network
+    depends_on:
+      - redis
+    
 
 # declare the network resource
 # this will allow you to use service discovery and address a container by its name from within the network

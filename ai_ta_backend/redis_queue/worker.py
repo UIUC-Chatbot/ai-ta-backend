@@ -10,8 +10,7 @@ from rq import Connection, Queue, Worker
 from dotenv import load_dotenv
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO)
-#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')#logging.basicConfig(level=logging.DEBUG)
 
 # sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
@@ -23,11 +22,16 @@ from ai_ta_backend.redis_queue.task import ingest_wrapper  # Add this import
 
 def start_worker():
   logging.info("Starting Redis worker...")
-  redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
-                     host=os.environ["INGEST_REDIS_URL"],
-                     password=os.environ["INGEST_REDIS_PASSWORD"],
+  # redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
+  #                    host=os.environ["INGEST_REDIS_URL"],
+  #                    password=os.environ["INGEST_REDIS_PASSWORD"],
+  #                    socket_timeout=None,
+  #                    )
+  redis_conn = Redis(port=6379,
+                     host="redis",
                      socket_timeout=None,
                      )
+
   with Connection(redis_conn):
     worker = Worker([Queue("default")])
     worker.work()

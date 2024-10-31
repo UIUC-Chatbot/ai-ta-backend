@@ -950,6 +950,7 @@ class Ingest:
             metadatas (List[Dict[str, Any]]): _description_
         """
         # return "Success"
+        logging.info(f"Split and upload invoked with {len(texts)} texts and {len(metadatas)} metadatas")
         print(f"In split and upload. Metadatas: {metadatas}")
         print("KWARGS: ", kwargs)
 
@@ -1000,7 +1001,7 @@ class Ingest:
                 context.metadata['chunk_index'] = i
                 context.metadata['doc_groups'] = kwargs.get('groups', [])
 
-            print("Starting to call embeddings API")
+            logging.info("Starting to call embeddings API")
             
             embeddings_start_time = time.monotonic()
             oai = OpenAIAPIProcessor(
@@ -1018,7 +1019,7 @@ class Ingest:
             embeddings_dict: dict[str, List[float]] = {
                 item[0]['input']: item[1]['data'][0]['embedding'] for item in oai.results
             }
-            print("post embeddings API call")
+            logging.info("post embeddings API call")
             
             ### BULK upload to Qdrant ###
             vectors: list[PointStruct] = []
@@ -1089,7 +1090,7 @@ class Ingest:
                                     'base_url': metadatas[0].get('base_url', None),
                                     'is_duplicate': False,
                                 })
-            print("successful END OF split_and_upload")
+            logging.info("successful END OF split_and_upload")
             return "Success"
         except Exception as e:
             err: str = f"ERROR IN split_and_upload(): Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore

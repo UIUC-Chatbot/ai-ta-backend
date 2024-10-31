@@ -9,22 +9,26 @@ import traceback as tb
 import json
 from ai_ta_backend.redis_queue.task import ingest_wrapper
 from ai_ta_backend.redis_queue.sql_alchemy import SQLAlchemyIngestDB
+import logging
+
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 load_dotenv()
 
 # Initialize connections
-redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
-                   host=os.environ["INGEST_REDIS_URL"],
-                   password=os.environ["INGEST_REDIS_PASSWORD"],
-                   socket_timeout=None,
-                   )
+# redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
+#                    host=os.environ["INGEST_REDIS_URL"],
+#                    password=os.environ["INGEST_REDIS_PASSWORD"],
+#                    socket_timeout=None,
+#                    )
+
+redis_conn = Redis(port=6379,
+                     host="redis",
+                     socket_timeout=None,
+                     )
 
 task_queue = Queue(connection=redis_conn)
-
-# supabase_client = supabase.create_client(  # type: ignore
-#       supabase_url=os.environ['SUPABASE_URL'],
-#       supabase_key=os.environ['SUPABASE_API_KEY'],
-#       options=ClientOptions(postgrest_client_timeout=60,))
 
 sql_session = SQLAlchemyIngestDB()
 
@@ -72,17 +76,17 @@ def update_task_failure(job, exc_type, exc_value, traceback):
 
 
 def queue_ingest_task(inputs):
-    print(f"Queueing ingest task for {inputs['course_name']}")
-    print("Inputs: ", inputs)
+    logging.info(f"Queueing ingest task for {inputs['course_name']}")
+    logging.info("Inputs: ", inputs)
 
     response = redis_conn.ping()
     if response:
-        print("Redis server is online")
+        logging.info("Redis server is online")
     else:
-        print("Redis is offline")
+        logging.info("Redis is offline")
 
     job = task_queue.enqueue(ingest_wrapper, inputs, on_success=update_task_status, on_failure=update_task_failure)
-    print(f"Job {job.id} enqueued, status: {job.get_status()}")
+    logging.info(f"Job {job.id} enqueued, status: {job.get_status()}")
 
     # Insert into 'documents_in_progress'
     doc_progress_payload = {
