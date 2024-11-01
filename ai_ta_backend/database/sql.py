@@ -158,4 +158,39 @@ class SQLDatabase:
     return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails", '["' + email + '"]').execute()
   
   def getConversationsCreatedAtByCourse(self, course_name: str):
-    return self.supabase_client.table("llm-convo-monitor").select("created_at").eq("course_name", course_name).execute()
+    count_response = self.supabase_client.table("llm-convo-monitor")\
+        .select("created_at", count="exact")\
+        .eq("course_name", course_name)\
+        .execute()
+    
+    total_count = count_response.count
+    # print(f"Total entries available: {total_count}")
+
+    if total_count <= 0:
+        return [], 0
+
+    all_data = []
+    batch_size = 1000
+    start = 0
+
+    while start < total_count:
+        end = min(start + batch_size - 1, total_count - 1)
+        # print(f"Fetching data from {start} to {end}")
+
+        response = self.supabase_client.table("llm-convo-monitor")\
+            .select("created_at")\
+            .eq("course_name", course_name)\
+            .range(start, end)\
+            .execute()
+
+        # print(f"Fetched {len(response.data)} entries in this batch.")
+
+        if not response.data:
+            print(f"No data returned for range {start} to {end}.")
+            break
+
+        all_data.extend(response.data)
+        start += batch_size
+
+    # print(f"Total entries retrieved: {len(all_data)}")
+    return all_data, total_count

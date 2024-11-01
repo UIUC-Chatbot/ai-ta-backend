@@ -18,7 +18,7 @@ from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapter
-from ai_ta_backend.service.nomic_service import NomicService
+# from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.utils_tokenization import count_tokens_and_cost
@@ -31,13 +31,13 @@ class RetrievalService:
 
   @inject
   def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, posthog: PosthogService,
-               sentry: SentryService, nomicService: NomicService, thread_pool_executor: ThreadPoolExecutorAdapter):
+               sentry: SentryService, thread_pool_executor: ThreadPoolExecutorAdapter): # nomicService: NomicService,
     self.vdb = vdb
     self.sqlDb = sqlDb
     self.aws = aws
     self.sentry = sentry
     self.posthog = posthog
-    self.nomicService = nomicService
+    # self.nomicService = nomicService
     self.thread_pool_executor = thread_pool_executor
     openai.api_key = os.environ["VLADS_OPENAI_KEY"]
 
@@ -548,17 +548,20 @@ class RetrievalService:
   def getConversationStats(self, course_name: str):
     """
     Fetches conversation data from the database and groups them by day, hour, and weekday.
-
-     Args:
-        course_name (str)
     
+    Args:
+        course_name (str)
+
     Returns:
-        dict: Aggregated conversation counts:
-        - 'per_day': By date (YYYY-MM-DD).
-        - 'per_hour': By hour (0-23).
-        - 'per_weekday': By weekday (Monday-Sunday).   
+        dict: A dictionary containing:
+            - 'per_day': Counts of conversations by date (YYYY-MM-DD).
+            - 'per_hour': Counts of conversations by hour (0-23).
+            - 'per_weekday': Counts of conversations by weekday (Monday-Sunday).
+            - 'heatmap': A nested dictionary for heatmap data (days of the week as keys, hours as inner keys).
     """
-    response = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
+    # print(f"Received course_name: {course_name}")
+    
+    conversations, total_count = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
 
     central_tz = pytz.timezone('America/Chicago')
 
@@ -566,23 +569,23 @@ class RetrievalService:
         'per_day': defaultdict(int),
         'per_hour': defaultdict(int),
         'per_weekday': defaultdict(int),
+        'heatmap': defaultdict(lambda: defaultdict(int)),
     }
 
-    if response and hasattr(response, 'data') and response.data:
-        for record in response.data:
+    if conversations:
+        for record in conversations:
             created_at = record['created_at']
+            parsed_date = parser.parse(created_at).astimezone(central_tz)
 
-            parsed_date = parser.parse(created_at)
-
-            central_time = parsed_date.astimezone(central_tz)
-
-            day = central_time.date()
-            hour = central_time.hour
-            day_of_week = central_time.strftime('%A')
+            day = parsed_date.date()
+            hour = parsed_date.hour
+            day_of_week = parsed_date.strftime('%A')
 
             grouped_data['per_day'][str(day)] += 1
             grouped_data['per_hour'][hour] += 1
             grouped_data['per_weekday'][day_of_week] += 1
+            grouped_data['heatmap'][day_of_week][hour] += 1
+
     else:
         print("No valid response data. Check if the query is correct or if the response is empty.")
         return {}
@@ -591,36 +594,6 @@ class RetrievalService:
         'per_day': dict(grouped_data['per_day']),
         'per_hour': dict(grouped_data['per_hour']),
         'per_weekday': dict(grouped_data['per_weekday']),
+        'heatmap': {day: dict(hours) for day, hours in grouped_data['heatmap'].items()},
     }
   
-  def getConversationHeatmapByHour(self, course_name: str):
-    """
-    Fetches conversation data and groups them into a heatmap by day of the week and hour (Central Time).
-    
-    Args:
-        course_name (str)
-
-    Returns:
-        dict: A nested dictionary with days of the week as outer keys and hours (0-23) as inner keys, where values are conversation counts.
-    """
-    response = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
-    central_tz = pytz.timezone('America/Chicago')
-
-    heatmap_data = defaultdict(lambda: defaultdict(int))
-
-    if response and hasattr(response, 'data') and response.data:
-        for record in response.data:
-            created_at = record['created_at']
-
-            parsed_date = parser.parse(created_at)
-            central_time = parsed_date.astimezone(central_tz)
-
-            day_of_week = central_time.strftime('%A')
-            hour = central_time.hour
-
-            heatmap_data[day_of_week][hour] += 1
-    else:
-        print("No valid response data. Check if the query is correct or if the response is empty.")
-        return {}
-
-    return dict(heatmap_data)

@@ -532,19 +532,6 @@ def get_conversation_stats(service: RetrievalService) -> Response:
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-@app.route('/getConversationHeatmapByHour', methods=['GET'])
-def get_questions_heatmap_by_hour(service: RetrievalService) -> Response:
-    course_name = request.args.get('course_name', default='', type=str)
-
-    if not course_name:
-        abort(400, description="Missing required parameter: 'course_name' must be provided.")
-
-    heatmap_data = service.getConversationHeatmapByHour(course_name)
-
-    response = jsonify(heatmap_data)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
-
 @app.route('/run_flow', methods=['POST'])
 def run_flow(service: WorkflowService) -> Response:
   """
