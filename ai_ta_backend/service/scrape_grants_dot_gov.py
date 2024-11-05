@@ -1,35 +1,7 @@
-import base64
-import json
-import os
-import tempfile
-import uuid
-import zipfile
-from urllib.parse import urlparse
-
 import pandas as pd
-import requests
-import xlsxwriter
 from injector import inject
-from pandas import DataFrame
-
-from ai_ta_backend.database.aws import AWSStorage
-from ai_ta_backend.database.sql import SQLDatabase
-from ai_ta_backend.executors.process_pool_executor import ProcessPoolExecutorAdapter
-from ai_ta_backend.service.sentry_service import SentryService
-from ai_ta_backend.utils.email.send_transactional_email import send_email
-from ai_ta_backend.utils.export_utils import (
-    _cleanup,
-    _create_zip,
-    _create_zip_for_user_convo_export,
-    _initialize_base_name,
-    _initialize_excel,
-    _initialize_file_paths,
-    _process_conversation,
-    _process_conversation_for_user_convo_export,
-)
 
 
-#
 class ScrapeGrantsDotGov:
 
   @inject
@@ -43,9 +15,10 @@ class ScrapeGrantsDotGov:
 
   def main_scrape(self):
     """
-        This function is used to test the process.
-        """
+    This function is used to test the process.
+    """
     # return {"response": "Test process successful.", "results": results}
+    pass
 
   # def start_ingest(self, df: DataFrame):
   def start_ingest(self):
