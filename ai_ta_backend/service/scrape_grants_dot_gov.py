@@ -16,10 +16,10 @@ class ScrapeGrantsDotGov:
     """
     ⭐️ MAIN ENTRYPOINT ⭐️
     """
-    df = scraper.download_csv()
+    df = self.download_csv()
     if df is not None:
-      only_new_grants_df = scraper.remove_expired_grants(df)
-      scraper.start_ingest(only_new_grants_df)
+      only_new_grants_df = self.remove_expired_grants(df)
+      self.start_ingest(only_new_grants_df)
 
   def remove_expired_grants(self, df: pd.DataFrame):
     """
@@ -172,13 +172,3 @@ class ScrapeGrantsDotGov:
         raise Exception("Failed to download grants CSV from website. No files found in the download directory.")
     finally:
       driver.quit()
-
-
-if __name__ == "__main__":
-
-  # export_service = ExportService(SQLDatabase(), AWSStorage(), SentryService(), ProcessPoolExecutorAdapter())
-  scraper = ScrapeGrantsDotGov()
-  # df = scraper.download_csv()
-  # if df is not None:
-  #   scraper.start_ingest(df)
-  scraper.start_ingest()
