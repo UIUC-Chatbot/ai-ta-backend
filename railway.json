@@ -5,15 +5,17 @@
     "nixpacksVersion": "1.15.0",
     "nixpacksPlan": {
       "phases": {
+        "setup": {
+          "nixPkgs": ["python310", "gcc", "chromium", "chromedriver"]
+        },
         "install": {
           "cmds": [
-            "python -m venv --copies /opt/venv && . /opt/venv/bin/activate",
+            "python -m venv --copies /opt/venv",
+            ". /opt/venv/bin/activate",
+            "export PATH=$PATH:$(dirname $(which chromedriver))",
             "pip install pip==23.3.1",
             "pip install -r requirements.txt"
           ]
-        },
-        "setup": {
-          "nixPkgs": ["python310", "gcc"]
         }
       }
     }

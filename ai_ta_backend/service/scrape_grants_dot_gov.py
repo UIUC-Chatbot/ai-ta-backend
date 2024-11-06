@@ -113,6 +113,7 @@ class ScrapeGrantsDotGov:
 
     from selenium import webdriver
     from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.chrome.service import Service
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.support.ui import WebDriverWait
@@ -129,6 +130,16 @@ class ScrapeGrantsDotGov:
             "download.prompt_for_download": False,
             "download.directory_upgrade": True,
         })
+    chrome_options.add_argument("--headless")  # Runs Chrome in headless mode
+    chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
+    chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+
+    # Locate chromedriver
+    chromedriver_path = shutil.which("chromedriver")
+    service = Service(executable_path=chromedriver_path)
+
+    # Initialize the WebDriver
+    driver = webdriver.Chrome(service=service, options=chrome_options)
 
     # Initialize driver with options
     driver = webdriver.Chrome(options=chrome_options)
