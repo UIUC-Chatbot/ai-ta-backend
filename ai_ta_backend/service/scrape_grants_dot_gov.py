@@ -145,7 +145,8 @@ class ScrapeGrantsDotGov:
     chrome_options.add_argument("--verbose")
 
     # Initialize the WebDriver with WebDriver Manager for Chromium
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    # driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
+    driver = webdriver.Chrome(options=chrome_options)
 
     try:
       # Navigate to the grants search page
