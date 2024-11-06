@@ -11,10 +11,10 @@
             "gcc",
             "chromium",
             "chromedriver",
-            "libnss",
+            "nss",
             "atk",
-            "atk-bridge",
-            "libx11",
+            "at-spi2-atk",
+            "libX11",
             "libxcb"
           ],
           "cmds": [
