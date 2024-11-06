@@ -1,8 +1,7 @@
 import os
 
-from injector import inject
-
 import supabase
+from injector import inject
 
 
 class SQLDatabase:
@@ -14,9 +13,36 @@ class SQLDatabase:
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
 
   def getAllMaterialsForCourse(self, course_name: str):
+    """
+    WARNING: This will hit 1,500 row limit! 
+    Without pagination, you'll be limited by Supabase's default maximum rows limit (1000-1500 depending on the configuration).
+    """
     return self.supabase_client.table(
         os.environ['SUPABASE_DOCUMENTS_TABLE']).select('course_name, s3_path, readable_filename, url, base_url').eq(
             'course_name', course_name).execute()
+
+  def getAllMaterialsForCourse_fullUsingPagination(self, course_name: str):
+    """
+    This uses pagination to retrieve all documents for a course.
+    """
+    all_materials = []
+    page = 1
+    page_size = 200
+
+    while True:
+      response = self.supabase_client.table(
+          os.environ['SUPABASE_DOCUMENTS_TABLE']).select('course_name, s3_path, readable_filename, url, base_url').eq(
+              'course_name', course_name).range((page - 1) * page_size, page * page_size - 1).execute()
+
+      materials = response.data
+      all_materials.extend(materials)
+
+      if len(materials) < page_size:
+        break
+
+      page += 1
+
+    return all_materials
 
   def getMaterialsForCourseAndS3Path(self, course_name: str, s3_path: str):
     return self.supabase_client.from_(os.environ['SUPABASE_DOCUMENTS_TABLE']).select("id, s3_path, contexts").eq(
@@ -153,9 +179,10 @@ class SQLDatabase:
 
   def insertProject(self, project_info):
     return self.supabase_client.table("projects").insert(project_info).execute()
-  
+
   def getPreAssignedAPIKeys(self, email: str):
-    return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails", '["' + email + '"]').execute()
-  
+    return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails",
+                                                                                      '["' + email + '"]').execute()
+
   def getConversationsCreatedAtByCourse(self, course_name: str):
     return self.supabase_client.table("llm-convo-monitor").select("created_at").eq("course_name", course_name).execute()

@@ -519,31 +519,34 @@ def switch_workflow(service: WorkflowService) -> Response:
     else:
       abort(400, description=f"Bad request: {e}")
 
+
 @app.route('/getConversationStats', methods=['GET'])
 def get_conversation_stats(service: RetrievalService) -> Response:
-    course_name = request.args.get('course_name', default='', type=str)
+  course_name = request.args.get('course_name', default='', type=str)
 
-    if course_name == '':
-        abort(400, description="Missing required parameter: 'course_name' must be provided.")
+  if course_name == '':
+    abort(400, description="Missing required parameter: 'course_name' must be provided.")
 
-    conversation_stats = service.getConversationStats(course_name)
+  conversation_stats = service.getConversationStats(course_name)
 
-    response = jsonify(conversation_stats)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+  response = jsonify(conversation_stats)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/getConversationHeatmapByHour', methods=['GET'])
 def get_questions_heatmap_by_hour(service: RetrievalService) -> Response:
-    course_name = request.args.get('course_name', default='', type=str)
+  course_name = request.args.get('course_name', default='', type=str)
 
-    if not course_name:
-        abort(400, description="Missing required parameter: 'course_name' must be provided.")
+  if not course_name:
+    abort(400, description="Missing required parameter: 'course_name' must be provided.")
 
-    heatmap_data = service.getConversationHeatmapByHour(course_name)
+  heatmap_data = service.getConversationHeatmapByHour(course_name)
 
-    response = jsonify(heatmap_data)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+  response = jsonify(heatmap_data)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/run_flow', methods=['POST'])
 def run_flow(service: WorkflowService) -> Response:
@@ -597,6 +600,23 @@ def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> 
 
   # Do long-running LLM task in the background.
   flaskExecutor.submit(service.generate_json_schema, project_name, project_description)
+
+  response = jsonify(result)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/scrapeGrantsDotGov', methods=['POST'])
+def scrapeGrantsDotGov(retrievalService: RetrievalService, sentryService: SentryService) -> Response:
+  """
+  Scrape grants.gov and ingest. We're careful to delete expired grants.
+  """
+  # data = request.get_json()
+
+  from ai_ta_backend.service.scrape_grants_dot_gov import ScrapeGrantsDotGov
+  scraper = ScrapeGrantsDotGov(retrievalService=retrievalService, sentryService=sentryService)
+  scraper.main_scrape()
+  result = "success"
 
   response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
