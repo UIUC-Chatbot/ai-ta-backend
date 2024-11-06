@@ -20,7 +20,7 @@ from injector import Binder
 from injector import SingletonScope
 from langchain_core.messages import HumanMessage
 from langchain_core.messages import SystemMessage
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 import urllib3
 
 from ai_ta_backend.database.aws import AWSStorage
@@ -481,40 +481,85 @@ def configure(binder: Binder) -> None:
   sql_bound = False
   storage_bound = False
 
-  # Define database URLs with conditional checks for environment variables
-  encoded_password = quote_plus(os.getenv('SUPABASE_PASSWORD'))
+  # Encode the PostgreSQL password
+  #encoded_password = quote_plus(os.getenv('POSTGRES_PASSWORD'))
+  #print("ENCODED PASSWORD (i.e., POSTGRES_PASSWORD):", encoded_password)
+
+  # Define database URLs with corrected environment variables
+  # DB_URLS = {
+  #     'supabase':
+  #         f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}",
+  #     'sqlite':
+  #         f"sqlite:///{os.getenv('SQLITE_DB_NAME')}" if os.getenv('SQLITE_DB_NAME') else None,
+  #     'postgres':
+  #         f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+  #         if all([
+  #             os.getenv('POSTGRES_USER'),
+  #             os.getenv('POSTGRES_PASSWORD'),
+  #             os.getenv('POSTGRES_HOST'),
+  #             os.getenv('POSTGRES_PORT'),
+  #             os.getenv('POSTGRES_DB')
+  #         ]) else None
+  # }
+  # print("DB_URLS:", DB_URLS)
+
+  # # Bind to the first available SQL database configuration
+  # for db_type, url in DB_URLS.items():
+  #   if url:
+  #     logging.info(f"Binding to {db_type} database with URL: {url}")
+  #     with app.app_context():
+  #       app.config['SQLALCHEMY_DATABASE_URI'] = url
+  #       db.init_app(app)
+
+  #       # Check if tables exist before creating them
+  #       inspector = inspect(db.engine)
+  #       existing_tables = inspector.get_table_names()
+  #       print("Existing tables:", existing_tables)
+  #       if not existing_tables:
+  #         logging.info("Creating tables as the database is empty")
+  #         db.create_all()
+  #       else:
+  #         logging.info("Tables already exist, skipping creation")
+
+  #     binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
+  #     sql_bound = True
+  #     break
   DB_URLS = {
       'supabase':
-          f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_URL')}",
-      'sqlite':
-          f"sqlite:///{os.getenv('SQLITE_DB_NAME')}" if os.getenv('SQLITE_DB_NAME') else None,
-      'postgres':
-          f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_URL')}"
-          if os.getenv('POSTGRES_USER') and os.getenv('POSTGRES_PASSWORD') and os.getenv('POSTGRES_URL') else None
+          f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}",
   }
-
-  # Bind to the first available SQL database configuration
+  
+  # Try to connect to Supabase and verify connection
   for db_type, url in DB_URLS.items():
     if url:
-      logging.info(f"Binding to {db_type} database with URL: {url}")
-      with app.app_context():
-        app.config['SQLALCHEMY_DATABASE_URI'] = url
-        db.init_app(app)
-
-        # Check if tables exist before creating them
-        inspector = inspect(db.engine)
-        existing_tables = inspector.get_table_names()
-
-        if not existing_tables:
-          logging.info("Creating tables as the database is empty")
-          db.create_all()
-        else:
-          logging.info("Tables already exist, skipping creation")
-
-      binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
-      sql_bound = True
-      break
-
+      logging.info(f"Attempting to connect to {db_type} database with URL: {url}")
+      try:
+        with app.app_context():
+          app.config['SQLALCHEMY_DATABASE_URI'] = url
+          db.init_app(app)
+          
+          # Test connection by executing a simple query with text()
+          with db.engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+            connection.commit()  # Add commit to ensure transaction completion
+            logging.info(f"✅ Successfully connected to {db_type} database")
+          
+          # Check if tables exist
+          inspector = inspect(db.engine)
+          existing_tables = inspector.get_table_names()
+          logging.info(f"Found existing tables: {existing_tables}")
+          
+          if not existing_tables:
+            logging.info("Creating tables as database is empty")
+            db.create_all()
+          
+        binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
+        sql_bound = True
+        break
+        
+      except Exception as e:
+        logging.error(f"❌ Failed to connect to {db_type} database: {str(e)}")
+        continue
   # Conditionally bind databases based on the availability of their respective secrets
   if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(
       os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):

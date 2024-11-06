@@ -54,6 +54,7 @@ services:
       - minio-data:/data
 
   flask_app:
+    container_name: flask-ta-backend
     build: . # Directory with Dockerfile for Flask app
     # image: kastanday/ai-ta-backend:gunicorn
     ports:
@@ -64,15 +65,24 @@ services:
       - ./db:/usr/src/app/db # Mount local directory to store SQLite database
     networks:
       - my-network
+      - supabase_default  # Add connection to Supabase network
     depends_on:
       - qdrant
       - redis
       - minio
+    environment:
+      - POSTGRES_HOST=supabase-db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 # declare the network resource
 # this will allow you to use service discovery and address a container by its name from within the network
 networks:
   my-network: {}
+  supabase_default:    # Add this network
+    external: true     # Mark as external since it's managed by Supabase
 
 volumes:
   redis-data: {}

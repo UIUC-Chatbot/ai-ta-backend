@@ -61,3 +61,8 @@ The docs are auto-built and deployed to [our docs website](https://uiuc-chatbot.
 'url': doc.metadata.get('url'), # wouldn't this error out?
 'base_url': doc.metadata.get('base_url'),
 ```
+
+
+### Note
+
+For Supabase, the current version we are using is v1.24.09 ([link](https://github.com/supabase/supabase/tree/v1.24.09))
