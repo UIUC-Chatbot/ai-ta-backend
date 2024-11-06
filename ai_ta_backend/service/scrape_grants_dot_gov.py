@@ -118,6 +118,9 @@ class ScrapeGrantsDotGov:
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.support.ui import WebDriverWait
 
+    # from webdriver_manager.core.utils import ChromeType
+    from webdriver_manager.chrome import ChromeDriverManager
+
     # Create an absolute path for downloads that works cross-platform
     download_dir = str(Path.cwd() / "grants-dot-gov-downloads")
     os.makedirs(download_dir, exist_ok=True)
@@ -130,19 +133,19 @@ class ScrapeGrantsDotGov:
             "download.prompt_for_download": False,
             "download.directory_upgrade": True,
         })
-    chrome_options.add_argument("--headless")  # Runs Chrome in headless mode
-    chrome_options.add_argument("--no-sandbox")  # Bypass OS security model
-    chrome_options.add_argument("--disable-dev-shm-usage")  # Overcome limited resource problems
+    chrome_options.add_argument("--headless=new")  # Use the new headless mode
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--dns-prefetch-disable")
+    chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+    chrome_options.add_argument("--enable-logging")
+    chrome_options.add_argument("--verbose")
 
-    # Locate chromedriver
-    chromedriver_path = shutil.which("chromedriver")
-    service = Service(executable_path=chromedriver_path)
-
-    # Initialize the WebDriver
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-
-    # Initialize driver with options
-    driver = webdriver.Chrome(options=chrome_options)
+    # Initialize the WebDriver with WebDriver Manager for Chromium
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
     try:
       # Navigate to the grants search page

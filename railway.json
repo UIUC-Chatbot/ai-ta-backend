@@ -7,10 +7,7 @@
       "phases": {
         "setup": {
           "nixPkgs": ["python310", "gcc", "chromium", "chromedriver"],
-          "cmds": [
-            "export NIXPKGS_ALLOW_UNFREE=1",
-            "nix-env -iA nixpkgs.chromium nixpkgs.chromedriver"
-          ]
+          "cmds": ["export NIXPKGS_ALLOW_UNFREE=1"]
         },
         "install": {
           "cmds": [
