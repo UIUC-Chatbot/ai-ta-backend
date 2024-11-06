@@ -6,9 +6,9 @@ A Flask application hosting endpoints for AI TA backend.
 
 ## License
 
-This project is available under the [CC BY-NC 4.0 License](LICENSE) for non-commercial use.
+This project is available under the [CC BY-NC 4.0 License](https://creativecommons.org/licenses/by-nc/4.0/) which restricts commercial use.
 
-![CC BY-NC 4.0 License Image](https://github.com/user-attachments/assets/21f4d62f-6a34-4e73-aae3-3129f81b8140)
+[![CC BY-NC 4.0 License Image](https://github.com/user-attachments/assets/21f4d62f-6a34-4e73-aae3-3129f81b8140)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 
 ### Commercial Use
