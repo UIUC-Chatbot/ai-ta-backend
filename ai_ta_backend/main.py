@@ -43,6 +43,9 @@ from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
 
+from ai_ta_backend.utils.pubmed_extraction import extractPubmedData
+
+
 app = Flask(__name__)
 CORS(app)
 executor = Executor(app)
@@ -597,6 +600,17 @@ def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> 
 
   # Do long-running LLM task in the background.
   flaskExecutor.submit(service.generate_json_schema, project_name, project_description)
+
+  response = jsonify(result)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+@app.route('/pubmedExtraction', methods=['GET'])
+def pubmedExtraction():
+  """
+  Extracts metadata and download papers from PubMed.
+  """
+  result = extractPubmedData()
 
   response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
