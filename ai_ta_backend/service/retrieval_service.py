@@ -18,7 +18,7 @@ from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapter
-from ai_ta_backend.service.nomic_service import NomicService
+# from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.utils.utils_tokenization import count_tokens_and_cost
@@ -31,13 +31,13 @@ class RetrievalService:
 
   @inject
   def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, posthog: PosthogService,
-               sentry: SentryService, nomicService: NomicService, thread_pool_executor: ThreadPoolExecutorAdapter):
+               sentry: SentryService, thread_pool_executor: ThreadPoolExecutorAdapter):
     self.vdb = vdb
     self.sqlDb = sqlDb
     self.aws = aws
     self.sentry = sentry
     self.posthog = posthog
-    self.nomicService = nomicService
+    #self.nomicService = nomicService
     self.thread_pool_executor = thread_pool_executor
     openai.api_key = os.environ["VLADS_OPENAI_KEY"]
 

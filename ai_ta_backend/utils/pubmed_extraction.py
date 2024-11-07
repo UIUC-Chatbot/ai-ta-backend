@@ -40,9 +40,11 @@ def extractPubmedData():
     start_time = time.monotonic()
 
     ftp_address = "ftp.ncbi.nlm.nih.gov"
-    ftp_path = "pubmed/baseline"
+    #ftp_path = "pubmed/baseline"
+    ftp_path = "pubmed/updatefiles"
     file_list = getFileList(ftp_address, ftp_path, ".gz")
-
+    print("Total files: ", len(file_list))
+    
     # with concurrent.futures.ProcessPoolExecutor() as executor:
     #     futures = [executor.submit(processPubmedXML, file, ftp_address, ftp_path) for file in file_list[131:133]]
     #     for future in concurrent.futures.as_completed(futures):
@@ -50,7 +52,11 @@ def extractPubmedData():
     #             future.result()
     #         except Exception as e:
     #             print("Error processing file: ", e)
-    for file in file_list[1100:]:
+
+    files_to_process = getFilesToProcess(file_list)
+    
+
+    for file in files_to_process:
         status = processPubmedXML(file, ftp_address, ftp_path)
         print("Status: ", status)
 
@@ -65,116 +71,129 @@ def extractPubmedData():
     
     return "success"
 
+def getFilesToProcess(file_list: list):
+    last_processed_response = SUPBASE_CLIENT.table("pubmed_daily_update").select("*").order("created_at", desc=True).limit(1).execute() # type: ignore
+    last_processed_file = last_processed_response.data[0]['last_xml_file']
+    print("Last processed file: ", last_processed_file)
+    files_to_process = []
+
+    for file in file_list:
+        if file == last_processed_file:
+            break
+        files_to_process.append(file)
+
+    return files_to_process
+
 def processPubmedXML(file:str, ftp_address:str, ftp_path:str):
     """
     Main function to extract metadata and articles from the PubMed baseline folder.
     """
     start_time = time.monotonic()
     try:
-        # print("Processing file: ", file)
-        # gz_filepath = downloadXML(ftp_address, ftp_path, file, "pubmed")
-        # gz_file_download_time = time.time()
+        print("Processing file: ", file)
+        gz_filepath = downloadXML(ftp_address, ftp_path, file, "pubmed")
+        gz_file_download_time = time.time()
 
-        # # extract the XML file
-        # if not gz_filepath:
-        #     return "failure"
-        # xml_filepath = extractXMLFile(gz_filepath)
+        # extract the XML file
+        if not gz_filepath:
+            return "failure"
+        xml_filepath = extractXMLFile(gz_filepath)
         
-        # xml_id = xml_filepath[7:-4].replace(".", "_")
-        # destination_dir = xml_id + "_papers"
-        # csv_filepath = xml_id + "_metadata.csv"
-        # error_log = xml_id + "_errors.txt"
+        xml_id = xml_filepath[7:-4].replace(".", "_")
+        destination_dir = xml_id + "_papers"
+        csv_filepath = xml_id + "_metadata.csv"
+        error_log = xml_id + "_errors.txt"
 
-        # for i, metadata in enumerate(extractMetadataFromXML(xml_filepath, destination_dir, error_log)):
-        #     metadata_extract_start_time = time.time() 
+        for i, metadata in enumerate(extractMetadataFromXML(xml_filepath, destination_dir, error_log)):
+            metadata_extract_start_time = time.time()
 
-        #     batch_dir = os.path.join(destination_dir, f"batch_{i+1}")
-        #     os.makedirs(batch_dir, exist_ok=True)
+            batch_dir = os.path.join(destination_dir, f"batch_{i+1}")
+            os.makedirs(batch_dir, exist_ok=True)
 
-        #     # find PMC ID and DOI for all articles
-        #     metadata_with_ids = getArticleIDs(metadata, error_log)
-        #     metadata_update_time = time.time()
-        #     print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
+            # find PMC ID and DOI for all articles
+            metadata_with_ids = getArticleIDs(metadata, error_log)
+            metadata_update_time = time.time()
+            print("Time taken to get PMC ID and DOI for 100 articles: ", round(metadata_update_time - metadata_extract_start_time, 2), "seconds")
                 
-        #     # download the articles
-        #     complete_metadata = downloadArticles(metadata_with_ids, batch_dir, error_log)
-        #     print("Time taken to download 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
+            # download the articles
+            complete_metadata = downloadArticles(metadata_with_ids, batch_dir, error_log)
+            print("Time taken to download 100 articles: ", round(time.time() - metadata_update_time, 2), "seconds")
 
-        #     # store metadata in csv file
-        #     df = pd.DataFrame(complete_metadata)
+            # store metadata in csv file
+            df = pd.DataFrame(complete_metadata)
 
-        #     # add a column for the XML file path
-        #     df['xml_filename'] = os.path.basename(xml_filepath)
+            # add a column for the XML file path
+            df['xml_filename'] = os.path.basename(xml_filepath)
 
-        #     if os.path.isfile(csv_filepath):
-        #         df.to_csv(csv_filepath, mode='a', header=False, index=False)
-        #     else:
-        #         df.to_csv(csv_filepath, index=False)
+            if os.path.isfile(csv_filepath):
+                df.to_csv(csv_filepath, mode='a', header=False, index=False)
+            else:
+                df.to_csv(csv_filepath, index=False)
             
-        #     before_upload = time.time()
-        #     # upload current batch to minio
-        #     print(f"Starting async upload for batch {i+1}...")
-        #     #asyncio.run(uploadToStorage(batch_dir, error_log))
-        #     with concurrent.futures.ThreadPoolExecutor() as executor:
-        #         future = executor.submit(uploadToStorage, batch_dir, error_log)
-        #     after_upload = time.time()
+            before_upload = time.time()
+            # upload current batch to minio
+            print(f"Starting async upload for batch {i+1}...")
+            #asyncio.run(uploadToStorage(batch_dir, error_log))
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(uploadToStorage, batch_dir, error_log)
+            after_upload = time.time()
 
-        #     print("Time elapsed between upload call: ", after_upload - before_upload)
-        #     POSTHOG.capture(distinct_id = "pubmed_extraction",
-        #         event = "uploadToMinio",
-        #         properties = {
-        #             "description": "upload files to minio",
-        #             "total_runtime": after_upload - before_upload,
-        #         }
-        #     )
+            print("Time elapsed between upload call: ", after_upload - before_upload)
+            POSTHOG.capture(distinct_id = "pubmed_extraction",
+                event = "uploadToMinio",
+                properties = {
+                    "description": "upload files to minio",
+                    "total_runtime": after_upload - before_upload,
+                }
+            )
 
-        #     print("Time taken to download 100 articles: ", round(time.time() - metadata_extract_start_time, 2), "seconds")
+            print("Time taken to download 100 articles: ", round(time.time() - metadata_extract_start_time, 2), "seconds")
             
-        # post_download_time_1 = time.monotonic()
+        post_download_time_1 = time.monotonic()
 
-        # # upload metadata to SQL DB
-        # df = pd.read_csv(csv_filepath)
-        # complete_metadata = df.to_dict('records')
-        # final_metadata = []
-        # unique_pmids = []
-        # for item in complete_metadata:
-        #     for key, value in item.items():
-        #         if pd.isna(value):  # Or: math.isnan(value)
-        #             item[key] = None
+        # upload metadata to SQL DB
+        df = pd.read_csv(csv_filepath)
+        complete_metadata = df.to_dict('records')
+        final_metadata = []
+        unique_pmids = []
+        for item in complete_metadata:
+            for key, value in item.items():
+                if pd.isna(value):  # Or: math.isnan(value)
+                    item[key] = None
                 
-        #     # check for duplicates
-        #     if item['pmid'] not in unique_pmids:
-        #         final_metadata.append(item)
-        #         unique_pmids.append(item['pmid'])
-        # print("Final metadata: ", len(final_metadata))
+            # check for duplicates
+            if item['pmid'] not in unique_pmids:
+                final_metadata.append(item)
+                unique_pmids.append(item['pmid'])
+        print("Final metadata: ", len(final_metadata))
             
-        # try:
-        #     response = SUPBASE_CLIENT.table("publications").upsert(final_metadata).execute() # type: ignore
-        #     print("Uploaded metadata to SQL DB.")
-        # except Exception as e:
-        #     print("Error in uploading to Supabase: ", e)
-        #     # log the supabase error
-        #     with open(error_log, 'a') as f:
-        #         f.write("Error in Supabase upsert: " + str(e) + "\n")
+        try:
+            response = SUPBASE_CLIENT.table("publications").upsert(final_metadata).execute() # type: ignore
+            print("Uploaded metadata to SQL DB.")
+        except Exception as e:
+            print("Error in uploading to Supabase: ", e)
+            # log the supabase error
+            with open(error_log, 'a') as f:
+                f.write("Error in Supabase upsert: " + str(e) + "\n")
 
-        # post_download_time_2 = time.monotonic()
+        post_download_time_2 = time.monotonic()
         
-        # POSTHOG.capture(distinct_id = "pubmed_extraction",
-        #     event = "uploadToSupabase",
-        #     properties = {
-        #         "description": "Process and upload metadata file to Supabase",
-        #         "total_runtime": post_download_time_2 - post_download_time_1,
-        #     }
-        # )
+        POSTHOG.capture(distinct_id = "pubmed_extraction",
+            event = "uploadToSupabase",
+            properties = {
+                "description": "Process and upload metadata file to Supabase",
+                "total_runtime": post_download_time_2 - post_download_time_1,
+            }
+        )
 
         # upload txt articles to bucket
-        print("Uploading articles to storage...")
-        destination_dir = "/home/avd6/chatbotai/asmita/ai-ta-backend/papers"
-        error_log = "all_errors.txt"
-        #asyncio.run(uploadToStorage(destination_dir, error_log))
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(uploadToStorage, destination_dir, error_log)
-            print("Upload started asynchronously.")
+        # print("Uploading articles to storage...")
+        # #destination_dir = "/home/avd6/chatbotai/asmita/ai-ta-backend/papers"
+        # #error_log = "all_errors.txt"
+        # #asyncio.run(uploadToStorage(destination_dir, error_log))
+        # with concurrent.futures.ThreadPoolExecutor() as executor:
+        #     future = executor.submit(uploadToStorage, destination_dir, error_log)
+        #     print("Upload started asynchronously.")
 
         post_download_time_3 = time.monotonic()
 
@@ -302,7 +321,7 @@ def extractMetadataFromXML(xml_filepath: str, dir: str, error_file: str):
     Returns:
         metadata: List of dictionaries containing metadata for each article.
     """
-    # print("inside extractMetadataFromXML()")
+    print("inside extractMetadataFromXML()")
     start_time = time.monotonic()
     try:
         # create a directory to store papers
