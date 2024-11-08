@@ -21,7 +21,6 @@ from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapt
 from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
-from ai_ta_backend.utils.utils_tokenization import count_tokens_and_cost
 
 
 class RetrievalService:
@@ -123,17 +122,13 @@ class RetrievalService:
                                                       public_doc_groups=public_doc_groups)
 
       time_to_retrieve_docs = time.monotonic() - start_time_vector_search
-      start_time_count_tokens = time.monotonic()
 
       valid_docs = []
       for doc in found_docs:
         valid_docs.append(doc)
 
-      time_to_count_tokens = time.monotonic() - start_time_count_tokens
-
-      print(f"Course: {course_name} ||| search_query: {search_query}")
       print(
-          f"⏰ ^^ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds, time to count tokens: {time_to_count_tokens:.2f} seconds, time for parallel operations: {time_for_parallel_operations:.2f} seconds, time to retrieve docs: {time_to_retrieve_docs:.2f} seconds"
+          f"Course: {course_name} ||| search_query: {search_query} ⏰ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds, time for parallel operations: {time_for_parallel_operations:.2f} seconds, time to retrieve docs: {time_to_retrieve_docs:.2f} seconds"
       )
       if len(valid_docs) == 0:
         return []
@@ -386,8 +381,6 @@ class RetrievalService:
     """
     Search the vector database for a given query, course name, and document groups.
     """
-    start_time_overall = time.monotonic()
-
     if doc_groups is None:
       doc_groups = []
 
@@ -420,9 +413,8 @@ class RetrievalService:
     time_for_capture_search_succeeded_event = time.monotonic() - start_time_capture_search_succeeded_event
 
     print(
-        f"time for vector search: {time_for_vector_search:.2f} seconds, time for process search results: {time_for_process_search_results:.2f} seconds, time for capture search succeeded event: {time_for_capture_search_succeeded_event:.2f} seconds"
+        f"time for embedding query: {self.openai_embedding_latency:.2f} seconds, time for vector search: {time_for_vector_search:.2f} seconds, time for process search results: {time_for_process_search_results:.2f} seconds, time for capture search succeeded event: {time_for_capture_search_succeeded_event:.2f} seconds"
     )
-    print(f"time for embedding query: {self.openai_embedding_latency:.2f} seconds")
     return found_docs
 
   def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n,
@@ -468,7 +460,8 @@ class RetrievalService:
 
   def _capture_search_succeeded_event(self, search_query, course_name, search_results):
     vector_score_calc_latency_sec = time.monotonic()
-    max_vector_score, min_vector_score, avg_vector_score = self._calculate_vector_scores(search_results)
+    # Removed because it takes 0.15 seconds to _calculate_vector_scores... not worth it rn.
+    # max_vector_score, min_vector_score, avg_vector_score = self._calculate_vector_scores(search_results)
     self.posthog.capture(
         event_name="vector_search_succeeded",
         properties={
@@ -476,9 +469,9 @@ class RetrievalService:
             "course_name": course_name,
             "qdrant_latency_sec": self.qdrant_latency_sec,
             "openai_embedding_latency_sec": self.openai_embedding_latency,
-            "max_vector_score": max_vector_score,
-            "min_vector_score": min_vector_score,
-            "avg_vector_score": avg_vector_score,
+            # "max_vector_score": max_vector_score,
+            # "min_vector_score": min_vector_score,
+            # "avg_vector_score": avg_vector_score,
             "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,
         },
     )
