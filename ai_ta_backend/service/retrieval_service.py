@@ -127,9 +127,10 @@ class RetrievalService:
       for doc in found_docs:
         valid_docs.append(doc)
 
-      print(
-          f"Course: {course_name} ||| search_query: {search_query} ⏰ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds, time for parallel operations: {time_for_parallel_operations:.2f} seconds, time to retrieve docs: {time_to_retrieve_docs:.2f} seconds"
-      )
+      print(f"Course: {course_name} ||| search_query: {search_query}\n"
+            f"⏰ Runtime of getTopContexts: {(time.monotonic() - start_time_overall):.2f} seconds\n"
+            f"Runtime for parallel operations: {time_for_parallel_operations:.2f} seconds, "
+            f"Runtime to complete vector_search: {time_to_retrieve_docs:.2f} seconds")
       if len(valid_docs) == 0:
         return []
 
@@ -412,9 +413,10 @@ class RetrievalService:
     self._capture_search_succeeded_event(search_query, course_name, search_results)
     time_for_capture_search_succeeded_event = time.monotonic() - start_time_capture_search_succeeded_event
 
-    print(
-        f"time for embedding query: {self.openai_embedding_latency:.2f} seconds, time for vector search: {time_for_vector_search:.2f} seconds, time for process search results: {time_for_process_search_results:.2f} seconds, time for capture search succeeded event: {time_for_capture_search_succeeded_event:.2f} seconds"
-    )
+    print(f"Runtime for embedding query: {self.openai_embedding_latency:.2f} seconds\n"
+          f"Runtime for vector search: {time_for_vector_search:.2f} seconds\n"
+          f"Runtime for process search results: {time_for_process_search_results:.2f} seconds\n"
+          f"Runtime for capture search succeeded event: {time_for_capture_search_succeeded_event:.2f} seconds")
     return found_docs
 
   def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n,
