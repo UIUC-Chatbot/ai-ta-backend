@@ -106,12 +106,12 @@ def getTopContexts(service: RetrievalService) -> Response:
   Exception
       Testing how exceptions are handled.
   """
+  start_time = time.monotonic()
   data = request.get_json()
   search_query: str = data.get('search_query', '')
   course_name: str = data.get('course_name', '')
   token_limit: int = data.get('token_limit', 3000)
   doc_groups: List[str] = data.get('doc_groups', [])
-  start_time = time.monotonic()
 
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
@@ -122,9 +122,9 @@ def getTopContexts(service: RetrievalService) -> Response:
     )
 
   found_documents = asyncio.run(service.getTopContexts(search_query, course_name, token_limit, doc_groups))
-  print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
+  print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
   return response
 
 
@@ -519,31 +519,34 @@ def switch_workflow(service: WorkflowService) -> Response:
     else:
       abort(400, description=f"Bad request: {e}")
 
+
 @app.route('/getConversationStats', methods=['GET'])
 def get_conversation_stats(service: RetrievalService) -> Response:
-    course_name = request.args.get('course_name', default='', type=str)
+  course_name = request.args.get('course_name', default='', type=str)
 
-    if course_name == '':
-        abort(400, description="Missing required parameter: 'course_name' must be provided.")
+  if course_name == '':
+    abort(400, description="Missing required parameter: 'course_name' must be provided.")
 
-    conversation_stats = service.getConversationStats(course_name)
+  conversation_stats = service.getConversationStats(course_name)
 
-    response = jsonify(conversation_stats)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+  response = jsonify(conversation_stats)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/getConversationHeatmapByHour', methods=['GET'])
 def get_questions_heatmap_by_hour(service: RetrievalService) -> Response:
-    course_name = request.args.get('course_name', default='', type=str)
+  course_name = request.args.get('course_name', default='', type=str)
 
-    if not course_name:
-        abort(400, description="Missing required parameter: 'course_name' must be provided.")
+  if not course_name:
+    abort(400, description="Missing required parameter: 'course_name' must be provided.")
 
-    heatmap_data = service.getConversationHeatmapByHour(course_name)
+  heatmap_data = service.getConversationHeatmapByHour(course_name)
 
-    response = jsonify(heatmap_data)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+  response = jsonify(heatmap_data)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/run_flow', methods=['POST'])
 def run_flow(service: WorkflowService) -> Response:
