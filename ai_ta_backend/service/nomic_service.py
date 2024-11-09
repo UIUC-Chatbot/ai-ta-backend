@@ -9,10 +9,11 @@ import numpy as np
 import pandas as pd
 from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
-from nomic import AtlasProject, atlas
 
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.sentry_service import SentryService
+
+# from nomic import AtlasProject, atlas
 
 LOCK_EXCEPTIONS = [
     'Project is locked for state access! Please wait until the project is unlocked to access embeddings.',
@@ -63,7 +64,6 @@ class NomicService():
         self.sentry.capture_exception(e)
       return {"map_id": None, "map_link": None}
 
-
   def log_to_conversation_map(self, course_name: str, conversation):
     """
     This function logs new conversations to existing nomic maps.
@@ -82,12 +82,12 @@ class NomicService():
       if not response.data:
         print("Map does not exist for this course. Redirecting to map creation...")
         return self.create_conversation_map(course_name)
-      
+
       # entry present for doc map, but not convo map
       elif not response.data[0]['convo_map_id']:
         print("Map does not exist for this course. Redirecting to map creation...")
         return self.create_conversation_map(course_name)
-          
+
       project_id = response.data[0]['convo_map_id']
       last_uploaded_convo_id = response.data[0]['last_uploaded_convo_id']
 
@@ -154,17 +154,16 @@ class NomicService():
           project_info = {'course_name': course_name, 'convo_map_id': project_id, 'last_uploaded_convo_id': last_id}
           project_response = self.sql.updateProjects(course_name, project_info)
           print("Update response from supabase: ", project_response)
-      
+
       # rebuild the map
       self.rebuild_map(course_name, "conversation")
       return "success"
-    
+
     except Exception as e:
       print(e)
       self.sentry.capture_exception(e)
       return "Error in logging to conversation map: {e}"
-  
-  
+
   def log_to_existing_conversation(self, course_name: str, conversation):
     """
     This function logs follow-up questions to existing conversations in the map.
@@ -176,18 +175,18 @@ class NomicService():
 
       # fetch id from supabase
       incoming_id_response = self.sql.getConversation(course_name, key="convo_id", value=conversation_id)
-      
+
       project_name = 'Conversation Map for ' + course_name
       project = AtlasProject(name=project_name, add_datums_if_exists=True)
 
       prev_id = incoming_id_response.data[0]['id']
-      uploaded_data = project.get_data(ids=[prev_id]) # fetch data point from nomic
+      uploaded_data = project.get_data(ids=[prev_id])  # fetch data point from nomic
       prev_convo = uploaded_data[0]['conversation']
 
       # update conversation
       messages = conversation['messages']
       messages_to_be_logged = messages[-2:]
-      
+
       for message in messages_to_be_logged:
         if message['role'] == 'user':
           emoji = "🙋 "
@@ -200,7 +199,7 @@ class NomicService():
           text = message['content']
 
         prev_convo += "\n>>> " + emoji + message['role'] + ": " + text + "\n"
-      
+
       # create embeddings of first query
       embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
                                           openai_api_base="https://api.openai.com/v1/",
@@ -228,14 +227,13 @@ class NomicService():
       # re-insert updated conversation
       result = self.append_to_map(embeddings, metadata, project_name)
       print("Result of appending to existing map:", result)
-    
+
       return "success"
 
     except Exception as e:
       print("Error in log_to_existing_conversation():", e)
       self.sentry.capture_exception(e)
       return "Error in logging to existing conversation: {e}"
-
 
   def create_conversation_map(self, course_name: str):
     """
@@ -370,7 +368,6 @@ class NomicService():
             project_response = self.sql.insertProjectInfo(project_info)
           print("Response from supabase: ", project_response)
 
-
       # rebuild the map
       self.rebuild_map(course_name, "conversation")
       return "success"
@@ -470,7 +467,8 @@ class NomicService():
 
       for _index, row in df.iterrows():
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        created_at = datetime.datetime.strptime(row['created_at'], "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
+        created_at = datetime.datetime.strptime(row['created_at'],
+                                                "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
         conversation_exists = False
         conversation = ""
         emoji = ""

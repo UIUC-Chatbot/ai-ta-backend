@@ -19,7 +19,6 @@ from flask_executor import Executor
 from flask_injector import FlaskInjector, RequestScope
 from injector import Binder, SingletonScope
 
-from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
@@ -36,7 +35,8 @@ from ai_ta_backend.executors.thread_pool_executor import (
     ThreadPoolExecutorInterface,
 )
 from ai_ta_backend.service.export_service import ExportService
-from ai_ta_backend.service.nomic_service import NomicService
+
+# from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.project_service import ProjectService
 from ai_ta_backend.service.retrieval_service import RetrievalService
@@ -176,22 +176,21 @@ def delete(service: RetrievalService, flaskExecutor: ExecutorInterface):
   return response
 
 
-@app.route('/getNomicMap', methods=['GET'])
-def nomic_map(service: NomicService):
-  course_name: str = request.args.get('course_name', default='', type=str)
-  map_type: str = request.args.get('map_type', default='conversation', type=str)
+# @app.route('/getNomicMap', methods=['GET'])
+# def nomic_map(service: NomicService):
+#   course_name: str = request.args.get('course_name', default='', type=str)
+#   map_type: str = request.args.get('map_type', default='conversation', type=str)
 
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+#   if course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  map_id = service.get_nomic_map(course_name, map_type)
-  print("nomic map\n", map_id)
+#   map_id = service.get_nomic_map(course_name, map_type)
+#   print("nomic map\n", map_id)
 
-  response = jsonify(map_id)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
+#   response = jsonify(map_id)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 # @app.route('/createDocumentMap', methods=['GET'])
 # def createDocumentMap(service: NomicService):
@@ -236,28 +235,27 @@ def nomic_map(service: NomicService):
 #   response.headers.add('Access-Control-Allow-Origin', '*')
 #   return response
 
+# @app.route('/onResponseCompletion', methods=['POST'])
+# def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
+#   data = request.get_json()
+#   course_name = data['course_name']
+#   conversation = data['conversation']
 
-@app.route('/onResponseCompletion', methods=['POST'])
-def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
-  data = request.get_json()
-  course_name = data['course_name']
-  conversation = data['conversation']
+#   if course_name == '' or conversation == '':
+#     # proper web error "400 Bad request"
+#     abort(
+#         400,
+#         description=
+#         f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
+#     )
+#   print(f"In /onResponseCompletion for course: {course_name}")
 
-  if course_name == '' or conversation == '':
-    # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
-    )
-  print(f"In /onResponseCompletion for course: {course_name}")
-
-  # background execution of tasks!!
-  #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
-  #result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
-  response = jsonify({'outcome': 'success'})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   # background execution of tasks!!
+#   #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
+#   #result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
+#   response = jsonify({'outcome': 'success'})
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 
 @app.route('/export-convo-history-csv', methods=['GET'])
@@ -606,13 +604,30 @@ def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> 
   return response
 
 
+@app.route('/scrapeGrantsDotGov', methods=['POST'])
+def scrapeGrantsDotGov(retrievalService: RetrievalService, sentryService: SentryService) -> Response:
+  """
+  Scrape grants.gov and ingest. We're careful to delete expired grants.
+  """
+  # data = request.get_json()
+
+  from ai_ta_backend.service.scrape_grants_dot_gov import ScrapeGrantsDotGov
+  scraper = ScrapeGrantsDotGov(retrievalService=retrievalService, sentryService=sentryService)
+  scraper.main_scrape()
+  result = "success"
+
+  response = jsonify(result)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
   binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)
   binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
   binder.bind(SentryService, to=SentryService, scope=SingletonScope)
-  binder.bind(NomicService, to=NomicService, scope=SingletonScope)
+  # binder.bind(NomicService, to=NomicService, scope=SingletonScope)
   binder.bind(ExportService, to=ExportService, scope=SingletonScope)
   binder.bind(WorkflowService, to=WorkflowService, scope=SingletonScope)
   binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
