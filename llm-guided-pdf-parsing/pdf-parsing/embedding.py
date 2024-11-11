@@ -2,10 +2,14 @@ import json
 
 import requests
 from retry import retry
+import os
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 
 @retry(tries=10, delay=.25)
-def get_embeddings(prompt, model="nomic-embed-text:v1.5", base_url="https://secret-ollama.ncsa.ai/api/embeddings"):
+def get_embeddings(prompt, model="nomic-embed-text:v1.5", base_url=os.environ['EMBEDDING_BASE_URL']):
 
   payload = {"model": model, "prompt": prompt, "options": {"num_ctx": 8192}}
 
