@@ -596,4 +596,19 @@ class RetrievalService:
         'per_weekday': dict(grouped_data['per_weekday']),
         'heatmap': {day: dict(hours) for day, hours in grouped_data['heatmap'].items()},
     }
+
+  def getCourseStats(self, course_name: str) -> Dict[str, int]:
+    """
+    Get statistics about conversations for a course.
+    
+    Args:
+        course_name (str): Name of the course to get stats for
+
+    Returns:
+        Dict[str, int]: Dictionary containing:
+            - total_conversations: Total number of conversations
+            - total_users: Number of unique users
+            - total_messages: Total number of messages
+    """
+    return self.sqlDb.getCourseStats(course_name)
   

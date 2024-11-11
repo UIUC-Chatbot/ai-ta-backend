@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 from injector import inject
 
@@ -164,7 +165,6 @@ class SQLDatabase:
         .execute()
     
     total_count = count_response.count
-    # print(f"Total entries available: {total_count}")
 
     if total_count <= 0:
         return [], 0
@@ -175,15 +175,12 @@ class SQLDatabase:
 
     while start < total_count:
         end = min(start + batch_size - 1, total_count - 1)
-        # print(f"Fetching data from {start} to {end}")
 
         response = self.supabase_client.table("llm-convo-monitor")\
             .select("created_at")\
             .eq("course_name", course_name)\
             .range(start, end)\
             .execute()
-
-        # print(f"Fetched {len(response.data)} entries in this batch.")
 
         if not response.data:
             print(f"No data returned for range {start} to {end}.")
@@ -192,5 +189,29 @@ class SQLDatabase:
         all_data.extend(response.data)
         start += batch_size
 
-    # print(f"Total entries retrieved: {len(all_data)}")
     return all_data, total_count
+  
+  def getCourseStats(self, course_name: str) -> Dict[str, int]:
+      conversations_response = self.supabase_client.table("llm-convo-monitor") \
+          .select("id, user_email, convo_id", count="exact") \
+          .eq("course_name", course_name) \
+          .execute()
+      
+      total_conversations = conversations_response.count if conversations_response.count else 0
+      
+      unique_users = set(record["user_email"] 
+                        for record in conversations_response.data 
+                        if record.get("user_email"))
+      total_users = len(unique_users)
+
+      messages_response = self.supabase_client.rpc(
+          "get_message_count", 
+          {"course": course_name}).execute()
+      total_messages = messages_response.data if messages_response.data else 0
+
+      return {
+          "total_conversations": total_conversations,
+          "total_users": total_users, 
+          "total_messages": total_messages
+      }
+      

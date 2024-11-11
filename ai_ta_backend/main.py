@@ -590,6 +590,20 @@ def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> 
   return response
 
 
+@app.route('/getCourseStats', methods=['GET'])
+def get_course_stats(service: RetrievalService) -> Response:
+    course_name = request.args.get('course_name', default='', type=str)
+
+    if course_name == '':
+        abort(400, description="Missing required parameter: 'course_name' must be provided.")
+
+    course_stats = service.getCourseStats(course_name)
+
+    response = jsonify(course_stats)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
