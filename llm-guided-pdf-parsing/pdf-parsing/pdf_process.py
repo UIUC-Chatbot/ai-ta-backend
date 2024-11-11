@@ -50,7 +50,7 @@ def process_pdf_file(
   try:
     start_time = time.monotonic()
     grobidClient.process_pdf(str(input_file), tei_file.name, "processFulltextDocument")
-    print(f"📜 Grobid Runtime: {(time.monotonic() - start_time):.2f} seconds")
+    # print(f"📜 Grobid Runtime: {(time.monotonic() - start_time):.2f} seconds")
     posthog.capture('llm-guided-ingest',
                     event='grobid_runtime_v2',
                     properties={

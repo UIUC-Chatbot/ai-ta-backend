@@ -37,8 +37,8 @@ http_client = PoolManager(
 
 client = Minio(
     os.environ['MINIO_API_ENDPOINT'],
-    access_key=os.getenv('MINIO_ACCESS_KEY'),
-    secret_key=os.getenv('MINIO_SECRET_KEY'),
+    access_key=os.environ['MINIO_ACCESS_KEY'],
+    secret_key=os.environ['MINIO_SECRET_KEY'],
     secure=False,
     http_client=http_client,
 )
@@ -52,16 +52,16 @@ LOG_FILE = os.environ['SUCCESS_LOG_FILE']
 ERR_LOG_FILE = os.environ['ERR_LOG_FILE']
 DB_PATH = os.environ['DB_PATH']
 
-grobid_server = os.getenv('GROBID_SERVER')
+grobid_server = os.environ['GROBID_SERVER']
 BASE_TEMP_DIR = 'temp'
 BASE_OUTPUT_DIR = 'output'
 BUCKET_NAME = 'pubmed'
 
-NUM_PARALLEL = 80
+NUM_PARALLEL = 30
 
 # Configure Grobid
 grobid_config = {
-    "grobid_server": os.getenv('GROBID_SERVER'),
+    "grobid_server": grobid_server,
     "batch_size": 2000,
     "sleep_time": 3,
     "generateIDs": False,
@@ -127,7 +127,7 @@ def main_parallel_upload():
           # print(f"(while completing jobs) Current queue size: {queue.qsize()}")
           if num_processed_this_run % 100 == 0:
             print(
-                f"🏎️ Num processed this run: {num_processed_this_run}. ⏰ Runtime: {(time.monotonic() - start_time_main_parallel):.2f} seconds"
+                f"1️⃣ Num processed this run: {num_processed_this_run}. ⏰ Runtime: {(time.monotonic() - start_time_main_parallel):.2f} seconds"
             )
 
           posthog.capture('llm-guided-ingest',
@@ -138,6 +138,7 @@ def main_parallel_upload():
                               'minio_path':
                                   f'{BUCKET_NAME}/{obj.object_name}'
                           })
+          print(f"🏎️  PDF/sec (running total): {float(num_processed_this_run / (time.monotonic() - start_time_main_parallel)):.2f}")
 
         except Exception as e:
           # MAIN / ONLY FAILURE CASE
@@ -169,7 +170,7 @@ def upload_single_pdf(minio_object_name, queue):
   file_content = response.read()
   response.close()
   response.release_conn()
-  print(f"⏰ Minio download: {(time.monotonic() - start_time_minio):.2f} seconds")
+  # print(f"⏰ Minio download: {(time.monotonic() - start_time_minio):.2f} seconds")
   posthog.capture('llm-guided-ingest',
                   event='minio_download',
                   properties={
@@ -197,7 +198,8 @@ def upload_single_pdf(minio_object_name, queue):
         'minio_path': f'{BUCKET_NAME}/{minio_object_name}'
     })
 
-  print(f"⭐️ Total ingest runtime: {(time.monotonic() - start_time_minio):.2f} seconds")
+  runtime = round(time.monotonic() - start_time_minio, 2)
+  print(f"⭐️ Total ingest runtime: {runtime} seconds. Tokens per sec: {(int(total_tokens)/runtime):.2f}")
   posthog.capture('llm-guided-ingest',
                   event='success_ingest_v2',
                   properties={
@@ -215,6 +217,13 @@ def load_processed_files(log_file):
     with open(log_file, 'r') as f:
       return set(line.strip() for line in f)
   return set()
+
+def load_error_files(err_log_file):
+    if os.path.exists(err_log_file):
+        with open(err_log_file, 'r') as f:
+            return set(line.split(' --- ')[0].strip() for line in f if ' --- ' in line)
+    return set()
+
 
 
 def save_processed_file(log_file, file_path):
@@ -240,12 +249,33 @@ def db_worker(queue, db_path, client):
   conn.close()
 
 
+# def minio_object_generator(client, bucket_name):
+#   processed_files = load_processed_files(LOG_FILE)
+#   error_files = load_error_files(ERR_LOG_FILE)
+#   all_skipped_files = processed_files.union(error_files)
+#   for obj in client.list_objects(bucket_name, recursive=True):
+#     if not obj.object_name.endswith('.pdf'):
+#       continue 
+#     if obj.object_name not in all_skipped_files:
+#       yield obj
+
 def minio_object_generator(client, bucket_name):
   processed_files = load_processed_files(LOG_FILE)
-  for obj in client.list_objects(bucket_name, recursive=True):
-    if obj.object_name not in processed_files:
-      yield obj
-
+  error_files = load_error_files(ERR_LOG_FILE)
+  all_skipped_files = processed_files.union(error_files)
+  
+  with open('all_pubmed_filenames.txt', 'r') as f:
+    for line in f:
+      object_name = line.strip()
+      if object_name not in all_skipped_files:
+        if not object_name.endswith('.pdf'):
+          continue 
+        # Create a simple object-like structure to maintain compatibility
+        class MinioObj:
+          def __init__(self, name):
+            self.object_name = name
+        
+        yield MinioObj(object_name)
 
 # def queue_size_monitor(queue):
 #   while True:
