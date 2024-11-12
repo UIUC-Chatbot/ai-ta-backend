@@ -1,6 +1,3 @@
-# Supabase stuffs
-supabase/docker/db/
-
 # don't sync coursera docs
 coursera-dl/
 *parsed.json
