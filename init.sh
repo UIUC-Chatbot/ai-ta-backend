@@ -1,13 +1,15 @@
-### To Run the script:
-### chmod +x init.sh
-### ./init.sh
-
 #!/bin/bash
 set -e
 
 # Start the Supabase Docker Compose
 echo "Starting Supabase services..."
-docker compose -f ./supabase/docker/docker-compose.yml up -d
+docker compose -f ./supabase/docker/docker-compose.yml -f ./docker-compose.override.yml up -d
+
+# Wait for the database to be ready
+echo "Waiting for the database to be ready..."
+until docker exec supabase-db pg_isready -U postgres; do
+  sleep 1
+done
 
 # Start the parent Docker Compose
 echo "Starting application services..."
