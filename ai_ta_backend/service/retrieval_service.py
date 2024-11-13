@@ -11,6 +11,7 @@ import pytz
 from dateutil import parser
 from injector import inject
 from langchain.chat_models import AzureChatOpenAI
+from langchain.embeddings.ollama import OllamaEmbeddings
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 
@@ -48,15 +49,7 @@ class RetrievalService:
         # openai_api_type=os.environ['OPENAI_API_TYPE'],
         # openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
-
-    # self.llm = AzureChatOpenAI(
-    #     temperature=0,
-    #     deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
-    #     openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-    #     openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-    #     openai_api_version=os.environ["OPENAI_API_VERSION"],
-    #     openai_api_type=os.environ['OPENAI_API_TYPE'],
-    # )
+    self.vyriad_embeddings = OllamaEmbeddings(base_url=os.environ['OLLAMA_SERVER_URL'], model='nomic-embed-text:v1.5')
 
   async def getTopContexts(
       self,
@@ -76,6 +69,9 @@ class RetrievalService:
         """
     if doc_groups is None:
       doc_groups = []
+
+    vyriad_project_name = os.getenv('VYRIAD_PROJECT_NAME', '')
+    is_vyriad = (vyriad_project_name == course_name)
     try:
       start_time_overall = time.monotonic()
       # Improvement of performance by parallelizing independent operations:
@@ -102,7 +98,7 @@ class RetrievalService:
         tasks = [
             loop.run_in_executor(executor, self.sqlDb.getDisabledDocGroups, course_name),
             loop.run_in_executor(executor, self.sqlDb.getPublicDocGroups, course_name),
-            loop.run_in_executor(executor, self._embed_query_and_measure_latency, search_query)
+            loop.run_in_executor(executor, self._embed_query_and_measure_latency, search_query, is_vyriad)
         ]
 
       disabled_doc_groups_response, public_doc_groups_response, user_query_embedding = await asyncio.gather(*tasks)
@@ -119,7 +115,8 @@ class RetrievalService:
                                                       doc_groups=doc_groups,
                                                       user_query_embedding=user_query_embedding,
                                                       disabled_doc_groups=disabled_doc_groups,
-                                                      public_doc_groups=public_doc_groups)
+                                                      public_doc_groups=public_doc_groups,
+                                                      is_vyriad=is_vyriad)
 
       time_to_retrieve_docs = time.monotonic() - start_time_vector_search
 
@@ -378,7 +375,7 @@ class RetrievalService:
       self.sentry.capture_exception(e)
 
   def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, disabled_doc_groups,
-                    public_doc_groups):
+                    public_doc_groups, is_vyriad):
     """
     Search the vector database for a given query, course name, and document groups.
     """
@@ -400,7 +397,7 @@ class RetrievalService:
     # Perform the vector search
     start_time_vector_search = time.monotonic()
     search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
-                                                 disabled_doc_groups, public_doc_groups)
+                                                 disabled_doc_groups, public_doc_groups, is_vyriad)
     time_for_vector_search = time.monotonic() - start_time_vector_search
 
     # Process the search results by extracting the page content and metadata
@@ -420,17 +417,20 @@ class RetrievalService:
     return found_docs
 
   def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n,
-                             disabled_doc_groups, public_doc_groups):
+                             disabled_doc_groups, public_doc_groups, is_vyriad):
     qdrant_start_time = time.monotonic()
     search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
-                                            disabled_doc_groups, public_doc_groups)
+                                            disabled_doc_groups, public_doc_groups, is_vyriad)
     self.qdrant_latency_sec = time.monotonic() - qdrant_start_time
     return search_results
 
-  def _embed_query_and_measure_latency(self, search_query):
+  def _embed_query_and_measure_latency(self, search_query, is_vyriad):
     openai_start_time = time.monotonic()
-    user_query_embedding = self.embeddings.embed_query(search_query)
+    embeddings = self.vyriad_embeddings if is_vyriad else self.embeddings
+    # print(f"Embeddings: {embeddings}")
+    user_query_embedding = embeddings.embed_query(search_query)
     self.openai_embedding_latency = time.monotonic() - openai_start_time
+
     return user_query_embedding
 
   def _capture_search_invoked_event(self, search_query, course_name, doc_groups):
