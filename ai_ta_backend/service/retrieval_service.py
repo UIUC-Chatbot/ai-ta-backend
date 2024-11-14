@@ -526,54 +526,68 @@ class RetrievalService:
   def getConversationStats(self, course_name: str):
     """
     Fetches conversation data from the database and groups them by day, hour, and weekday.
-    
-    Args:
-        course_name (str)
-
-    Returns:
-        dict: A dictionary containing:
-            - 'per_day': Counts of conversations by date (YYYY-MM-DD).
-            - 'per_hour': Counts of conversations by hour (0-23).
-            - 'per_weekday': Counts of conversations by weekday (Monday-Sunday).
-            - 'heatmap': A nested dictionary for heatmap data (days of the week as keys, hours as inner keys).
     """
-    # print(f"Received course_name: {course_name}")
-    
-    conversations, total_count = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
+    try:
+        conversations, total_count = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
 
-    central_tz = pytz.timezone('America/Chicago')
+        # Initialize with empty data (all zeros)
+        response_data = {
+            'per_day': {},
+            'per_hour': {str(hour): 0 for hour in range(24)},  # Convert hour to string for consistency
+            'per_weekday': {day: 0 for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']},
+            'heatmap': {day: {str(hour): 0 for hour in range(24)} for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']},
+            'total_count': 0
+        }
 
-    grouped_data = {
-        'per_day': defaultdict(int),
-        'per_hour': defaultdict(int),
-        'per_weekday': defaultdict(int),
-        'heatmap': defaultdict(lambda: defaultdict(int)),
-    }
+        if not conversations:
+            return response_data
 
-    if conversations:
+        central_tz = pytz.timezone('America/Chicago')
+        grouped_data = {
+            'per_day': defaultdict(int),
+            'per_hour': defaultdict(int),
+            'per_weekday': defaultdict(int),
+            'heatmap': defaultdict(lambda: defaultdict(int)),
+        }
+
         for record in conversations:
-            created_at = record['created_at']
-            parsed_date = parser.parse(created_at).astimezone(central_tz)
+            try:
+                created_at = record['created_at']
+                parsed_date = parser.parse(created_at).astimezone(central_tz)
 
-            day = parsed_date.date()
-            hour = parsed_date.hour
-            day_of_week = parsed_date.strftime('%A')
+                day = parsed_date.date()
+                hour = parsed_date.hour
+                day_of_week = parsed_date.strftime('%A')
 
-            grouped_data['per_day'][str(day)] += 1
-            grouped_data['per_hour'][hour] += 1
-            grouped_data['per_weekday'][day_of_week] += 1
-            grouped_data['heatmap'][day_of_week][hour] += 1
+                grouped_data['per_day'][str(day)] += 1
+                grouped_data['per_hour'][str(hour)] += 1  # Convert hour to string
+                grouped_data['per_weekday'][day_of_week] += 1
+                grouped_data['heatmap'][day_of_week][str(hour)] += 1  # Convert hour to string
+            except Exception as e:
+                print(f"Error processing record: {str(e)}")
+                continue
 
-    else:
-      print("No valid response data. Check if the query is correct or if the response is empty.")
-      return {}
+        return {
+            'per_day': dict(grouped_data['per_day']),
+            'per_hour': {str(k): v for k, v in grouped_data['per_hour'].items()},
+            'per_weekday': dict(grouped_data['per_weekday']),
+            'heatmap': {day: {str(h): count for h, count in hours.items()} 
+                       for day, hours in grouped_data['heatmap'].items()},
+            'total_count': total_count
+        }
 
-    return {
-        'per_day': dict(grouped_data['per_day']),
-        'per_hour': dict(grouped_data['per_hour']),
-        'per_weekday': dict(grouped_data['per_weekday']),
-        'heatmap': {day: dict(hours) for day, hours in grouped_data['heatmap'].items()},
-    }
+    except Exception as e:
+        print(f"Error in getConversationStats for course {course_name}: {str(e)}")
+        self.sentry.capture_exception(e)
+        # Return empty data structure on error
+        return {
+            'per_day': {},
+            'per_hour': {str(hour): 0 for hour in range(24)},
+            'per_weekday': {day: 0 for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']},
+            'heatmap': {day: {str(hour): 0 for hour in range(24)} 
+                       for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']},
+            'total_count': 0
+        }
 
   def getProjectStats(self, project_name: str) -> Dict[str, int]:
     """
