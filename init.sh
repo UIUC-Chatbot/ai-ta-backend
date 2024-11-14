@@ -1,4 +1,10 @@
 #!/bin/bash
+
+git submodule update --init --recursive
+
+if [ ! -f ./supabase/docker/.env ]; then
+  cp ./supabase/docker/.env.example ./supabase/docker/.env
+fi
 set -e
 
 # Start the Supabase Docker Compose
