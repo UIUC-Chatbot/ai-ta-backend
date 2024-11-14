@@ -591,16 +591,16 @@ def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> 
   return response
 
 
-@app.route('/getCourseStats', methods=['GET'])
-def get_course_stats(service: RetrievalService) -> Response:
-    course_name = request.args.get('course_name', default='', type=str)
+@app.route('/getProjectStats', methods=['GET'])
+def get_project_stats(service: RetrievalService) -> Response:
+    project_name = request.args.get('project_name', default='', type=str)
 
-    if course_name == '':
-        abort(400, description="Missing required parameter: 'course_name' must be provided.")
+    if project_name == '':
+        abort(400, description="Missing required parameter: 'project_name' must be provided.")
 
-    course_stats = service.getCourseStats(course_name)
+    project_stats = service.getProjectStats(project_name)
 
-    response = jsonify(course_stats)
+    response = jsonify(project_stats)
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 

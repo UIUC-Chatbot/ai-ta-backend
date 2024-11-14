@@ -191,27 +191,10 @@ class SQLDatabase:
 
     return all_data, total_count
   
-  def getCourseStats(self, course_name: str) -> Dict[str, int]:
-      conversations_response = self.supabase_client.table("llm-convo-monitor") \
-          .select("id, user_email, convo_id", count="exact") \
-          .eq("course_name", course_name) \
-          .execute()
-      
-      total_conversations = conversations_response.count if conversations_response.count else 0
-      
-      unique_users = set(record["user_email"] 
-                        for record in conversations_response.data 
-                        if record.get("user_email"))
-      total_users = len(unique_users)
+  def getProjectStats(self, project_name: str):
+    response = self.supabase_client.table("project_stats").select("total_messages, total_conversations, unique_users")\
+                .eq("project_name", project_name).execute()
+    
+    return response.data[0] if response.data else {"total_messages": 0, "total_conversations": 0, "unique_users": 0}
 
-      messages_response = self.supabase_client.rpc(
-          "get_message_count", 
-          {"course": course_name}).execute()
-      total_messages = messages_response.data if messages_response.data else 0
-
-      return {
-          "total_conversations": total_conversations,
-          "total_users": total_users, 
-          "total_messages": total_messages
-      }
       

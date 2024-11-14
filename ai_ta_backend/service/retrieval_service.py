@@ -575,12 +575,12 @@ class RetrievalService:
         'heatmap': {day: dict(hours) for day, hours in grouped_data['heatmap'].items()},
     }
 
-  def getCourseStats(self, course_name: str) -> Dict[str, int]:
+  def getProjectStats(self, project_name: str) -> Dict[str, int]:
     """
-    Get statistics about conversations for a course.
+    Get statistics for a project.
     
     Args:
-        course_name (str): Name of the course to get stats for
+        project_name (str)
 
     Returns:
         Dict[str, int]: Dictionary containing:
@@ -588,5 +588,5 @@ class RetrievalService:
             - total_users: Number of unique users
             - total_messages: Total number of messages
     """
-    return self.sqlDb.getCourseStats(course_name)
+    return self.sqlDb.getProjectStats(project_name)
   
