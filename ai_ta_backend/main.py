@@ -19,7 +19,7 @@ from flask_executor import Executor
 from flask_injector import FlaskInjector, RequestScope
 from injector import Binder, SingletonScope
 
-from ai_ta_backend.beam.nomic_logging import create_document_map
+#from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
@@ -207,19 +207,19 @@ def nomic_map(service: NomicService):
 #   response.headers.add('Access-Control-Allow-Origin', '*')
 #   return response
 
-# @app.route('/createConversationMap', methods=['GET'])
-# def createConversationMap(service: NomicService):
-#   course_name: str = request.args.get('course_name', default='', type=str)
+@app.route('/createConversationMap', methods=['GET'])
+def createConversationMap(service: NomicService):
+  course_name: str = request.args.get('course_name', default='', type=str)
 
-#   if course_name == '':
-#     # proper web error "400 Bad request"
-#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-#   map_id = service.create_conversation_map(course_name)
+  map_id = service.create_conversation_map(course_name)
 
-#   response = jsonify(map_id)
-#   response.headers.add('Access-Control-Allow-Origin', '*')
-#   return response
+  response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 # @app.route('/logToConversationMap', methods=['GET'])
 # def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
