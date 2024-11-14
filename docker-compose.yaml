@@ -12,6 +12,8 @@ services:
     image: qdrant/qdrant:v1.9.5
     restart: always
     container_name: qdrant
+    environment:
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
     ports:
       - 6333:6333
       - 6334:6334
@@ -32,7 +34,7 @@ services:
           "-f",
           "-H",
           "Authorization: Bearer qd-SbvSWrYpa473J33yPjdL",
-          "http://localhost:6333/health"
+          "http://localhost:6333/health",
         ]
       interval: 30s
       timeout: 10s
@@ -65,7 +67,7 @@ services:
       - ./db:/usr/src/app/db # Mount local directory to store SQLite database
     networks:
       - my-network
-      - supabase_default  # Add connection to Supabase network
+      - supabase_default # Add connection to Supabase network
     depends_on:
       - qdrant
       - redis
@@ -86,8 +88,8 @@ services:
 # this will allow you to use service discovery and address a container by its name from within the network
 networks:
   my-network: {}
-  supabase_default:    # Add this network
-    external: true     # Mark as external since it's managed by Supabase
+  supabase_default:
+    external: true # Mark as external since it's managed by Supabase
 
 volumes:
   redis-data: {}
