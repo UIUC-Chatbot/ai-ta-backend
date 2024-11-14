@@ -192,6 +192,15 @@ def nomic_map(service: NomicService):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/updateConversationMaps', methods=['GET'])
+def updateConversationMaps(service: NomicService):
+  
+  response = service.update_conversation_maps()
+
+  response = jsonify(response)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 # @app.route('/createDocumentMap', methods=['GET'])
 # def createDocumentMap(service: NomicService):

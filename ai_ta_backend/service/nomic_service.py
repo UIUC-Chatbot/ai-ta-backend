@@ -29,40 +29,111 @@ class NomicService():
     self.sentry = sentry
     self.sql = sql
 
-  # def get_nomic_map(self, course_name: str, type: str):
-  #   """
-	# 	Returns the variables necessary to construct an iframe of the Nomic map given a course name.
-	# 	We just need the ID and URL.
-	# 	Example values:
-	# 		map link: https://atlas.nomic.ai/map/ed222613-97d9-46a9-8755-12bbc8a06e3a/f4967ad7-ff37-4098-ad06-7e1e1a93dd93
-	# 		map id: f4967ad7-ff37-4098-ad06-7e1e1a93dd93
-	# 	"""
-  #   # nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
-  #   if type.lower() == 'document':
-  #     NOMIC_MAP_NAME_PREFIX = 'Document Map for '
-  #   else:
-  #     NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
+  def get_nomic_map(self, course_name: str, type: str):
+    """
+		Returns the variables necessary to construct an iframe of the Nomic map given a course name.
+		We just need the ID and URL.
+		Example values:
+			map link: https://atlas.nomic.ai/map/ed222613-97d9-46a9-8755-12bbc8a06e3a/f4967ad7-ff37-4098-ad06-7e1e1a93dd93
+			map id: f4967ad7-ff37-4098-ad06-7e1e1a93dd93
+		"""
+    # nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
+    if type.lower() == 'document':
+      NOMIC_MAP_NAME_PREFIX = 'Document Map for '
+    else:
+      NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
 
-  #   project_name = NOMIC_MAP_NAME_PREFIX + course_name
-  #   start_time = time.monotonic()
+    project_name = NOMIC_MAP_NAME_PREFIX + course_name
+    project_name = project_name.replace(" ", "-").lower()
+    start_time = time.monotonic()
 
-  #   try:
-  #     project = atlas.AtlasProject(name=project_name, add_datums_if_exists=True)
-  #     map = project.get_map(project_name)
+    try:
+      project = AtlasDataset(project_name)
+      map = project.get_map(course_name + "_convo_index")
 
-  #     print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
-  #     return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
-  #   except Exception as e:
-  #     # Error: ValueError: You must specify a unique_id_field when creating a new project.
-  #     if str(e) == 'You must specify a unique_id_field when creating a new project.':  # type: ignore
-  #       print(
-  #           "Nomic map does not exist yet, probably because you have less than 20 queries/documents on your project: ",
-  #           e)
-  #     else:
-  #       print("ERROR in get_nomic_map():", e)
-  #       self.sentry.capture_exception(e)
-  #     return {"map_id": None, "map_link": None}
+      print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
+      return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
+    except Exception as e:
+      # Error: ValueError: You must specify a unique_id_field when creating a new project.
+      if str(e) == 'You must specify a unique_id_field when creating a new project.':  # type: ignore
+        print(
+            "Nomic map does not exist yet, probably because you have less than 20 queries/documents on your project: ",
+            e)
+      else:
+        print("ERROR in get_nomic_map():", e)
+        self.sentry.capture_exception(e)
+      return {"map_id": None, "map_link": None}
+    
+  def update_conversation_maps(self):
+    """
+    This function updates all conversation maps in UIUC.Chat. To be called via a CRON job.
+    """
+    try:
+      # fetch all projects from SQL
+      response = self.sql.getAllProjects()
+      projects = response.data
 
+      for project in projects:
+        #if not project['convo_map_id']:
+        created_maps = ['ECE408SP24', 'ECE408FA23', 'ECE220FA23', 'cropwizard-beta', 'FIN574-GT',
+                        'clowder-docs', 'COEadvising', 'gpt4', 'Law794-TransactionalDraftingAlam', 
+                        'gies-online-mba-v2', 'ProfDevPlan', 'ece120', 'cropwizard', 'maxlindsey', 'NCSA', 
+                        'PNBot']
+        if project['course_name'] not in created_maps:
+          # need to create a new conversation map
+          print("Creating new conversation map for course: ", project['course_name'])
+          status = self.create_conversation_map(project['course_name'])
+          print("Status of conversation map creation: ", status)
+          
+        
+        else:
+          print("Updating existing conversation map for course: ", project['course_name'])
+          # check the last uploaded conversation id
+          last_uploaded_convo_id = project['last_uploaded_convo_id']
+          response = self.sql.getCountFromLLMConvoMonitor(project['course_name'], last_id=last_uploaded_convo_id)
+          total_convo_count = response.count
+
+          if total_convo_count == 0:
+            print("No new conversations to log.")
+            continue
+          else:
+            print("Total number of unlogged conversations in Supabase: ", total_convo_count)
+            current_convo_count = 0
+            combined_dfs = []
+            while current_convo_count < total_convo_count:
+              response = self.sql.getAllConversationsBetweenIds(project['course_name'], last_uploaded_convo_id, 0, 100)
+              if len(response.data) == 0:
+                break
+              curr_df = pd.DataFrame(response.data)
+              combined_dfs.append(curr_df)
+              current_convo_count += len(response.data)
+
+            # concat all dfs from the combined_dfs list
+            final_df = pd.concat(combined_dfs, ignore_index=True)
+            # prep data for nomic upload
+            embeddings, metadata = self.data_prep_for_convo_map(final_df)
+
+            # append to existing map
+            print("Appending data to existing map...")
+            result = self.append_to_map(embeddings, metadata, "Conversation Map for " + project['course_name'])
+            if result == "success":
+              last_id = int(final_df['id'].iloc[-1])
+              project_info = {'last_uploaded_convo_id': last_id}
+              project_response = self.sql.updateProjects(project['course_name'], project_info)
+              print("Update response from supabase: ", project_response)
+
+              # rebuild the map
+              self.rebuild_map(project['course_name'], "conversation")
+
+            else:
+              print("Error in appending to existing map: ", result)
+
+      return "success"
+    
+    except Exception as e:
+      print("Error in update_conversation_maps():", e)
+      self.sentry.capture_exception(e)
+      return f"Error in updating conversation maps: {e}"
 
   # def log_to_conversation_map(self, course_name: str, conversation):
   #   """
@@ -464,9 +535,11 @@ class NomicService():
       map_name = map_name.replace(" ", "-").lower()
       print("in append_to_map() for map name: ", map_name)
       project = AtlasDataset(map_name)
-      with project.wait_for_dataset_lock():
+      if project.is_accepting_data:
         #project.add_data(embeddings=embeddings, data=metadata)
         project.add_data(data=metadata)
+      else:
+        print("Project is currently indexing and cannot ingest new datums. Try again later.")
       return "success"
     except Exception as e:
       print(e)

@@ -159,3 +159,6 @@ class SQLDatabase:
   
   def getConversationsCreatedAtByCourse(self, course_name: str):
     return self.supabase_client.table("llm-convo-monitor").select("created_at").eq("course_name", course_name).execute()
+  
+  def getAllProjects(self):
+    return self.supabase_client.table("projects").select("course_name, doc_map_id, convo_map_id, last_uploaded_doc_id, last_uploaded_convo_id").execute()
