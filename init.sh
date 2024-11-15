@@ -1,6 +1,11 @@
 #!/bin/bash
 
-git submodule update --init --recursive
+# Sparse checkout for supabase/docker
+git submodule update --init --depth 1 && \
+cd supabase && \
+git sparse-checkout init --cone && \
+git sparse-checkout set docker && \
+cd ..
 
 if [ ! -f ./supabase/docker/.env ]; then
   cp ./supabase/docker/.env.example ./supabase/docker/.env
