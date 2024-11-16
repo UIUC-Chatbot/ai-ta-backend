@@ -74,18 +74,12 @@ class NomicService():
       projects = response.data
 
       for project in projects:
-        #if not project['convo_map_id']:
-        created_maps = ['ECE408SP24', 'ECE408FA23', 'ECE220FA23', 'cropwizard-beta', 'FIN574-GT',
-                        'clowder-docs', 'COEadvising', 'gpt4', 'Law794-TransactionalDraftingAlam', 
-                        'gies-online-mba-v2', 'ProfDevPlan', 'ece120', 'cropwizard', 'maxlindsey', 'NCSA', 
-                        'PNBot']
-        if project['course_name'] not in created_maps:
+        if not project['convo_map_id']:
           # need to create a new conversation map
           print("Creating new conversation map for course: ", project['course_name'])
           status = self.create_conversation_map(project['course_name'])
           print("Status of conversation map creation: ", status)
           
-        
         else:
           print("Updating existing conversation map for course: ", project['course_name'])
           # check the last uploaded conversation id
@@ -134,6 +128,70 @@ class NomicService():
       print("Error in update_conversation_maps():", e)
       self.sentry.capture_exception(e)
       return f"Error in updating conversation maps: {e}"
+    
+
+  def update_document_maps(self):
+    """
+    This function updates all document maps in UIUC.Chat. To be called via a CRON job.
+    """
+    try:
+      # fetch all projects from SQL
+      response = self.sql.getAllProjects()
+      projects = response.data
+
+      for project in projects:
+        if not project['doc_map_id']:
+          # need to create a new document map
+          print("Creating new document map for course: ", project['course_name'])
+          status = self.create_document_map(project['course_name'])
+          print("Status of document map creation: ", status)
+          
+        else:
+          print("Updating existing document map for course: ", project['course_name'])
+          # check the last uploaded document id
+          last_uploaded_doc_id = project['last_uploaded_doc_id']
+          response = self.sql.getCountFromDocuments(project['course_name'], last_id=last_uploaded_doc_id)
+          total_doc_count = response.count
+
+          if total_doc_count == 0:
+            print("No new documents to log.")
+            continue
+          else:
+            print("Total number of unlogged documents in Supabase: ", total_doc_count)
+            current_doc_count = 0
+            combined_dfs = []
+            while current_doc_count < total_doc_count:
+              response = self.sql.getDocsForIdsGte(course_name=project['course_name'], first_id=last_uploaded_doc_id, limit=100)
+              if len(response.data) == 0:
+                break
+              curr_df = pd.DataFrame(response.data)
+              combined_dfs.append(curr_df)
+              current_doc_count += len(response.data)
+
+            # concat all dfs from the combined_dfs list
+            final_df = pd.concat(combined_dfs, ignore_index=True)
+            # prep data for nomic upload
+            embeddings, metadata = self.data_prep_for_doc_map(final_df)
+
+            # append to existing map
+            print("Appending data to existing map...")
+            result = self.append_to_map(embeddings, metadata, "Document Map for " + project['course_name'])
+            if result == "success":
+              last_id = int(final_df['id'].iloc[-1])
+              project_info = {'last_uploaded_doc_id': last_id}
+              project_response = self.sql.updateProjects(project['course_name'], project_info)
+              print("Update response from supabase: ", project_response)
+
+              # rebuild the map
+              self.rebuild_map(project['course_name'], "document")
+
+            else:
+              print("Error in appending to existing map: ", result)
+
+      return "success"
+    
+    except Exception as e:
+      print("Error in update_document_maps", e)
 
 
   def create_conversation_map(self, course_name: str):
@@ -543,7 +601,7 @@ class NomicService():
         if isinstance(messages[0]['content'], list):
           if 'text' in messages[0]['content'][0]:
             first_message = messages[0]['content'][0]['text']
-            #print("First message:", first_message)
+
         else:
           first_message = messages[0]['content']
         user_queries.append(first_message)
@@ -574,20 +632,12 @@ class NomicService():
             "created_at": created_at,
             "modified_at": current_time
         }
-        #print("Metadata row:", meta_row)
+        
         metadata.append(meta_row)
-
-      # embeddings_model = OpenAIEmbeddings(openai_api_type="openai",
-      #                                     openai_api_base="https://api.openai.com/v1/",
-      #                                     openai_api_key=os.environ['VLADS_OPENAI_KEY'],
-      #                                     openai_api_version="2020-11-07")
-      # embeddings = embeddings_model.embed_documents(user_queries)
 
       metadata = pd.DataFrame(metadata)
       embeddings = []
-      # embeddings = np.array(embeddings)
       print("Metadata shape:", metadata.shape)
-      # print("Embeddings shape:", embeddings.shape)
       return embeddings, metadata
 
     except Exception as e:
@@ -603,7 +653,7 @@ class NomicService():
     try:
       metadata = []
       embeddings = []
-      texts = []
+      
 
       for index, row in df.iterrows():
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -630,7 +680,6 @@ class NomicService():
         }
 
         metadata.append(meta_row)
-        texts.append(text_row)
       
       metadata = pd.DataFrame(metadata)
       embeddings = []
