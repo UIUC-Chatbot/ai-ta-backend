@@ -560,6 +560,7 @@ def configure(binder: Binder) -> None:
       except Exception as e:
         logging.error(f"❌ Failed to connect to {db_type} database: {str(e)}")
         continue
+
   # Conditionally bind databases based on the availability of their respective secrets
   if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(
       os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
