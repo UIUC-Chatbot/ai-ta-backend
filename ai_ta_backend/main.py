@@ -562,13 +562,16 @@ def configure(binder: Binder) -> None:
         continue
 
   # Conditionally bind databases based on the availability of their respective secrets
-  if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(
+  if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_COLLECTION_NAME"]) or any(
       os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
     logging.info("Binding to Qdrant database")
 
     logging.info(f"Qdrant Collection Name: {os.environ['QDRANT_COLLECTION_NAME']}")
     logging.info(f"Qdrant URL: {os.environ['QDRANT_URL']}")
-    logging.info(f"Qdrant API Key: {os.environ['QDRANT_API_KEY']}")
+    if os.getenv("QDRANT_API_KEY"):
+      logging.info(f"Qdrant API Key: {os.environ['QDRANT_API_KEY']}")
+    else:
+      logging.warning("Qdrant API Key is not set")
     binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
     vector_bound = True
 
