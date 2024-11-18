@@ -19,6 +19,7 @@ set -e
 
 # Start the Supabase Docker Compose
 echo "Starting Supabase services..."
+docker compose -f ./supabase/docker/docker-compose.yml down -v
 docker compose -f ./supabase/docker/docker-compose.yml -f ./docker-compose.override.yml up -d
 
 # Wait for the database to be ready
@@ -29,6 +30,7 @@ done
 
 # Start the parent Docker Compose
 echo "Starting application services..."
-docker compose -f ./docker-compose.yaml up -d
+docker compose -f ./docker-compose.yaml down -v
+docker compose -f ./docker-compose.yaml up --build -d
 
 echo "All services are up!"
