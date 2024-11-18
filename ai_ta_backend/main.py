@@ -551,21 +551,6 @@ def get_conversation_stats(service: RetrievalService) -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-
-@app.route('/getConversationHeatmapByHour', methods=['GET'])
-def get_questions_heatmap_by_hour(service: RetrievalService) -> Response:
-  course_name = request.args.get('course_name', default='', type=str)
-
-  if not course_name:
-    abort(400, description="Missing required parameter: 'course_name' must be provided.")
-
-  heatmap_data = service.getConversationHeatmapByHour(course_name)
-
-  response = jsonify(heatmap_data)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
 @app.route('/run_flow', methods=['POST'])
 def run_flow(service: WorkflowService) -> Response:
   """
@@ -622,6 +607,20 @@ def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> 
   response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
+
+@app.route('/getProjectStats', methods=['GET'])
+def get_project_stats(service: RetrievalService) -> Response:
+    project_name = request.args.get('project_name', default='', type=str)
+
+    if project_name == '':
+        abort(400, description="Missing required parameter: 'project_name' must be provided.")
+
+    project_stats = service.getProjectStats(project_name)
+
+    response = jsonify(project_stats)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 
 def configure(binder: Binder) -> None:
