@@ -18,6 +18,9 @@ class AWSStorage():
       )
     elif all(os.getenv(key) for key in ["MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_URL"]):
       logging.info("Using Minio for storage")
+      minio_url = os.getenv('MINIO_URL')
+      if not minio_url.startswith('http://') and not minio_url.startswith('https://'):
+          minio_url = 'http://' + minio_url  # Add default protocol if missing
       self.s3_client = boto3.client('s3',
                                     endpoint_url=os.getenv('MINIO_URL'),
                                     aws_access_key_id=os.getenv('MINIO_ACCESS_KEY'),

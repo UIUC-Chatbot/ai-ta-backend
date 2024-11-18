@@ -392,6 +392,8 @@ class RetrievalService:
               "doc_groups": doc_groups,
           },
       )
+    else:
+      logging.info("Posthog service not available. Skipping event capture.")
 
   def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n):
     qdrant_start_time = time.monotonic()
@@ -433,6 +435,8 @@ class RetrievalService:
               "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,
           },
       )
+    else:
+      logging.info("Posthog service not available. Skipping event capture.")
 
   def _calculate_vector_scores(self, search_results):
     max_vector_score = 0

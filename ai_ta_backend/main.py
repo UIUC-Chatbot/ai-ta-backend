@@ -39,7 +39,7 @@ from ai_ta_backend.executors.thread_pool_executor import \
 from ai_ta_backend.extensions import db
 from ai_ta_backend.service.export_service import ExportService
 from ai_ta_backend.service.nomic_service import NomicService
-from ai_ta_backend.service.posthog_service import PosthogService
+# from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
@@ -355,34 +355,34 @@ def exportDocuments(service: ExportService):
   return response
 
 
-@app.route('/getTopContextsWithMQR', methods=['GET'])
-def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogService) -> Response:
-  """
-  Get relevant contexts for a given search query, using Multi-query retrieval + filtering method.
-  """
-  search_query: str = request.args.get('search_query', default='', type=str)
-  course_name: str = request.args.get('course_name', default='', type=str)
-  token_limit: int = request.args.get('token_limit', default=3000, type=int)
-  if search_query == '' or course_name == '':
-    # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
-    )
+# @app.route('/getTopContextsWithMQR', methods=['GET'])
+# def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogService) -> Response:
+#   """
+#   Get relevant contexts for a given search query, using Multi-query retrieval + filtering method.
+#   """
+#   search_query: str = request.args.get('search_query', default='', type=str)
+#   course_name: str = request.args.get('course_name', default='', type=str)
+#   token_limit: int = request.args.get('token_limit', default=3000, type=int)
+#   if search_query == '' or course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(
+#         400,
+#         description=
+#         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
+#     )
 
-  posthog_service.capture(event_name='filter_top_contexts_invoked',
-                          properties={
-                              'user_query': search_query,
-                              'course_name': course_name,
-                              'token_limit': token_limit,
-                          })
+#   posthog_service.capture(event_name='filter_top_contexts_invoked',
+#                           properties={
+#                               'user_query': search_query,
+#                               'course_name': course_name,
+#                               'token_limit': token_limit,
+#                           })
 
-  found_documents = service.getTopContextsWithMQR(search_query, course_name, token_limit)
+#   found_documents = service.getTopContextsWithMQR(search_query, course_name, token_limit)
 
-  response = jsonify(found_documents)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   response = jsonify(found_documents)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 
 @app.route('/getworkflows', methods=['GET'])
@@ -589,9 +589,9 @@ def configure(binder: Binder) -> None:
     logging.info("Binding to Nomic service")
     binder.bind(NomicService, to=NomicService, scope=SingletonScope)
 
-  if os.getenv("POSTHOG_API_KEY"):
-    logging.info("Binding to Posthog service")
-    binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
+  # if os.getenv("POSTHOG_API_KEY"):
+  #   logging.info("Binding to Posthog service")
+  #   binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
 
   if os.getenv("SENTRY_DSN"):
     logging.info("Binding to Sentry service")
