@@ -201,6 +201,15 @@ def updateConversationMaps(service: NomicService):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/updateDocumentMaps', methods=['GET'])
+def updateDocumentMaps(service: NomicService):
+  
+  response = service.update_document_maps()
+
+  response = jsonify(response)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/createDocumentMap', methods=['GET'])
 def createDocumentMap(service: NomicService):
@@ -246,27 +255,27 @@ def createConversationMap(service: NomicService):
 #   return response
 
 
-@app.route('/onResponseCompletion', methods=['POST'])
-def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
-  data = request.get_json()
-  course_name = data['course_name']
-  conversation = data['conversation']
+# @app.route('/onResponseCompletion', methods=['POST'])
+# def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
+#   data = request.get_json()
+#   course_name = data['course_name']
+#   conversation = data['conversation']
 
-  if course_name == '' or conversation == '':
-    # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
-    )
-  print(f"In /onResponseCompletion for course: {course_name}")
+#   if course_name == '' or conversation == '':
+#     # proper web error "400 Bad request"
+#     abort(
+#         400,
+#         description=
+#         f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
+#     )
+#   print(f"In /onResponseCompletion for course: {course_name}")
 
-  # background execution of tasks!!
-  #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
-  #result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
-  response = jsonify({'outcome': 'success'})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+  # # background execution of tasks!!
+  # #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
+  # #result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
+  # response = jsonify({'outcome': 'success'})
+  # response.headers.add('Access-Control-Allow-Origin', '*')
+  # return response
 
 
 @app.route('/export-convo-history-csv', methods=['GET'])
