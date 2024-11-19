@@ -118,22 +118,23 @@ class NomicService():
     
   def update_document_maps(self):
     """
-    Updates all document maps in UIUC.Chat.
+    Updates all document maps in UIUC.Chat by processing and uploading documents in batches.
     
     Returns:
         str: Status of document maps update process
     """
+    DOCUMENT_MAP_PREFIX = "Document Map for "
     BATCH_SIZE = 100
-    MAP_PREFIX = "Document Map for "
+    UPLOAD_THRESHOLD = 500
 
     try:
       # Fetch all projects
       projects = self.sql.getAllProjects().data
-
+        
       for project in projects:
         try:
           course_name = project['course_name']
-              
+                
           # Determine whether to create or update map
           if not project.get('doc_map_id'):
             print(f"Creating new document map for course: {course_name}")
@@ -144,53 +145,85 @@ class NomicService():
           # Check for new documents
           last_uploaded_doc_id = project['last_uploaded_doc_id']
           response = self.sql.getCountFromDocuments(course_name, last_id=last_uploaded_doc_id)
-              
+                
           if not response.count:
             print("No new documents to log.")
             continue
 
-          print(f"Total unlogged documents in Supabase: {response.count}")
-
-          # Fetch and process new documents
+          # Prepare update process
+          total_doc_count = response.count
+          print(f"Total unlogged documents in Supabase: {total_doc_count}")
+                
+          project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', 
+                    f"{DOCUMENT_MAP_PREFIX}{course_name}".replace(" ", "-").replace("_", "-").lower())
+          first_id = last_uploaded_doc_id
+                
           combined_dfs = []
           current_doc_count = 0
-          first_id = last_uploaded_doc_id
+          doc_count = 0
+          batch_number = 0
 
-          while current_doc_count < response.count:
-            docs_response = self.sql.getDocsForIdsGte(
-              course_name=course_name, 
-              first_id=first_id, 
-              limit=BATCH_SIZE
-            )
-                  
-            if not docs_response.data:
+          while current_doc_count < total_doc_count:
+            # Fetch documents in batches
+            response = self.sql.getDocsForIdsGte(
+                        course_name=course_name, 
+                        first_id=first_id, 
+                        limit=BATCH_SIZE
+                    )
+                    
+            if not response.data:
               break
 
-            curr_df = pd.DataFrame(docs_response.data)
-            combined_dfs.append(curr_df)
-            current_doc_count += len(docs_response.data)
-            first_id = docs_response.data[-1]['id'] + 1
+            df = pd.DataFrame(response.data)
+            combined_dfs.append(df)
+            current_doc_count += len(response.data)
+            doc_count += len(response.data)
 
-          # Prepare and append data to map
-          final_df = pd.concat(combined_dfs, ignore_index=True)
-          metadata = self.data_prep_for_doc_map(final_df)
+            # Determine if we should process the batch
+            should_process = (
+                        doc_count >= UPLOAD_THRESHOLD or 
+                        current_doc_count >= total_doc_count
+                    )
 
-          print("Appending data to existing map...")
-          map_name = re.sub(r'[^a-zA-Z0-9\s-]', '', f"{MAP_PREFIX}{course_name}".replace(" ", "-").replace("_", "-").lower())
-          result = self.append_to_map(
-            metadata=metadata, 
-            map_name=map_name
-          )
+            if should_process:
+              batch_number += 1
+              print(f"\nProcessing batch #{batch_number}")
+                        
+              final_df = pd.concat(combined_dfs, ignore_index=True)
+              metadata = self.data_prep_for_doc_map(final_df)
+                        
+              # Upload to map
+              result = self.append_to_map(
+                            metadata=metadata,
+                            map_name=project_name
+                        )
 
-          if result == "success":
-            last_id = int(final_df['id'].iloc[-1])
-            project_info = {'last_uploaded_doc_id': last_id}
-                  
-            # Update project and rebuild map
-            self.sql.updateProjects(course_name, project_info)
-            self.rebuild_map(course_name, "document")
-          else:
-            print(f"Error in updating document map for {course_name}: {result}")
+              if result == "success":
+                last_id = int(final_df['id'].iloc[-1])
+                project_info = {'last_uploaded_doc_id': last_id}
+                self.sql.updateProjects(course_name, project_info)
+                            
+                print(f"Completed batch #{batch_number}. "
+                  f"Documents processed: {current_doc_count}/{total_doc_count}")
+              else:
+                print(f"Error in uploading batch for {course_name}: {result}")
+                raise Exception(f"Batch upload failed: {result}")
+
+              # Reset for next batch
+              combined_dfs = []
+              doc_count = 0
+
+            # Prepare for next iteration
+            first_id = response.data[-1]['id'] + 1
+
+            # Exit condition to prevent infinite loop
+            if current_doc_count >= total_doc_count:
+              break
+
+          # Rebuild map after all documents are processed
+          self.rebuild_map(course_name, "document")
+          print(f"\nSuccessfully processed all documents for {course_name}")
+          print(f"Total batches processed: {batch_number}")
 
         except Exception as e:
           print(f"Error in updating document map for {course_name}: {e}")
@@ -198,11 +231,11 @@ class NomicService():
           continue
 
       return "success"
-  
+    
     except Exception as e:
-      print(f"Error in update_document_maps: {e}")
-      self.sentry.capture_exception(e)
-      return f"Error in update_document_maps: {e}"
+        print(f"Error in update_document_maps: {e}")
+        self.sentry.capture_exception(e)
+        return f"Error in update_document_maps: {e}"
   
   def create_conversation_map(self, course_name: str):
     """
