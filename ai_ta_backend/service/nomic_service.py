@@ -25,9 +25,16 @@ class NomicService():
 
   @inject
   def __init__(self, sentry: SentryService, sql: SQLAlchemyDatabase):
-    nomic.login(os.environ['NOMIC_API_KEY'])
-    self.sentry = sentry
-    self.sql = sql
+      self.sentry = sentry
+      self.sql = sql
+      NOMIC_API_KEY = os.environ.get('NOMIC_API_KEY')
+
+      if NOMIC_API_KEY:
+          nomic.login(NOMIC_API_KEY)
+          self.nomic_available = True
+      else:
+          logging.info("NOMIC_API_KEY not found. Nomic functionality will be disabled.")
+          self.nomic_available = False
 
   def get_nomic_map(self, course_name: str, type: str):
     """
@@ -37,6 +44,9 @@ class NomicService():
 			map link: https://atlas.nomic.ai/map/ed222613-97d9-46a9-8755-12bbc8a06e3a/f4967ad7-ff37-4098-ad06-7e1e1a93dd93
 			map id: f4967ad7-ff37-4098-ad06-7e1e1a93dd93
 		"""
+    if not self.nomic_available:
+        logging.warning("Nomic functionality is disabled. Cannot get Nomic map.")
+        return {"map_id": None, "map_link": None}
     # nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
     if type.lower() == 'document':
       NOMIC_MAP_NAME_PREFIX = 'Document Map for '

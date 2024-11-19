@@ -181,18 +181,18 @@ def delete(service: RetrievalService, flaskExecutor: ExecutorInterface):
 @app.route('/getNomicMap', methods=['GET'])
 def nomic_map(service: NomicService):
   course_name: str = request.args.get('course_name', default='', type=str)
-  map_type: str = request.args.get('map_type', default='conversation', type=str)
+  map_type: str = request.args.get('type', default='document', type=str)
 
   if course_name == '':
     # proper web error "400 Bad request"
     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  map_id = service.get_nomic_map(course_name, map_type)
-  logging.info("nomic map\n", map_id)
+  nomic_map_info = service.get_nomic_map(course_name, map_type)
 
-  response = jsonify(map_id)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+  if nomic_map_info["map_id"] is None:
+      return jsonify({"message": "Nomic functionality is disabled or map not available."}), 200
+
+  return jsonify(nomic_map_info)
 
 
 # @app.route('/createDocumentMap', methods=['GET'])
