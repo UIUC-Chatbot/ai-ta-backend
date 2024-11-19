@@ -259,7 +259,7 @@ class NomicService():
       # Validate conversation count
       response = self.sql.getCountFromLLMConvoMonitor(course_name, last_id=0)
       if not response.count or response.count < MIN_CONVERSATIONS:
-        return f"Cannot create map: {'' if not response.count else 'Less than 20 conversations'}"
+        return f"Cannot create map: {'No docs present' if not response.count else 'Less than 20 conversations'}"
 
       # Prepare map creation
       total_convo_count = response.count
@@ -521,6 +521,9 @@ class NomicService():
     """
     try:
       print(f"Appending to map: {map_name}")
+      if map_name == 'conversation-map-for-pnbot':
+        print("Skipping append to PNBot map")
+        return "success"
       project = AtlasDataset(map_name)
         
       # if not project.is_accepting_data:
