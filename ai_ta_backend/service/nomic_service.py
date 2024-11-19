@@ -259,7 +259,7 @@ class NomicService():
       # Validate conversation count
       response = self.sql.getCountFromLLMConvoMonitor(course_name, last_id=0)
       if not response.count or response.count < MIN_CONVERSATIONS:
-        return f"Cannot create map: {'No docs present' if not response.count else 'Less than 20 conversations'}"
+        return f"Cannot create map: {'No new convos present' if not response.count else 'Less than 20 conversations'}"
 
       # Prepare map creation
       total_convo_count = response.count
@@ -359,7 +359,7 @@ class NomicService():
       # Validate document count
       response = self.sql.getCountFromDocuments(course_name, last_id=0)
       if not response.count or response.count < MIN_DOCUMENTS:
-        return f"Cannot create map: {'' if not response.count else 'Less than 20 documents'}"
+        return f"Cannot create map: {'No new docs present' if not response.count else 'Less than 20 documents'}"
 
       # Prepare map creation
       total_doc_count = response.count
