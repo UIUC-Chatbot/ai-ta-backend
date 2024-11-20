@@ -558,9 +558,9 @@ def configure(binder: Binder) -> None:
     storage_bound = True
 
   # Conditionally bind services based on the availability of their respective secrets
-  # if os.getenv("NOMIC_API_KEY"):
-  #   logging.info("Binding to Nomic service")
-  #   binder.bind(NomicService, to=NomicService, scope=SingletonScope)
+  if os.getenv("NOMIC_API_KEY"):
+    logging.info("Binding to Nomic service")
+    binder.bind(NomicService, to=NomicService, scope=SingletonScope)
 
   if os.getenv("POSTHOG_API_KEY"):
     logging.info("Binding to Posthog service")

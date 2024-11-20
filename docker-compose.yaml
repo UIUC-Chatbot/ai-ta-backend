@@ -1,6 +1,6 @@
 services:
   redis:
-    image: redis:7.2
+    image: redis:latest
     restart: unless-stopped
     container_name: redis
     command: redis-server --requirepass ${INGEST_REDIS_PASSWORD}

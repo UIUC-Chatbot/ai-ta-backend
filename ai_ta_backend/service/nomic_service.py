@@ -25,7 +25,8 @@ class NomicService():
 
   @inject
   def __init__(self, sentry: SentryService, sql: SQLAlchemyDatabase):
-    nomic.login(os.environ['NOMIC_API_KEY'])
+    if os.getenv("NOMIC_API_KEY"):
+        nomic.login(os.getenv("NOMIC_API_KEY"))
     self.sentry = sentry
     self.sql = sql
 
@@ -68,7 +69,7 @@ class NomicService():
     2. If no, create it
     3. If yes, fetch all conversations since last upload and log it
     """
-    nomic.login(os.getenv('NOMIC_API_KEY'))
+    # nomic.login(os.getenv('NOMIC_API_KEY'))
     NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
     try:
       # check if map exists
@@ -236,7 +237,7 @@ class NomicService():
     """
     This function creates a conversation map for a given course from scratch.
     """
-    nomic.login(os.getenv('NOMIC_API_KEY'))
+    # nomic.login(os.getenv('NOMIC_API_KEY'))
     NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
     try:
       # check if map exists
@@ -379,7 +380,7 @@ class NomicService():
     This function rebuilds a given map in Nomic.
     """
     logging.info("in rebuild_map()")
-    nomic.login(os.getenv('NOMIC_API_KEY'))
+    # nomic.login(os.getenv('NOMIC_API_KEY'))
 
     if map_type.lower() == 'document':
       NOMIC_MAP_NAME_PREFIX = 'Document Map for '
@@ -410,7 +411,7 @@ class NomicService():
 			topic_label_field: str
 			colorable_fields: list of str
 		"""
-    nomic.login(os.environ['NOMIC_API_KEY'])
+    # nomic.login(os.environ['NOMIC_API_KEY'])
     logging.info("in create_map()")
     try:
       project = atlas.map_embeddings(embeddings=embeddings,
@@ -435,7 +436,7 @@ class NomicService():
 			metadata: pd.DataFrame of Nomic upload metadata
 			map_name: str
 		"""
-    nomic.login(os.environ['NOMIC_API_KEY'])
+    # nomic.login(os.environ['NOMIC_API_KEY'])
     try:
       project = atlas.AtlasProject(name=map_name, add_datums_if_exists=True)
       with project.wait_for_project_lock():
