@@ -84,7 +84,12 @@ class Ingest:
             print("QDRANT API KEY OR URL NOT FOUND!")
 
         if self.aws_access_key_id and self.aws_secret_access_key:
-            self.s3_client = boto3.client('s3', aws_access_key_id=self.aws_access_key_id, aws_secret_access_key=self.aws_secret_access_key)
+            self.s3_client = boto3.client(
+                's3',
+                endpoint_url=os.getenv('MINIO_URL'), # Automatically uses Minio if this is set, otherwise S3.
+                aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+            )
         else:
             print("AWS ACCESS KEY ID OR SECRET ACCESS KEY NOT FOUND!")
         self.sql_session = SQLAlchemyIngestDB()
