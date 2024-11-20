@@ -27,14 +27,11 @@ class NomicService():
   def __init__(self, sentry: SentryService, sql: SQLAlchemyDatabase):
       self.sentry = sentry
       self.sql = sql
-      NOMIC_API_KEY = os.environ.get('NOMIC_API_KEY')
 
-      if NOMIC_API_KEY:
-          nomic.login(NOMIC_API_KEY)
-          self.nomic_available = True
+      if os.getenv('NOMIC_API_KEY'):
+        nomic.login(os.getenv('NOMIC_API_KEY'))
       else:
-          logging.info("NOMIC_API_KEY not found. Nomic functionality will be disabled.")
-          self.nomic_available = False
+        logging.info("NOMIC_API_KEY not found. Nomic functionality will be disabled.")
 
   def get_nomic_map(self, course_name: str, type: str):
     """
@@ -44,7 +41,7 @@ class NomicService():
 			map link: https://atlas.nomic.ai/map/ed222613-97d9-46a9-8755-12bbc8a06e3a/f4967ad7-ff37-4098-ad06-7e1e1a93dd93
 			map id: f4967ad7-ff37-4098-ad06-7e1e1a93dd93
 		"""
-    if not self.nomic_available:
+    if not os.getenv('NOMIC_API_KEY'):
         logging.warning("Nomic functionality is disabled. Cannot get Nomic map.")
         return {"map_id": None, "map_link": None}
     # nomic.login(os.getenv('NOMIC_API_KEY'))  # login during start of flask app
@@ -78,7 +75,7 @@ class NomicService():
     2. If no, create it
     3. If yes, fetch all conversations since last upload and log it
     """
-    nomic.login(os.getenv('NOMIC_API_KEY'))
+    # nomic.login(os.getenv('NOMIC_API_KEY'))
     NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
     try:
       # check if map exists
@@ -246,7 +243,7 @@ class NomicService():
     """
     This function creates a conversation map for a given course from scratch.
     """
-    nomic.login(os.getenv('NOMIC_API_KEY'))
+    # nomic.login(os.getenv('NOMIC_API_KEY'))
     NOMIC_MAP_NAME_PREFIX = 'Conversation Map for '
     try:
       # check if map exists
@@ -389,7 +386,7 @@ class NomicService():
     This function rebuilds a given map in Nomic.
     """
     logging.info("in rebuild_map()")
-    nomic.login(os.getenv('NOMIC_API_KEY'))
+    # nomic.login(os.getenv('NOMIC_API_KEY'))
 
     if map_type.lower() == 'document':
       NOMIC_MAP_NAME_PREFIX = 'Document Map for '
@@ -420,7 +417,7 @@ class NomicService():
 			topic_label_field: str
 			colorable_fields: list of str
 		"""
-    nomic.login(os.environ['NOMIC_API_KEY'])
+    # nomic.login(os.environ['NOMIC_API_KEY'])
     logging.info("in create_map()")
     try:
       project = atlas.map_embeddings(embeddings=embeddings,
@@ -445,7 +442,7 @@ class NomicService():
 			metadata: pd.DataFrame of Nomic upload metadata
 			map_name: str
 		"""
-    nomic.login(os.environ['NOMIC_API_KEY'])
+    # nomic.login(os.environ['NOMIC_API_KEY'])
     try:
       project = atlas.AtlasProject(name=map_name, add_datums_if_exists=True)
       with project.wait_for_project_lock():

@@ -9,26 +9,13 @@ class AWSStorage():
 
   @inject
   def __init__(self):
-    if all(os.getenv(key) for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]):
-      logging.info("Using AWS for storage")
-      self.s3_client = boto3.client(
-          's3',
-          aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-          aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-      )
-    elif all(os.getenv(key) for key in ["MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_URL"]):
-      logging.info("Using Minio for storage")
-      minio_url = os.getenv('MINIO_URL')
-      if not minio_url.startswith('http://') and not minio_url.startswith('https://'):
-          minio_url = 'http://' + minio_url  # Add default protocol if missing
-      self.s3_client = boto3.client('s3',
-                                    endpoint_url=os.getenv('MINIO_URL'),
-                                    aws_access_key_id=os.getenv('MINIO_ACCESS_KEY'),
-                                    aws_secret_access_key=os.getenv('MINIO_SECRET_KEY'),
-                                    config=boto3.session.Config(signature_version='s3v4'),
-                                    region_name='us-east-1')
-    else:
-      raise ValueError("No valid storage credentials found.")
+    # This works for both Minio and AWS S3.
+    self.s3_client = boto3.client(
+        's3',
+        endpoint_url=os.getenv('MINIO_URL'), # Automatically uses Minio if this is set.
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    )
 
   def upload_file(self, file_path: str, bucket_name: str, object_name: str):
     self.s3_client.upload_file(file_path, bucket_name, object_name)
