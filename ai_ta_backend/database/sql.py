@@ -27,8 +27,7 @@ class SQLAlchemyDatabase:
         try:
             query = self.db.select(models.Document).where(models.Document.course_name == course_name)
             result = self.db.session.execute(query).scalars().all()
-            documents = [doc.to_dict() for doc in result]  # Convert each document to a dict
-            return DatabaseResponse(data=documents, count=len(result)).to_dict()
+            return DatabaseResponse(data=result, count=len(result))
         finally:
             self.db.session.close()
     

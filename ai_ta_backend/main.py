@@ -147,7 +147,10 @@ def getAll(service: RetrievalService) -> Response:
 
   distinct_dicts = service.getAll(course_name)
 
-  response = jsonify({"distinct_files": distinct_dicts})
+  # Convert each Document class instance to a JSON-serializable dict
+  json_dicts = [d.to_dict() for d in distinct_dicts]
+
+  response = jsonify({"distinct_files": json_dicts})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
@@ -548,12 +551,11 @@ def configure(binder: Binder) -> None:
     binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
     vector_bound = True
 
-  if all(os.getenv(key) for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "S3_BUCKET_NAME"]) or any(
-      os.getenv(key) for key in ["MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_URL"]):
-    if os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY"):
-      logging.info("Binding to AWS storage")
-    elif os.getenv("MINIO_ACCESS_KEY") and os.getenv("MINIO_SECRET_KEY"):
-      logging.info("Binding to Minio storage")
+  if any(os.getenv(key) for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "S3_BUCKET_NAME", "MINIO_URL"]):
+    if os.getenv("MINIO_URL"):
+      logging.info("Binding to MinIO storage")
+    else:
+      logging.info("Binding to AWS S3 storage")
     binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
     storage_bound = True
 
