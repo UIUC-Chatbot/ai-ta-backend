@@ -38,11 +38,14 @@ from ai_ta_backend.executors.thread_pool_executor import \
     ThreadPoolExecutorInterface
 from ai_ta_backend.extensions import db
 from ai_ta_backend.service.export_service import ExportService
-from ai_ta_backend.service.nomic_service import NomicService
+#from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
+
+from ai_ta_backend.redis_queue.ingestQueue import addJobToIngestQueue
+
 
 app = Flask(__name__)
 CORS(app)
@@ -144,7 +147,10 @@ def getAll(service: RetrievalService) -> Response:
 
   distinct_dicts = service.getAll(course_name)
 
-  response = jsonify({"distinct_files": distinct_dicts})
+  # Convert each Document class instance to a JSON-serializable dict
+  json_dicts = [d.to_dict() for d in distinct_dicts]
+
+  response = jsonify({"distinct_files": json_dicts})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
@@ -178,21 +184,21 @@ def delete(service: RetrievalService, flaskExecutor: ExecutorInterface):
   return response
 
 
-@app.route('/getNomicMap', methods=['GET'])
-def nomic_map(service: NomicService):
-  course_name: str = request.args.get('course_name', default='', type=str)
-  map_type: str = request.args.get('map_type', default='conversation', type=str)
+# @app.route('/getNomicMap', methods=['GET'])
+# def nomic_map(service: NomicService):
+#   course_name: str = request.args.get('course_name', default='', type=str)
+#   map_type: str = request.args.get('map_type', default='conversation', type=str)
 
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+#   if course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  map_id = service.get_nomic_map(course_name, map_type)
-  logging.info("nomic map\n", map_id)
+#   map_id = service.get_nomic_map(course_name, map_type)
+#   logging.info("nomic map\n", map_id)
 
-  response = jsonify(map_id)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   response = jsonify(map_id)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 
 # @app.route('/createDocumentMap', methods=['GET'])
@@ -210,58 +216,58 @@ def nomic_map(service: NomicService):
 #   return response
 
 
-@app.route('/createConversationMap', methods=['GET'])
-def createConversationMap(service: NomicService):
-  course_name: str = request.args.get('course_name', default='', type=str)
+# @app.route('/createConversationMap', methods=['GET'])
+# def createConversationMap(service: NomicService):
+#   course_name: str = request.args.get('course_name', default='', type=str)
 
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+#   if course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  map_id = service.create_conversation_map(course_name)
+#   map_id = service.create_conversation_map(course_name)
 
-  response = jsonify(map_id)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
-
-
-@app.route('/logToConversationMap', methods=['GET'])
-def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
-  course_name: str = request.args.get('course_name', default='', type=str)
-
-  if course_name == '':
-    # proper web error "400 Bad request"
-    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
-
-  #map_id = service.log_to_conversation_map(course_name)
-  map_id = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
-
-  response = jsonify(map_id)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   response = jsonify(map_id)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 
-@app.route('/onResponseCompletion', methods=['POST'])
-def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
-  data = request.get_json()
-  course_name = data['course_name']
-  conversation = data['conversation']
+# @app.route('/logToConversationMap', methods=['GET'])
+# def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
+#   course_name: str = request.args.get('course_name', default='', type=str)
 
-  if course_name == '' or conversation == '':
-    # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
-    )
-  logging.info(f"In /onResponseCompletion for course: {course_name}")
+#   if course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-  # background execution of tasks!!
-  #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
-  flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
-  response = jsonify({'outcome': 'success'})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   #map_id = service.log_to_conversation_map(course_name)
+#   map_id = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
+
+#   response = jsonify(map_id)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
+
+
+# @app.route('/onResponseCompletion', methods=['POST'])
+# def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
+#   data = request.get_json()
+#   course_name = data['course_name']
+#   conversation = data['conversation']
+
+#   if course_name == '' or conversation == '':
+#     # proper web error "400 Bad request"
+#     abort(
+#         400,
+#         description=
+#         f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
+#     )
+#   logging.info(f"In /onResponseCompletion for course: {course_name}")
+
+#   # background execution of tasks!!
+#   #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
+#   flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
+#   response = jsonify({'outcome': 'success'})
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 
 @app.route('/export-convo-history-csv', methods=['GET'])
@@ -475,6 +481,25 @@ def run_flow(service: WorkflowService) -> Response:
     else:
       abort(400, description=f"Bad request: {e}")
 
+@app.route('/ingest', methods=['POST'])
+def ingest() -> Response:
+  logging.info("In /ingest")
+
+  data = request.get_json()
+
+  # send data to redis_queue/ingestQueue.py
+  result = addJobToIngestQueue(data)
+  logging.info("Result from addJobToIngestQueue:  %s", result)
+
+  response = jsonify(
+    {
+      "outcome": f'Queued Ingest task',
+      "ingest_task_id": result
+    }
+  )
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 def configure(binder: Binder) -> None:
   vector_bound = False
@@ -526,12 +551,11 @@ def configure(binder: Binder) -> None:
     binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
     vector_bound = True
 
-  if all(os.getenv(key) for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "S3_BUCKET_NAME"]) or any(
-      os.getenv(key) for key in ["MINIO_ACCESS_KEY", "MINIO_SECRET_KEY", "MINIO_URL"]):
-    if os.getenv("AWS_ACCESS_KEY_ID") and os.getenv("AWS_SECRET_ACCESS_KEY"):
-      logging.info("Binding to AWS storage")
-    elif os.getenv("MINIO_ACCESS_KEY") and os.getenv("MINIO_SECRET_KEY"):
-      logging.info("Binding to Minio storage")
+  if any(os.getenv(key) for key in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "S3_BUCKET_NAME", "MINIO_URL"]):
+    if os.getenv("MINIO_URL"):
+      logging.info("Binding to MinIO storage")
+    else:
+      logging.info("Binding to AWS S3 storage")
     binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
     storage_bound = True
 

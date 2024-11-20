@@ -4,6 +4,15 @@ FROM python:3.10-slim
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
+# Install ffmpeg and git
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    git \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
 
 # Copy the requirements file first to leverage Docker cache
 COPY ai_ta_backend/requirements.txt .

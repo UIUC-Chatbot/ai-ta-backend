@@ -41,20 +41,21 @@ class RetrievalService:
 
     self.embeddings = OpenAIEmbeddings(
         model='text-embedding-ada-002',
-        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        openai_api_type=os.environ['OPENAI_API_TYPE'],
-        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        openai_api_version=os.environ["OPENAI_API_VERSION"],
+        openai_api_key=os.environ["OPENAI_API_KEY"],
+        # openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+        # openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+        # openai_api_type=os.environ['OPENAI_API_TYPE'],
+        # openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
 
-    self.llm = AzureChatOpenAI(
-        temperature=0,
-        deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
-        openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
-        openai_api_key=os.environ["AZURE_OPENAI_KEY"],
-        openai_api_version=os.environ["OPENAI_API_VERSION"],
-        openai_api_type=os.environ['OPENAI_API_TYPE'],
-    )
+    # self.llm = AzureChatOpenAI(
+    #     temperature=0,
+    #     deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
+    #     openai_api_base=os.environ["AZURE_OPENAI_ENDPOINT"],
+    #     openai_api_key=os.environ["AZURE_OPENAI_KEY"],
+    #     openai_api_version=os.environ["OPENAI_API_VERSION"],
+    #     openai_api_type=os.environ['OPENAI_API_TYPE'],
+    # )
 
   def getTopContexts(self,
                      search_query: str,

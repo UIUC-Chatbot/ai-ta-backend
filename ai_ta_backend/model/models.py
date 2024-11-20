@@ -94,6 +94,66 @@ class DocGroup(Base):
             "doc_count": self.doc_count
         }
     
+class DocumentsInProgress(Base):
+    __tablename__ = 'documents_in_progress'
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    created_at = Column(DateTime, default=func.now())
+    s3_path = Column(Text)
+    readable_filename = Column(Text)
+    course_name = Column(Text)
+    url = Column(Text)
+    contexts = Column(JSON, default=lambda: [{"text": "", "timestamp": "", "embedding": "", "pagenumber": ""}])
+    base_url = Column(Text)
+    doc_groups = Column(Text)
+    error = Column(Text)
+    beam_task_id = Column(Text)
+
+    __table_args__ = (Index('documents_in_progress_pkey', 'id', postgresql_using='btree'),)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "created_at": self.created_at,
+            "s3_path": self.s3_path,
+            "readable_filename": self.readable_filename,
+            "course_name": self.course_name,
+            "url": self.url,
+            "contexts": self.contexts,
+            "base_url": self.base_url,
+            "doc_groups": self.doc_groups,
+            "error": self.error,
+            "beam_task_id": self.beam_task_id
+        }
+    
+class DocumentsFailed(Base):
+    __tablename__ = 'documents_failed'
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    created_at = Column(DateTime, default=func.now())
+    s3_path = Column(Text)
+    readable_filename = Column(Text)
+    course_name = Column(Text)
+    url = Column(Text)
+    contexts = Column(JSON, default=lambda: [{"text": "", "timestamp": "", "embedding": "", "pagenumber": ""}])
+    base_url = Column(Text)
+    doc_groups = Column(Text)
+    error = Column(Text)
+
+    __table_args__ = (Index('documents_failed_pkey', 'id', postgresql_using='btree'),)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "created_at": self.created_at,
+            "s3_path": self.s3_path,
+            "readable_filename": self.readable_filename,
+            "course_name": self.course_name,
+            "url": self.url,
+            "contexts": self.contexts,
+            "base_url": self.base_url,
+            "doc_groups": self.doc_groups,
+            "error": self.error,
+        }
+    
 class Project(Base):
     __tablename__ = 'projects'
     id = Column(BigInteger, primary_key=True, autoincrement=True)
