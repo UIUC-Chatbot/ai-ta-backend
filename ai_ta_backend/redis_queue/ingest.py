@@ -49,7 +49,7 @@ from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Qdrant
 
-from ai_ta_backend.redis_queue.sql_alchemy import SQLAlchemyIngestDB
+from ai_ta_backend.redis_queue.ingestSQL import SQLAlchemyIngestDB
 
 from dotenv import load_dotenv
 import logging
@@ -57,9 +57,10 @@ import logging
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Sample comment to push commit
-
 class Ingest:
+    """
+    Class for ingesting documents into the vector database.
+    """
 
     def __init__(self):
         # Store configuration values, not client objects

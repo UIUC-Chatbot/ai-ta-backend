@@ -44,7 +44,7 @@ from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
 
-from ai_ta_backend.redis_queue.main_script import queue_ingest_task
+from ai_ta_backend.redis_queue.ingestQueue import addJobToIngestQueue
 
 
 app = Flask(__name__)
@@ -487,9 +487,9 @@ def ingest() -> Response:
 
   data = request.get_json()
 
-  # send data to redis_queue/main_script.py
-  result = queue_ingest_task(data)
-  logging.info("Result from queue_ingest_task:  %s", result)
+  # send data to redis_queue/ingestQueue.py
+  result = addJobToIngestQueue(data)
+  logging.info("Result from addJobToIngestQueue:  %s", result)
 
   response = jsonify(
     {

@@ -36,8 +36,33 @@ class DatabaseResponse(Generic[T]):
 
 class SQLAlchemyIngestDB:
     def __init__(self) -> None:
-        encoded_password = quote_plus(os.getenv('SUPABASE_PASSWORD'))
-        db_uri = f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_URL')}"
+        # Define supported database configurations and their required env vars
+        DB_CONFIGS = {
+            'supabase': ['SUPABASE_USER', 'SUPABASE_PASSWORD', 'SUPABASE_URL'],
+            'sqlite': ['SQLITE_DB_NAME'],
+            'postgres': ['POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_URL']
+        }
+
+        # Detect which database configuration is available
+        db_type = None
+        for db, required_vars in DB_CONFIGS.items():
+            if all(os.getenv(var) for var in required_vars):
+                db_type = db
+                break
+
+        if not db_type:
+            raise ValueError("No valid database configuration found in environment variables")
+
+        # Build the appropriate connection string
+        if db_type == 'supabase':
+            encoded_password = quote_plus(os.getenv('SUPABASE_PASSWORD'))
+            db_uri = f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_URL')}"
+        elif db_type == 'sqlite':
+            db_uri = f"sqlite:///{os.getenv('SQLITE_DB_NAME')}"
+        else:  # postgres
+            db_uri = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_URL')}"
+
+        # Create engine and session
         engine = create_engine(db_uri)
         Session = sessionmaker(bind=engine)
         self.session = Session()
