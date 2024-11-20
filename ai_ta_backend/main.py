@@ -488,7 +488,12 @@ def ingest() -> Response:
   result = queue_ingest_task(data)
   logging.info("Result from queue_ingest_task:  %s", result)
 
-  response = jsonify({"outcome": 'success'})
+  response = jsonify(
+    {
+      "outcome": f'Queued Ingest task',
+      "ingest_task_id": result
+    }
+  )
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 

@@ -17,16 +17,11 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %
 load_dotenv()
 
 # Initialize connections
-# redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
-#                    host=os.environ["INGEST_REDIS_URL"],
-#                    password=os.environ["INGEST_REDIS_PASSWORD"],
-#                    socket_timeout=None,
-#                    )
-
-redis_conn = Redis(port=6379,
-                     host="redis",
-                     socket_timeout=None,
-                     )
+redis_conn = Redis(port=int(os.environ["INGEST_REDIS_PORT"]),
+                   host=os.environ["INGEST_REDIS_HOST"],
+                   password=os.environ["INGEST_REDIS_PASSWORD"],
+                   socket_timeout=None,
+                   )
 
 task_queue = Queue(connection=redis_conn)
 
