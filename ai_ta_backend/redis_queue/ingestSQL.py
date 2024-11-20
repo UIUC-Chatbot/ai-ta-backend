@@ -40,7 +40,7 @@ class SQLAlchemyIngestDB:
         DB_CONFIGS = {
             'supabase': ['SUPABASE_USER', 'SUPABASE_PASSWORD', 'SUPABASE_URL'],
             'sqlite': ['SQLITE_DB_NAME'],
-            'postgres': ['POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_URL']
+            'postgres': ['POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_HOST']
         }
 
         # Detect which database configuration is available
@@ -60,7 +60,7 @@ class SQLAlchemyIngestDB:
         elif db_type == 'sqlite':
             db_uri = f"sqlite:///{os.getenv('SQLITE_DB_NAME')}"
         else:  # postgres
-            db_uri = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_URL')}"
+            db_uri = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}"
 
         # Create engine and session
         engine = create_engine(db_uri)
