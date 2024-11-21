@@ -1247,6 +1247,7 @@ class Ingest:
                     else:
                         print("Error in deleting file from Qdrant:", e)
                         sentry_sdk.capture_exception(e)
+                        raise e
 
                 try:
                     self.sql_session.delete_document_by_s3_path(course_name=course_name, s3_path=s3_path)
@@ -1275,6 +1276,7 @@ class Ingest:
                     else:
                         print("Error in deleting file from Qdrant:", e)
                         sentry_sdk.capture_exception(e)
+                        raise e
                 
                 try:
                 # delete from Supabase
