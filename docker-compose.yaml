@@ -23,6 +23,8 @@ services:
     # ports:
     #   - 6333:6333
     #   - 6334:6334
+    environment:
+      - QDRANT_API_KEY=${QDRANT_API_KEY}
     volumes:
       - ./qdrant_data:/qdrant/storage
       - ./qdrant_config.yaml:/qdrant/config/production.yaml # Mount the config file directly as a volume
@@ -50,16 +52,22 @@ services:
     environment:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
-    command: server /data --address ":10000" --console-address ":10001"
+    command: server /data --address ":${DOCKER_INTERNAL_MINIO_API_PORT}" --console-address ":${DOCKER_INTERNAL_MINIO_DASHBOARD_PORT}"
     ports:
-      - ${PUBLIC_MINIO_API_PORT}:10000
-      - ${PUBLIC_MINIO_DASHBOARD_PORT}:10001
+      - ${PUBLIC_MINIO_API_PORT}:${DOCKER_INTERNAL_MINIO_API_PORT}
+      - ${PUBLIC_MINIO_DASHBOARD_PORT}:${DOCKER_INTERNAL_MINIO_DASHBOARD_PORT}
     networks:
       - my-network
     volumes:
       - minio-data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:10000/minio/health/live"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:${DOCKER_INTERNAL_MINIO_API_PORT}/minio/health/live",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
