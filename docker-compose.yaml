@@ -45,15 +45,10 @@ services:
     environment:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
-      # Add this temporarily for debugging
-      # PUBLIC_MINIO_API_PORT: ${PUBLIC_MINIO_API_PORT}
-      # PUBLIC_MINIO_DASHBOARD_PORT: ${PUBLIC_MINIO_DASHBOARD_PORT}
     command: server /data
     ports:
-      # - ${PUBLIC_MINIO_API_PORT}:9000
-      # - ${PUBLIC_MINIO_DASHBOARD_PORT}:9001
-      - 3013:9000
-      - 3014:9001
+      - ${PUBLIC_MINIO_API_PORT}:10000
+      - ${PUBLIC_MINIO_DASHBOARD_PORT}:10001
     networks:
       - my-network
     volumes:
