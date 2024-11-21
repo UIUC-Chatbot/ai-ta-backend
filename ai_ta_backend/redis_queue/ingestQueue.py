@@ -63,7 +63,7 @@ def onSuccessCallback(job, connection, result, *args, **kwargs):
         result_json = json.loads(result)
         if result_json['failure_ingest']:
             # call the failure update func here in case task status is success, but ingest has failed :(
-            update_task_failure(job, Exception, Exception(result_json["failure_ingest"]), None)
+            onFailureCallback(job, Exception, Exception(result_json["failure_ingest"]), None)
         else:
             # remove from 'documents_in_progress'
             sql_session.delete_document_in_progress(job_id)

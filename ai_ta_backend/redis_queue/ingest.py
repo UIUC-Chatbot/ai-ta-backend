@@ -70,7 +70,7 @@ class Ingest:
         self.qdrant_collection_name = os.getenv('QDRANT_COLLECTION_NAME')
         self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
         self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-        self.posthog_api_key = os.environ['POSTHOG_API_KEY']
+        self.posthog_api_key = os.getenv('POSTHOG_API_KEY')
     
     def initialize_resources(self):
         # Initialize clients and resources when needed
