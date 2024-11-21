@@ -145,6 +145,7 @@ class Ingest:
         except Exception as e:
             print("Error in main_ingest: ", e)
             sentry_sdk.capture_exception(e)
+            success_fail_dict = {"failure_ingest": {'error': str(e)}}
             return json.dumps(success_fail_dict)
     
     def run_ingest(self, course_name, s3_paths, base_url, url, readable_filename, content, document_groups):
