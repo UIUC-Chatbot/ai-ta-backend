@@ -30,7 +30,7 @@ def addJobToIngestQueue(inputs):
     This adds a job to the queue, then eventually the queue worker uses the functions in ingest.py to ingest the document.
     """
     logging.info(f"Queueing ingest task for {inputs['course_name']}")
-    logging.info("Inputs: ", inputs)
+    logging.info(f"Inputs: {inputs}")
 
     response = redis_conn.ping()
     if response:
@@ -43,7 +43,7 @@ def addJobToIngestQueue(inputs):
 
     # Insert into 'documents_in_progress'
     doc_progress_payload = {
-        "s3_path": inputs['s3_paths'][0],
+        "s3_path": inputs['s3_paths'][0] if 's3_paths' in inputs else '',
         "readable_filename": inputs['readable_filename'],
         "course_name": inputs['course_name'],
         "beam_task_id": job.id,
