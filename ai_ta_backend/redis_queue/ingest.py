@@ -1153,7 +1153,9 @@ class Ingest:
         supabase_whole_text = ""
         exact_doc_exists = False
         if len(supabase_contents) > 0:  # a doc with same filename exists in Supabase
+            logging.info(f"Checking for Supabase contents: {supabase_contents}")
             for record in supabase_contents:
+                logging.info(f"Record: {record}")
                 if incoming_s3_path:
                     curr_filename = record['s3_path'].split('/')[-1]
                     older_s3_path = record['s3_path']
