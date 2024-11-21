@@ -81,6 +81,7 @@ class Ingest:
             # Check if the collection exists
             if not self.qdrant_client.get_collection(self.qdrant_collection_name):
                 # Create the collection if it doesn't exist
+                logging.info(f"Creating collection {self.qdrant_collection_name}")
                 self.qdrant_client.create_collection(
                     collection_name=self.qdrant_collection_name,
                     vectors_config={
@@ -88,6 +89,7 @@ class Ingest:
                         "distance": "Cosine"  # Example distance metric, adjust as needed
                     }
                 )
+                logging.info(f"Collection exists? {self.qdrant_client.get_collection(self.qdrant_collection_name)}")
             
             self.vectorstore = Qdrant(
                 client=self.qdrant_client,
