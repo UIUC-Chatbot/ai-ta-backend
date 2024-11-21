@@ -486,7 +486,7 @@ def ingest() -> Response:
   logging.info("In /ingest")
 
   data = request.get_json()
-
+  logging.info("Data received: %s", data)
   # send data to redis_queue/ingestQueue.py
   result = addJobToIngestQueue(data)
   logging.info("Result from addJobToIngestQueue:  %s", result)
