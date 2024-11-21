@@ -10,6 +10,11 @@ services:
       - my-network
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   qdrant:
     image: qdrant/qdrant:v1.9.5
@@ -53,6 +58,11 @@ services:
       - my-network
     volumes:
       - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   flask-app:
     build: . # Directory with Dockerfile for Flask app
@@ -69,6 +79,11 @@ services:
       - qdrant
       - redis
       - minio
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   ingest-worker:
     build: . # Use the same build context as the Flask app
@@ -79,6 +94,17 @@ services:
       - my-network
     depends_on:
       - redis
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "from redis import Redis; from rq import Worker; r = Redis(host='redis', port=6379, password='${INGEST_REDIS_PASSWORD}'); exit(0 if Worker.count(r) > 0 else 1)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 # declare the network resource
 # this will allow you to use service discovery and address a container by its name from within the network
