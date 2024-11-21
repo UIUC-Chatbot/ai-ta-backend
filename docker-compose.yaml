@@ -18,10 +18,6 @@ services:
     # ports:
     #   - 6333:6333
     #   - 6334:6334
-    # expose:
-    #   - 6333
-    #   - 6334
-    #   - 6335
     volumes:
       - ./qdrant_data:/qdrant/storage
       - ./qdrant_config.yaml:/qdrant/config/production.yaml # Mount the config file directly as a volume
@@ -50,12 +46,9 @@ services:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
     command: server /data
-    # ports:
-    #   - 9000:9000 # API access
-    #   - 9001:9001 # Console access
-    # expose:
-    #   - 9000
-    #   - 9001
+    ports:
+      - ${PUBLIC_MINIO_API_PORT}:9000
+      - ${PUBLIC_MINIO_DASHBOARD_PORT}:9001
     networks:
       - my-network
     volumes:
@@ -68,8 +61,6 @@ services:
     container_name: flask-app
     ports:
       - "${FLASK_PORT}:8000"
-    expose:
-      - "${FLASK_PORT}"
     volumes:
       - ./db:/usr/src/app/db # Mount local directory to store SQLite database
     networks:
