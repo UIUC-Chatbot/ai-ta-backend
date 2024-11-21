@@ -7,7 +7,7 @@ services:
     # ports:
     #   - 6379:6379
     networks:
-      - my-network
+      - uiuc-chat-network
     volumes:
       - redis-data:/data
     healthcheck:
@@ -29,7 +29,7 @@ services:
       - ./qdrant_data:/qdrant/storage
       - ./qdrant_config.yaml:/qdrant/config/production.yaml # Mount the config file directly as a volume
     networks:
-      - my-network
+      - uiuc-chat-network
     healthcheck:
       test:
         [
@@ -37,8 +37,8 @@ services:
           "curl",
           "-f",
           "-H",
-          "Authorization: Bearer qd-SbvSWrYpa473J33yPjdL",
-          "http://localhost:6333/health",
+          "Authorization: Bearer ${QDRANT_API_KEY}",
+          "http://qdrant:6333/health",
         ]
       interval: 30s
       timeout: 10s
@@ -57,7 +57,7 @@ services:
       - ${PUBLIC_MINIO_API_PORT}:${DOCKER_INTERNAL_MINIO_API_PORT}
       - ${PUBLIC_MINIO_DASHBOARD_PORT}:${DOCKER_INTERNAL_MINIO_DASHBOARD_PORT}
     networks:
-      - my-network
+      - uiuc-chat-network
     volumes:
       - minio-data:/data
     healthcheck:
@@ -66,7 +66,7 @@ services:
           "CMD",
           "curl",
           "-f",
-          "http://localhost:${DOCKER_INTERNAL_MINIO_API_PORT}/minio/health/live",
+          "http://minio:${DOCKER_INTERNAL_MINIO_API_PORT}/minio/health/live",
         ]
       interval: 30s
       timeout: 10s
@@ -82,13 +82,13 @@ services:
     volumes:
       - ./db:/usr/src/app/db # Mount local directory to store SQLite database
     networks:
-      - my-network
+      - uiuc-chat-network
     depends_on:
       - qdrant
       - redis
       - minio
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      test: ["CMD", "curl", "-f", "http://flask-app:8000"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -99,7 +99,7 @@ services:
     restart: unless-stopped
     container_name: ingest-worker
     networks:
-      - my-network
+      - uiuc-chat-network
     depends_on:
       - redis
     healthcheck:
@@ -117,7 +117,7 @@ services:
 # declare the network resource
 # this will allow you to use service discovery and address a container by its name from within the network
 networks:
-  my-network: {}
+  uiuc-chat-network: {}
 
 volumes:
   redis-data: {}
