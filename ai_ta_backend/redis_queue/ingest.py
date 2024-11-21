@@ -259,33 +259,35 @@ class Ingest:
                             'error':
                                 f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}"
                         }
-                        self.posthog.capture(
-                            'distinct_id_of_the_user',
-                            event='ingest_failure',
-                            properties={
-                                'course_name':
-                                    course_name,
-                                's3_path':
-                                    s3_paths,
-                                'kwargs':
-                                    kwargs,
-                                'error':
-                                    f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}"
-                            })
+                        if self.posthog:
+                            self.posthog.capture(
+                                'distinct_id_of_the_user',
+                                event='ingest_failure',
+                                properties={
+                                    'course_name':
+                                        course_name,
+                                    's3_path':
+                                        s3_paths,
+                                    'kwargs':
+                                        kwargs,
+                                    'error':
+                                        f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}"
+                                })
 
             return success_status
         except Exception as e:
             err = f"❌❌ Error in /ingest: `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()  # type: ignore
 
             success_status['failure_ingest'] = {'s3_path': s3_path, 'error': f"MAJOR ERROR DURING INGEST: {err}"}
-            self.posthog.capture('distinct_id_of_the_user',
-                                event='ingest_failure',
-                                properties={
-                                    'course_name': course_name,
-                                    's3_path': s3_paths,
-                                    'kwargs': kwargs,
-                                    'error': err
-                                })
+            if self.posthog:
+                self.posthog.capture('distinct_id_of_the_user',
+                                    event='ingest_failure',
+                                    properties={
+                                        'course_name': course_name,
+                                        's3_path': s3_paths,
+                                        'kwargs': kwargs,
+                                        'error': err
+                                    })
 
             sentry_sdk.capture_exception(e)
             print(f"MAJOR ERROR IN /bulk_ingest: {str(e)}")
@@ -295,15 +297,16 @@ class Ingest:
     def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str, **kwargs) -> Dict[str, None | str | Dict[str, str]]:
         """Crawlee integration
         """
-        self.posthog.capture('distinct_id_of_the_user',
-                            event='ingest_single_web_text_invoked',
-                            properties={
-                                'course_name': course_name,
-                                'base_url': base_url,
-                                'url': url,
-                                'content': content,
-                                'title': readable_filename
-                            })
+        if self.posthog:
+            self.posthog.capture('distinct_id_of_the_user',
+                                event='ingest_single_web_text_invoked',
+                                properties={
+                                    'course_name': course_name,
+                                    'base_url': base_url,
+                                    'url': url,
+                                    'content': content,
+                                    'title': readable_filename
+                                })
         success_or_failure: Dict[str, None | str | Dict[str, str]] = {"success_ingest": None, "failure_ingest": None}
         try:
             # if not, ingest the text
@@ -318,14 +321,15 @@ class Ingest:
                 'base_url': base_url,
             }]
             self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
-            self.posthog.capture('distinct_id_of_the_user',
-                                event='ingest_single_web_text_succeeded',
-                                properties={
-                                    'course_name': course_name,
-                                    'base_url': base_url,
-                                    'url': url,
-                                    'title': readable_filename
-                                })
+            if self.posthog:
+                self.posthog.capture('distinct_id_of_the_user',
+                                    event='ingest_single_web_text_succeeded',
+                                    properties={
+                                        'course_name': course_name,
+                                        'base_url': base_url,
+                                        'url': url,
+                                        'title': readable_filename
+                                    })
 
             success_or_failure['success_ingest'] = url
             return success_or_failure
@@ -782,12 +786,13 @@ class Ingest:
             
     
     def _ocr_pdf(self, s3_path: str, course_name: str, **kwargs):
-        self.posthog.capture('distinct_id_of_the_user',
-                            event='ocr_pdf_invoked',
-                            properties={
-                                'course_name': course_name,
-                                's3_path': s3_path,
-                            })
+        if self.posthog:
+            self.posthog.capture('distinct_id_of_the_user',
+                                event='ocr_pdf_invoked',
+                                properties={
+                                    'course_name': course_name,
+                                    's3_path': s3_path,
+                                })
 
         pdf_pages_OCRed: List[Dict] = []
         try:
@@ -815,12 +820,13 @@ class Ingest:
                 } for page in pdf_pages_OCRed
             ]
             pdf_texts = [page['text'] for page in pdf_pages_OCRed]
-            self.posthog.capture('distinct_id_of_the_user',
-                                event='ocr_pdf_succeeded',
-                                properties={
-                                    'course_name': course_name,
-                                    's3_path': s3_path,
-                                })
+            if self.posthog:
+                self.posthog.capture('distinct_id_of_the_user',
+                                    event='ocr_pdf_succeeded',
+                                    properties={
+                                        'course_name': course_name,
+                                        's3_path': s3_path,
+                                    })
 
             has_words = any(text.strip() for text in pdf_texts)
             if not has_words:
@@ -961,16 +967,16 @@ class Ingest:
         logging.info(f"Split and upload invoked with {len(texts)} texts and {len(metadatas)} metadatas")
         print(f"In split and upload. Metadatas: {metadatas}")
         print("KWARGS: ", kwargs)
-
-        self.posthog.capture('distinct_id_of_the_user',
-                            event='split_and_upload_invoked',
-                            properties={
-                                'course_name': metadatas[0].get('course_name', None),
-                                's3_path': metadatas[0].get('s3_path', None),
-                                'readable_filename': metadatas[0].get('readable_filename', None),
-                                'url': metadatas[0].get('url', None),
-                                'base_url': metadatas[0].get('base_url', None),
-                            })
+        if self.posthog:
+            self.posthog.capture('distinct_id_of_the_user',
+                                event='split_and_upload_invoked',
+                                properties={
+                                    'course_name': metadatas[0].get('course_name', None),
+                                    's3_path': metadatas[0].get('s3_path', None),
+                                    'readable_filename': metadatas[0].get('readable_filename', None),
+                                    'url': metadatas[0].get('url', None),
+                                    'base_url': metadatas[0].get('base_url', None),
+                                })
 
         #print(f"In split and upload. Metadatas: {metadatas}")
         #print(f"Texts: {texts}")
@@ -992,16 +998,17 @@ class Ingest:
             # check for duplicates
             is_duplicate = self.check_for_duplicates(input_texts, metadatas)
             if is_duplicate:
-                self.posthog.capture('distinct_id_of_the_user',
-                                    event='split_and_upload_succeeded',
-                                    properties={
-                                        'course_name': metadatas[0].get('course_name', None),
-                                        's3_path': metadatas[0].get('s3_path', None),
-                                        'readable_filename': metadatas[0].get('readable_filename', None),
-                                        'url': metadatas[0].get('url', None),
-                                        'base_url': metadatas[0].get('base_url', None),
-                                        'is_duplicate': True,
-                                    })
+                if self.posthog:
+                    self.posthog.capture('distinct_id_of_the_user',
+                                        event='split_and_upload_succeeded',
+                                        properties={
+                                            'course_name': metadatas[0].get('course_name', None),
+                                            's3_path': metadatas[0].get('s3_path', None),
+                                            'readable_filename': metadatas[0].get('readable_filename', None),
+                                            'url': metadatas[0].get('url', None),
+                                            'base_url': metadatas[0].get('base_url', None),
+                                            'is_duplicate': True,
+                                        })
                 return "Success"
 
             # adding chunk index to metadata for parent doc retrieval
@@ -1087,17 +1094,17 @@ class Ingest:
                     if count == 0:
                         print("Error in adding to doc groups")
                         raise ValueError("Error in adding to doc groups")
-
-            self.posthog.capture('distinct_id_of_the_user',
-                                event='split_and_upload_succeeded',
-                                properties={
-                                    'course_name': metadatas[0].get('course_name', None),
-                                    's3_path': metadatas[0].get('s3_path', None),
-                                    'readable_filename': metadatas[0].get('readable_filename', None),
-                                    'url': metadatas[0].get('url', None),
-                                    'base_url': metadatas[0].get('base_url', None),
-                                    'is_duplicate': False,
-                                })
+            if self.posthog:
+                self.posthog.capture('distinct_id_of_the_user',
+                                    event='split_and_upload_succeeded',
+                                    properties={
+                                        'course_name': metadatas[0].get('course_name', None),
+                                        's3_path': metadatas[0].get('s3_path', None),
+                                        'readable_filename': metadatas[0].get('readable_filename', None),
+                                        'url': metadatas[0].get('url', None),
+                                        'base_url': metadatas[0].get('base_url', None),
+                                        'is_duplicate': False,
+                                    })
             logging.info("successful END OF split_and_upload")
             return "Success"
         except Exception as e:
