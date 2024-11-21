@@ -45,6 +45,8 @@ services:
     environment:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+      MINIO_API_PORT: "10000"
+      MINIO_CONSOLE_PORT: "10001"
     command: server /data
     ports:
       - ${PUBLIC_MINIO_API_PORT}:10000
