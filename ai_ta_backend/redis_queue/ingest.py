@@ -77,6 +77,18 @@ class Ingest:
         # Initialize clients and resources when needed
         if self.qdrant_api_key and self.qdrant_url:
             self.qdrant_client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key)
+            
+            # Check if the collection exists
+            if not self.qdrant_client.get_collection(self.qdrant_collection_name):
+                # Create the collection if it doesn't exist
+                self.qdrant_client.create_collection(
+                    collection_name=self.qdrant_collection_name,
+                    vectors_config={
+                        "size": 1536,  # Example size, adjust as needed
+                        "distance": "Cosine"  # Example distance metric, adjust as needed
+                    }
+                )
+            
             self.vectorstore = Qdrant(
                 client=self.qdrant_client,
                 collection_name=self.qdrant_collection_name,
