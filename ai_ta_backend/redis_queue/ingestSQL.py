@@ -158,7 +158,7 @@ class SQLAlchemyIngestDB:
     
     def get_like_docs_by_url(self, course_name, url):
         query = (
-            select(models.Document.id, models.Document.contexts, models.Document.s3_path)
+            select(models.Document.id, models.Document.contexts, models.Document.url)
             .where(models.Document.course_name == course_name)
             .where(models.Document.url.like(f"%{url}%"))
             .order_by(desc(models.Document.id))
