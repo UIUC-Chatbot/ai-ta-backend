@@ -21,6 +21,7 @@ from injector import Binder, SingletonScope
 
 from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.database.aws import AWSStorage
+from ai_ta_backend.database.redis import RedisDatabase
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.executors.flask_executor import (
@@ -108,6 +109,7 @@ def getTopContexts(service: RetrievalService) -> Response:
   """
   start_time = time.monotonic()
   data = request.get_json()
+  print("data: ", data)
   search_query: str = data.get('search_query', '')
   course_name: str = data.get('course_name', '')
   token_limit: int = data.get('token_limit', 3000)
@@ -617,6 +619,7 @@ def configure(binder: Binder) -> None:
   binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
   binder.bind(SQLDatabase, to=SQLDatabase, scope=SingletonScope)
   binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
+  binder.bind(RedisDatabase, to=RedisDatabase, scope=SingletonScope)
   binder.bind(ExecutorInterface, to=FlaskExecutorAdapter(executor), scope=SingletonScope)
 
 
