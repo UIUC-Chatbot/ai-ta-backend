@@ -81,6 +81,8 @@ services:
       - qdrant
       - redis
       - minio
+    env_file:
+      - .env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -96,6 +98,8 @@ services:
       - my-network
     depends_on:
       - redis
+    env_file:
+      - .env
     
 
 # declare the network resource

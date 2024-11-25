@@ -31,6 +31,6 @@ done
 # Start the parent Docker Compose
 echo "Starting application services..."
 docker compose -f ./docker-compose.yaml down -v
-docker compose -f ./docker-compose.yaml up --build -d
+docker compose -f ./docker-compose.yaml up -d
 
 echo "All services are up!"
