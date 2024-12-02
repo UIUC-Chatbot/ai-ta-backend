@@ -521,9 +521,6 @@ class NomicService():
     """
     try:
       print(f"Appending to map: {map_name}")
-      if map_name == 'conversation-map-for-pnbot':
-        print("Skipping append to PNBot map")
-        return "success"
       project = AtlasDataset(map_name)
         
       # if not project.is_accepting_data:

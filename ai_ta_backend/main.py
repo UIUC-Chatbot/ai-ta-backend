@@ -193,18 +193,18 @@ def nomic_map(service: NomicService):
   return response
 
 @app.route('/updateConversationMaps', methods=['GET'])
-def updateConversationMaps(service: NomicService):
+def updateConversationMaps(service: NomicService, flaskExecutor: ExecutorInterface):
   
-  response = service.update_conversation_maps()
+  response = flaskExecutor.submit(service.update_conversation_maps).result()
 
   response = jsonify(response)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
 @app.route('/updateDocumentMaps', methods=['GET'])
-def updateDocumentMaps(service: NomicService):
+def updateDocumentMaps(service: NomicService, flaskExecutor: ExecutorInterface):
   
-  response = service.update_document_maps()
+  response = flaskExecutor.submit(service.update_document_maps).result()
 
   response = jsonify(response)
   response.headers.add('Access-Control-Allow-Origin', '*')
