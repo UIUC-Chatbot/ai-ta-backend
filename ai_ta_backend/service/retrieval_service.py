@@ -8,6 +8,7 @@ from typing import Dict, List, Union
 
 import openai
 import pytz
+import requests
 from dateutil import parser
 from injector import inject
 from langchain.chat_models import AzureChatOpenAI
@@ -399,6 +400,10 @@ class RetrievalService:
     search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
                                                  disabled_doc_groups, public_doc_groups, is_vyriad)
     time_for_vector_search = time.monotonic() - start_time_vector_search
+    # SPECIAL CASE FOR VYRIAD
+    if is_vyriad:
+      vyriad_search_results = self._vyriad_special_case(search_results)
+      print(f"Vyriad search results: {vyriad_search_results}")
 
     # Process the search results by extracting the page content and metadata
     start_time_process_search_results = time.monotonic()
@@ -442,6 +447,42 @@ class RetrievalService:
             "doc_groups": doc_groups,
         },
     )
+
+  def _vyriad_special_case(self, search_results):
+    """
+    Special case for Vyriad search results - fetches page content from API in bulk.
+    """
+    if not search_results:
+      return []
+
+    try:
+      # Get context IDs from search results
+      context_ids = [result.payload['context_id'] for result in search_results]
+
+      # Call API to get text for all context IDs in bulk
+      api_url = "https://pubmed-db-query.ncsa.ai/getTextFromContextIDBulk"
+      response = requests.post(api_url, json={"ids": context_ids})
+
+      if not response.ok:
+        print(f"Error in bulk API request: {response.status_code}")
+        return []
+
+      # Create mapping of context_id to text from response
+      context_texts = response.json()
+
+      # Update search results with texts from bulk response
+      updated_results = []
+      for result in search_results:
+        context_id = result.payload['context_id']
+        if context_id in context_texts:
+          result.payload['page_content'] = context_texts[context_id]
+          updated_results.append(result)
+
+      return updated_results
+
+    except Exception as e:
+      print(f"Error in _vyriad_special_case: {e}")
+      return []
 
   def _process_search_results(self, search_results, course_name):
     found_docs: list[Document] = []

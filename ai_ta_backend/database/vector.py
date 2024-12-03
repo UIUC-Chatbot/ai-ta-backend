@@ -43,11 +43,13 @@ class VectorDatabase():
     collection_name = os.environ['VYRIAD_QDRANT_COLLECTION_NAME'] if is_vyriad else os.environ['QDRANT_COLLECTION_NAME']
     search_results = client.search(
         collection_name=collection_name,
-        query_filter=self._create_search_filter(course_name, doc_groups, disabled_doc_groups, public_doc_groups),
+        query_filter=self._create_search_filter(course_name, doc_groups, disabled_doc_groups, public_doc_groups)
+        if not is_vyriad else None,
         with_vectors=False,
         query_vector=user_query_embedding,
         limit=top_n,  # Return n closest points
         search_params=models.SearchParams(quantization=models.QuantizationSearchParams(rescore=False)))
+    print(f"Search results: {search_results}")
     return search_results
 
   def _create_search_filter(self, course_name: str, doc_groups: List[str], admin_disabled_doc_groups: List[str],
