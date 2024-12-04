@@ -589,7 +589,7 @@ class RetrievalService:
             'total_count': 0
         }
 
-  def getProjectStats(self, project_name: str) -> Dict[str, int]:
+  def getProjectStats(self, project_name: str) -> Dict[str, int | float]:
     """
     Get statistics for a project.
     
@@ -597,10 +597,65 @@ class RetrievalService:
         project_name (str)
 
     Returns:
-        Dict[str, int]: Dictionary containing:
-            - total_conversations: Total number of conversations
-            - total_users: Number of unique users
-            - total_messages: Total number of messages
+        Dict[str, int | float]: Dictionary containing:
+            - total_messages (int): Total number of messages
+            - total_conversations (int): Total number of conversations
+            - unique_users (int): Number of unique users
+            - avg_conversations_per_user (float): Average conversations per user
+            - avg_messages_per_user (float): Average messages per user
+            - avg_messages_per_conversation (float): Average messages per conversation
     """
     return self.sqlDb.getProjectStats(project_name)
-  
+
+  def getWeeklyTrends(self, project_name: str) -> Dict:
+    """
+    Get weekly trends for a project, showing percentage changes in metrics.
+    
+    Args:
+        project_name (str): Name of the project
+        
+    Returns:
+        Dict: Contains metrics with their current week value, previous week value, and percentage change.
+    """
+    response = self.sqlDb.getWeeklyTrends(project_name)
+    
+    if response and hasattr(response, 'data'):
+        return response.data
+        
+    return {
+        "unique_users": {
+            "current_week": 0,
+            "previous_week": 0,
+            "percent_change": 0
+        },
+        "total_conversations": {
+            "current_week": 0,
+            "previous_week": 0,
+            "percent_change": 0
+        }
+    }
+
+  def getModelUsageCounts(self, project_name: str) -> Dict[str, int]:
+    """
+    Get counts of different models used in conversations for a project.
+    
+    Args:
+        project_name (str): Name of the project
+        
+    Returns:
+        Dict[str, int]: Dictionary with model names as keys and usage counts as values
+    """
+    try:
+        response = self.sqlDb.getModelUsageCounts(project_name)
+        
+        if response and hasattr(response, 'data'):
+            # Convert the response into a dictionary
+            model_counts = {item['model']: item['count'] for item in response.data if item['model']}
+            return model_counts
+            
+        return {}
+        
+    except Exception as e:
+        print(f"Error fetching model usage counts for {project_name}: {str(e)}")
+        self.sentry.capture_exception(e)
+        return {}

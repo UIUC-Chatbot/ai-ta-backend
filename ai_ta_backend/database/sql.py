@@ -211,12 +211,46 @@ class SQLDatabase:
         response = self.supabase_client.table("project_stats").select("total_messages, total_conversations, unique_users")\
                     .eq("project_name", project_name).execute()
         
+        stats: Dict[str, int | float] = {
+            "total_messages": 0,
+            "total_conversations": 0,
+            "unique_users": 0,
+            "avg_conversations_per_user": 0.0,
+            "avg_messages_per_user": 0.0,
+            "avg_messages_per_conversation": 0.0
+        }
+        
         if response and hasattr(response, 'data') and response.data:
-            return response.data[0]
+            base_stats = response.data[0]
+            stats.update(base_stats)
+            
+            if stats["unique_users"] > 0:
+                stats["avg_conversations_per_user"] = float(round(stats["total_conversations"] / stats["unique_users"], 2))
+                stats["avg_messages_per_user"] = float(round(stats["total_messages"] / stats["unique_users"], 2))
+            
+            if stats["total_conversations"] > 0:
+                stats["avg_messages_per_conversation"] = float(round(stats["total_messages"] / stats["total_conversations"], 2))
+                
+        return stats
+        
     except Exception as e:
         print(f"Error fetching project stats for {project_name}: {str(e)}")
-    
-    # Return default values if anything fails
-    return {"total_messages": 0, "total_conversations": 0, "unique_users": 0}
+        return {
+            "total_messages": 0,
+            "total_conversations": 0,
+            "unique_users": 0,
+            "avg_conversations_per_user": 0.0,
+            "avg_messages_per_user": 0.0,
+            "avg_messages_per_conversation": 0.0
+        }
 
-      
+  def getWeeklyTrends(self, project_name: str):
+    return self.supabase_client.rpc('calculate_weekly_trends', {
+            'course_name_input': project_name
+        }).execute()
+  
+  def getModelUsageCounts(self, project_name: str):
+    return self.supabase_client.rpc('count_models_by_project', {
+            'project_name_input': project_name
+        }).execute()
+  

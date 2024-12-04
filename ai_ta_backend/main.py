@@ -605,6 +605,35 @@ def get_project_stats(service: RetrievalService) -> Response:
     return response
 
 
+@app.route('/getWeeklyTrends', methods=['GET'])
+def get_weekly_trends(service: RetrievalService) -> Response:
+    """Get weekly trends showing percentage changes in key metrics."""
+    project_name = request.args.get('project_name', default='', type=str)
+
+    if project_name == '':
+        abort(400, description="Missing required parameter: 'project_name' must be provided.")
+
+    weekly_trends = service.getWeeklyTrends(project_name)
+
+    response = jsonify(weekly_trends)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
+
+@app.route('/getModelUsageCounts', methods=['GET'])
+def get_model_usage_counts(service: RetrievalService) -> Response:
+    """Get counts of different models used in conversations."""
+    project_name = request.args.get('project_name', default='', type=str)
+
+    if project_name == '':
+        abort(400, description="Missing required parameter: 'project_name' must be provided.")
+
+    model_counts = service.getModelUsageCounts(project_name)
+
+    response = jsonify(model_counts)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
