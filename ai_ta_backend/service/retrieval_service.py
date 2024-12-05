@@ -20,7 +20,8 @@ from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapter
-from ai_ta_backend.service.nomic_service import NomicService
+
+# from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
 
@@ -32,13 +33,13 @@ class RetrievalService:
 
   @inject
   def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, posthog: PosthogService,
-               sentry: SentryService, nomicService: NomicService, thread_pool_executor: ThreadPoolExecutorAdapter):
+               sentry: SentryService, thread_pool_executor: ThreadPoolExecutorAdapter):
     self.vdb = vdb
     self.sqlDb = sqlDb
     self.aws = aws
     self.sentry = sentry
     self.posthog = posthog
-    self.nomicService = nomicService
+    # self.nomicService = nomicService
     self.thread_pool_executor = thread_pool_executor
     openai.api_key = os.environ["VLADS_OPENAI_KEY"]
 
@@ -461,7 +462,7 @@ class RetrievalService:
 
       # Call API to get text for all context IDs in bulk
       api_url = "https://pubmed-db-query.ncsa.ai/getTextFromContextIDBulk"
-      response = requests.post(api_url, json={"ids": context_ids})
+      response = requests.post(api_url, json={"ids": context_ids}, timeout=30)
 
       if not response.ok:
         print(f"Error in bulk API request: {response.status_code}")
@@ -482,6 +483,7 @@ class RetrievalService:
 
     except Exception as e:
       print(f"Error in _vyriad_special_case: {e}")
+      # sentry.capture_exception(e)
       return []
 
   def _process_search_results(self, search_results, course_name):
@@ -543,18 +545,19 @@ class RetrievalService:
         Returns:
             List[Dict]: _description_
         """
-    for found_doc in found_docs:
-      if "pagenumber" not in found_doc.metadata.keys():
-        print("found no pagenumber")
-        found_doc.metadata["pagenumber"] = found_doc.metadata["pagenumber_or_timestamp"]
+    # for found_doc in found_docs:
+    #   if "pagenumber" not in found_doc.metadata.keys():
+    #     print("found no pagenumber")
+    #     found_doc.metadata["pagenumber"] = found_doc.metadata["pagenumber_or_timestamp"]
 
     contexts = [
         {
             "text": doc.page_content,
-            "readable_filename": doc.metadata["readable_filename"],
-            "course_name ": doc.metadata["course_name"],
-            "s3_path": doc.metadata["s3_path"],
-            "pagenumber": doc.metadata["pagenumber"],  # this because vector db schema is older...
+            "readable_filename": doc.metadata.get("readable_filename", ""),
+            "course_name ": doc.metadata.get("course_name", ""),
+            # "s3_path": doc.metadata["s3_path"], # TODO @Rohan: We should get this from qdrant directly.
+            "s3_path": doc.metadata.get("s3_path", ""),
+            "pagenumber": doc.metadata.get("pagenumber", None),  # this because vector db schema is older...
             # OPTIONAL PARAMS...
             "url": doc.metadata.get("url"),  # wouldn't this error out?
             "base_url": doc.metadata.get("base_url"),
