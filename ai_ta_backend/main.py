@@ -35,7 +35,7 @@ from ai_ta_backend.executors.thread_pool_executor import (
     ThreadPoolExecutorInterface,
 )
 from ai_ta_backend.service.export_service import ExportService
-#from ai_ta_backend.service.nomic_service import NomicService
+from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.project_service import ProjectService
 from ai_ta_backend.service.retrieval_service import RetrievalService
@@ -610,7 +610,7 @@ def configure(binder: Binder) -> None:
   binder.bind(RetrievalService, to=RetrievalService, scope=RequestScope)
   binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
   binder.bind(SentryService, to=SentryService, scope=SingletonScope)
-  #binder.bind(NomicService, to=NomicService, scope=SingletonScope)
+  binder.bind(NomicService, to=NomicService, scope=SingletonScope)
   binder.bind(ExportService, to=ExportService, scope=SingletonScope)
   binder.bind(WorkflowService, to=WorkflowService, scope=SingletonScope)
   binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
