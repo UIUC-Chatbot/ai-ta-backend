@@ -9,6 +9,10 @@ from injector import inject
 from nomic import AtlasDataset, atlas
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from ai_ta_backend.database.sql import SQLDatabase
+from ai_ta_backend.service.sentry_service import SentryService
+
+
 class NomicService():
 
   @inject
@@ -424,6 +428,7 @@ class NomicService():
       print(e)
       self.sentry.capture_exception(e)
       return f"Error in creating document map: {str(e)}"
+
 
 #   ## -------------------------------- SUPPLEMENTARY MAP FUNCTIONS --------------------------------- ##
 
