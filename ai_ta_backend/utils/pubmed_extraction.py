@@ -49,7 +49,7 @@ class PubmedExtraction:
 
     files_to_process = self.getFilesToProcess(file_list)
 
-    for file in files_to_process:
+    for file in files_to_process[::-1]:
       status = self.processPubmedXML(file, ftp_address, ftp_path)
       print("Status: ", status)
 
