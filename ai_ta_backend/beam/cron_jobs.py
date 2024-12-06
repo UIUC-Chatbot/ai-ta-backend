@@ -12,8 +12,8 @@ from beam import schedule
 
 @schedule(when="@daily", name="update-nomic-maps")
 def task():
-    print("Hi, from your task running at 11:00 AM daily!")
-    base_url = "https://flask-pr-328.up.railway.app"
+    print("Hi, from your task running at midnight daily!")
+    base_url = "https://flask-production-751b.up.railway.app"
 
     # Update conversation maps
     url = f"{base_url}/updateConversationMaps"
