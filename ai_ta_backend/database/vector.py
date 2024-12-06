@@ -22,6 +22,7 @@ class VectorDatabase():
     self.qdrant_client = QdrantClient(
         url=os.environ['QDRANT_URL'],
         api_key=os.environ['QDRANT_API_KEY'],
+        port=os.getenv('QDRANT_PORT') if os.getenv('QDRANT_PORT') else None,
         timeout=20,  # default is 5 seconds. Getting timeout errors w/ document groups.
     )
 

@@ -41,6 +41,24 @@ For a great experience bring your own OpenAI API key. We also support Azure Open
 
 {% embed url="https://www.youtube.com/watch?v=XNf1zBywDRo" %}
 
+## How to set up a tutor mode&#x20;
+
+These series of walkthroughs are about system prompt and different ways you can customize them. The very first one is a helpful teaching assistant. We call this prompt "tutor mode".
+
+{% embed url="https://www.youtube.com/watch?v=t1vu0nPUA9M" %}
+
+## Document-Based References Only System Prompt
+
+Restricts AI to use only information from the provided documents.
+
+{% embed url="https://youtu.be/r4-BmIDhP50" %}
+
+## Bypassing UIUC.chat's internal prompting&#x20;
+
+Bypasses internal prompting and citations.
+
+{% embed url="https://youtu.be/P9ZmpnOg0VI" %}
+
 ## Why UIUC.chat?
 
 * Control Over Your Information Sources: Unlike vendor-driven sites like ChatGPT.com, all API interactions are contractually hidden and do not train on your data. You have full control over your information sources.&#x20;

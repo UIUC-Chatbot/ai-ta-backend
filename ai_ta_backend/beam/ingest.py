@@ -50,7 +50,6 @@ if beam.env.is_remote():
   from langchain.text_splitter import RecursiveCharacterTextSplitter
   from langchain.vectorstores import Qdrant
 
-  #from nomic_logging import delete_from_document_map, log_to_document_map, rebuild_map
   from OpenaiEmbeddings import OpenAIAPIProcessor
   from PIL import Image
   from posthog import Posthog
@@ -58,6 +57,15 @@ if beam.env.is_remote():
   from qdrant_client import QdrantClient, models
   from qdrant_client.models import PointStruct
   from supabase.client import ClientOptions
+
+  sentry_sdk.init(
+      dsn=os.getenv("SENTRY_DSN"),
+      # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+      traces_sample_rate=1.0,
+      # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
+      # We recommend adjusting this value in production.
+      profiles_sample_rate=1.0,
+      enable_tracing=True)
 
 requirements = [
     "openai<1.0",
@@ -82,7 +90,6 @@ requirements = [
     "GitPython==3.1.40",
     "beautifulsoup4==4.12.2",
     "sentry-sdk==1.39.1",
-    "nomic==2.0.14",
     "pdfplumber==0.11.0",  # PDF OCR, better performance than Fitz/PyMuPDF in my Gies PDF testing.
 ]
 
@@ -156,14 +163,6 @@ def loader():
   #     openai_api_type=OPENAI_API_TYPE)
 
   posthog = Posthog(sync_mode=True, project_api_key=os.environ['POSTHOG_API_KEY'], host='https://app.posthog.com')
-  sentry_sdk.init(
-      dsn=os.getenv("SENTRY_DSN"),
-      # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-      traces_sample_rate=1.0,
-      # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
-      # We recommend adjusting this value in production.
-      profiles_sample_rate=1.0,
-      enable_tracing=True)
 
   return qdrant_client, vectorstore, s3_client, supabase_client, posthog
 
@@ -190,7 +189,7 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
   url: List[str] | str | None = inputs.get('url', None)
   base_url: List[str] | str | None = inputs.get('base_url', None)
   readable_filename: List[str] | str = inputs.get('readable_filename', '')
-  content: str | List[str] | None = cast(str | List[str] | None, inputs.get('url'))  # defined if ingest type is webtext
+  content: str | List[str] | None = inputs.get('content', None)  # defined if ingest type is webtext
   doc_groups: List[str] | str = inputs.get('groups', [])
 
   print(
@@ -252,10 +251,23 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
     # response = supabase_client.table('documents_failed').insert(document).execute()  # type: ignore
     # print(f"Supabase ingest failure response: {response}")
   else:
-    # Success case: rebuild nomic document map after all ingests are done
-    # rebuild_status = rebuild_map(str(course_name), map_type='document')
     pass
 
+  # Success ingest!
+  posthog.capture(
+      'distinct_id_of_the_user',
+      event='ingest_success',
+      properties={
+          'course_name': course_name,
+          's3_path': s3_paths,
+          's3_paths': s3_paths,
+          'url': url,
+          'base_url': base_url,
+          'readable_filename': readable_filename,
+          'content': content,
+          'doc_groups': doc_groups,
+          # TODO: Tokens in entire document
+      })
   print(f"Final success_fail_dict: {success_fail_dict}")
   sentry_sdk.flush(timeout=20)
   return json.dumps(success_fail_dict)
@@ -353,6 +365,7 @@ class Ingest():
             success_status['success_ingest'] = s3_path
             print(f"No ingest methods -- Falling back to UTF-8 INGEST... s3_path = {s3_path}")
           except Exception as e:
+            sentry_sdk.capture_exception(e)
             print(
                 f"We don't have a ingest method for this filetype: {file_extension}. As a last-ditch effort, we tried to ingest the file as utf-8 text, but that failed too. File is unsupported: {s3_path}. UTF-8 ingest error: {e}"
             )
@@ -380,6 +393,7 @@ class Ingest():
     except Exception as e:
       err = f"❌❌ Error in /ingest: `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
       )  # type: ignore
+      sentry_sdk.capture_exception(e)
 
       success_status['failure_ingest'] = {'s3_path': s3_path, 'error': f"MAJOR ERROR DURING INGEST: {err}"}
       self.posthog.capture('distinct_id_of_the_user',
@@ -395,7 +409,8 @@ class Ingest():
       print(f"MAJOR ERROR IN /bulk_ingest: {str(e)}")
       return success_status
 
-  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str, **kwargs):
+  def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str,
+                             **kwargs):
     """Crawlee integration
     """
     self.posthog.capture('distinct_id_of_the_user',
@@ -1179,11 +1194,6 @@ class Ingest():
       response = self.supabase_client.table(
           os.getenv('REFACTORED_MATERIALS_SUPABASE_TABLE')).insert(document).execute()  # type: ignore
 
-      # add to Nomic document map
-      # if len(response.data) > 0:
-      #   course_name = contexts[0].metadata.get('course_name')
-      #   log_to_document_map(course_name)
-
       # need to update Supabase tables with doc group info
       if len(response.data) > 0:
         # get groups from kwargs
@@ -1191,22 +1201,24 @@ class Ingest():
         if groups:
           # call the supabase function to add the document to the group
           if contexts[0].metadata.get('url'):
-            data, count = self.supabase_client.rpc('add_document_to_group_url', {
-              "p_course_name": contexts[0].metadata.get('course_name'),
-              "p_s3_path": contexts[0].metadata.get('s3_path'),
-              "p_url": contexts[0].metadata.get('url'),
-              "p_readable_filename": contexts[0].metadata.get('readable_filename'),
-              "p_doc_groups": groups,
-            }).execute()
+            data, count = self.supabase_client.rpc(
+                'add_document_to_group_url', {
+                    "p_course_name": contexts[0].metadata.get('course_name'),
+                    "p_s3_path": contexts[0].metadata.get('s3_path'),
+                    "p_url": contexts[0].metadata.get('url'),
+                    "p_readable_filename": contexts[0].metadata.get('readable_filename'),
+                    "p_doc_groups": groups,
+                }).execute()
           else:
-            data, count = self.supabase_client.rpc('add_document_to_group', {
-              "p_course_name": contexts[0].metadata.get('course_name'),
-              "p_s3_path": contexts[0].metadata.get('s3_path'),
-              "p_url": contexts[0].metadata.get('url'),
-              "p_readable_filename": contexts[0].metadata.get('readable_filename'),
-              "p_doc_groups": groups,
-            }).execute()
-          
+            data, count = self.supabase_client.rpc(
+                'add_document_to_group', {
+                    "p_course_name": contexts[0].metadata.get('course_name'),
+                    "p_s3_path": contexts[0].metadata.get('s3_path'),
+                    "p_url": contexts[0].metadata.get('url'),
+                    "p_readable_filename": contexts[0].metadata.get('readable_filename'),
+                    "p_doc_groups": groups,
+                }).execute()
+
           if len(data) == 0:
             print("Error in adding to doc groups")
             raise ValueError("Error in adding to doc groups")
@@ -1365,22 +1377,6 @@ class Ingest():
           else:
             print("Error in deleting file from Qdrant:", e)
             sentry_sdk.capture_exception(e)
-        # try:
-        #   # delete from Nomic
-        #   response = self.supabase_client.from_(
-        #       os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).select("id, s3_path, contexts").eq('s3_path', s3_path).eq(
-        #           'course_name', course_name).execute()
-        #   data = response.data[0]  #single record fetched
-        #   nomic_ids_to_delete = []
-        #   context_count = len(data['contexts'])
-        #   for i in range(1, context_count + 1):
-        #     nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
-
-        #   # delete from Nomic
-        #   delete_from_document_map(course_name, nomic_ids_to_delete)
-        # except Exception as e:
-        #   print("Error in deleting file from Nomic:", e)
-        #   sentry_sdk.capture_exception(e)
 
         try:
           self.supabase_client.from_(os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).delete().eq(
@@ -1410,22 +1406,7 @@ class Ingest():
           else:
             print("Error in deleting file from Qdrant:", e)
             sentry_sdk.capture_exception(e)
-        # try:
-        #   # delete from Nomic
-        #   response = self.supabase_client.from_(os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).select("id, url, contexts").eq(
-        #       'url', source_url).eq('course_name', course_name).execute()
-        #   data = response.data[0]  #single record fetched
-        #   nomic_ids_to_delete = []
-        #   context_count = len(data['contexts'])
-        #   for i in range(1, context_count + 1):
-        #     nomic_ids_to_delete.append(str(data['id']) + "_" + str(i))
-
-        #   # delete from Nomic
-        #   delete_from_document_map(course_name, nomic_ids_to_delete)
-        # except Exception as e:
-        #   print("Error in deleting file from Nomic:", e)
-        #   sentry_sdk.capture_exception(e)
-
+        
         try:
           # delete from Supabase
           self.supabase_client.from_(os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).delete().eq(
