@@ -19,7 +19,6 @@ from flask_executor import Executor
 from flask_injector import FlaskInjector, RequestScope
 from injector import Binder, SingletonScope
 
-#from ai_ta_backend.beam.nomic_logging import create_document_map
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.database.vector import VectorDatabase
@@ -109,12 +108,12 @@ def getTopContexts(service: RetrievalService) -> Response:
   Exception
       Testing how exceptions are handled.
   """
+  start_time = time.monotonic()
   data = request.get_json()
   search_query: str = data.get('search_query', '')
   course_name: str = data.get('course_name', '')
   token_limit: int = data.get('token_limit', 3000)
   doc_groups: List[str] = data.get('doc_groups', [])
-  start_time = time.monotonic()
 
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
@@ -125,9 +124,9 @@ def getTopContexts(service: RetrievalService) -> Response:
     )
 
   found_documents = asyncio.run(service.getTopContexts(search_query, course_name, token_limit, doc_groups))
-  print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
+  print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
   return response
 
 
@@ -196,71 +195,56 @@ def delete(service: RetrievalService, flaskExecutor: ExecutorInterface):
 #   return response
 
 
-# @app.route('/createDocumentMap', methods=['GET'])
-# def createDocumentMap(service: NomicService):
-#   course_name: str = request.args.get('course_name', default='', type=str)
+@app.route('/updateConversationMaps', methods=['GET'])
+def updateConversationMaps(service: NomicService, flaskExecutor: ExecutorInterface):
+  print("Starting conversation map update...")
 
-#   if course_name == '':
-#     # proper web error "400 Bad request"
-#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+  response = flaskExecutor.submit(service.update_conversation_maps)
 
-#   map_id = create_document_map(course_name)
-
-#   response = jsonify(map_id)
-#   response.headers.add('Access-Control-Allow-Origin', '*')
-#   return response
-
-# @app.route('/createConversationMap', methods=['GET'])
-# def createConversationMap(service: NomicService):
-#   course_name: str = request.args.get('course_name', default='', type=str)
-
-#   if course_name == '':
-#     # proper web error "400 Bad request"
-#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
-
-#   map_id = service.create_conversation_map(course_name)
-
-#   response = jsonify(map_id)
-#   response.headers.add('Access-Control-Allow-Origin', '*')
-#   return response
-
-# @app.route('/logToConversationMap', methods=['GET'])
-# def logToConversationMap(service: NomicService, flaskExecutor: ExecutorInterface):
-#   course_name: str = request.args.get('course_name', default='', type=str)
-
-#   if course_name == '':
-#     # proper web error "400 Bad request"
-#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
-
-#   #map_id = service.log_to_conversation_map(course_name)
-#   map_id = flaskExecutor.submit(service.log_to_conversation_map, course_name).result()
-
-#   response = jsonify(map_id)
-#   response.headers.add('Access-Control-Allow-Origin', '*')
-#   return response
+  response = jsonify({"Task started"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 
-# @app.route('/onResponseCompletion', methods=['POST'])
-# def logToNomic(service: NomicService, flaskExecutor: ExecutorInterface):
-#   data = request.get_json()
-#   course_name = data['course_name']
-#   conversation = data['conversation']
+@app.route('/updateDocumentMaps', methods=['GET'])
+def updateDocumentMaps(service: NomicService, flaskExecutor: ExecutorInterface):
+  print("Starting conversation map update...")
 
-#   if course_name == '' or conversation == '':
-#     # proper web error "400 Bad request"
-#     abort(
-#         400,
-#         description=
-#         f"Missing one or more required parameters: 'course_name' and 'conversation' must be provided. Course name: `{course_name}`, Conversation: `{conversation}`"
-#     )
-#   print(f"In /onResponseCompletion for course: {course_name}")
+  response = flaskExecutor.submit(service.update_document_maps)
 
-#   # background execution of tasks!!
-#   #response = flaskExecutor.submit(service.log_convo_to_nomic, course_name, data)
-#   #result = flaskExecutor.submit(service.log_to_conversation_map, course_name, conversation).result()
-#   response = jsonify({'outcome': 'success'})
-#   response.headers.add('Access-Control-Allow-Origin', '*')
-#   return response
+  response = jsonify({"Task started"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/createDocumentMap', methods=['GET'])
+def createDocumentMap(service: NomicService):
+  course_name: str = request.args.get('course_name', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  map_id = service.create_document_map(course_name)
+
+  response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/createConversationMap', methods=['GET'])
+def createConversationMap(service: NomicService):
+  course_name: str = request.args.get('course_name', default='', type=str)
+
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+
+  map_id = service.create_conversation_map(course_name)
+
+  response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 
 @app.route('/export-convo-history-csv', methods=['GET'])
@@ -522,31 +506,20 @@ def switch_workflow(service: WorkflowService) -> Response:
     else:
       abort(400, description=f"Bad request: {e}")
 
+
 @app.route('/getConversationStats', methods=['GET'])
 def get_conversation_stats(service: RetrievalService) -> Response:
-    course_name = request.args.get('course_name', default='', type=str)
+  course_name = request.args.get('course_name', default='', type=str)
 
-    if course_name == '':
-        abort(400, description="Missing required parameter: 'course_name' must be provided.")
+  if course_name == '':
+    abort(400, description="Missing required parameter: 'course_name' must be provided.")
 
-    conversation_stats = service.getConversationStats(course_name)
+  conversation_stats = service.getConversationStats(course_name)
 
-    response = jsonify(conversation_stats)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+  response = jsonify(conversation_stats)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
-@app.route('/getConversationHeatmapByHour', methods=['GET'])
-def get_questions_heatmap_by_hour(service: RetrievalService) -> Response:
-    course_name = request.args.get('course_name', default='', type=str)
-
-    if not course_name:
-        abort(400, description="Missing required parameter: 'course_name' must be provided.")
-
-    heatmap_data = service.getConversationHeatmapByHour(course_name)
-
-    response = jsonify(heatmap_data)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
 
 @app.route('/run_flow', methods=['POST'])
 def run_flow(service: WorkflowService) -> Response:
@@ -613,6 +586,20 @@ def pubmedExtraction():
   result = extractPubmedData()
 
   response = jsonify(result)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/getProjectStats', methods=['GET'])
+def get_project_stats(service: RetrievalService) -> Response:
+  project_name = request.args.get('project_name', default='', type=str)
+
+  if project_name == '':
+    abort(400, description="Missing required parameter: 'project_name' must be provided.")
+
+  project_stats = service.getProjectStats(project_name)
+
+  response = jsonify(project_stats)
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
