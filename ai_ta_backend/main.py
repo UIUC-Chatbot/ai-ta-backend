@@ -41,7 +41,7 @@ from ai_ta_backend.service.project_service import ProjectService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
-from ai_ta_backend.utils.pubmed_extraction import extractPubmedData
+from ai_ta_backend.utils.pubmed_extraction import PubmedExtraction
 
 app = Flask(__name__)
 CORS(app)
@@ -582,7 +582,7 @@ def pubmedExtraction():
   """
   Extracts metadata and download papers from PubMed.
   """
-  result = extractPubmedData()
+  result = PubmedExtraction().extractPubmedData()
 
   response = jsonify(result)
   response.headers.add('Access-Control-Allow-Origin', '*')
