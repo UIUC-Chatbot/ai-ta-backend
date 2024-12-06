@@ -277,7 +277,7 @@ def fech_articles_by_pmc_id(pmci_id, course_name, s3_client, **kwargs):
         }
 
         if journal_name:
-            payload["doc_groups"] = [journal_name]
+            payload["groups"] = [journal_name]
         print("Ingest Payload: ", payload)
 
         beam_url = 'https://app.beam.cloud/taskqueue/ingest_task_queue/latest'
