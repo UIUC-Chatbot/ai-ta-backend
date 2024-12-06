@@ -478,7 +478,7 @@ class RetrievalService:
         if context_id in context_texts:
           result.payload['page_content'] = context_texts[context_id]['page_content']
           result.payload['readable_filename'] = context_texts[context_id]['readable_filename']
-          result.payload['s3_path'] = result.payload['minio_path']
+          result.payload['s3_path'] = str(result.payload['minio_path']).replace('pubmed/', '')  # remove bucket name
           updated_results.append(result)
 
       return updated_results
