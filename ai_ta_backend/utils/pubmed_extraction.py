@@ -90,6 +90,7 @@ class PubmedExtraction:
       if not gz_filepath:
         return "failure"
       xml_filepath = self.extractXMLFile(gz_filepath)
+      print("Extracted XML file: ", xml_filepath)
 
       xml_id = xml_filepath[7:-4].replace(".", "_")
       destination_dir = xml_id + "_papers"
@@ -98,7 +99,7 @@ class PubmedExtraction:
 
       for i, metadata in enumerate(self.extractMetadataFromXML(xml_filepath, destination_dir, error_log)):
         metadata_extract_start_time = time.time()
-
+        print("Processing batch: ", i + 1)
         batch_dir = os.path.join(destination_dir, f"batch_{i + 1}")
         os.makedirs(batch_dir, exist_ok=True)
 
