@@ -391,7 +391,7 @@ class RetrievalService:
       public_doc_groups = []
 
     # Max number of search results to return
-    top_n = 60
+    top_n = 200
 
     # Capture the search invoked event to PostHog
     self._capture_search_invoked_event(search_query, course_name, doc_groups)
