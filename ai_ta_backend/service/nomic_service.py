@@ -1,14 +1,17 @@
 import datetime
 import os
-import time
 import re
+import time
+
 import nomic
 import pandas as pd
 from injector import inject
 from nomic import AtlasDataset, atlas
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.sentry_service import SentryService
+
 
 class NomicService():
 
@@ -26,6 +29,11 @@ class NomicService():
 			map link: https://atlas.nomic.ai/map/ed222613-97d9-46a9-8755-12bbc8a06e3a/f4967ad7-ff37-4098-ad06-7e1e1a93dd93
 			map id: f4967ad7-ff37-4098-ad06-7e1e1a93dd93
 		"""
+    if not course_name or not type:
+      raise ValueError("Course name and type are required")
+    if type.lower() not in ['document', 'conversation']:
+      raise ValueError("Invalid map type")
+
     start_time = time.monotonic()
     try:
       if type.lower() == 'document':
@@ -36,13 +44,13 @@ class NomicService():
         index_suffix = "_convo_index"
 
       project_name = map_prefix + course_name
-      project_name = project_name.replace(" ", "-").lower() # names are like this - conversation-map-for-cropwizard-15
+      project_name = project_name.replace(" ", "-").lower()  # names are like this - conversation-map-for-cropwizard-15
       project = AtlasDataset(project_name)
       map = project.get_map(course_name + index_suffix)
 
       print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
       return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
-    
+
     except Exception as e:
       # Error: ValueError: You must specify a unique_id_field when creating a new project.
       if str(e) == 'You must specify a unique_id_field when creating a new project.':  # type: ignore
@@ -62,7 +70,7 @@ class NomicService():
     """
     try:
       projects = self.sql.getAllProjects().data
-        
+
       for project in projects:
         course_name = project['course_name']
         print(f"Processing course: {course_name}")
@@ -88,19 +96,20 @@ class NomicService():
           response = self.sql.getAllConversationsBetweenIds(course_name, last_uploaded_id, 0, 100)
           if not response.data:
             break
-                    
+
           combined_dfs.append(pd.DataFrame(response.data))
           current_count += len(response.data)
 
           if combined_dfs:
             final_df = pd.concat(combined_dfs, ignore_index=True)
             metadata = self.data_prep_for_convo_map(final_df)
-                
+
             print("Appending data to existing map...")
-            map_name = re.sub(r'[^a-zA-Z0-9\s-]', '', f"Conversation Map for {course_name}".replace("_", "-")).replace(" ", "-").lower()
+            map_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
+                              f"Conversation Map for {course_name}".replace("_", "-")).replace(" ", "-").lower()
 
             result = self.append_to_map(metadata=metadata, map_name=map_name)
-                
+
             if result == "success":
               last_id = int(final_df['id'].iloc[-1])
               self.sql.updateProjects(course_name, {'last_uploaded_convo_id': last_id})
@@ -109,13 +118,13 @@ class NomicService():
               print(f"Error in updating conversation map: {result}")
 
       return "success"
-        
+
     except Exception as e:
       error_msg = f"Error in updating conversation maps: {e}"
       print(error_msg)
       self.sentry.capture_exception(e)
-      return error_msg  
-    
+      return error_msg
+
   def update_document_maps(self):
     """
     Updates all document maps in UIUC.Chat by processing and uploading documents in batches.
@@ -130,11 +139,11 @@ class NomicService():
     try:
       # Fetch all projects
       projects = self.sql.getAllProjects().data
-        
+
       for project in projects:
         try:
           course_name = project['course_name']
-                
+
           # Determine whether to create or update map
           if not project.get('doc_map_id'):
             print(f"Creating new document map for course: {course_name}")
@@ -145,7 +154,7 @@ class NomicService():
           # Check for new documents
           last_uploaded_doc_id = project['last_uploaded_doc_id']
           response = self.sql.getCountFromDocuments(course_name, last_id=last_uploaded_doc_id)
-                
+
           if not response.count:
             print("No new documents to log.")
             continue
@@ -153,11 +162,11 @@ class NomicService():
           # Prepare update process
           total_doc_count = response.count
           print(f"Total unlogged documents in Supabase: {total_doc_count}")
-                
-          project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', 
-                    f"{DOCUMENT_MAP_PREFIX}{course_name}".replace(" ", "-").replace("_", "-").lower())
+
+          project_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
+                                f"{DOCUMENT_MAP_PREFIX}{course_name}".replace(" ", "-").replace("_", "-").lower())
           first_id = last_uploaded_doc_id
-                
+
           combined_dfs = []
           current_doc_count = 0
           doc_count = 0
@@ -165,12 +174,8 @@ class NomicService():
 
           while current_doc_count < total_doc_count:
             # Fetch documents in batches
-            response = self.sql.getDocsForIdsGte(
-                        course_name=course_name, 
-                        first_id=first_id, 
-                        limit=BATCH_SIZE
-                    )
-                    
+            response = self.sql.getDocsForIdsGte(course_name=course_name, first_id=first_id, limit=BATCH_SIZE)
+
             if not response.data:
               break
 
@@ -180,31 +185,25 @@ class NomicService():
             doc_count += len(response.data)
 
             # Determine if we should process the batch
-            should_process = (
-                        doc_count >= UPLOAD_THRESHOLD or 
-                        current_doc_count >= total_doc_count
-                    )
+            should_process = (doc_count >= UPLOAD_THRESHOLD or current_doc_count >= total_doc_count)
 
             if should_process:
               batch_number += 1
               print(f"\nProcessing batch #{batch_number}")
-                        
+
               final_df = pd.concat(combined_dfs, ignore_index=True)
               metadata = self.data_prep_for_doc_map(final_df)
-                        
+
               # Upload to map
-              result = self.append_to_map(
-                            metadata=metadata,
-                            map_name=project_name
-                        )
+              result = self.append_to_map(metadata=metadata, map_name=project_name)
 
               if result == "success":
                 last_id = int(final_df['id'].iloc[-1])
                 project_info = {'last_uploaded_doc_id': last_id}
                 self.sql.updateProjects(course_name, project_info)
-                            
+
                 print(f"Completed batch #{batch_number}. "
-                  f"Documents processed: {current_doc_count}/{total_doc_count}")
+                      f"Documents processed: {current_doc_count}/{total_doc_count}")
               else:
                 print(f"Error in uploading batch for {course_name}: {result}")
                 raise Exception(f"Batch upload failed: {result}")
@@ -231,12 +230,12 @@ class NomicService():
           continue
 
       return "success"
-    
+
     except Exception as e:
-        print(f"Error in update_document_maps: {e}")
-        self.sentry.capture_exception(e)
-        return f"Error in update_document_maps: {e}"
-  
+      print(f"Error in update_document_maps: {e}")
+      self.sentry.capture_exception(e)
+      return f"Error in update_document_maps: {e}"
+
   def create_conversation_map(self, course_name: str):
     """
     Creates a conversation map for a given course from conversations in the database.
@@ -264,10 +263,11 @@ class NomicService():
       # Prepare map creation
       total_convo_count = response.count
       print(f"Total conversations in Supabase: {total_convo_count}")
-      
-      project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', (NOMIC_MAP_NAME_PREFIX + course_name).replace(" ", "-").replace("_", "-").lower())
+
+      project_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
+                            (NOMIC_MAP_NAME_PREFIX + course_name).replace(" ", "-").replace("_", "-").lower())
       first_id = response.data[0]['id'] - 1
-        
+
       combined_dfs = []
       current_convo_count = 0
       convo_count = 0
@@ -292,7 +292,7 @@ class NomicService():
           final_df = pd.concat(combined_dfs, ignore_index=True)
           print(f"length of final_df: {len(final_df)}")
           metadata = self.data_prep_for_convo_map(final_df)
-                
+
           # Create or append to map
           if first_batch:
             print("in first batch")
@@ -305,11 +305,7 @@ class NomicService():
           if result == "success":
             project = AtlasDataset(project_name)
             last_id = int(final_df['id'].iloc[-1])
-            project_info = {
-              'course_name': course_name, 
-              'convo_map_id': project.id, 
-              'last_uploaded_convo_id': last_id
-            }
+            project_info = {'course_name': course_name, 'convo_map_id': project.id, 'last_uploaded_convo_id': last_id}
             print("project_info", project_info)
             # Update or insert project info
             if existing_map.data:
@@ -330,10 +326,10 @@ class NomicService():
       return "success"
 
     except Exception as e:
-        print(e)
-        self.sentry.capture_exception(e)
-        return f"Error in creating conversation map: {str(e)}"
-    
+      print(e)
+      self.sentry.capture_exception(e)
+      return f"Error in creating conversation map: {str(e)}"
+
   def create_document_map(self, course_name: str):
     """
     Creates a document map for a given course from documents in the database.
@@ -364,10 +360,10 @@ class NomicService():
       # Prepare map creation
       total_doc_count = response.count
       print(f"Total documents in Supabase: {total_doc_count}")
-      
+
       project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', project_name.replace(" ", "-").replace("_", "-").lower())
       first_id = response.data[0]['id'] - 1
-        
+
       combined_dfs = []
       current_doc_count = 0
       doc_count = 0
@@ -385,16 +381,13 @@ class NomicService():
         doc_count += len(response.data)
 
         # Determine if we should process the batch
-        should_process = (
-          doc_count >= UPLOAD_THRESHOLD or 
-          current_doc_count >= total_doc_count or 
-          current_doc_count == total_doc_count
-        )
+        should_process = (doc_count >= UPLOAD_THRESHOLD or current_doc_count >= total_doc_count or
+                          current_doc_count == total_doc_count)
 
         if should_process:
           final_df = pd.concat(combined_dfs, ignore_index=True)
           metadata = self.data_prep_for_doc_map(final_df)
-                
+
           # Create or append to map
           index_name = f"{course_name}_doc_index"
           if first_batch:
@@ -406,11 +399,7 @@ class NomicService():
           if result == "success":
             project = AtlasDataset(project_name)
             last_id = int(final_df['id'].iloc[-1])
-            project_info = {
-                'course_name': course_name, 
-                'doc_map_id': project.id, 
-                'last_uploaded_doc_id': last_id
-              }
+            project_info = {'course_name': course_name, 'doc_map_id': project.id, 'last_uploaded_doc_id': last_id}
 
             # Update or insert project info
             if existing_map.data:
@@ -433,11 +422,11 @@ class NomicService():
       # Rebuild the map
       self.rebuild_map(course_name, "document")
       return "success"
-      
+
     except Exception as e:
-        print(e)
-        self.sentry.capture_exception(e)
-        return f"Error in creating document map: {str(e)}"
+      print(e)
+      self.sentry.capture_exception(e)
+      return f"Error in creating document map: {str(e)}"
 
   ## -------------------------------- SUPPLEMENTARY MAP FUNCTIONS --------------------------------- ##
 
@@ -450,21 +439,21 @@ class NomicService():
     Returns:
         str: Status of map rebuilding process
     """
-    MAP_PREFIXES = {
-        'document': 'Document Map for ',
-        'conversation': 'Conversation Map for '
-    }
-    
+    MAP_PREFIXES = {'document': 'Document Map for ', 'conversation': 'Conversation Map for '}
+
     try:
-      project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', (MAP_PREFIXES.get(map_type.lower(), '') + course_name).replace(" ", "-").replace("_", "-").lower())
+      project_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
+                            (MAP_PREFIXES.get(map_type.lower(), '') + course_name).replace(" ",
+                                                                                           "-").replace("_",
+                                                                                                        "-").lower())
       print(f"Rebuilding map: {project_name}")
       project = AtlasDataset(project_name)
-        
+
       if project.is_accepting_data:
         project.update_indices(rebuild_topic_models=True)
-        
+
       return "success"
-    
+
     except Exception as e:
       print(e)
       self.sentry.capture_exception(e)
@@ -484,30 +473,24 @@ class NomicService():
         str: 'success' or error message
     """
     print(f"Creating map: {map_name}")
-    
+
     try:
-      project = atlas.map_data(
-        data=metadata,
-        identifier=map_name,
-        id_field="id",
-        topic_model=True,
-        duplicate_detection=True,
-        indexed_field=index_field
-      )
-        
-      project.create_index(
-        name=index_name,
-        indexed_field=index_field,
-        topic_model=True,
-        duplicate_detection=True
-      )
-        
+      project = atlas.map_data(data=metadata,
+                               identifier=map_name,
+                               id_field="id",
+                               topic_model=True,
+                               duplicate_detection=True,
+                               indexed_field=index_field)
+
+      project.create_index(name=index_name, indexed_field=index_field, topic_model=True, duplicate_detection=True)
+
       return "success"
-        
+
     except Exception as e:
       print(e)
       return f"Error in creating map: {e}"
 
+  @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=10, max=600))
   def append_to_map(self, metadata, map_name):
     """
     Appends new data to an existing Nomic map.
@@ -522,14 +505,14 @@ class NomicService():
     try:
       print(f"Appending to map: {map_name}")
       project = AtlasDataset(map_name)
-        
+
       # if not project.is_accepting_data:
       #   print("Project is currently indexing. Try again later.")
       #   return "Project busy"
-      with project.wait_for_dataset_lock():   
+      with project.wait_for_dataset_lock():
         project.add_data(data=metadata)
       return "success"
-        
+
     except Exception as e:
       print(e)
       return f"Error in appending to map: {e}"
@@ -543,25 +526,26 @@ class NomicService():
         pd.DataFrame: Processed metadata for map creation, or None if error occurs
     """
     print("Preparing conversation data for map")
-    
+
     try:
       metadata = []
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
       for _, row in df.iterrows():
-        created_at = datetime.datetime.strptime(row['created_at'], "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
+        created_at = datetime.datetime.strptime(row['created_at'],
+                                                "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
         messages = row['convo']['messages']
         first_message = messages[0]['content']
         if isinstance(first_message, list):
           first_message = first_message[0].get('text', '')
-            
+
         conversation = []
         for message in messages:
           emoji = "🙋 " if message['role'] == 'user' else "🤖 "
           content = message['content']
           text = content[0].get('text', '') if isinstance(content, list) else content
           conversation.append(f"\n>>> {emoji}{message['role']}: {text}\n")
-            
+
         metadata.append({
             "course": row['course_name'],
             "conversation": ''.join(conversation),
@@ -571,16 +555,16 @@ class NomicService():
             "first_query": first_message,
             "created_at": created_at,
             "modified_at": current_time
-          })
-        
+        })
+
       result = pd.DataFrame(metadata)
       print(f"Metadata shape: {result.shape}")
       return result
-        
+
     except Exception as e:
       print(f"Error in data preparation: {e}")
       self.sentry.capture_exception(e)
-      return pd.DataFrame()  
+      return pd.DataFrame()
 
   def data_prep_for_doc_map(self, df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -595,27 +579,25 @@ class NomicService():
     try:
       metadata = []
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
+
       for _, row in df.iterrows():
-        created_at = datetime.datetime.strptime(
-                row['created_at'], 
-                "%Y-%m-%dT%H:%M:%S.%f%z"
-            ).strftime("%Y-%m-%d %H:%M:%S")
-            
+        created_at = datetime.datetime.strptime(row['created_at'],
+                                                "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
+
         for idx, context in enumerate(row['contexts'], 1):
           metadata.append({
-            "id": f"{row['id']}_{idx}",
-            "created_at": created_at,
-            "s3_path": row['s3_path'],
-            "url": row['url'] or "",
-            "base_url": row['base_url'] or "",
-            "readable_filename": row['readable_filename'],
-            "modified_at": current_time,
-            "text": context['text']
+              "id": f"{row['id']}_{idx}",
+              "created_at": created_at,
+              "s3_path": row['s3_path'],
+              "url": row['url'] or "",
+              "base_url": row['base_url'] or "",
+              "readable_filename": row['readable_filename'],
+              "modified_at": current_time,
+              "text": context['text']
           })
-        
+
       return pd.DataFrame(metadata)
-        
+
     except Exception as e:
       print(f"Error in document data preparation: {e}")
       self.sentry.capture_exception(e)
