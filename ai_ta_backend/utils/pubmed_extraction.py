@@ -121,6 +121,7 @@ class PubmedExtraction:
         if os.path.isfile(csv_filepath):
           df.to_csv(csv_filepath, mode='a', header=False, index=False)
         else:
+          print("Creating new metadata file: ", csv_filepath)
           df.to_csv(csv_filepath, index=False)
 
         before_upload = time.time()
