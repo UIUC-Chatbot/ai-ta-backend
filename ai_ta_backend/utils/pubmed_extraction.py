@@ -697,7 +697,7 @@ class PubmedExtraction:
         self.minio_client.make_bucket(bucket_name)
         print("Created bucket", bucket_name)
 
-      upload_log = "all_papers.txt"
+      upload_log = error_file.split("_")[0] + ".txt"
       files = []
       for root, _, files_ in os.walk(filepath):
         for file in files_:
