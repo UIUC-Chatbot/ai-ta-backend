@@ -5,8 +5,6 @@ Run twice a day.
 
 # Call /updateConversationMap and /updateDocumentMap endpoints in Nomic
 
-import os
-
 import requests
 from beam import schedule
 
@@ -19,7 +17,7 @@ def task():
   # Update conversation maps
   url = f"{base_url}/updateConversationMaps"
   try:
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
     if response.status_code == 200:
       print("Conversation maps updated successfully")
     else:
@@ -31,7 +29,7 @@ def task():
   # Update document maps
   url = f"{base_url}/updateDocumentMaps"
   try:
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
     if response.status_code == 200:
       print("Document maps updated successfully")
     else:
