@@ -17,7 +17,8 @@ class NomicService():
 
   @inject
   def __init__(self, sentry: SentryService, sql: SQLDatabase):
-    nomic.login(os.environ['NOMIC_API_KEY'])
+    # nomic.login(os.environ['NOMIC_API_KEY'])
+    nomic.cli.login(os.environ['NOMIC_API_KEY'])
     self.sentry = sentry
     self.sql = sql
 
