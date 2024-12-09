@@ -19,23 +19,43 @@ import supabase
 from minio import Minio
 from posthog import Posthog
 
-POSTHOG = Posthog(sync_mode=False, project_api_key=os.environ['POSTHOG_API_KEY'], host="https://app.posthog.com")
+# POSTHOG = Posthog(sync_mode=False, project_api_key=os.environ['POSTHOG_API_KEY'], host="https://app.posthog.com")
 
-SUPBASE_CLIENT = supabase.create_client(  # type: ignore
-    supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
-    supabase_key=os.getenv('SUPABASE_API_KEY')  # type: ignore
-)
+# SUPBASE_CLIENT = supabase.create_client(  # type: ignore
+#     supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+#     supabase_key=os.getenv('SUPABASE_API_KEY')  # type: ignore
+# )
 
-MINIO_CLIENT = Minio(os.environ['MINIO_ENDPOINT'],
-                     access_key=os.environ['MINIO_ACCESS_KEY'],
-                     secret_key=os.environ['MINIO_SECRET'],
-                     secure=True)
+# MINIO_CLIENT = Minio(os.environ['MINIO_ENDPOINT'],
+#                      access_key=os.environ['MINIO_ACCESS_KEY'],
+#                      secret_key=os.environ['MINIO_SECRET'],
+#                      secure=True)
 
 
 def extractPubmedData():
   """
-    Main function to extract metadata and articles from the PubMed baseline folder.
-    """
+  Main function to extract metadata and articles from the PubMed baseline folder.
+  """
+  global POSTHOG, SUPABASE_CLIENT, MINIO_CLIENT
+    
+  # Initialize only if not already initialized
+  if 'POSTHOG' not in globals():
+        POSTHOG = Posthog(sync_mode=False, 
+                         project_api_key=os.environ['POSTHOG_API_KEY'], 
+                         host="https://app.posthog.com")
+
+  if 'SUPABASE_CLIENT' not in globals():
+        SUPABASE_CLIENT = supabase.create_client(  # type: ignore
+            supabase_url=os.getenv('SUPABASE_URL'),  # type: ignore
+            supabase_key=os.getenv('SUPABASE_API_KEY')  # type: ignore
+        )
+
+  if 'MINIO_CLIENT' not in globals():
+        MINIO_CLIENT = Minio(os.environ['MINIO_ENDPOINT'],
+                            access_key=os.environ['MINIO_ACCESS_KEY'],
+                            secret_key=os.environ['MINIO_SECRET'],
+                            secure=True)
+
   start_time = time.monotonic()
 
   ftp_address = "ftp.ncbi.nlm.nih.gov"
