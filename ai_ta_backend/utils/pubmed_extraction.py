@@ -90,7 +90,7 @@ def extractPubmedData():
 
 
 def getFilesToProcess(file_list: list):
-  last_processed_response = SUPBASE_CLIENT.table("pubmed_daily_update").select("*").order(
+  last_processed_response = SUPABASE_CLIENT.table("pubmed_daily_update").select("*").order(
       "created_at", desc=True).limit(1).execute()  # type: ignore
   last_processed_file = last_processed_response.data[0]['last_xml_file']
   print("Last processed file: ", last_processed_file)
@@ -188,7 +188,7 @@ def processPubmedXML(file: str, ftp_address: str, ftp_path: str):
     print("Final metadata: ", len(final_metadata))
 
     try:
-      response = SUPBASE_CLIENT.table("publications").upsert(final_metadata).execute()  # type: ignore
+      response = SUPABASE_CLIENT.table("publications").upsert(final_metadata).execute()  # type: ignore
       print("Uploaded metadata to SQL DB.")
     except Exception as e:
       print("Error in uploading to Supabase: ", e)
