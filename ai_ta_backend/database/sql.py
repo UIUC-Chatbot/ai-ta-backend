@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 from injector import inject
 
@@ -102,6 +103,14 @@ class SQLDatabase:
       return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
           "course_name", course_name).gt("id", last_id).order('id', desc=False).execute()
 
+  def getCountFromDocuments(self, course_name: str, last_id: int):
+    if last_id == 0:
+      return self.supabase_client.table("documents").select("id", count='exact').eq("course_name",
+        course_name).order('id', desc=False).execute()
+    else:
+      return self.supabase_client.table("documents").select("id", count='exact').eq("course_name",
+        course_name).gt("id", last_id).order('id', desc=False).execute()
+                                                                                                            
   def getDocMapFromProjects(self, course_name: str):
     return self.supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
 
@@ -156,3 +165,69 @@ class SQLDatabase:
   
   def getPreAssignedAPIKeys(self, email: str):
     return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails", '["' + email + '"]').execute()
+  
+  def getConversationsCreatedAtByCourse(self, course_name: str):
+    try:
+        count_response = self.supabase_client.table("llm-convo-monitor")\
+            .select("created_at", count="exact")\
+            .eq("course_name", course_name)\
+            .execute()
+        
+        total_count = count_response.count if hasattr(count_response, 'count') else 0
+        
+        if total_count <= 0:
+            print(f"No conversations found for course: {course_name}")
+            return [], 0
+
+        all_data = []
+        batch_size = 1000
+        start = 0
+
+        while start < total_count:
+            end = min(start + batch_size - 1, total_count - 1)
+
+            try:
+                response = self.supabase_client.table("llm-convo-monitor")\
+                    .select("created_at")\
+                    .eq("course_name", course_name)\
+                    .range(start, end)\
+                    .execute()
+
+                if not response or not hasattr(response, 'data') or not response.data:
+                    print(f"No data returned for range {start} to {end}.")
+                    break
+
+                all_data.extend(response.data)
+                start += batch_size
+
+            except Exception as batch_error:
+                print(f"Error fetching batch {start}-{end}: {str(batch_error)}")
+                continue
+
+        if not all_data:
+            print(f"No conversation data could be retrieved for course: {course_name}")
+            return [], 0
+
+        return all_data, len(all_data)
+
+    except Exception as e:
+        print(f"Error in getConversationsCreatedAtByCourse for {course_name}: {str(e)}")
+        return [], 0
+  
+  def getProjectStats(self, project_name: str):
+    try:
+        response = self.supabase_client.table("project_stats").select("total_messages, total_conversations, unique_users")\
+                    .eq("project_name", project_name).execute()
+        
+        if response and hasattr(response, 'data') and response.data:
+            return response.data[0]
+    except Exception as e:
+        print(f"Error fetching project stats for {project_name}: {str(e)}")
+    
+    # Return default values if anything fails
+    return {"total_messages": 0, "total_conversations": 0, "unique_users": 0}
+
+      
+  
+  def getAllProjects(self):
+    return self.supabase_client.table("projects").select("course_name, doc_map_id, convo_map_id, last_uploaded_doc_id, last_uploaded_convo_id").execute()
