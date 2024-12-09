@@ -178,21 +178,21 @@ def delete(service: RetrievalService, flaskExecutor: ExecutorInterface):
   return response
 
 
-# @app.route('/getNomicMap', methods=['GET'])
-# def nomic_map(service: NomicService):
-#   course_name: str = request.args.get('course_name', default='', type=str)
-#   map_type: str = request.args.get('map_type', default='conversation', type=str)
+@app.route('/getNomicMap', methods=['GET'])
+def nomic_map(service: NomicService):
+  course_name: str = request.args.get('course_name', default='', type=str)
+  map_type: str = request.args.get('map_type', default='conversation', type=str)
 
-#   if course_name == '':
-#     # proper web error "400 Bad request"
-#     abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
+  if course_name == '':
+    # proper web error "400 Bad request"
+    abort(400, description=f"Missing required parameter: 'course_name' must be provided. Course name: `{course_name}`")
 
-#   map_id = service.get_nomic_map(course_name, map_type)
-#   print("nomic map\n", map_id)
+  map_id = service.get_nomic_map(course_name, map_type)
+  print("nomic map\n", map_id)
 
-#   response = jsonify(map_id)
-#   response.headers.add('Access-Control-Allow-Origin', '*')
-#   return response
+  response = jsonify(map_id)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
 
 
 @app.route('/updateConversationMaps', methods=['GET'])
