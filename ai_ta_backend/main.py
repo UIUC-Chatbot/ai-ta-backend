@@ -43,6 +43,7 @@ from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
 
 from ai_ta_backend.utils.pubmed_extraction import extractPubmedData
+from ai_ta_backend.utils.update_project import webscrape_documents
 
 
 app = Flask(__name__)
