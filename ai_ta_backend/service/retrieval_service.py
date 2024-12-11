@@ -15,7 +15,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 
 from ai_ta_backend.database.aws import AWSStorage
-from ai_ta_backend.database.sql import SQLDatabase
+from ai_ta_backend.database.sql import SQLDatabase, ProjectStats, WeeklyMetric, ModelUsage
 from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapter
 # from ai_ta_backend.service.nomic_service import NomicService
@@ -588,7 +588,7 @@ class RetrievalService:
             'total_count': 0
         }
 
-  def getProjectStats(self, project_name: str) -> Dict[str, int]:
+  def getProjectStats(self, project_name: str) -> ProjectStats:
     """
     Get statistics for a project.
     
@@ -596,10 +596,44 @@ class RetrievalService:
         project_name (str)
 
     Returns:
-        Dict[str, int]: Dictionary containing:
-            - total_conversations: Total number of conversations
-            - total_users: Number of unique users
-            - total_messages: Total number of messages
+        ProjectStats: TypedDict containing:
+            - total_messages (int): Total number of messages
+            - total_conversations (int): Total number of conversations
+            - unique_users (int): Number of unique users
+            - avg_conversations_per_user (float): Average conversations per user
+            - avg_messages_per_user (float): Average messages per user
+            - avg_messages_per_conversation (float): Average messages per conversation
     """
     return self.sqlDb.getProjectStats(project_name)
-  
+
+  def getWeeklyTrends(self, project_name: str) -> List[WeeklyMetric]:
+    """
+    Get weekly trends for a project, showing percentage changes in metrics.
+    
+    Args:
+        project_name (str): Name of the project
+        
+    Returns:
+        List[WeeklyMetric]: List of metrics with their current week value, 
+        previous week value, and percentage change.
+    """
+    return self.sqlDb.getWeeklyTrends(project_name)
+
+  def getModelUsageCounts(self, project_name: str) -> List[ModelUsage]:
+    """
+    Get counts of different models used in conversations for a project.
+    
+    Args:
+        project_name (str): Name of the project
+        
+    Returns:
+        List[ModelUsage]: List of model usage statistics containing model name,
+        count and percentage of total usage
+    """
+    try:
+        return self.sqlDb.getModelUsageCounts(project_name)
+            
+    except Exception as e:
+        print(f"Error fetching model usage counts for {project_name}: {str(e)}")
+        self.sentry.capture_exception(e)
+        return []

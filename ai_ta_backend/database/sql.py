@@ -1,10 +1,28 @@
 import os
-from typing import Dict
+from typing import Dict, TypedDict, List, Union
 
 from injector import inject
 
 import supabase
 
+class ProjectStats(TypedDict):
+    total_messages: int
+    total_conversations: int
+    unique_users: int
+    avg_conversations_per_user: float
+    avg_messages_per_user: float
+    avg_messages_per_conversation: float
+
+class WeeklyMetric(TypedDict):
+    current_week_value: int
+    metric_name: str
+    percentage_change: float
+    previous_week_value: int
+
+class ModelUsage(TypedDict):
+    model_name: str
+    count: int
+    percentage: float
 
 class SQLDatabase:
 
@@ -214,20 +232,89 @@ class SQLDatabase:
         print(f"Error in getConversationsCreatedAtByCourse for {course_name}: {str(e)}")
         return [], 0
   
-  def getProjectStats(self, project_name: str):
+  def getProjectStats(self, project_name: str) -> ProjectStats:
     try:
         response = self.supabase_client.table("project_stats").select("total_messages, total_conversations, unique_users")\
                     .eq("project_name", project_name).execute()
         
+        stats: Dict[str, int | float] = {
+            "total_messages": 0,
+            "total_conversations": 0,
+            "unique_users": 0,
+            "avg_conversations_per_user": 0.0,
+            "avg_messages_per_user": 0.0,
+            "avg_messages_per_conversation": 0.0
+        }
+        
         if response and hasattr(response, 'data') and response.data:
-            return response.data[0]
+            base_stats = response.data[0]
+            stats.update(base_stats)
+            
+            if stats["unique_users"] > 0:
+                stats["avg_conversations_per_user"] = float(round(stats["total_conversations"] / stats["unique_users"], 2))
+                stats["avg_messages_per_user"] = float(round(stats["total_messages"] / stats["unique_users"], 2))
+            
+            if stats["total_conversations"] > 0:
+                stats["avg_messages_per_conversation"] = float(round(stats["total_messages"] / stats["total_conversations"], 2))
+                
+        # Convert stats to proper types before creating ProjectStats
+        stats_typed = {
+            "total_messages": int(stats["total_messages"]),
+            "total_conversations": int(stats["total_conversations"]),
+            "unique_users": int(stats["unique_users"]),
+            "avg_conversations_per_user": float(stats["avg_conversations_per_user"]),
+            "avg_messages_per_user": float(stats["avg_messages_per_user"]),
+            "avg_messages_per_conversation": float(stats["avg_messages_per_conversation"])
+        }
+        return ProjectStats(**stats_typed)
+        
     except Exception as e:
         print(f"Error fetching project stats for {project_name}: {str(e)}")
-    
-    # Return default values if anything fails
-    return {"total_messages": 0, "total_conversations": 0, "unique_users": 0}
+        return ProjectStats(
+            total_messages=0,
+            total_conversations=0,
+            unique_users=0,
+            avg_conversations_per_user=0.0,
+            avg_messages_per_user=0.0,
+            avg_messages_per_conversation=0.0
+        )
 
-      
-  
+  def getWeeklyTrends(self, project_name: str) -> List[WeeklyMetric]:
+    response = self.supabase_client.rpc('calculate_weekly_trends', {
+            'course_name_input': project_name
+        }).execute()
+    
+    if response and hasattr(response, 'data'):
+        return [WeeklyMetric(
+            current_week_value=item['current_week_value'],
+            metric_name=item['metric_name'],
+            percentage_change=item['percentage_change'],
+            previous_week_value=item['previous_week_value']
+        ) for item in response.data]
+        
+    return []
+
+  def getModelUsageCounts(self, project_name: str) -> List[ModelUsage]:
+    response = self.supabase_client.rpc('count_models_by_project', {
+            'project_name_input': project_name
+        }).execute()
+        
+    if response and hasattr(response, 'data'):
+        total_count = sum(item['count'] for item in response.data if item.get('model'))
+        
+        model_counts = []
+        for item in response.data:
+            if item.get('model'):
+                percentage = round((item['count'] / total_count * 100), 2) if total_count > 0 else 0
+                model_counts.append(ModelUsage(
+                    model_name=item['model'],
+                    count=item['count'],
+                    percentage=percentage
+                ))
+        
+        return model_counts
+            
+    return []
+
   def getAllProjects(self):
     return self.supabase_client.table("projects").select("course_name, doc_map_id, convo_map_id, last_uploaded_doc_id, last_uploaded_convo_id").execute()
