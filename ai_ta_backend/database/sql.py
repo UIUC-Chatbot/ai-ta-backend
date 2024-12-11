@@ -121,6 +121,14 @@ class SQLDatabase:
       return self.supabase_client.table("llm-convo-monitor").select("id", count='exact').eq(
           "course_name", course_name).gt("id", last_id).order('id', desc=False).execute()
 
+  def getCountFromDocuments(self, course_name: str, last_id: int):
+    if last_id == 0:
+      return self.supabase_client.table("documents").select("id", count='exact').eq("course_name",
+        course_name).order('id', desc=False).execute()
+    else:
+      return self.supabase_client.table("documents").select("id", count='exact').eq("course_name",
+        course_name).gt("id", last_id).order('id', desc=False).execute()
+                                                                                                            
   def getDocMapFromProjects(self, course_name: str):
     return self.supabase_client.table("projects").select("doc_map_id").eq("course_name", course_name).execute()
 
@@ -299,4 +307,6 @@ class SQLDatabase:
         ) for item in response.data if item['model']]
             
     return []
-  
+
+  def getAllProjects(self):
+    return self.supabase_client.table("projects").select("course_name, doc_map_id, convo_map_id, last_uploaded_doc_id, last_uploaded_convo_id").execute()
