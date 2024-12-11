@@ -15,7 +15,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 
 from ai_ta_backend.database.aws import AWSStorage
-from ai_ta_backend.database.sql import SQLDatabase
+from ai_ta_backend.database.sql import SQLDatabase, ProjectStats, WeeklyMetric, ModelUsage
 from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapter
 # from ai_ta_backend.service.nomic_service import NomicService
@@ -589,7 +589,7 @@ class RetrievalService:
             'total_count': 0
         }
 
-  def getProjectStats(self, project_name: str) -> Dict[str, int | float]:
+  def getProjectStats(self, project_name: str) -> ProjectStats:
     """
     Get statistics for a project.
     
@@ -597,7 +597,7 @@ class RetrievalService:
         project_name (str)
 
     Returns:
-        Dict[str, int | float]: Dictionary containing:
+        ProjectStats: TypedDict containing:
             - total_messages (int): Total number of messages
             - total_conversations (int): Total number of conversations
             - unique_users (int): Number of unique users
@@ -607,7 +607,7 @@ class RetrievalService:
     """
     return self.sqlDb.getProjectStats(project_name)
 
-  def getWeeklyTrends(self, project_name: str) -> Dict:
+  def getWeeklyTrends(self, project_name: str) -> List[WeeklyMetric]:
     """
     Get weekly trends for a project, showing percentage changes in metrics.
     
@@ -615,27 +615,12 @@ class RetrievalService:
         project_name (str): Name of the project
         
     Returns:
-        Dict: Contains metrics with their current week value, previous week value, and percentage change.
+        List[WeeklyMetric]: List of metrics with their current week value, 
+        previous week value, and percentage change.
     """
-    response = self.sqlDb.getWeeklyTrends(project_name)
-    
-    if response and hasattr(response, 'data'):
-        return response.data
-        
-    return {
-        "unique_users": {
-            "current_week": 0,
-            "previous_week": 0,
-            "percent_change": 0
-        },
-        "total_conversations": {
-            "current_week": 0,
-            "previous_week": 0,
-            "percent_change": 0
-        }
-    }
+    return self.sqlDb.getWeeklyTrends(project_name)
 
-  def getModelUsageCounts(self, project_name: str) -> Dict[str, int]:
+  def getModelUsageCounts(self, project_name: str) -> List[ModelUsage]:
     """
     Get counts of different models used in conversations for a project.
     
@@ -643,19 +628,13 @@ class RetrievalService:
         project_name (str): Name of the project
         
     Returns:
-        Dict[str, int]: Dictionary with model names as keys and usage counts as values
+        List[ModelUsage]: List of model usage statistics containing model name,
+        count and percentage of total usage
     """
     try:
-        response = self.sqlDb.getModelUsageCounts(project_name)
-        
-        if response and hasattr(response, 'data'):
-            # Convert the response into a dictionary
-            model_counts = {item['model']: item['count'] for item in response.data if item['model']}
-            return model_counts
+        return self.sqlDb.getModelUsageCounts(project_name)
             
-        return {}
-        
     except Exception as e:
         print(f"Error fetching model usage counts for {project_name}: {str(e)}")
         self.sentry.capture_exception(e)
-        return {}
+        return []
