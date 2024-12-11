@@ -522,6 +522,9 @@ def switch_workflow(service: WorkflowService) -> Response:
 
 @app.route('/getConversationStats', methods=['GET'])
 def get_conversation_stats(service: RetrievalService) -> Response:
+  """
+  Retrieves statistical metrics about conversations for a specific course.
+  """
   course_name = request.args.get('course_name', default='', type=str)
 
   if course_name == '':
@@ -590,9 +593,11 @@ def createProject(service: ProjectService, flaskExecutor: ExecutorInterface) -> 
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
-
 @app.route('/getProjectStats', methods=['GET'])
 def get_project_stats(service: RetrievalService) -> Response:
+    """
+    Retrieves statistical metrics about conversations for a specific project.
+    """
     project_name = request.args.get('project_name', default='', type=str)
 
     if project_name == '':
@@ -604,10 +609,11 @@ def get_project_stats(service: RetrievalService) -> Response:
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-
 @app.route('/getWeeklyTrends', methods=['GET'])
 def get_weekly_trends(service: RetrievalService) -> Response:
-    """Get weekly trends showing percentage changes in key metrics."""
+    """
+    Provides week-over-week percentage changes in key project metrics.
+    """
     project_name = request.args.get('project_name', default='', type=str)
 
     if project_name == '':
@@ -619,10 +625,11 @@ def get_weekly_trends(service: RetrievalService) -> Response:
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
-
 @app.route('/getModelUsageCounts', methods=['GET'])
 def get_model_usage_counts(service: RetrievalService) -> Response:
-    """Get counts of different models used in conversations."""
+    """
+    Get counts of different models used in conversations.
+    """
     project_name = request.args.get('project_name', default='', type=str)
 
     if project_name == '':
