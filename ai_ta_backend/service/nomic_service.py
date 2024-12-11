@@ -47,7 +47,8 @@ class NomicService():
         index_suffix = "_convo_index"
 
       project_name = map_prefix + course_name
-      project_name = project_name.replace(" ", "-").lower()  # names are like this - conversation-map-for-cropwizard-15
+      # project_name = project_name.replace(" ", "-").lower()  # names are like this - conversation-map-for-cropwizard-15
+      project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', project_name.replace(" ", "-").replace("_", "-").lower())
       project = AtlasDataset(project_name)
       map = project.get_map(course_name + index_suffix)
 
