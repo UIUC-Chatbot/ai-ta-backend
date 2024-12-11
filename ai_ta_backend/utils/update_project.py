@@ -24,8 +24,8 @@ def webscrape_documents(project_name: str):
     print(f"Total base_urls: {len(base_urls)}")
     
     #webcrawl_url = "https://crawlee.kastan.ai/crawl"
-    #webcrawl_url = "https://crawlee-production.up.railway.app/crawl"
-    webcrawl_url = "https://crawlee-pr-7.up.railway.app/crawl"
+    webcrawl_url = "https://crawlee-production.up.railway.app/crawl"
+    
     payload = {
         "params": {
             "url": "",
