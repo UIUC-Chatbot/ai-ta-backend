@@ -299,12 +299,25 @@ class SQLDatabase:
             'project_name_input': project_name
         }).execute()
     
+    print(f"Raw response from Supabase: {response.data}")  # Debug log
+    
     if response and hasattr(response, 'data'):
-        return [ModelUsage(
-            model_name=item['model'],
-            count=item['count'],
-            percentage=item['percentage']
-        ) for item in response.data if item['model']]
+        # Calculate total count
+        total_count = sum(item['count'] for item in response.data if item.get('model'))
+        
+        # Create ModelUsage objects with calculated percentages
+        model_counts = []
+        for item in response.data:
+            if item.get('model'):  # Only process items with a model name
+                percentage = round((item['count'] / total_count * 100), 2) if total_count > 0 else 0
+                model_counts.append(ModelUsage(
+                    model_name=item['model'],
+                    count=item['count'],
+                    percentage=percentage
+                ))
+        
+        print(f"Final model_counts: {model_counts}")  # Debug log
+        return model_counts
             
     return []
 
