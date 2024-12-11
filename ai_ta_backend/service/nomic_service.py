@@ -8,6 +8,8 @@ import pandas as pd
 from injector import inject
 from nomic import AtlasDataset, atlas
 from tenacity import retry, stop_after_attempt, wait_exponential
+from ai_ta_backend.database.sql import SQLDatabase
+from ai_ta_backend.service.sentry_service import SentryService
 
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.sentry_service import SentryService
@@ -112,8 +114,8 @@ class NomicService():
             result = self.append_to_map(metadata=metadata, map_name=map_name)
 
             if result == "success":
-              last_id = int(final_df['id'].iloc[-1])
-              self.sql.updateProjects(course_name, {'last_uploaded_convo_id': last_id})
+              last_uploaded_id = int(final_df['id'].iloc[-1])
+              self.sql.updateProjects(course_name, {'last_uploaded_convo_id': last_uploaded_id})
               self.rebuild_map(course_name, "conversation")
             else:
               print(f"Error in updating conversation map: {result}")
@@ -314,6 +316,10 @@ class NomicService():
             else:
               self.sql.insertProjectInfo(project_info)
 
+          else:
+            print(f"Did not append additional data to new map: {result}")
+            return f"Did not append additional data to new map: {result}"
+
           # Reset for next batch
           combined_dfs = []
           convo_count = 0
@@ -407,6 +413,10 @@ class NomicService():
               self.sql.updateProjects(course_name, project_info)
             else:
               self.sql.insertProjectInfo(project_info)
+          
+          else:
+            print(f"Error in uploading batch for {course_name}: {result}")
+            return f"Error in uploading batch for {course_name}: {result}"
 
           # Reset for next batch
           combined_dfs = []
@@ -511,9 +521,16 @@ class NomicService():
       # if not project.is_accepting_data:
       #   print("Project is currently indexing. Try again later.")
       #   return "Project busy"
-      with project.wait_for_dataset_lock():
-        project.add_data(data=metadata)
-      return "success"
+      start_time = time.monotonic()
+      while time.monotonic() - start_time < 60:
+        if project.is_accepting_data:
+          project.add_data(data=metadata)
+          print(f"Data appended to map: {map_name}")
+          return "success"
+        print("Project is currently indexing. Waiting for 5 seconds...")
+        time.sleep(5)
+      
+      return "Project busy"
 
     except Exception as e:
       print(e)

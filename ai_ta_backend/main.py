@@ -199,7 +199,7 @@ def updateConversationMaps(service: NomicService, flaskExecutor: ExecutorInterfa
 
   response = flaskExecutor.submit(service.update_conversation_maps)
 
-  response = jsonify({"Task started"})
+  response = jsonify({"outcome": "Task started"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
@@ -210,7 +210,7 @@ def updateDocumentMaps(service: NomicService, flaskExecutor: ExecutorInterface):
 
   response = flaskExecutor.submit(service.update_document_maps)
 
-  response = jsonify({"Task started"})
+  response = jsonify({"outcome": "Task started"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
