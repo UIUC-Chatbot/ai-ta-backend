@@ -77,6 +77,9 @@ class NomicService():
 
       for project in projects:
         course_name = project['course_name']
+        if course_name in ["PNBot", "Canvas-TA"]:
+          continue
+
         print(f"Processing course: {course_name}")
 
         if not project['convo_map_id']:
@@ -117,9 +120,13 @@ class NomicService():
             if result == "success":
               last_uploaded_id = int(final_df['id'].iloc[-1])
               self.sql.updateProjects(course_name, {'last_uploaded_convo_id': last_uploaded_id})
-              self.rebuild_map(course_name, "conversation")
+              
             else:
               print(f"Error in updating conversation map: {result}")
+            
+            combined_dfs = []
+        self.rebuild_map(course_name, "conversation")
+        print(f"Successfully processed all conversations for {course_name}")
 
       return "success"
 
@@ -261,7 +268,9 @@ class NomicService():
 
       # Validate conversation count
       response = self.sql.getCountFromLLMConvoMonitor(course_name, last_id=0)
+      print(f"Response from Supabase: {response}")
       if not response.count or response.count < MIN_CONVERSATIONS:
+        print(f"Cannot create map: {'No new convos present' if not response.count else 'Less than 20 conversations'}")
         return f"Cannot create map: {'No new convos present' if not response.count else 'Less than 20 conversations'}"
 
       # Prepare map creation
@@ -523,13 +532,18 @@ class NomicService():
       #   print("Project is currently indexing. Try again later.")
       #   return "Project busy"
       start_time = time.monotonic()
-      while time.monotonic() - start_time < 60:
+      while time.monotonic() - start_time < 180:
         if project.is_accepting_data:
           project.add_data(data=metadata)
           print(f"Data appended to map: {map_name}")
           return "success"
         print("Project is currently indexing. Waiting for 5 seconds...")
         time.sleep(5)
+
+      # with project.wait_for_dataset_lock():
+      #   project.add_data(data=metadata)
+      #   print(f"Data appended to map: {map_name}")
+      #   return "success"
       
       return "Project busy"
 
