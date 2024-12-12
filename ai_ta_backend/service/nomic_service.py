@@ -77,8 +77,6 @@ class NomicService():
 
       for project in projects:
         course_name = project['course_name']
-        if course_name in ["PNBot", "Canvas-TA"]:
-          continue
 
         print(f"Processing course: {course_name}")
 
