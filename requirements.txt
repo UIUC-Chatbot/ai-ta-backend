@@ -41,7 +41,7 @@ minio==7.2.12
 
 # Logging 
 posthog==3.1.0
-sentry-sdk==1.39.1
+sentry-sdk==2.19.2
 
 ollama==0.2.1
 
