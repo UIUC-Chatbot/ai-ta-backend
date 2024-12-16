@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Sparse checkout for supabase/docker
-git submodule update --init --depth 1 && \
+git submodule update --init --depth 1 --recursive && \
 cd supabase && \
 git sparse-checkout init --cone && \
 git sparse-checkout set docker && \
