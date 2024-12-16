@@ -1,3 +1,6 @@
 [submodule "supabase"]
 	path = supabase
 	url = https://github.com/supabase/supabase
+[submodule "ic_crawlee"]
+	path = ic_crawlee
+	url = https://github.com/UIUC-Chatbot/crawlee.git
