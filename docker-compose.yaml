@@ -109,7 +109,7 @@ services:
     volumes:
       - ./data:/data
     ports:
-      - "3345:3345"
+      - "3345:3000"
 
 # declare the network resource
 # this will allow you to use service discovery and address a container by its name from within the network
