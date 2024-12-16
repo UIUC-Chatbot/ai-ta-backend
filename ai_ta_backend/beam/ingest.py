@@ -1164,18 +1164,16 @@ class Ingest():
             collection_name=os.environ['QDRANT_COLLECTION_NAME'],  # type: ignore
             points=vectors,  # type: ignore
         )
-      except Timeout as e:
-        # it's fine if this gets timeout error. it will still post, according to devs: https://github.com/qdrant/qdrant/issues/3654
-        print(
-            "Warning: all update and/or upsert timeouts are fine (completed in background), but errors might not be: ",
-            e)
-        pass
       except Exception as e:
-        # log other exceptions
         logging.error("Error in QDRANT upload: ", exc_info=True)
         err = f"Error in QDRANT upload: {e}"
-        sentry_sdk.capture_exception(e)
-        raise Exception(err)
+        if "timed out" in str(e):
+          # timed out error is fine, task will continue in background
+          pass
+        else:
+          print(err)
+          sentry_sdk.capture_exception(e)
+          raise Exception(err)
 
       ### Supabase SQL ###
       contexts_for_supa = [{
