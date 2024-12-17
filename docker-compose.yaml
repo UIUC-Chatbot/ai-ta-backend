@@ -110,11 +110,14 @@ services:
       - ./data:/data
     ports:
       - "3345:3000"
+    environment:
+      - INGEST_URL=http://flask-app:8000/ingest # The port has to be the internal port of the Flask app, not the external one in the env file
 
 # declare the network resource
 # this will allow you to use service discovery and address a container by its name from within the network
 networks:
-  my-network: {}
+  my-network:
+    driver: bridge
   supabase_default:
     external: true # Mark as external since it's managed by Supabase
 
