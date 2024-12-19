@@ -95,15 +95,7 @@ class ProjectService:
             row['providerBodyNoModels']['apiKey'] = encrypt_if_needed(row['providerBodyNoModels']['apiKey'])
             llm_val[row['providerName']] = row['providerBodyNoModels']
 
-          # Insert the pre-assigned API keys into Redis
           self.redis_client.set(redis_key, json.dumps(llm_val))
-
-          # Check the response status
-          if set_response.status_code == 200:
-            print("LLM key-value pair inserted successfully.")
-          else:
-            print(
-                f"Failed to insert LLM key-value pair. Status code: {response.status_code}, Response: {response.text}")
 
       return "success"
     except Exception as e:
