@@ -201,18 +201,14 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
   ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
 
   # Insert into 'documents_in_progress' table
-  responseBody = context.response_body  
-  result = supabase_client.table('documents_in_progress').insert({
+  supabase_client.table('documents_in_progress').insert({
       'course_name': course_name,
       's3_path': s3_paths,
       'base_url': base_url,
       'url': url,
       'readable_filename': readable_filename,
-      'beam_task_id': responseBody.task_id,
   }).execute()
-  if result.error:
-      print(f"Error inserting into documents_in_progress: {result.error}")
-
+      
   def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
     if content:
       return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=groups)
