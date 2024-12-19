@@ -38,7 +38,7 @@ boto3==1.28.79
 qdrant-client==1.7.3
 supabase==2.5.3
 minio==7.2.12
-"redis[hiredis]"
+redis[hiredis]
 
 # Logging 
 posthog==3.1.0
