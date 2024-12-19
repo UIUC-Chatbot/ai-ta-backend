@@ -1,6 +1,7 @@
 import json
 import os
 
+import redis
 import requests
 from injector import inject
 
@@ -22,6 +23,8 @@ class ProjectService:
     self.sqlDb = sql_db
     self.posthog = posthog_service
     self.sentry = sentry_service
+
+    self.redis_client = redis.Redis.from_url(os.environ['REDIS_URL'], db=0)
 
   def generate_json_schema(self, project_name: str, project_description: str | None) -> None:
     # Generate metadata schema using project_name and project_description
@@ -93,8 +96,7 @@ class ProjectService:
             llm_val[row['providerName']] = row['providerBodyNoModels']
 
           # Insert the pre-assigned API keys into Redis
-          set_llm_url = str(os.environ['KV_REST_API_URL']) + f"/set/{redis_key}"
-          set_response = requests.post(set_llm_url, headers=headers, data=json.dumps(llm_val))
+          self.redis_client.set(redis_key, json.dumps(llm_val))
 
           # Check the response status
           if set_response.status_code == 200:
