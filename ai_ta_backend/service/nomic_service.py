@@ -121,6 +121,7 @@ class NomicService():
               
             else:
               print(f"Error in updating conversation map: {result}")
+              break
             
             combined_dfs = []
         self.rebuild_map(course_name, "conversation")
@@ -530,7 +531,7 @@ class NomicService():
       #   print("Project is currently indexing. Try again later.")
       #   return "Project busy"
       start_time = time.monotonic()
-      while time.monotonic() - start_time < 180:
+      while time.monotonic() - start_time < 30:
         if project.is_accepting_data:
           project.add_data(data=metadata)
           print(f"Data appended to map: {map_name}")
