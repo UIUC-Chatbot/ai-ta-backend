@@ -121,6 +121,7 @@ class NomicService():
               
             else:
               print(f"Error in updating conversation map: {result}")
+              break
             
             combined_dfs = []
         self.rebuild_map(course_name, "conversation")
