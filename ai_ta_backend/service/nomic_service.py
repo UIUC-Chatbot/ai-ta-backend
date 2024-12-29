@@ -73,14 +73,17 @@ class NomicService():
         str: 'success' or error message
     """
     try:
-      projects = self.sql.getAllProjects().data
-
+      
+      #projects = self.sql.getAllProjects().data
+      projects = self.sql.getConvoMapDetails().data
+      print("Length of projects: ", len(projects))
+      
       for project in projects:
         course_name = project['course_name']
 
         print(f"Processing course: {course_name}")
 
-        if not project['convo_map_id']:
+        if not project['convo_map_id'] or project['convo_map_id'] == 'N/A':
           print(f"Creating new conversation map for {course_name}")
           self.create_conversation_map(course_name)
           continue
@@ -126,7 +129,9 @@ class NomicService():
             combined_dfs = []
         self.rebuild_map(course_name, "conversation")
         print(f"Successfully processed all conversations for {course_name}")
+        print(f"------------------------------------------------------------------------")
 
+      print("Finished updating all conversation maps.")
       return "success"
 
     except Exception as e:
@@ -268,6 +273,7 @@ class NomicService():
       # Validate conversation count
       response = self.sql.getCountFromLLMConvoMonitor(course_name, last_id=0)
       print(f"Response from Supabase: {response}")
+
       if not response.count or response.count < MIN_CONVERSATIONS:
         print(f"Cannot create map: {'No new convos present' if not response.count else 'Less than 20 conversations'}")
         return f"Cannot create map: {'No new convos present' if not response.count else 'Less than 20 conversations'}"

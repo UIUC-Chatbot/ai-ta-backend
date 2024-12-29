@@ -318,3 +318,6 @@ class SQLDatabase:
 
   def getAllProjects(self):
     return self.supabase_client.table("projects").select("course_name, doc_map_id, convo_map_id, last_uploaded_doc_id, last_uploaded_convo_id").execute()
+  
+  def getConvoMapDetails(self):
+    return self.supabase_client.rpc("get_convo_maps", params={}).execute()
