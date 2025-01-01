@@ -14,17 +14,19 @@ def task():
   print("Hi, from your task running at 6 AM UTC (12 AM CST) daily!")
   base_url = "https://flask-production-751b.up.railway.app"
 
+  print("Temporarily disabled")
+
   # Update conversation maps
-  url = f"{base_url}/updateConversationMaps"
-  try:
-    response = requests.get(url, timeout=30)
-    if response.status_code == 200:
-      print("Conversation maps updated successfully")
-    else:
-      print(f"Failed to update conversation maps - Status code: {response.status_code}")
-      print(f"Response text: {response.text}")
-  except Exception as e:
-    print(f"Error updating conversation maps: {str(e)}")
+  # url = f"{base_url}/updateConversationMaps"
+  # try:
+  #   response = requests.get(url, timeout=30)
+  #   if response.status_code == 200:
+  #     print("Conversation maps updated successfully")
+  #   else:
+  #     print(f"Failed to update conversation maps - Status code: {response.status_code}")
+  #     print(f"Response text: {response.text}")
+  # except Exception as e:
+  #   print(f"Error updating conversation maps: {str(e)}")
 
   # # Update document maps
   # url = f"{base_url}/updateDocumentMaps"
