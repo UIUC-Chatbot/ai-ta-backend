@@ -47,7 +47,6 @@ class NomicService():
         index_suffix = "_convo_index"
 
       project_name = map_prefix + course_name
-      # project_name = project_name.replace(" ", "-").lower()  # names are like this - conversation-map-for-cropwizard-15
       project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', project_name.replace(" ", "-").replace("_", "-").lower())
       project = AtlasDataset(project_name)
       map = project.get_map(course_name + index_suffix)
@@ -82,9 +81,6 @@ class NomicService():
       
       for project in projects:
         course_name = project['course_name']
-        if course_name != 'cropwizard-1.5':
-            continue
-
         print(f"Processing course: {course_name}")
 
         if not project['convo_map_id'] or project['convo_map_id'] == 'N/A':
@@ -98,6 +94,7 @@ class NomicService():
 
         if total_convo_count == 0:
           print("No new conversations to log.")
+          self.create_map_index(course_name, index_field="first_query", map_type="conversation")
           continue
 
         print(f"Found {total_convo_count} unlogged conversations")
@@ -160,14 +157,16 @@ class NomicService():
 
     try:
       # Fetch all projects
-      projects = self.sql.getAllProjects().data
+      projects = self.sql.getDocMapDetails().data
+      print("Length of projects: ", len(projects))
 
       for project in projects:
         try:
           course_name = project['course_name']
+          print(f"Processing course: {project}")
           
           # Determine whether to create or update map
-          if not project.get('doc_map_id'):
+          if not project.get('doc_map_id') or project.get('doc_map_id') == 'N/A':
             print(f"Creating new document map for course: {course_name}")
             status = self.create_document_map(course_name)
             print(f"Status of document map creation: {status}")
@@ -179,6 +178,7 @@ class NomicService():
 
           if not response.count:
             print("No new documents to log.")
+            print("---------------------------------------------------------")
             continue
 
           # Prepare update process
@@ -242,9 +242,12 @@ class NomicService():
               break
 
           # Rebuild map after all documents are processed
-          self.rebuild_map(course_name, "document")
+          # self.rebuild_map(course_name, "document")
+          self.create_map_index(course_name, index_field="text", map_type="document")
+          
           print(f"\nSuccessfully processed all documents for {course_name}")
           print(f"Total batches processed: {batch_number}")
+          print(f"------------------------------------------------------------------------")
 
         except Exception as e:
           print(f"Error in updating document map for {course_name}: {e}")

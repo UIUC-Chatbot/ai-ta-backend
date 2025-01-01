@@ -321,3 +321,7 @@ class SQLDatabase:
   
   def getConvoMapDetails(self):
     return self.supabase_client.rpc("get_convo_maps", params={}).execute()
+  
+  def getDocMapDetails(self):
+    return self.supabase_client.rpc("get_doc_map_details", params={}).execute()
+  
