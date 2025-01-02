@@ -325,3 +325,6 @@ class SQLDatabase:
   def getDocMapDetails(self):
     return self.supabase_client.rpc("get_doc_map_details", params={}).execute()
   
+  def getProjectsWithConvoMaps(self):
+     return self.supabase_client.table("projects").select("course_name, convo_map_id, last_uploaded_convo_id, conversation_map_index").neq("convo_map_id", None).execute()
+  
