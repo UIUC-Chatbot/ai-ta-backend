@@ -328,3 +328,6 @@ class SQLDatabase:
   def getProjectsWithConvoMaps(self):
      return self.supabase_client.table("projects").select("course_name, convo_map_id, last_uploaded_convo_id, conversation_map_index").neq("convo_map_id", None).execute()
   
+  def getProjectsWithDocMaps(self):
+     return self.supabase_client.table("projects").select("course_name, doc_map_id, last_uploaded_doc_id, document_map_index").neq("doc_map_id", None).execute()
+  
