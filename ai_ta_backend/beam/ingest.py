@@ -49,16 +49,14 @@ if beam.env.is_remote():
   from langchain.schema import Document
   from langchain.text_splitter import RecursiveCharacterTextSplitter
   from langchain.vectorstores import Qdrant
-
   from OpenaiEmbeddings import OpenAIAPIProcessor
   from PIL import Image
   from posthog import Posthog
   from pydub import AudioSegment
   from qdrant_client import QdrantClient, models
   from qdrant_client.models import PointStruct
-  from supabase.client import ClientOptions
   from requests.exceptions import Timeout
-
+  from supabase.client import ClientOptions
 
   sentry_sdk.init(
       dsn=os.getenv("SENTRY_DSN"),
@@ -71,6 +69,7 @@ if beam.env.is_remote():
 
 requirements = [
     "openai<1.0",
+    "pandas",
     "supabase==2.5.3",
     "tiktoken==0.5.1",
     "boto3==1.28.79",
@@ -84,9 +83,9 @@ requirements = [
     "ffprobe==0.5",
     "ffmpeg==1.4",
     "PyMuPDF==1.23.6",
-    "pytesseract==0.3.10",  # image OCR"
-    "openpyxl==3.1.2",  # excel"
-    "networkx==3.2.1",  # unused part of excel partitioning :("
+    "pytesseract==0.3.10",  # image OCR
+    "openpyxl==3.1.2",  # excel
+    "networkx==3.2.1",  # unused part of excel partitioning :(
     "python-pptx==0.6.23",
     "unstructured==0.15.12",
     "GitPython==3.1.40",
@@ -1412,7 +1411,7 @@ class Ingest():
           else:
             print("Error in deleting file from Qdrant:", e)
             sentry_sdk.capture_exception(e)
-        
+
         try:
           # delete from Supabase
           self.supabase_client.from_(os.environ['REFACTORED_MATERIALS_SUPABASE_TABLE']).delete().eq(
