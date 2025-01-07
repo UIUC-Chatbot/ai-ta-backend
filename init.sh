@@ -16,11 +16,10 @@ if [ ! -f .env ]; then
 fi
 
 set -e
-
 # Start the Supabase Docker Compose
 echo "Starting Supabase services..."
 docker compose -f ./supabase/docker/docker-compose.yml down -v
-docker compose -f ./supabase/docker/docker-compose.yml -f ./docker-compose.override.yml up -d
+sudo docker compose -f ./supabase/docker/docker-compose.yml -f ./docker-compose.override.yml up -d --build
 
 # Wait for the database to be ready
 echo "Waiting for the database to be ready..."
@@ -29,8 +28,10 @@ until docker exec supabase-db pg_isready -U postgres; do
 done
 
 # Start the parent Docker Compose
+chmod -R 777 ./supabase
 echo "Starting application services..."
 docker compose -f ./docker-compose.yaml down -v
-docker compose -f ./docker-compose.yaml up -d
+# Note: you may need to give docker with sufficient permissions to run this command (eg: sudo chmod -r 777 .)
+sudo docker compose -f ./docker-compose.yaml up -d --build
 
 echo "All services are up!"
