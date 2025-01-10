@@ -14,6 +14,9 @@ class PosthogService:
           project_api_key=os.getenv("POSTHOG_API_KEY", None),
           host="https://app.posthog.com",
       )
+    else: 
+      self.posthog = None
 
   def capture(self, event_name, properties):
-    self.posthog.capture("distinct_id_of_the_user", event=event_name, properties=properties)
+    if self.posthog:
+      self.posthog.capture("distinct_id_of_the_user", event=event_name, properties=properties)

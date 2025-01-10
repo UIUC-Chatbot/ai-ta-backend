@@ -612,9 +612,9 @@ def configure(binder: Binder) -> None:
     logging.info("Binding to Nomic service")
     binder.bind(NomicService, to=NomicService, scope=SingletonScope)
 
-  # if os.getenv("POSTHOG_API_KEY"):
-  #   logging.info("Binding to Posthog service")
-  #   binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
+  if os.getenv("POSTHOG_API_KEY"):
+    logging.info("Binding to Posthog service")
+    binder.bind(PosthogService, to=PosthogService, scope=SingletonScope)
 
   if os.getenv("SENTRY_DSN"):
     logging.info("Binding to Sentry service")
