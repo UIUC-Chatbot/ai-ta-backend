@@ -553,7 +553,6 @@ def configure(binder: Binder) -> None:
       'supabase':
           f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}",
   }
-  
   # Try to connect to Supabase and verify connection
   for db_type, url in DB_URLS.items():
     if url:

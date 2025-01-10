@@ -59,13 +59,16 @@ class SQLAlchemyIngestDB:
             db_uri = f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_URL')}"
         elif db_type == 'sqlite':
             db_uri = f"sqlite:///{os.getenv('SQLITE_DB_NAME')}"
-        else:  # postgres
-            db_uri = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}"
+        else:
+            # postgres
+            db_uri = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
 
         # Create engine and session
+        print("About to connect to DB from IngestSQL.py, with URI:", db_uri)
         engine = create_engine(db_uri)
         Session = sessionmaker(bind=engine)
         self.session = Session()
+        print("Successfully connected to DB from IngestSQL.py")
 
     def insert_document_in_progress(self, doc_progress_payload: dict):
         insert_stmt = insert(models.DocumentsInProgress).values(doc_progress_payload)
