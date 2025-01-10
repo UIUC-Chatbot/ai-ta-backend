@@ -22,6 +22,8 @@ from langchain_core.messages import HumanMessage
 from langchain_core.messages import SystemMessage
 from sqlalchemy import inspect, text
 import urllib3
+from qdrant_client import QdrantClient, models
+import boto3
 
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.qdrant import VectorDatabase
@@ -637,6 +639,65 @@ def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter, scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
   logging.info("Configured all services and adapters", binder._bindings)
+
+  # TODO: Initialize the databases 
+
+  # Qdrant
+  # Initialize Qdrant collection if it doesn't exist
+  try:
+    qdrant_client = QdrantClient(
+        url=os.getenv('QDRANT_URL', 'http://qdrant:6333'),
+        https=False,
+        api_key=os.getenv('QDRANT_API_KEY'),
+        timeout=20,
+    )
+    
+    # Create collection with OpenAI embedding dimensions
+    qdrant_client.recreate_collection(
+        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+        vectors_config=models.VectorParams(
+            size=1536,  # OpenAI embedding dimensions
+            distance=models.Distance.COSINE
+        )
+    )
+    logging.info(f"Initialized Qdrant collection: {os.environ['QDRANT_COLLECTION_NAME']}")
+  except Exception as e:
+    logging.error(f"Failed to initialize Qdrant collection: {str(e)}")
+
+  # Initialize Minio
+  try:
+    s3_client = boto3.client(
+        's3',
+        endpoint_url=os.getenv('MINIO_URL'),
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    )
+
+    # Create bucket if it doesn't exist
+    bucket_name = os.environ['S3_BUCKET_NAME']
+    try:
+        s3_client.head_bucket(Bucket=bucket_name)
+        logging.info(f"S3 bucket already exists: {bucket_name}")
+
+        # Create courses/ path by putting an empty object
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key='courses/'
+        )
+        logging.info(f"Created courses/ path in bucket: {bucket_name}")
+    except:
+        s3_client.create_bucket(Bucket=bucket_name)
+        logging.info(f"Created S3 bucket: {bucket_name}")
+        
+        # Create courses/ path in new bucket
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key='courses/'
+        )
+        logging.info(f"Created courses/ path in bucket: {bucket_name}")
+  except Exception as e:
+    logging.error(f"Failed to initialize S3 bucket: {str(e)}")
+
 
 FlaskInjector(app=app, modules=[configure])
 

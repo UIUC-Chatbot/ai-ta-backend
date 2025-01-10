@@ -985,6 +985,7 @@ class Ingest:
         ), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
 
         try:
+            logging.info("Before Text Splitter")
             text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
                 chunk_size=1000,
                 chunk_overlap=150,
@@ -996,6 +997,7 @@ class Ingest:
             input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
 
             # check for duplicates
+            logging.info(f"Before checking for duplicates")
             is_duplicate = self.check_for_duplicates(input_texts, metadatas)
             if is_duplicate:
                 if self.posthog: 
@@ -1016,8 +1018,7 @@ class Ingest:
                 context.metadata['chunk_index'] = i
                 context.metadata['doc_groups'] = kwargs.get('groups', [])
 
-            logging.info("Starting to call embeddings API")
-            
+            logging.info("Before call to embeddings API")
             embeddings_start_time = time.monotonic()
             oai = OpenAIAPIProcessor(
                 input_prompts_list=input_texts,
@@ -1045,6 +1046,7 @@ class Ingest:
                     PointStruct(id=str(uuid.uuid4()), vector=embeddings_dict[context.page_content], payload=upload_metadata))
 
             try:
+                logging.info(f"Before Upsert to Qdrant")
                 self.qdrant_client.upsert(
                     collection_name=os.environ['QDRANT_COLLECTION_NAME'],  # type: ignore
                     points=vectors,  # type: ignore
@@ -1123,6 +1125,8 @@ class Ingest:
         course_name = metadatas[0]['course_name']
         incoming_s3_path = metadatas[0]['s3_path']
         url = metadatas[0]['url']
+
+        logging.info(f"In check_for_duplicates")
 
         if incoming_s3_path:
             # check if uuid exists in s3_path -- not all s3_paths have uuids!

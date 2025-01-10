@@ -25,7 +25,7 @@ class VectorDatabase():
     self.qdrant_client = QdrantClient(
         url=os.getenv('QDRANT_URL', 'http://qdrant:6333'),  # Default to localhost if not set
         https=False,
-        api_key=os.getenv('QDRANT_API_KEY'),  # Avoid KeyError
+        api_key=os.getenv('QDRANT_API_KEY'),
         timeout=20,
     )
 
