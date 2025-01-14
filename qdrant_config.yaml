@@ -151,8 +151,8 @@ service:
   # (Either above or via an external service like nginx.)
   # Sending an api-key over an unencrypted channel is insecure.
   #
-  # Uncomment to enable.
-  # api_key: ${QDRANT_API_KEY}
+  # ⚠️ MANUALLY KEEP THIS IN SYNC WITH .env FILE
+  api_key: your-strong-key-here
 
 cluster:
   # Use `enabled: true` to run Qdrant in distributed deployment mode

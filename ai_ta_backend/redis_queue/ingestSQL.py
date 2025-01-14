@@ -1,4 +1,5 @@
 import os
+import logging
 from urllib.parse import quote_plus
 
 from ai_ta_backend.model import models
@@ -59,13 +60,16 @@ class SQLAlchemyIngestDB:
             db_uri = f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_URL')}"
         elif db_type == 'sqlite':
             db_uri = f"sqlite:///{os.getenv('SQLITE_DB_NAME')}"
-        else:  # postgres
-            db_uri = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}"
+        else:
+            # postgres
+            db_uri = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
 
         # Create engine and session
+        print("About to connect to DB from IngestSQL.py, with URI:", db_uri)
         engine = create_engine(db_uri)
         Session = sessionmaker(bind=engine)
         self.session = Session()
+        print("Successfully connected to DB from IngestSQL.py")
 
     def insert_document_in_progress(self, doc_progress_payload: dict):
         insert_stmt = insert(models.DocumentsInProgress).values(doc_progress_payload)
@@ -146,6 +150,7 @@ class SQLAlchemyIngestDB:
             return None, 0
         
     def get_like_docs_by_s3_path(self, course_name, original_filename):
+        logging.info(f"In get_like_docs_by_s3_path")
         query = (
             select(models.Document.id, models.Document.contexts, models.Document.s3_path)
             .where(models.Document.course_name == course_name)
@@ -153,6 +158,7 @@ class SQLAlchemyIngestDB:
             .order_by(desc(models.Document.id))
         )
         result = self.session.execute(query).mappings().all()
+        logging.info(f"In get_like_docs_by_s3_path, result: {result}")
         response = DatabaseResponse(data=result, count=len(result)).to_dict()
         return response
     

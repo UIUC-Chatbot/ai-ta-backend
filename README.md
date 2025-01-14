@@ -19,12 +19,26 @@ Failure to obtain a commercial license for commercial use is a violation of the 
 
 ## Docker Deployment
 
+### Supabase
+
+1. Duplicate `.env.example` from `supabase/docker/.env.example` and rename it to `.env`. (example: cp ./supabase/docker/.env.example ./supabase/docker/.env)
+2. Customize your env variables as needed in the supabase docker
+
+### Self-host docker
+
 1. Duplicate `.env.template` and rename it to `.env`. E.g. `cp .env.template .env`
 2. Customize your env variables. Your vector database can be either Qdrant and Pinecone. The SQL database can be any of SQLite, Postgres, and Supabase. The object storage can be Minio or AWS S3. 
-3. Run Docker Compose `docker compose up --build`
-4. Navitage to `localhost:8000` (or whatever your `$FLASK_PORT` is)
 
-To customize HTTP port used as the main entrypoint, set the `FLASK_PORT` variabel in your `.env`. It defaults to 8000.
+### Running simultaneously
+
+We've created an `init.sh` file to run both docker-compose files with run command. To do this, first initialize the `init.sh` with right permission.
+
+```bash
+chmod +x init.sh
+./init.sh #runs the script
+```
+
+To customize HTTP port used as the main entrypoint, set the `FLASK_PORT` variabel in your `.env`. It defaults to 8188.
 
 Works on version: `Docker Compose version v2.27.1-desktop.1`
 
@@ -47,7 +61,7 @@ For local dev:
 
 1. Rename `.env.template` to `.env` and fill in the required variables
 2. Install Python requirements `pip install -r requirements.txt`
-3. Start the server for development (with live reloads) `cd ai_ta_backend` then `flask --app ai_ta_backend.main:app --debug run --port 8000`
+3. Start the server for development (with live reloads) `cd ai_ta_backend` then `flask --app ai_ta_backend.main:app --debug run --port 8188`
 
 
 ### Course metadata structure
@@ -62,3 +76,8 @@ For local dev:
 'url': doc.metadata.get('url'), # wouldn't this error out?
 'base_url': doc.metadata.get('base_url'),
 ```
+
+
+### Note
+
+For Supabase, the current version we are using is v1.24.09 ([link](https://github.com/supabase/supabase/tree/v1.24.09))

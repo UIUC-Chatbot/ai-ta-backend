@@ -20,8 +20,10 @@ from injector import Binder
 from injector import SingletonScope
 from langchain_core.messages import HumanMessage
 from langchain_core.messages import SystemMessage
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 import urllib3
+from qdrant_client import QdrantClient, models
+import boto3
 
 from ai_ta_backend.database.aws import AWSStorage
 from ai_ta_backend.database.qdrant import VectorDatabase
@@ -38,7 +40,7 @@ from ai_ta_backend.executors.thread_pool_executor import \
     ThreadPoolExecutorInterface
 from ai_ta_backend.extensions import db
 from ai_ta_backend.service.export_service import ExportService
-#from ai_ta_backend.service.nomic_service import NomicService
+from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -361,34 +363,34 @@ def exportDocuments(service: ExportService):
   return response
 
 
-@app.route('/getTopContextsWithMQR', methods=['GET'])
-def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogService) -> Response:
-  """
-  Get relevant contexts for a given search query, using Multi-query retrieval + filtering method.
-  """
-  search_query: str = request.args.get('search_query', default='', type=str)
-  course_name: str = request.args.get('course_name', default='', type=str)
-  token_limit: int = request.args.get('token_limit', default=3000, type=int)
-  if search_query == '' or course_name == '':
-    # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
-    )
+# @app.route('/getTopContextsWithMQR', methods=['GET'])
+# def getTopContextsWithMQR(service: RetrievalService, posthog_service: PosthogService) -> Response:
+#   """
+#   Get relevant contexts for a given search query, using Multi-query retrieval + filtering method.
+#   """
+#   search_query: str = request.args.get('search_query', default='', type=str)
+#   course_name: str = request.args.get('course_name', default='', type=str)
+#   token_limit: int = request.args.get('token_limit', default=3000, type=int)
+#   if search_query == '' or course_name == '':
+#     # proper web error "400 Bad request"
+#     abort(
+#         400,
+#         description=
+#         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
+#     )
 
-  posthog_service.capture(event_name='filter_top_contexts_invoked',
-                          properties={
-                              'user_query': search_query,
-                              'course_name': course_name,
-                              'token_limit': token_limit,
-                          })
+#   posthog_service.capture(event_name='filter_top_contexts_invoked',
+#                           properties={
+#                               'user_query': search_query,
+#                               'course_name': course_name,
+#                               'token_limit': token_limit,
+#                           })
 
-  found_documents = service.getTopContextsWithMQR(search_query, course_name, token_limit)
+#   found_documents = service.getTopContextsWithMQR(search_query, course_name, token_limit)
 
-  response = jsonify(found_documents)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+#   response = jsonify(found_documents)
+#   response.headers.add('Access-Control-Allow-Origin', '*')
+#   return response
 
 
 @app.route('/getworkflows', methods=['GET'])
@@ -506,48 +508,96 @@ def configure(binder: Binder) -> None:
   sql_bound = False
   storage_bound = False
 
-  # Define database URLs with conditional checks for environment variables
-  encoded_password = quote_plus(os.getenv('SUPABASE_PASSWORD'))
+  # Encode the PostgreSQL password
+  #encoded_password = quote_plus(os.getenv('POSTGRES_PASSWORD'))
+  #print("ENCODED PASSWORD (i.e., POSTGRES_PASSWORD):", encoded_password)
+
+  # Define database URLs with corrected environment variables
+  # DB_URLS = {
+  #     'supabase':
+  #         f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}",
+  #     'sqlite':
+  #         f"sqlite:///{os.getenv('SQLITE_DB_NAME')}" if os.getenv('SQLITE_DB_NAME') else None,
+  #     'postgres':
+  #         f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+  #         if all([
+  #             os.getenv('POSTGRES_USER'),
+  #             os.getenv('POSTGRES_PASSWORD'),
+  #             os.getenv('POSTGRES_HOST'),
+  #             os.getenv('POSTGRES_PORT'),
+  #             os.getenv('POSTGRES_DB')
+  #         ]) else None
+  # }
+  # print("DB_URLS:", DB_URLS)
+
+  # # Bind to the first available SQL database configuration
+  # for db_type, url in DB_URLS.items():
+  #   if url:
+  #     logging.info(f"Binding to {db_type} database with URL: {url}")
+  #     with app.app_context():
+  #       app.config['SQLALCHEMY_DATABASE_URI'] = url
+  #       db.init_app(app)
+
+  #       # Check if tables exist before creating them
+  #       inspector = inspect(db.engine)
+  #       existing_tables = inspector.get_table_names()
+  #       print("Existing tables:", existing_tables)
+  #       if not existing_tables:
+  #         logging.info("Creating tables as the database is empty")
+  #         db.create_all()
+  #       else:
+  #         logging.info("Tables already exist, skipping creation")
+
+  #     binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
+  #     sql_bound = True
+  #     break
   DB_URLS = {
       'supabase':
-          f"postgresql://{os.getenv('SUPABASE_USER')}:{encoded_password}@{os.getenv('SUPABASE_URL')}",
-      'sqlite':
-          f"sqlite:///{os.getenv('SQLITE_DB_NAME')}" if os.getenv('SQLITE_DB_NAME') else None,
-      'postgres':
-          f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_URL')}"
-          if os.getenv('POSTGRES_USER') and os.getenv('POSTGRES_PASSWORD') and os.getenv('POSTGRES_URL') else None
+          f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}",
   }
-
-  # Bind to the first available SQL database configuration
+  # Try to connect to Supabase and verify connection
   for db_type, url in DB_URLS.items():
     if url:
-      logging.info(f"Binding to {db_type} database with URL: {url}")
-      with app.app_context():
-        app.config['SQLALCHEMY_DATABASE_URI'] = url
-        db.init_app(app)
-
-        # Check if tables exist before creating them
-        inspector = inspect(db.engine)
-        existing_tables = inspector.get_table_names()
-
-        if not existing_tables:
-          logging.info("Creating tables as the database is empty")
-          db.create_all()
-        else:
-          logging.info("Tables already exist, skipping creation")
-
-      binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
-      sql_bound = True
-      break
+      logging.info(f"Attempting to connect to {db_type} database with URL: {url}")
+      try:
+        with app.app_context():
+          app.config['SQLALCHEMY_DATABASE_URI'] = url
+          db.init_app(app)
+          
+          # Test connection by executing a simple query with text()
+          with db.engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+            connection.commit()  # Add commit to ensure transaction completion
+            logging.info(f"✅ Successfully connected to {db_type} database")
+          
+          # Check if tables exist
+          inspector = inspect(db.engine)
+          existing_tables = inspector.get_table_names()
+          logging.info(f"Found existing tables: {existing_tables}")
+          
+          if not existing_tables:
+            logging.info("Creating tables as database is empty")
+            db.create_all()
+          
+        binder.bind(SQLAlchemyDatabase, to=SQLAlchemyDatabase(db), scope=SingletonScope)
+        sql_bound = True
+        break
+        
+      except Exception as e:
+        logging.error(f"❌ Failed to connect to {db_type} database: {str(e)}")
+        continue
 
   # Conditionally bind databases based on the availability of their respective secrets
-  if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_API_KEY", "QDRANT_COLLECTION_NAME"]) or any(
+  if all(os.getenv(key) for key in ["QDRANT_URL", "QDRANT_COLLECTION_NAME"]) or any(
       os.getenv(key) for key in ["PINECONE_API_KEY", "PINECONE_PROJECT_NAME"]):
     logging.info("Binding to Qdrant database")
 
     logging.info(f"Qdrant Collection Name: {os.environ['QDRANT_COLLECTION_NAME']}")
     logging.info(f"Qdrant URL: {os.environ['QDRANT_URL']}")
-    logging.info(f"Qdrant API Key: {os.environ['QDRANT_API_KEY']}")
+    if os.getenv("QDRANT_API_KEY"):
+      logging.info(f"Qdrant API Key: {os.environ['QDRANT_API_KEY']}")
+    else:
+      logging.warning("Qdrant API Key is not set")
     binder.bind(VectorDatabase, to=VectorDatabase, scope=SingletonScope)
     vector_bound = True
 
@@ -589,6 +639,65 @@ def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter, scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
   logging.info("Configured all services and adapters", binder._bindings)
+
+  # TODO: Initialize the databases 
+
+  # Qdrant
+  # Initialize Qdrant collection if it doesn't exist
+  try:
+    qdrant_client = QdrantClient(
+        url=os.getenv('QDRANT_URL', 'http://qdrant:6333'),
+        https=False,
+        api_key=os.getenv('QDRANT_API_KEY'),
+        timeout=20,
+    )
+    
+    # Create collection with OpenAI embedding dimensions
+    qdrant_client.recreate_collection(
+        collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+        vectors_config=models.VectorParams(
+            size=1536,  # OpenAI embedding dimensions
+            distance=models.Distance.COSINE
+        )
+    )
+    logging.info(f"Initialized Qdrant collection: {os.environ['QDRANT_COLLECTION_NAME']}")
+  except Exception as e:
+    logging.error(f"Failed to initialize Qdrant collection: {str(e)}")
+
+  # Initialize Minio
+  try:
+    s3_client = boto3.client(
+        's3',
+        endpoint_url=os.getenv('MINIO_URL'),
+        aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+    )
+
+    # Create bucket if it doesn't exist
+    bucket_name = os.environ['S3_BUCKET_NAME']
+    try:
+        s3_client.head_bucket(Bucket=bucket_name)
+        logging.info(f"S3 bucket already exists: {bucket_name}")
+
+        # Create courses/ path by putting an empty object
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key='courses/'
+        )
+        logging.info(f"Created courses/ path in bucket: {bucket_name}")
+    except:
+        s3_client.create_bucket(Bucket=bucket_name)
+        logging.info(f"Created S3 bucket: {bucket_name}")
+        
+        # Create courses/ path in new bucket
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key='courses/'
+        )
+        logging.info(f"Created courses/ path in bucket: {bucket_name}")
+  except Exception as e:
+    logging.error(f"Failed to initialize S3 bucket: {str(e)}")
+
 
 FlaskInjector(app=app, modules=[configure])
 

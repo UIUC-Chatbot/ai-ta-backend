@@ -108,7 +108,7 @@ class DocumentsInProgress(Base):
     error = Column(Text)
     beam_task_id = Column(Text)
 
-    __table_args__ = (Index('documents_in_progress_pkey', 'id', postgresql_using='btree'),)
+    # __table_args__ = (Index('documents_in_progress_pkey', 'id', postgresql_using='btree'),)
 
     def to_dict(self):
         return {
@@ -138,7 +138,7 @@ class DocumentsFailed(Base):
     doc_groups = Column(Text)
     error = Column(Text)
 
-    __table_args__ = (Index('documents_failed_pkey', 'id', postgresql_using='btree'),)
+    # __table_args__ = (Index('documents_failed_pkey', 'id', postgresql_using='btree'),)
 
     def to_dict(self):
         return {
@@ -170,7 +170,7 @@ class Project(Base):
 
     __table_args__ = (
         Index('projects_course_name_key', 'course_name', postgresql_using='btree'),
-        Index('projects_pkey', 'id', postgresql_using='btree'),
+        # Index('projects_pkey', 'id', postgresql_using='btree'),
     )
 
     def to_dict(self):
@@ -213,8 +213,8 @@ class LlmConvoMonitor(Base):
 
     __table_args__ = (
         Index('llm_convo_monitor_course_name_idx', 'course_name', postgresql_using='hash'),
-        Index('llm-convo-monitor_convo_id_key', 'convo_id', postgresql_using='btree'),
-        Index('llm-convo-monitor_pkey', 'id', postgresql_using='btree'),
+        # Index('llm-convo-monitor_convo_id_key', 'convo_id', postgresql_using='btree'),
+        # Index('llm-convo-monitor_pkey', 'id', postgresql_using='btree'),
     )
 
     def to_dict(self):
@@ -242,7 +242,7 @@ class Conversations(Base):
     folder_id = Column(UUID(as_uuid=True))
 
     __table_args__ = (
-        Index('conversations_pkey', 'id', postgresql_using='btree'),
+        # Index('conversations_pkey', 'id', postgresql_using='btree'),
         Index('idx_user_email_updated_at', 'user_email', 'updated_at', postgresql_using='btree'),
     )
 
@@ -277,9 +277,9 @@ class Messages(Base):
     content_image_url = Column(Text)
     image_description = Column(Text)
 
-    __table_args__ = (
-        Index('messages_pkey', 'id', postgresql_using='btree'),
-    )
+    # __table_args__ = (
+    #     Index('messages_pkey', 'id', postgresql_using='btree'),
+    # )
 
     def to_dict(self):
         return {
@@ -307,9 +307,9 @@ class PreAuthAPIKeys(Base):
     providerName = Column(Text)
     notes = Column(Text)   
 
-    __table_args__ = (
-        Index('pre-authorized-api-keys_pkey', 'id', postgresql_using='btree'),
-    )
+    # __table_args__ = (
+    #     Index('pre-authorized-api-keys_pkey', 'id', postgresql_using='btree'),
+    # )
 
     def to_dict(self):
         return {

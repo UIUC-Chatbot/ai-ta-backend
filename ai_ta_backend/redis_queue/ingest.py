@@ -52,7 +52,6 @@ from langchain.vectorstores import Qdrant
 from ai_ta_backend.redis_queue.ingestSQL import SQLAlchemyIngestDB
 
 from dotenv import load_dotenv
-import logging
 
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -111,8 +110,9 @@ class Ingest:
         self.sql_session = SQLAlchemyIngestDB()
 
         if self.posthog_api_key:
-            self.posthog = Posthog(sync_mode=True, project_api_key=self.posthog_api_key, host='https://app.posthog.com')
+            self.posthog = Posthog(sync_mode=False, project_api_key=self.posthog_api_key, host='https://app.posthog.com')
         else:
+            self.posthog = None
             print("POSTHOG API KEY NOT FOUND!")
     
     def main_ingest(self, **inputs: Dict[str | List[str], Any]):
@@ -999,6 +999,7 @@ class Ingest:
         ), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
 
         try:
+            logging.info("Before Text Splitter")
             text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
                 chunk_size=1000,
                 chunk_overlap=150,
@@ -1010,6 +1011,7 @@ class Ingest:
             input_texts = [{'input': context.page_content, 'model': 'text-embedding-ada-002'} for context in contexts]
 
             # check for duplicates
+            logging.info(f"Before checking for duplicates")
             is_duplicate = self.check_for_duplicates(input_texts, metadatas)
             if is_duplicate:
                 if self.posthog:
@@ -1030,8 +1032,7 @@ class Ingest:
                 context.metadata['chunk_index'] = i
                 context.metadata['doc_groups'] = kwargs.get('groups', [])
 
-            logging.info("Starting to call embeddings API")
-            
+            logging.info("Before call to embeddings API")
             embeddings_start_time = time.monotonic()
             oai = OpenAIAPIProcessor(
                 input_prompts_list=input_texts,
@@ -1059,6 +1060,7 @@ class Ingest:
                     PointStruct(id=str(uuid.uuid4()), vector=embeddings_dict[context.page_content], payload=upload_metadata))
 
             try:
+                logging.info(f"Before Upsert to Qdrant")
                 self.qdrant_client.upsert(
                     collection_name=os.environ['QDRANT_COLLECTION_NAME'],  # type: ignore
                     points=vectors,  # type: ignore
@@ -1137,10 +1139,12 @@ class Ingest:
         incoming_s3_path = metadatas[0]['s3_path']
         url = metadatas[0]['url']
 
+        logging.info(f"In check_for_duplicates")
+
         if incoming_s3_path:
             # check if uuid exists in s3_path -- not all s3_paths have uuids!
             incoming_filename = incoming_s3_path.split('/')[-1]
-            # print("Full filename: ", incoming_filename)
+            logging.debug(f"Full filename: {incoming_filename}")
             pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
                                 re.I)  # uuid V4 pattern, and v4 only.
             if bool(pattern.search(incoming_filename)):
@@ -1149,17 +1153,17 @@ class Ingest:
             else:
                 # do not remove anything and proceed with duplicate checking
                 original_filename = incoming_filename
-            print(f"Filename after removing uuid: {original_filename}")
+            logging.info(f"Filename after removing uuid: {original_filename}")
 
             supabase_contents = self.sql_session.get_like_docs_by_s3_path(course_name, original_filename)
             supabase_contents = supabase_contents['data']
-            print(f"No. of S3 path based records retrieved: {len(supabase_contents)}")  # multiple records can be retrieved: 3.pdf and 453.pdf
+            logging.info(f"No. of S3 path based records retrieved: {len(supabase_contents)}")  # multiple records can be retrieved: 3.pdf and 453.pdf
 
         elif url:
             original_filename = url
             supabase_contents = self.sql_session.get_like_docs_by_url(course_name, url)
             supabase_contents = supabase_contents['data']
-            print(f"No. of URL-based records retrieved: {len(supabase_contents)}")
+            logging.info(f"No. of URL-based records retrieved: {len(supabase_contents)}")
         else:
             original_filename = None
             supabase_contents = []

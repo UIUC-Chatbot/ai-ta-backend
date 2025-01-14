@@ -23,10 +23,10 @@ class VectorDatabase():
     """
     # vector DB
     self.qdrant_client = QdrantClient(
-        url='http://qdrant:6333',
+        url=os.getenv('QDRANT_URL', 'http://qdrant:6333'),  # Default to localhost if not set
         https=False,
-        api_key=os.environ['QDRANT_API_KEY'],
-        timeout=20,  # default is 5 seconds. Getting timeout errors w/ document groups.
+        api_key=os.getenv('QDRANT_API_KEY'),
+        timeout=20,
     )
 
     self.vectorstore = Qdrant(

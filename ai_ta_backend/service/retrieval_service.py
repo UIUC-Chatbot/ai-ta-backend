@@ -36,6 +36,7 @@ class RetrievalService:
     self.nomicService = nomicService
 
     logging.info(f"Vector DB: {self.vdb}")
+    logging.info(f"Posthog service: {self.posthog}")
 
     openai.api_key = os.environ["OPENAI_API_KEY"]
 
@@ -106,7 +107,7 @@ class RetrievalService:
       if len(valid_docs) == 0:
         return []
 
-      if self.posthog is not None:
+      if self.posthog:
         self.posthog.capture(
             event_name="getTopContexts_success_DI",
             properties={
@@ -127,7 +128,7 @@ class RetrievalService:
       err: str = f"ERROR: In /getTopContexts. Course: {course_name} ||| search_query: {search_query}\nTraceback: {traceback.print_exc()} \n{e}"  # type: ignore
       traceback.print_exc()
       logging.info(err)
-      if self.sentry is not None:
+      if self.sentry:
         self.sentry.capture_exception(e)
       return err
 
@@ -175,14 +176,14 @@ class RetrievalService:
       # Delete from Qdrant
       self.delete_from_qdrant(identifier_key, identifier_value)
 
-      # Delete from Nomic and Supabase
-      self.delete_from_nomic_and_supabase(course_name, identifier_key, identifier_value)
+      # Delete from Nomic and Supabase (commented out for now because Nomic is having issues)
+      # self.delete_from_nomic_and_supabase(course_name, identifier_key, identifier_value)
 
       return "Success"
     except Exception as e:
       err: str = f"ERROR IN delete_data: Traceback: {traceback.extract_tb(e.__traceback__)}❌❌ Error in {inspect.currentframe().f_code.co_name}:{e}"  # type: ignore
       logging.info(err)
-      if self.sentry is not None:
+      if self.sentry:
         self.sentry.capture_exception(e)
       return err
 
@@ -193,7 +194,7 @@ class RetrievalService:
       logging.info(f"AWS response: {response}")
     except Exception as e:
       logging.info("Error in deleting file from s3:", e)
-      if self.sentry is not None:
+      if self.sentry:
         self.sentry.capture_exception(e)
 
   def delete_from_qdrant(self, identifier_key: str, identifier_value: str):
@@ -207,7 +208,7 @@ class RetrievalService:
         pass
       else:
         logging.info("Error in deleting file from Qdrant:", e)
-        if self.sentry is not None:
+        if self.sentry:
           self.sentry.capture_exception(e)
 
   def getTopContextsWithMQR(self, search_query: str, course_name: str, token_limit: int = 4_000) -> Union[List[Dict], str]:
@@ -341,11 +342,11 @@ class RetrievalService:
       if not data:
         raise Exception(f"No document map found for this course: {course_name}")
       project_id = str(data[0].doc_map_id)
-      if self.nomicService is not None:
+      if self.nomicService:
         self.nomicService.delete_from_document_map(project_id, nomic_ids_to_delete)
     except Exception as e:
       logging.info(f"Nomic Error in deleting. {identifier_key}: {identifier_value}", e)
-      if self.sentry is not None:
+      if self.sentry:
         self.sentry.capture_exception(e)
 
     try:
@@ -353,7 +354,7 @@ class RetrievalService:
       response = self.sqlDb.deleteMaterialsForCourseAndKeyAndValue(course_name, identifier_key, identifier_value)
     except Exception as e:
       logging.info(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
-      if self.sentry is not None:
+      if self.sentry:
         self.sentry.capture_exception(e)
 
   def vector_search(self, search_query, course_name, doc_groups: List[str] | None = None):
@@ -384,7 +385,7 @@ class RetrievalService:
     return user_query_embedding
 
   def _capture_search_invoked_event(self, search_query, course_name, doc_groups):
-    if self.posthog is not None:
+    if self.posthog:
       self.posthog.capture(
           event_name="vector_search_invoked",
           properties={
@@ -393,6 +394,8 @@ class RetrievalService:
               "doc_groups": doc_groups,
           },
       )
+    else:
+      logging.info("Posthog service not available. Skipping event capture.")
 
   def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n):
     qdrant_start_time = time.monotonic()
@@ -413,14 +416,14 @@ class RetrievalService:
         found_docs.append(Document(page_content=page_content, metadata=metadata))
       except Exception as e:
         logging.info(f"Error in vector_search(), for course: `{course_name}`. Error: {e}")
-        if self.sentry is not None:
+        if self.sentry:
           self.sentry.capture_exception(e)
     return found_docs
 
   def _capture_search_succeeded_event(self, search_query, course_name, search_results):
     vector_score_calc_latency_sec = time.monotonic()
     max_vector_score, min_vector_score, avg_vector_score = self._calculate_vector_scores(search_results)
-    if self.posthog is not None:
+    if self.posthog:
       self.posthog.capture(
           event_name="vector_search_succeeded",
           properties={
@@ -434,6 +437,8 @@ class RetrievalService:
               "vector_score_calculation_latency_sec": time.monotonic() - vector_score_calc_latency_sec,
           },
       )
+    else:
+      logging.info("Posthog service not available. Skipping event capture.")
 
   def _calculate_vector_scores(self, search_results):
     max_vector_score = 0

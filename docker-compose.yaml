@@ -11,35 +11,31 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "ping"]
+      test: [ "CMD", "redis-cli", "--raw", "ping" ]
       interval: 30s
       timeout: 10s
       retries: 3
 
   qdrant:
-    image: qdrant/qdrant:v1.9.5
+    image: qdrant/qdrant:v1.12.6
     restart: unless-stopped
     container_name: qdrant
-    # ports:
-    #   - 6333:6333
-    #   - 6334:6334
-    environment:
-      - QDRANT_API_KEY=${QDRANT_API_KEY}
+    # environment:
+    #   - QDRANT_API_KEY=${QDRANT_API_KEY}
+    ports:
+      - 6333:6333
+      - 6334:6334
+    expose:
+      - 6333
+      - 6334
+      - 6335
     volumes:
       - ./qdrant_data:/qdrant/storage
       - ./qdrant_config.yaml:/qdrant/config/production.yaml # Mount the config file directly as a volume
     networks:
       - uiuc-chat-network
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "-H",
-          "Authorization: Bearer ${QDRANT_API_KEY}",
-          "http://qdrant:6333/health",
-        ]
+      test: [ "CMD", "curl", "-f", "-H", "Authorization: Bearer ${QDRANT_API_KEY}", "http://qdrant:6333/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -52,22 +48,21 @@ services:
     environment:
       MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
       MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
-    command: server /data --address ":${DOCKER_INTERNAL_MINIO_API_PORT}" --console-address ":${DOCKER_INTERNAL_MINIO_DASHBOARD_PORT}"
+      MINIO_API_PORT: ${DOCKER_INTERNAL_MINIO_API_PORT}
+      MINIO_CONSOLE_PORT: ${DOCKER_INTERNAL_MINIO_DASHBOARD_PORT}
+    command: server /data --console-address ":${DOCKER_INTERNAL_MINIO_DASHBOARD_PORT}" --address ":${DOCKER_INTERNAL_MINIO_API_PORT}"
     ports:
-      - ${PUBLIC_MINIO_API_PORT}:${DOCKER_INTERNAL_MINIO_API_PORT}
-      - ${PUBLIC_MINIO_DASHBOARD_PORT}:${DOCKER_INTERNAL_MINIO_DASHBOARD_PORT}
+      - ${PUBLIC_MINIO_API_PORT}:${DOCKER_INTERNAL_MINIO_API_PORT} # API access
+      - ${PUBLIC_MINIO_DASHBOARD_PORT}:${DOCKER_INTERNAL_MINIO_DASHBOARD_PORT} # Dashboard access
+    expose:
+      - ${PUBLIC_MINIO_API_PORT}
+      - ${PUBLIC_MINIO_DASHBOARD_PORT}
     networks:
       - uiuc-chat-network
     volumes:
       - minio-data:/data
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "http://minio:${DOCKER_INTERNAL_MINIO_API_PORT}/minio/health/live",
-        ]
+      test: [ "CMD", "curl", "-f", "http://minio:${DOCKER_INTERNAL_MINIO_API_PORT}/minio/health/live" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -83,12 +78,15 @@ services:
       - ./db:/usr/src/app/db # Mount local directory to store SQLite database
     networks:
       - uiuc-chat-network
+      - supabase_default # Add connection to Supabase network
     depends_on:
       - qdrant
       - redis
       - minio
+    env_file:
+      - .env
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://flask-app:8000"]
+      test: [ "CMD", "curl", "-f", "http://flask-app:8000" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -100,24 +98,39 @@ services:
     container_name: ingest-worker
     networks:
       - uiuc-chat-network
+      - supabase_default
     depends_on:
       - redis
+    env_file:
+      - .env
     healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "from redis import Redis; from rq import Worker; r = Redis(host='redis', port=6379, password='${INGEST_REDIS_PASSWORD}'); exit(0 if Worker.count(r) > 0 else 1)",
-        ]
+      test: [ "CMD", "python", "-c", "from redis import Redis; from rq import Worker; r = Redis(host='redis', port=6379, password='${INGEST_REDIS_PASSWORD}'); exit(0 if Worker.count(r) > 0 else 1)" ]
       interval: 30s
       timeout: 10s
       retries: 3
 
+  crawlee:
+    build: ./ic_crawlee
+    container_name: crawlee
+    networks:
+      - uiuc-chat-network
+    volumes:
+      - ./data:/data
+    ports:
+      - "3345:3000"
+    environment:
+      - INGEST_URL=http://flask-app:8000/ingest # The port has to be the internal port of the Flask app, not the external one in the env file
+      - uiuc-chat-network
+    depends_on:
+      - redis
+
 # declare the network resource
 # this will allow you to use service discovery and address a container by its name from within the network
 networks:
-  uiuc-chat-network: {}
+  uiuc-chat-network:
+    driver: bridge
+  supabase_default:
+    external: true # Mark as external since it's managed by Supabase
 
 volumes:
   redis-data: {}
