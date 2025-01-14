@@ -6,16 +6,16 @@ from pdf_to_images import pdf_to_images
 from qdrant_client.http import models
 import os
 import torch
-import tqdm
-
-import torch
 from PIL import Image
-
-# from colpali_engine.models import ColPali, ColPaliProcessor
 from colpali_engine.models import ColQwen2, ColQwen2Processor
+from tqdm import tqdm
+
+import concurrent.futures
+import threading
+from queue import Queue
 
 load_dotenv()
-BUCKET_NAME = 'pubmed'
+BUCKET_NAME = 'pubmed2'
 
 minio_client = Minio(
     os.environ['MINIO_API_ENDPOINT'],
@@ -24,68 +24,24 @@ minio_client = Minio(
     secure=False,
 )
 
-objects = minio_client.list_objects(BUCKET_NAME, recursive=True)
-#only the first file for testing
-first_object = next(objects, None)
-local_file_path = first_object.object_name
-print(local_file_path)
-minio_client.fget_object(BUCKET_NAME, first_object.object_name, local_file_path)
-output_dir = "output_images"
-pdf_to_images(local_file_path, output_dir)
-
-# model_name = (
-#     "davanstrien/finetune_colpali_v1_2-ufo-4bit"  # Use the latest version available
-# )
-# colpali_model = ColPali.from_pretrained(
-#     model_name,
-#     torch_dtype=torch.bfloat16,
-#     device_map="cpu",  # Use "cuda:0" for GPU, "cpu" for CPU, or "mps" for Apple Silicon
-# )
-# colpali_processor = ColPaliProcessor.from_pretrained(
-#     "vidore/colpaligemma-3b-pt-448-base"
-# )
-colpali_model = ColQwen2.from_pretrained(
-        "vidore/colqwen2-v1.0",
-        # torch_dtype=torch.bfloat16,
-        device_map="cpu",  # or "mps" if on Apple Silicon
-    ).eval()
-colpali_processor = ColQwen2Processor.from_pretrained("vidore/colqwen2-v1.0")
-
-
-# sample_image_path = os.path.join(output_dir, os.listdir(output_dir)[0])
-# sample_image = Image.open(sample_image_path)
-# with torch.no_grad():
-#     sample_batch = colpali_processor.process_images([sample_image]).to(
-#         colpali_model.device
-#     )
-#     sample_embedding = colpali_model(**sample_batch)
-# sample_embedding.shape
-
-qdrant_client = QdrantClient(url=os.environ['QDRANT_URL'], port=os.environ['QDRANT_PORT'], https=True, api_key=os.environ['QDRANT_API_KEY'])
+# Initialize Qdrant client
+qdrant_client = QdrantClient(
+    url=os.environ['QDRANT_URL'],
+    port=os.environ['QDRANT_PORT'],
+    https=True,
+    api_key=os.environ['QDRANT_API_KEY']
+)
 
 collection_name = "colpali"
 vector_size = 128
 
-vector_params = models.VectorParams(
-    size=vector_size,
-    distance=models.Distance.COSINE,
-    multivector_config=models.MultiVectorConfig(
-        comparator=models.MultiVectorComparator.MAX_SIM
-    ),
-)
-
-scalar_quant = models.ScalarQuantizationConfig(
-    type=models.ScalarType.INT8,
-    quantile=0.99,
-    always_ram=False,
-)
-
+# Configure Qdrant collection
 qdrant_client.recreate_collection(
-    collection_name=collection_name,  # the name of the collection
-    on_disk_payload=True,  # store the payload on disk
+    collection_name=collection_name,
+    on_disk_payload=True,
     optimizers_config=models.OptimizersConfigDiff(
         indexing_threshold=100
-    ),  # it can be useful to swith this off when doing a bulk upload and then manually trigger the indexing once the upload is done
+    ),
     vectors_config=models.VectorParams(
         size=vector_size,
         distance=models.Distance.COSINE,
@@ -102,9 +58,17 @@ qdrant_client.recreate_collection(
     ),
 )
 
+colpali_model = ColQwen2.from_pretrained(
+    "vidore/colqwen2-v1.0",
+    device_map="cpu",
+).eval()
+colpali_processor = ColQwen2Processor.from_pretrained("vidore/colqwen2-v1.0")
+
+output_dir = "output_images"
+os.makedirs(output_dir, exist_ok=True)
 
 @stamina.retry(on=Exception, attempts=3)
-def upsert_to_qdrant(batch):
+def upsert_to_qdrant(points):
     try:
         qdrant_client.upsert(
             collection_name=collection_name,
@@ -116,49 +80,153 @@ def upsert_to_qdrant(batch):
         return False
     return True
 
-batch_size = 1  # Adjust based on your GPU memory constraints
+# Process the first 1000 files from the MinIO bucket
+objects = minio_client.list_objects(BUCKET_NAME, recursive=True)
 
-# Use tqdm to create a progress bar
-# with tqdm(total=1, desc="Indexing Progress") as pbar:
-for i in range(0, 1, batch_size):
-    sample_image_path = os.path.join(output_dir, os.listdir(output_dir)[0])
-    images = [Image.open(sample_image_path)]
-    print(type(images))
-    torch.set_num_threads(torch.get_num_threads())
-    print(torch.get_num_threads())
-    # Process and encode images
-    with torch.no_grad():
-        batch_images = colpali_processor.process_images(images).to(
-            colpali_model.device
-        )
-        image_embeddings = colpali_model(**batch_images)
+processed_files = 0  # Counter for processed files
+point_id = 0
+with tqdm(total=1000, desc="Processing Files") as pbar:
+    for obj in objects:
+        if processed_files >= 1000:
+            break  # Stop after processing 1000 files
 
-    # Prepare points for Qdrant
-    points = []
-    for j, embedding in enumerate(image_embeddings):
-        # Convert the embedding to a list of vectors
-        print("multivector", embedding.shape)
-        multivector = embedding.cpu().float().numpy().tolist()
-        print(multivector)
-        points.append(
-            models.PointStruct(
-                id=i + j,  # we just use the index as the ID
-                vector=multivector,  # This is now a list of vectors
+        local_file_path = obj.object_name
+        local_save_path = os.path.join(output_dir, os.path.basename(local_file_path))
+
+        # Download the file
+        minio_client.fget_object(BUCKET_NAME, obj.object_name, local_save_path)
+
+        # Convert PDF to images and store in the output directory
+        pdf_to_images(local_save_path, output_dir)
+
+        # Process extracted images one by one
+        for image_name in os.listdir(output_dir):
+            if not image_name.endswith((".png", ".jpg", ".jpeg")):
+                continue  # Skip non-image files
+
+            image_path = os.path.join(output_dir, image_name)
+
+            # Load image
+            image = Image.open(image_path)
+
+            # Process and encode image
+            with torch.no_grad():
+                processed_image = colpali_processor.process_images([image]).to(colpali_model.device)
+                image_embedding = colpali_model(**processed_image)[0]  # First (and only) embedding
+
+            # Prepare the point for Qdrant
+            multivector = image_embedding.cpu().float().numpy().tolist()
+            point = models.PointStruct(
+                id=point_id,  # Unique ID for each file
+                vector=multivector,
                 payload={
-                    "source": "internet archive"
-                },  # can also add other metadata/data
+                    "source": "minio bucket",
+                    "file_name": os.path.basename(image_path),
+                    "original_file": local_file_path,
+                },
             )
-        )
-    # Upload points to Qdrant
-    try:
-        upsert_to_qdrant(points)
-        print("Batch uploaded successfully")
-    # clown level error handling here 🤡
-    except Exception as e:
-        print(f"Error during upsert: {e}")
-        continue
 
-    # Update the progress bar
-    # pbar.update(batch_size)
+            # Upload point to Qdrant
+            try:
+                upsert_to_qdrant([point])
+                print(f"Successfully inserted: {image_name}")
+                point_id+=1
+            except Exception as e:
+                print(f"Error during upsert: {e}")
+                continue
 
-print("Indexing complete!")
+            # Delete processed image to free space
+            os.remove(image_path)
+
+        # Update progress
+        processed_files += 1
+        pbar.update(1)
+
+print("Processing complete!")
+# batch_size = 4  # Process multiple images in a batch
+# thread_lock = threading.Lock()  # Lock for thread-safe printing
+
+
+# def process_image_batch(image_paths, point_id_start, local_file_path):
+#     points = []
+#     try:
+#         # Load and process images
+#         images = [Image.open(path) for path in image_paths]
+
+#         # Preprocess and encode batch
+#         with torch.no_grad():
+#             batch_images = colpali_processor.process_images(images).to(colpali_model.device)
+#             batch_embeddings = colpali_model(**batch_images)
+
+#         # Prepare points
+#         for idx, embedding in enumerate(batch_embeddings):
+#             multivector = embedding.cpu().float().numpy().tolist()
+#             point = models.PointStruct(
+#                 id=point_id_start + idx,
+#                 vector=multivector,
+#                 payload={
+#                     "source": "minio bucket",
+#                     "file_name": os.path.basename(image_paths[idx]),
+#                     "original_file": local_file_path,
+#                 },
+#             )
+#             points.append(point)
+
+#         # Upsert to Qdrant
+#         if upsert_to_qdrant(points):
+#             with thread_lock:
+#                 for path in image_paths:
+#                     print(f"Successfully inserted: {os.path.basename(path)}")
+#         return len(points)
+#     except Exception as e:
+#         with thread_lock:
+#             print(f"Error processing batch: {e}")
+#         return 0
+
+
+# # Thread-safe PDF to image converter
+# def pdf_to_images_thread_safe(local_save_path):
+#     with thread_lock:
+#         pdf_to_images(local_save_path, output_dir)
+
+
+# # Process files in the MinIO bucket
+# processed_files = 0
+# point_id = 0
+
+# with tqdm(total=1000, desc="Processing Files") as pbar:
+#     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+#         for obj in objects:
+#             if processed_files >= 1000:
+#                 break
+
+#             local_file_path = obj.object_name
+#             local_save_path = os.path.join(output_dir, os.path.basename(local_file_path))
+
+#             # Download file
+#             minio_client.fget_object(BUCKET_NAME, obj.object_name, local_save_path)
+
+#             # Convert PDF to images
+#             executor.submit(pdf_to_images_thread_safe, local_save_path).result()
+
+#             # Gather images
+#             image_paths = [
+#                 os.path.join(output_dir, fname)
+#                 for fname in os.listdir(output_dir)
+#                 if fname.endswith((".png", ".jpg", ".jpeg"))
+#             ]
+
+#             # Process in batches
+#             for i in range(0, len(image_paths), batch_size):
+#                 batch_paths = image_paths[i:i + batch_size]
+#                 processed_count = process_image_batch(batch_paths, point_id, local_file_path)
+#                 point_id += processed_count
+
+#                 # Delete processed images
+#                 for path in batch_paths:
+#                     os.remove(path)
+
+#             processed_files += 1
+#             pbar.update(1)
+
+# print("Processing complete!")
