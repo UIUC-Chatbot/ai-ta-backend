@@ -331,3 +331,6 @@ class SQLDatabase:
   def getProjectsWithDocMaps(self):
      return self.supabase_client.table("projects").select("course_name, doc_map_id, last_uploaded_doc_id, document_map_index").neq("doc_map_id", None).execute()
   
+  def getProjectMapName(self, course_name, field_name):
+    return self.supabase_client.table("projects").select(field_name).eq("course_name", course_name).execute()
+  

@@ -40,17 +40,18 @@ class NomicService():
     start_time = time.monotonic()
     try:
       if type.lower() == 'document':
-        map_prefix = 'Document Map for '
-        index_suffix = "_doc_index"
+        field = 'document_map_index'
       else:
-        map_prefix = 'Conversation Map for '
-        index_suffix = "_convo_index"
+        field = 'conversation_map_index'
 
-      project_name = map_prefix + course_name
-      project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', project_name.replace(" ", "-").replace("_", "-").lower())
-      project = AtlasDataset(project_name)
-      map = project.get_map(course_name + index_suffix)
-
+      map_name = self.sql.getProjectMapName(course_name, field).data[0]
+      if not map_name:
+        return {"map_id": None, "map_link": None}
+      else:
+        project_name = map_name[field].split("_index")[0]
+        project = AtlasDataset(project_name)
+        map = project.get_map(map_name[field])
+      
       print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
       return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
 
@@ -482,8 +483,8 @@ class NomicService():
           project_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
                                 (f"Conversation Map for {project['course_name']}").replace(" ", "-").replace("_", "-").lower())
           print(f"Deleting conversation map: {project_name}")
-          project = AtlasDataset(project_name)
-          project.delete()
+          dataset = AtlasDataset(project_name)
+          dataset.delete()
           
           # step 3: update SQL table to remove map info
           self.sql.updateProjects(project['course_name'], {'convo_map_id': None, 'last_uploaded_convo_id': None, 'conversation_map_index': None})
@@ -492,7 +493,8 @@ class NomicService():
           print(f"Error in deleting conversation map: {e}")
           self.sentry.capture_exception(e)
           continue
-        
+      print("Deleted all conversation maps.")
+
       # step 4: re-create conversation maps by calling update function
       status = self.update_conversation_maps() # this function will create new maps if not already present!
       print("Map re-creation status: ", status)
@@ -518,8 +520,8 @@ class NomicService():
           project_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
                                 (f"Document Map for {project['course_name']}").replace(" ", "-").replace("_", "-").lower())
           print(f"Deleting document map: {project_name}")
-          project = AtlasDataset(project_name)
-          project.delete()
+          dataset = AtlasDataset(project_name)
+          dataset.delete()
           
           # step 3: update SQL table to remove map info
           self.sql.updateProjects(project['course_name'], {'doc_map_id': None, 'last_uploaded_doc_id': None, 'document_map_index': None})
@@ -654,7 +656,7 @@ class NomicService():
       #   return "Project busy"
 
       start_time = time.monotonic()
-      while time.monotonic() - start_time < 30:
+      while time.monotonic() - start_time < 600:
         if project.is_accepting_data:
           project.add_data(data=metadata)
           print(f"Data appended to map: {map_name}")
