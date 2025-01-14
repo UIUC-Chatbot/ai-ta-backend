@@ -4,12 +4,17 @@ services:
     restart: unless-stopped
     container_name: redis
     command: redis-server --requirepass ${INGEST_REDIS_PASSWORD}
-    ports:
-      - 6379:6379
+    # ports:
+    #   - 6379:6379
     networks:
-      - my-network
+      - uiuc-chat-network
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   qdrant:
     image: qdrant/qdrant:v1.12.6
@@ -28,9 +33,9 @@ services:
       - ./qdrant_data:/qdrant/storage
       - ./qdrant_config.yaml:/qdrant/config/production.yaml # Mount the config file directly as a volume
     networks:
-      - my-network
+      - uiuc-chat-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "-H", "Authorization: Bearer qd-SbvSWrYpa473J33yPjdL", "http://localhost:6333/health" ]
+      test: [ "CMD", "curl", "-f", "-H", "Authorization: Bearer ${QDRANT_API_KEY}", "http://qdrant:6333/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -53,9 +58,14 @@ services:
       - ${PUBLIC_MINIO_API_PORT}
       - ${PUBLIC_MINIO_DASHBOARD_PORT}
     networks:
-      - my-network
+      - uiuc-chat-network
     volumes:
       - minio-data:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://minio:${DOCKER_INTERNAL_MINIO_API_PORT}/minio/health/live" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   flask-app:
     build: . # Directory with Dockerfile for Flask app
@@ -64,12 +74,10 @@ services:
     container_name: flask-app
     ports:
       - "${FLASK_PORT}:8000"
-    expose:
-      - "${FLASK_PORT}"
     volumes:
       - ./db:/usr/src/app/db # Mount local directory to store SQLite database
     networks:
-      - my-network
+      - uiuc-chat-network
       - supabase_default # Add connection to Supabase network
     depends_on:
       - qdrant
@@ -78,10 +86,10 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      test: [ "CMD", "curl", "-f", "http://flask-app:8000" ]
       interval: 30s
       timeout: 10s
-      retries: 10
+      retries: 3
 
   ingest-worker:
     build: . # Use the same build context as the Flask app
@@ -89,29 +97,37 @@ services:
     restart: unless-stopped
     container_name: ingest-worker
     networks:
-      - my-network
+      - uiuc-chat-network
       - supabase_default
     depends_on:
       - redis
     env_file:
       - .env
+    healthcheck:
+      test: [ "CMD", "python", "-c", "from redis import Redis; from rq import Worker; r = Redis(host='redis', port=6379, password='${INGEST_REDIS_PASSWORD}'); exit(0 if Worker.count(r) > 0 else 1)" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   crawlee:
     build: ./ic_crawlee
     container_name: crawlee
     networks:
-      - my-network
+      - uiuc-chat-network
     volumes:
       - ./data:/data
     ports:
       - "3345:3000"
     environment:
       - INGEST_URL=http://flask-app:8000/ingest # The port has to be the internal port of the Flask app, not the external one in the env file
+      - uiuc-chat-network
+    depends_on:
+      - redis
 
 # declare the network resource
 # this will allow you to use service discovery and address a container by its name from within the network
 networks:
-  my-network:
+  uiuc-chat-network:
     driver: bridge
   supabase_default:
     external: true # Mark as external since it's managed by Supabase

@@ -70,11 +70,26 @@ class Ingest:
         self.aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
         self.aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
         self.posthog_api_key = os.getenv('POSTHOG_API_KEY')
+        self.posthog = None
     
     def initialize_resources(self):
         # Initialize clients and resources when needed
         if self.qdrant_api_key and self.qdrant_url:
             self.qdrant_client = QdrantClient(url=self.qdrant_url, api_key=self.qdrant_api_key)
+            
+            # Check if the collection exists
+            if not self.qdrant_client.get_collection(self.qdrant_collection_name):
+                # Create the collection if it doesn't exist
+                logging.info(f"Creating collection {self.qdrant_collection_name}")
+                self.qdrant_client.create_collection(
+                    collection_name=self.qdrant_collection_name,
+                    vectors_config={
+                        "size": 1536,  # Example size, adjust as needed
+                        "distance": "Cosine"  # Example distance metric, adjust as needed
+                    }
+                )
+                logging.info(f"Collection exists? {self.qdrant_client.get_collection(self.qdrant_collection_name)}")
+            
             self.vectorstore = Qdrant(
                 client=self.qdrant_client,
                 collection_name=self.qdrant_collection_name,
@@ -145,6 +160,7 @@ class Ingest:
         except Exception as e:
             print("Error in main_ingest: ", e)
             sentry_sdk.capture_exception(e)
+            success_fail_dict = {"failure_ingest": {'error': str(e)}}
             return json.dumps(success_fail_dict)
     
     def run_ingest(self, course_name, s3_paths, base_url, url, readable_filename, content, document_groups):
@@ -257,7 +273,7 @@ class Ingest:
                             'error':
                                 f"We don't have a ingest method for this filetype: {file_extension} (with generic type {mime_type}), for file: {s3_path}"
                         }
-                        if self.posthog: 
+                        if self.posthog:
                             self.posthog.capture(
                                 'distinct_id_of_the_user',
                                 event='ingest_failure',
@@ -277,7 +293,7 @@ class Ingest:
             err = f"❌❌ Error in /ingest: `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc()  # type: ignore
 
             success_status['failure_ingest'] = {'s3_path': s3_path, 'error': f"MAJOR ERROR DURING INGEST: {err}"}
-            if self.posthog: 
+            if self.posthog:
                 self.posthog.capture('distinct_id_of_the_user',
                                     event='ingest_failure',
                                     properties={
@@ -295,7 +311,7 @@ class Ingest:
     def ingest_single_web_text(self, course_name: str, base_url: str, url: str, content: str, readable_filename: str, **kwargs) -> Dict[str, None | str | Dict[str, str]]:
         """Crawlee integration
         """
-        if self.posthog: 
+        if self.posthog:
             self.posthog.capture('distinct_id_of_the_user',
                                 event='ingest_single_web_text_invoked',
                                 properties={
@@ -319,7 +335,7 @@ class Ingest:
                 'base_url': base_url,
             }]
             self.split_and_upload(texts=text, metadatas=metadatas, **kwargs)
-            if self.posthog: 
+            if self.posthog:
                 self.posthog.capture('distinct_id_of_the_user',
                                     event='ingest_single_web_text_succeeded',
                                     properties={
@@ -784,7 +800,7 @@ class Ingest:
             
     
     def _ocr_pdf(self, s3_path: str, course_name: str, **kwargs):
-        if self.posthog: 
+        if self.posthog:
             self.posthog.capture('distinct_id_of_the_user',
                                 event='ocr_pdf_invoked',
                                 properties={
@@ -818,7 +834,7 @@ class Ingest:
                 } for page in pdf_pages_OCRed
             ]
             pdf_texts = [page['text'] for page in pdf_pages_OCRed]
-            if self.posthog: 
+            if self.posthog:
                 self.posthog.capture('distinct_id_of_the_user',
                                     event='ocr_pdf_succeeded',
                                     properties={
@@ -965,8 +981,7 @@ class Ingest:
         logging.info(f"Split and upload invoked with {len(texts)} texts and {len(metadatas)} metadatas")
         print(f"In split and upload. Metadatas: {metadatas}")
         print("KWARGS: ", kwargs)
-
-        if self.posthog: 
+        if self.posthog:
             self.posthog.capture('distinct_id_of_the_user',
                                 event='split_and_upload_invoked',
                                 properties={
@@ -999,7 +1014,7 @@ class Ingest:
             logging.info(f"Before checking for duplicates")
             is_duplicate = self.check_for_duplicates(input_texts, metadatas)
             if is_duplicate:
-                if self.posthog: 
+                if self.posthog:
                     self.posthog.capture('distinct_id_of_the_user',
                                         event='split_and_upload_succeeded',
                                         properties={
@@ -1095,8 +1110,7 @@ class Ingest:
                     if count == 0:
                         print("Error in adding to doc groups")
                         raise ValueError("Error in adding to doc groups")
-
-            if self.posthog: 
+            if self.posthog:
                 self.posthog.capture('distinct_id_of_the_user',
                                     event='split_and_upload_succeeded',
                                     properties={
@@ -1157,7 +1171,9 @@ class Ingest:
         supabase_whole_text = ""
         exact_doc_exists = False
         if len(supabase_contents) > 0:  # a doc with same filename exists in Supabase
+            logging.info(f"Checking for Supabase contents: {supabase_contents}")
             for record in supabase_contents:
+                logging.info(f"Record: {record}")
                 if incoming_s3_path:
                     curr_filename = record['s3_path'].split('/')[-1]
                     older_s3_path = record['s3_path']
@@ -1249,6 +1265,7 @@ class Ingest:
                     else:
                         print("Error in deleting file from Qdrant:", e)
                         sentry_sdk.capture_exception(e)
+                        raise e
 
                 try:
                     self.sql_session.delete_document_by_s3_path(course_name=course_name, s3_path=s3_path)
@@ -1277,6 +1294,7 @@ class Ingest:
                     else:
                         print("Error in deleting file from Qdrant:", e)
                         sentry_sdk.capture_exception(e)
+                        raise e
                 
                 try:
                 # delete from Supabase
