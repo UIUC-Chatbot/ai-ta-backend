@@ -37,7 +37,7 @@ langchain-openai==0.1.8
 
 # Data
 boto3==1.28.79
-qdrant-client==1.7.3
+qdrant-client==1.12.2
 supabase==2.11.0
 
 # Logging 

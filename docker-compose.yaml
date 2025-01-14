@@ -10,9 +10,9 @@ services:
       - my-network
     volumes:
       - redis-data:/data
-    
+
   qdrant:
-    image: qdrant/qdrant:v1.9.5
+    image: qdrant/qdrant:v1.12.6
     restart: unless-stopped
     container_name: qdrant
     # environment:
@@ -30,15 +30,7 @@ services:
     networks:
       - my-network
     healthcheck:
-      test:
-        [
-          "CMD",
-          "curl",
-          "-f",
-          "-H",
-          "Authorization: Bearer qd-SbvSWrYpa473J33yPjdL",
-          "http://localhost:6333/health",
-        ]
+      test: [ "CMD", "curl", "-f", "-H", "Authorization: Bearer qd-SbvSWrYpa473J33yPjdL", "http://localhost:6333/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -86,7 +78,7 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 10
