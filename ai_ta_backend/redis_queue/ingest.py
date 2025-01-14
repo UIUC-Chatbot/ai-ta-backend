@@ -52,7 +52,6 @@ from langchain.vectorstores import Qdrant
 from ai_ta_backend.redis_queue.ingestSQL import SQLAlchemyIngestDB
 
 from dotenv import load_dotenv
-import logging
 
 load_dotenv()
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -1131,7 +1130,7 @@ class Ingest:
         if incoming_s3_path:
             # check if uuid exists in s3_path -- not all s3_paths have uuids!
             incoming_filename = incoming_s3_path.split('/')[-1]
-            # print("Full filename: ", incoming_filename)
+            logging.debug(f"Full filename: {incoming_filename}")
             pattern = re.compile(r'[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}',
                                 re.I)  # uuid V4 pattern, and v4 only.
             if bool(pattern.search(incoming_filename)):
@@ -1140,17 +1139,17 @@ class Ingest:
             else:
                 # do not remove anything and proceed with duplicate checking
                 original_filename = incoming_filename
-            print(f"Filename after removing uuid: {original_filename}")
+            logging.info(f"Filename after removing uuid: {original_filename}")
 
             supabase_contents = self.sql_session.get_like_docs_by_s3_path(course_name, original_filename)
             supabase_contents = supabase_contents['data']
-            print(f"No. of S3 path based records retrieved: {len(supabase_contents)}")  # multiple records can be retrieved: 3.pdf and 453.pdf
+            logging.info(f"No. of S3 path based records retrieved: {len(supabase_contents)}")  # multiple records can be retrieved: 3.pdf and 453.pdf
 
         elif url:
             original_filename = url
             supabase_contents = self.sql_session.get_like_docs_by_url(course_name, url)
             supabase_contents = supabase_contents['data']
-            print(f"No. of URL-based records retrieved: {len(supabase_contents)}")
+            logging.info(f"No. of URL-based records retrieved: {len(supabase_contents)}")
         else:
             original_filename = None
             supabase_contents = []

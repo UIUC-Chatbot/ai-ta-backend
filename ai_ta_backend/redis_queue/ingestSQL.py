@@ -1,4 +1,5 @@
 import os
+import logging
 from urllib.parse import quote_plus
 
 from ai_ta_backend.model import models
