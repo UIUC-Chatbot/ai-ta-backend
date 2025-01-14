@@ -13,12 +13,13 @@ RUN apt-get update && apt-get install -y \
 
 ENV PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
+RUN pip install uv
 
 # Copy the requirements file first to leverage Docker cache
 COPY ai_ta_backend/requirements.txt .
 
 # Install any needed packages specified in requirements.txt
-RUN pip install -r requirements.txt
+RUN uv pip install -r requirements.txt --system
 
 # Mkdir for sqlite db
 RUN mkdir -p /usr/src/app/db
@@ -33,4 +34,4 @@ ENV PYTHONPATH="${PYTHONPATH}:/usr/src/app/ai_ta_backend"
 EXPOSE 8000
 
 # Run the application using Gunicorn with specified configuration
-CMD ["gunicorn", "--workers=1", "--threads=100", "--worker-class=gthread", "ai_ta_backend.main:app", "--timeout=1800", "--bind=0.0.0.0:8000"]
+CMD ["gunicorn", "--workers=1", "--threads=3", "--worker-class=gthread", "ai_ta_backend.main:app", "--timeout=1800", "--bind=0.0.0.0:8000"]
