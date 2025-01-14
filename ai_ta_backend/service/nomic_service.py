@@ -40,18 +40,18 @@ class NomicService():
     start_time = time.monotonic()
     try:
       if type.lower() == 'document':
-        map_prefix = 'Document Map for '
-        index_suffix = "_doc_index"
+        field = 'document_map_index'
       else:
-        map_prefix = 'Conversation Map for '
-        index_suffix = "_convo_index"
+        field = 'conversation_map_index'
 
-      project_name = map_prefix + course_name
-      # project_name = project_name.replace(" ", "-").lower()  # names are like this - conversation-map-for-cropwizard-15
-      project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', project_name.replace(" ", "-").replace("_", "-").lower())
-      project = AtlasDataset(project_name)
-      map = project.get_map(course_name + index_suffix)
-
+      map_name = self.sql.getProjectMapName(course_name, field).data[0]
+      if not map_name:
+        return {"map_id": None, "map_link": None}
+      else:
+        project_name = map_name[field].split("_index")[0]
+        project = AtlasDataset(project_name)
+        map = project.get_map(map_name[field])
+      
       print(f"⏰ Nomic Full Map Retrieval: {(time.monotonic() - start_time):.2f} seconds")
       return {"map_id": f"iframe{map.id}", "map_link": map.map_link}
 
@@ -69,18 +69,22 @@ class NomicService():
   def update_conversation_maps(self):
     """
     Updates all conversation maps in UIUC.Chat. To be called via a CRON job.
+    Step 1: Fetch all projects from the database.
+    Step 2: For each project, delete existing map.
+    Step 3: For each project, create a new map.
     Returns:
         str: 'success' or error message
     """
     try:
-      projects = self.sql.getAllProjects().data
-
+    
+      projects = self.sql.getConvoMapDetails().data
+      print("Length of projects: ", len(projects))
+      
       for project in projects:
         course_name = project['course_name']
-
         print(f"Processing course: {course_name}")
 
-        if not project['convo_map_id']:
+        if not project['convo_map_id'] or project['convo_map_id'] == 'N/A':
           print(f"Creating new conversation map for {course_name}")
           self.create_conversation_map(course_name)
           continue
@@ -91,6 +95,7 @@ class NomicService():
 
         if total_convo_count == 0:
           print("No new conversations to log.")
+          # self.create_map_index(course_name, index_field="first_query", map_type="conversation")
           continue
 
         print(f"Found {total_convo_count} unlogged conversations")
@@ -124,9 +129,14 @@ class NomicService():
               break
             
             combined_dfs = []
-        self.rebuild_map(course_name, "conversation")
-        print(f"Successfully processed all conversations for {course_name}")
+        # self.rebuild_map(course_name, "conversation") # rebuild map function is deprecated in Nomic, create a new index instead
+        self.create_map_index(course_name, index_field="first_query", map_type="conversation")
 
+        print(f"Successfully processed all conversations for {course_name}")
+        print(f"------------------------------------------------------------------------")
+        
+
+      print("Finished updating all conversation maps.")
       return "success"
 
     except Exception as e:
@@ -148,14 +158,16 @@ class NomicService():
 
     try:
       # Fetch all projects
-      projects = self.sql.getAllProjects().data
+      projects = self.sql.getDocMapDetails().data
+      print("Length of projects: ", len(projects))
 
       for project in projects:
         try:
           course_name = project['course_name']
-
+          print(f"Processing course: {project}")
+          
           # Determine whether to create or update map
-          if not project.get('doc_map_id'):
+          if not project.get('doc_map_id') or project.get('doc_map_id') == 'N/A':
             print(f"Creating new document map for course: {course_name}")
             status = self.create_document_map(course_name)
             print(f"Status of document map creation: {status}")
@@ -167,6 +179,7 @@ class NomicService():
 
           if not response.count:
             print("No new documents to log.")
+            print("---------------------------------------------------------")
             continue
 
           # Prepare update process
@@ -230,9 +243,12 @@ class NomicService():
               break
 
           # Rebuild map after all documents are processed
-          self.rebuild_map(course_name, "document")
+          # self.rebuild_map(course_name, "document")
+          self.create_map_index(course_name, index_field="text", map_type="document")
+          
           print(f"\nSuccessfully processed all documents for {course_name}")
           print(f"Total batches processed: {batch_number}")
+          print(f"------------------------------------------------------------------------")
 
         except Exception as e:
           print(f"Error in updating document map for {course_name}: {e}")
@@ -267,7 +283,8 @@ class NomicService():
 
       # Validate conversation count
       response = self.sql.getCountFromLLMConvoMonitor(course_name, last_id=0)
-      print(f"Response from Supabase: {response}")
+      print(f"Response from Supabase: {response.count}")
+
       if not response.count or response.count < MIN_CONVERSATIONS:
         print(f"Cannot create map: {'No new convos present' if not response.count else 'Less than 20 conversations'}")
         return f"Cannot create map: {'No new convos present' if not response.count else 'Less than 20 conversations'}"
@@ -338,7 +355,8 @@ class NomicService():
         first_id = response.data[-1]['id']
 
       # Rebuild map
-      self.rebuild_map(course_name, "conversation")
+      # self.rebuild_map(course_name, "conversation") # rebuild map function is deprecated in Nomic, create a new index instead
+      self.create_map_index(course_name, index_field="first_query", map_type="conversation")
       return "success"
 
     except Exception as e:
@@ -440,13 +458,89 @@ class NomicService():
           break
 
       # Rebuild the map
-      self.rebuild_map(course_name, "document")
+      # self.rebuild_map(course_name, "document") # rebuild map function is deprecated in Nomic, create a new index instead
+      self.create_map_index(course_name, index_field="text", map_type="document")
       return "success"
 
     except Exception as e:
       print(e)
       self.sentry.capture_exception(e)
       return f"Error in creating document map: {str(e)}"
+    
+  
+  def clean_up_conversation_maps(self):
+    """
+    Deletes all Nomic maps and re-creates them. To be called weekly via a CRON job.
+    This is to clean up all the new map indices generated daily.
+    """
+    try:
+      # step 1: get all conversation maps from SQL
+      data = self.sql.getProjectsWithConvoMaps().data
+      print("Length of projects: ", len(data))
+      # step 2: delete all conversation maps from Nomic
+      for project in data:
+        try:
+          project_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
+                                (f"Conversation Map for {project['course_name']}").replace(" ", "-").replace("_", "-").lower())
+          print(f"Deleting conversation map: {project_name}")
+          dataset = AtlasDataset(project_name)
+          dataset.delete()
+          
+          # step 3: update SQL table to remove map info
+          self.sql.updateProjects(project['course_name'], {'convo_map_id': None, 'last_uploaded_convo_id': None, 'conversation_map_index': None})
+
+        except Exception as e:
+          print(f"Error in deleting conversation map: {e}")
+          self.sentry.capture_exception(e)
+          continue
+      print("Deleted all conversation maps.")
+
+      # step 4: re-create conversation maps by calling update function
+      status = self.update_conversation_maps() # this function will create new maps if not already present!
+      print("Map re-creation status: ", status)
+
+      return "success"
+    except Exception as e:
+      print(e)
+      self.sentry.capture_exception(e)
+      return f"Error in cleaning up conversation maps: {str(e)}"
+    
+  def clean_up_document_maps(self):
+    """
+    Deletes all Nomic maps and re-creates them. To be called weekly via a CRON job.
+    This is to clean up all the new map indices generated daily.
+    """
+    try:
+      # step 1: get all document maps from SQL
+      data = self.sql.getProjectsWithDocMaps().data
+      print("Length of projects: ", len(data))
+      # step 2: delete all document maps from Nomic
+      for project in data:
+        try:
+          project_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
+                                (f"Document Map for {project['course_name']}").replace(" ", "-").replace("_", "-").lower())
+          print(f"Deleting document map: {project_name}")
+          dataset = AtlasDataset(project_name)
+          dataset.delete()
+          
+          # step 3: update SQL table to remove map info
+          self.sql.updateProjects(project['course_name'], {'doc_map_id': None, 'last_uploaded_doc_id': None, 'document_map_index': None})
+
+        except Exception as e:
+          print(f"Error in deleting document map: {e}")
+          self.sentry.capture_exception(e)
+          continue
+        
+      # step 4: re-create conversation maps by calling update function
+      status = self.update_document_maps() # this function will create new maps if not already present!
+      print("Map re-creation status: ", status)
+
+      return "success"
+    except Exception as e:
+      print(e)
+      self.sentry.capture_exception(e)
+      return f"Error in cleaning up document maps: {str(e)}"
+
 
 
 #   ## -------------------------------- SUPPLEMENTARY MAP FUNCTIONS --------------------------------- ##
@@ -479,6 +573,33 @@ class NomicService():
       print(e)
       self.sentry.capture_exception(e)
       return f"Error in rebuilding map: {e}"
+    
+  def create_map_index(self, course_name: str, index_field: str, map_type: str):
+    """
+    Creates a new index for a given map in Nomic.
+    """
+    MAP_PREFIXES = {'document': 'Document Map for ', 'conversation': 'Conversation Map for '}
+    try:
+      map_type = map_type.lower()
+      # create index
+      project_name = re.sub(r'[^a-zA-Z0-9\s-]', '', (MAP_PREFIXES.get(map_type, '') + course_name).replace(" ", "-").replace("_", "-").lower())
+      print(f"Creating index for map: {project_name}")
+      
+      project = AtlasDataset(project_name)
+      
+      current_day = datetime.datetime.now().day
+      index_name = f"{project_name}_index_{current_day}"
+      
+      project.create_index(name=index_name, indexed_field=index_field, topic_model=True, duplicate_detection=True)
+
+      # update index name to SQL database
+      self.sql.updateProjects(course_name, {f"{map_type}_map_index": index_name})
+
+      return "success"
+    except Exception as e:
+      print(e)
+      self.sentry.capture_exception(e)
+      return f"Error in creating index: {e}"
 
   def create_map(self, metadata, map_name, index_name, index_field):
     """
@@ -496,14 +617,17 @@ class NomicService():
     print(f"Creating map: {map_name}")
 
     try:
-      project = atlas.map_data(data=metadata,
-                               identifier=map_name,
-                               id_field="id",
-                               topic_model=True,
-                               duplicate_detection=True,
-                               indexed_field=index_field)
+      project = AtlasDataset(map_name,
+                             unique_id_field="id",)
+      project.add_data(data=metadata)
+      # project = atlas.map_data(data=metadata,
+      #                          identifier=map_name,
+      #                          id_field="id",
+      #                          topic_model=True,
+      #                          duplicate_detection=True,
+      #                          indexed_field=index_field)
 
-      project.create_index(name=index_name, indexed_field=index_field, topic_model=True, duplicate_detection=True)
+      # project.create_index(name=index_name, indexed_field=index_field, topic_model=True, duplicate_detection=True)
 
       return "success"
 
@@ -530,8 +654,9 @@ class NomicService():
       # if not project.is_accepting_data:
       #   print("Project is currently indexing. Try again later.")
       #   return "Project busy"
+
       start_time = time.monotonic()
-      while time.monotonic() - start_time < 30:
+      while time.monotonic() - start_time < 600:
         if project.is_accepting_data:
           project.add_data(data=metadata)
           print(f"Data appended to map: {map_name}")
