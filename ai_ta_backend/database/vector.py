@@ -58,13 +58,13 @@ class VectorDatabase():
     """
     Search the vector database for a given query.
     """
-    top_n = 10
+    # top_n = 10
     # Search the vector database
     search_results = self.vyriad_qdrant_client.search(
         collection_name='embedding',  # Pubmed embeddings
         with_vectors=False,
         query_vector=user_query_embedding,
-        limit=top_n,  # Return n closest points
+        limit=100,  # Return n closest points
     )
     # search_params=models.SearchParams(quantization=models.QuantizationSearchParams(rescore=False)))
 
@@ -108,7 +108,7 @@ class VectorDatabase():
           collection_name='prime_kg_nomic',  # Pubmed embeddings
           with_vectors=False,
           query_vector=user_query_embedding,
-          limit=top_n,
+          limit=20,  # not so many KG triplets
       )
 
       for result in prime_kg_triplets:
@@ -117,6 +117,9 @@ class VectorDatabase():
         result.payload['s3_path'] = None
         result.payload['pagenumber_or_timestamp'] = None
         result.payload['course_name'] = course_name
+
+      print("Len after with just Pubmed", len(updated_results))
+      print("Len after adding prime KGs", len(updated_results + prime_kg_triplets))
 
       return updated_results + prime_kg_triplets
 
