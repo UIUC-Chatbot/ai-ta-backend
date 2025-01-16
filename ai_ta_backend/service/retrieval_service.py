@@ -67,12 +67,10 @@ class RetrievalService:
     #     openai_api_type=os.environ['OPENAI_API_TYPE'],
     # )
 
-  async def getTopContexts(
-      self,
-      search_query: str,
-      course_name: str,
-      token_limit: int = 4_000,  # Deprecated
-      doc_groups: List[str] | None = None) -> Union[List[Dict], str]:
+  async def getTopContexts(self,
+                           search_query: str,
+                           course_name: str,
+                           doc_groups: List[str] | None = None) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
         /GET arguments
@@ -153,7 +151,6 @@ class RetrievalService:
           properties={
               "user_query": search_query,
               "course_name": course_name,
-              "token_limit": token_limit,
               # "total_tokens_used": token_counter,
               "total_contexts_used": len(valid_docs),
               "total_unique_docs_retrieved": len(found_docs),
@@ -342,29 +339,6 @@ class RetrievalService:
     #   sentry_sdk.capture_exception(e)
     #   return err
 
-  def format_for_json_mqr(self, found_docs) -> List[Dict]:
-    """
-    Same as format_for_json, but for the new MQR pipeline.
-    """
-    for found_doc in found_docs:
-      if "pagenumber" not in found_doc.keys():
-        print("found no pagenumber")
-        found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
-
-    contexts = [
-        {
-            'text': doc['text'],
-            'readable_filename': doc['readable_filename'],
-            'course_name ': doc['course_name'],
-            's3_path': doc['s3_path'],
-            'pagenumber': doc['pagenumber'],
-            'url': doc['url'],  # wouldn't this error out?
-            'base_url': doc['base_url'],
-        } for doc in found_docs
-    ]
-
-    return contexts
-
   def delete_from_nomic_and_supabase(self, course_name: str, identifier_key: str, identifier_value: str):
     # try:
     #   print(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
@@ -502,38 +476,27 @@ class RetrievalService:
     return max_vector_score, min_vector_score, avg_vector_score
 
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
-    """Formatting only.
-        {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
-
-        Args:
-            found_docs (List[Document]): _description_
-
-        Raises:
-            Exception: _description_
-
-        Returns:
-            List[Dict]: _description_
-        """
-    for found_doc in found_docs:
-      if "pagenumber" not in found_doc.metadata.keys():
-        print("found no pagenumber")
-        found_doc.metadata["pagenumber"] = found_doc.metadata["pagenumber_or_timestamp"]
-
-    contexts = [
+    """Format documents into JSON-serializable dictionaries.
+      
+      Args:
+          found_docs: List of Document objects containing page content and metadata
+          
+      Returns:
+          List of dictionaries with text content and metadata fields
+      """
+    return [
         {
             "text": doc.page_content,
             "readable_filename": doc.metadata["readable_filename"],
             "course_name ": doc.metadata["course_name"],
-            "s3_path": doc.metadata["s3_path"],
-            "pagenumber": doc.metadata["pagenumber"],  # this because vector db schema is older...
-            # OPTIONAL PARAMS...
-            "url": doc.metadata.get("url"),  # wouldn't this error out?
+            # OPTIONAL
+            "s3_path": doc.metadata.get("s3_path"),
+            "pagenumber": doc.metadata.get("pagenumber_or_timestamp"),  # Handles both old and new schema
+            "url": doc.metadata.get("url"),
             "base_url": doc.metadata.get("base_url"),
             "doc_groups": doc.metadata.get("doc_groups"),
         } for doc in found_docs
     ]
-
-    return contexts
 
   def getConversationStats(self, course_name: str):
     """

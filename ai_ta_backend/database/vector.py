@@ -66,16 +66,11 @@ class VectorDatabase():
         query_vector=user_query_embedding,
         limit=100,  # Return n closest points
     )
-    # search_params=models.SearchParams(quantization=models.QuantizationSearchParams(rescore=False)))
-
-    print(f"Search results: {search_results}")
 
     # Post-process the Qdrant results (hydrate the vectors with the full text from SQL)
     try:
       # Get context IDs from search results
       context_ids = [result.payload['context_id'] for result in search_results]
-
-      print("Context IDs", context_ids)
 
       # Call API to get text for all context IDs in bulk
       api_url = "https://pubmed-db-query.kastan.ai/getTextFromContextIDBulk"
@@ -96,7 +91,6 @@ class VectorDatabase():
           result.payload['page_content'] = context_texts[context_id]['page_content']
           result.payload['readable_filename'] = context_texts[context_id]['readable_filename']
           result.payload['s3_path'] = str(result.payload['minio_path']).replace('pubmed/', '')  # remove bucket name
-          result.payload['pagenumber_or_timestamp'] = None
           result.payload['course_name'] = course_name
           updated_results.append(result)
 
@@ -114,12 +108,7 @@ class VectorDatabase():
       for result in prime_kg_triplets:
         result.payload['page_content'] = result.payload["triplet_string"]
         result.payload['readable_filename'] = result.payload["triplet"]
-        result.payload['s3_path'] = None
-        result.payload['pagenumber_or_timestamp'] = None
         result.payload['course_name'] = course_name
-
-      print("Len after with just Pubmed", len(updated_results))
-      print("Len after adding prime KGs", len(updated_results + prime_kg_triplets))
 
       return updated_results + prime_kg_triplets
 
