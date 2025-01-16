@@ -656,13 +656,13 @@ class NomicService():
       #   return "Project busy"
 
       start_time = time.monotonic()
-      while time.monotonic() - start_time < 600:
+      while time.monotonic() - start_time < 60:
         if project.is_accepting_data:
           project.add_data(data=metadata)
           print(f"Data appended to map: {map_name}")
           return "success"
-        print("Project is currently indexing. Waiting for 5 seconds...")
-        time.sleep(5)
+        print("Project is currently indexing. Waiting for 10 seconds...")
+        time.sleep(10)
 
       # with project.wait_for_dataset_lock():
       #   project.add_data(data=metadata)
