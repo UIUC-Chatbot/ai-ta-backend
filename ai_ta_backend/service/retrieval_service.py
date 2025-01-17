@@ -10,14 +10,22 @@ import openai
 import pytz
 from dateutil import parser
 from injector import inject
-from langchain.chat_models import AzureChatOpenAI
+from langchain.embeddings.ollama import OllamaEmbeddings
+
+# from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
 
 from ai_ta_backend.database.aws import AWSStorage
-from ai_ta_backend.database.sql import SQLDatabase, ProjectStats, WeeklyMetric, ModelUsage
+from ai_ta_backend.database.sql import (
+    ModelUsage,
+    ProjectStats,
+    SQLDatabase,
+    WeeklyMetric,
+)
 from ai_ta_backend.database.vector import VectorDatabase
 from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapter
+
 # from ai_ta_backend.service.nomic_service import NomicService
 from ai_ta_backend.service.posthog_service import PosthogService
 from ai_ta_backend.service.sentry_service import SentryService
@@ -48,6 +56,8 @@ class RetrievalService:
         # openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
 
+    self.nomic_embeddings = OllamaEmbeddings(base_url=os.environ['OLLAMA_SERVER_URL'], model='nomic-embed-text:v1.5')
+
     # self.llm = AzureChatOpenAI(
     #     temperature=0,
     #     deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
@@ -57,12 +67,10 @@ class RetrievalService:
     #     openai_api_type=os.environ['OPENAI_API_TYPE'],
     # )
 
-  async def getTopContexts(
-      self,
-      search_query: str,
-      course_name: str,
-      token_limit: int = 4_000,  # Deprecated
-      doc_groups: List[str] | None = None) -> Union[List[Dict], str]:
+  async def getTopContexts(self,
+                           search_query: str,
+                           course_name: str,
+                           doc_groups: List[str] | None = None) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
         /GET arguments
@@ -95,13 +103,18 @@ class RetrievalService:
       # time to vector search: 0.48 seconds
       # Total time: 0.9 seconds
 
+      if course_name == "vyriad":
+        embedding_client = self.nomic_embeddings
+      else:
+        embedding_client = self.embeddings
+
       # Create tasks for parallel execution
       with self.thread_pool_executor as executor:
         loop = asyncio.get_event_loop()
         tasks = [
             loop.run_in_executor(executor, self.sqlDb.getDisabledDocGroups, course_name),
             loop.run_in_executor(executor, self.sqlDb.getPublicDocGroups, course_name),
-            loop.run_in_executor(executor, self._embed_query_and_measure_latency, search_query)
+            loop.run_in_executor(executor, self._embed_query_and_measure_latency, search_query, embedding_client)
         ]
 
       disabled_doc_groups_response, public_doc_groups_response, user_query_embedding = await asyncio.gather(*tasks)
@@ -138,7 +151,6 @@ class RetrievalService:
           properties={
               "user_query": search_query,
               "course_name": course_name,
-              "token_limit": token_limit,
               # "total_tokens_used": token_counter,
               "total_contexts_used": len(valid_docs),
               "total_unique_docs_retrieved": len(found_docs),
@@ -327,29 +339,6 @@ class RetrievalService:
     #   sentry_sdk.capture_exception(e)
     #   return err
 
-  def format_for_json_mqr(self, found_docs) -> List[Dict]:
-    """
-    Same as format_for_json, but for the new MQR pipeline.
-    """
-    for found_doc in found_docs:
-      if "pagenumber" not in found_doc.keys():
-        print("found no pagenumber")
-        found_doc['pagenumber'] = found_doc['pagenumber_or_timestamp']
-
-    contexts = [
-        {
-            'text': doc['text'],
-            'readable_filename': doc['readable_filename'],
-            'course_name ': doc['course_name'],
-            's3_path': doc['s3_path'],
-            'pagenumber': doc['pagenumber'],
-            'url': doc['url'],  # wouldn't this error out?
-            'base_url': doc['base_url'],
-        } for doc in found_docs
-    ]
-
-    return contexts
-
   def delete_from_nomic_and_supabase(self, course_name: str, identifier_key: str, identifier_value: str):
     # try:
     #   print(f"Nomic delete. Course: {course_name} using {identifier_key}: {identifier_value}")
@@ -398,9 +387,15 @@ class RetrievalService:
 
     # Perform the vector search
     start_time_vector_search = time.monotonic()
-    search_results = self._perform_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
-                                                 disabled_doc_groups, public_doc_groups)
-    time_for_vector_search = time.monotonic() - start_time_vector_search
+
+    # SPECIAL CASE FOR VYRIAD
+    if course_name == "vyriad":
+      search_results = self.vdb.vyriad_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                                     disabled_doc_groups, public_doc_groups)
+    else:
+      search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                              disabled_doc_groups, public_doc_groups)
+    self.qdrant_latency_sec = time.monotonic() - start_time_vector_search
 
     # Process the search results by extracting the page content and metadata
     start_time_process_search_results = time.monotonic()
@@ -413,22 +408,14 @@ class RetrievalService:
     time_for_capture_search_succeeded_event = time.monotonic() - start_time_capture_search_succeeded_event
 
     print(f"Runtime for embedding query: {self.openai_embedding_latency:.2f} seconds\n"
-          f"Runtime for vector search: {time_for_vector_search:.2f} seconds\n"
+          f"Runtime for vector search: {self.qdrant_latency_sec:.2f} seconds\n"
           f"Runtime for process search results: {time_for_process_search_results:.2f} seconds\n"
           f"Runtime for capture search succeeded event: {time_for_capture_search_succeeded_event:.2f} seconds")
     return found_docs
 
-  def _perform_vector_search(self, search_query, course_name, doc_groups, user_query_embedding, top_n,
-                             disabled_doc_groups, public_doc_groups):
-    qdrant_start_time = time.monotonic()
-    search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
-                                            disabled_doc_groups, public_doc_groups)
-    self.qdrant_latency_sec = time.monotonic() - qdrant_start_time
-    return search_results
-
-  def _embed_query_and_measure_latency(self, search_query):
+  def _embed_query_and_measure_latency(self, search_query, embedding_client):
     openai_start_time = time.monotonic()
-    user_query_embedding = self.embeddings.embed_query(search_query)
+    user_query_embedding = embedding_client.embed_query(search_query)
     self.openai_embedding_latency = time.monotonic() - openai_start_time
     return user_query_embedding
 
@@ -489,104 +476,113 @@ class RetrievalService:
     return max_vector_score, min_vector_score, avg_vector_score
 
   def format_for_json(self, found_docs: List[Document]) -> List[Dict]:
-    """Formatting only.
-        {'course_name': course_name, 'contexts': [{'source_name': 'Lumetta_notes', 'source_location': 'pg. 19', 'text': 'In FSM, we do this...'}, {'source_name': 'Lumetta_notes', 'source_location': 'pg. 20', 'text': 'In Assembly language, the code does that...'},]}
-
-        Args:
-            found_docs (List[Document]): _description_
-
-        Raises:
-            Exception: _description_
-
-        Returns:
-            List[Dict]: _description_
-        """
-    for found_doc in found_docs:
-      if "pagenumber" not in found_doc.metadata.keys():
-        print("found no pagenumber")
-        found_doc.metadata["pagenumber"] = found_doc.metadata["pagenumber_or_timestamp"]
-
-    contexts = [
+    """Format documents into JSON-serializable dictionaries.
+      
+      Args:
+          found_docs: List of Document objects containing page content and metadata
+          
+      Returns:
+          List of dictionaries with text content and metadata fields
+      """
+    return [
         {
             "text": doc.page_content,
             "readable_filename": doc.metadata["readable_filename"],
             "course_name ": doc.metadata["course_name"],
-            "s3_path": doc.metadata["s3_path"],
-            "pagenumber": doc.metadata["pagenumber"],  # this because vector db schema is older...
-            # OPTIONAL PARAMS...
-            "url": doc.metadata.get("url"),  # wouldn't this error out?
+            # OPTIONAL
+            "s3_path": doc.metadata.get("s3_path"),
+            "pagenumber": doc.metadata.get("pagenumber_or_timestamp"),  # Handles both old and new schema
+            "url": doc.metadata.get("url"),
             "base_url": doc.metadata.get("base_url"),
             "doc_groups": doc.metadata.get("doc_groups"),
         } for doc in found_docs
     ]
-
-    return contexts
 
   def getConversationStats(self, course_name: str):
     """
     Fetches conversation data from the database and groups them by day, hour, and weekday.
     """
     try:
-        conversations, total_count = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
+      conversations, total_count = self.sqlDb.getConversationsCreatedAtByCourse(course_name)
 
-        # Initialize with empty data (all zeros)
-        response_data = {
-            'per_day': {},
-            'per_hour': {str(hour): 0 for hour in range(24)},  # Convert hour to string for consistency
-            'per_weekday': {day: 0 for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']},
-            'heatmap': {day: {str(hour): 0 for hour in range(24)} for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']},
-            'total_count': 0
-        }
+      # Initialize with empty data (all zeros)
+      response_data = {
+          'per_day': {},
+          'per_hour': {
+              str(hour): 0 for hour in range(24)
+          },  # Convert hour to string for consistency
+          'per_weekday': {
+              day: 0 for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+          },
+          'heatmap': {
+              day: {
+                  str(hour): 0 for hour in range(24)
+              } for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+          },
+          'total_count': 0
+      }
 
-        if not conversations:
-            return response_data
+      if not conversations:
+        return response_data
 
-        central_tz = pytz.timezone('America/Chicago')
-        grouped_data = {
-            'per_day': defaultdict(int),
-            'per_hour': defaultdict(int),
-            'per_weekday': defaultdict(int),
-            'heatmap': defaultdict(lambda: defaultdict(int)),
-        }
+      central_tz = pytz.timezone('America/Chicago')
+      grouped_data = {
+          'per_day': defaultdict(int),
+          'per_hour': defaultdict(int),
+          'per_weekday': defaultdict(int),
+          'heatmap': defaultdict(lambda: defaultdict(int)),
+      }
 
-        for record in conversations:
-            try:
-                created_at = record['created_at']
-                parsed_date = parser.parse(created_at).astimezone(central_tz)
+      for record in conversations:
+        try:
+          created_at = record['created_at']
+          parsed_date = parser.parse(created_at).astimezone(central_tz)
 
-                day = parsed_date.date()
-                hour = parsed_date.hour
-                day_of_week = parsed_date.strftime('%A')
+          day = parsed_date.date()
+          hour = parsed_date.hour
+          day_of_week = parsed_date.strftime('%A')
 
-                grouped_data['per_day'][str(day)] += 1
-                grouped_data['per_hour'][str(hour)] += 1  # Convert hour to string
-                grouped_data['per_weekday'][day_of_week] += 1
-                grouped_data['heatmap'][day_of_week][str(hour)] += 1  # Convert hour to string
-            except Exception as e:
-                print(f"Error processing record: {str(e)}")
-                continue
+          grouped_data['per_day'][str(day)] += 1
+          grouped_data['per_hour'][str(hour)] += 1  # Convert hour to string
+          grouped_data['per_weekday'][day_of_week] += 1
+          grouped_data['heatmap'][day_of_week][str(hour)] += 1  # Convert hour to string
+        except Exception as e:
+          print(f"Error processing record: {str(e)}")
+          continue
 
-        return {
-            'per_day': dict(grouped_data['per_day']),
-            'per_hour': {str(k): v for k, v in grouped_data['per_hour'].items()},
-            'per_weekday': dict(grouped_data['per_weekday']),
-            'heatmap': {day: {str(h): count for h, count in hours.items()} 
-                       for day, hours in grouped_data['heatmap'].items()},
-            'total_count': total_count
-        }
+      return {
+          'per_day': dict(grouped_data['per_day']),
+          'per_hour': {
+              str(k): v for k, v in grouped_data['per_hour'].items()
+          },
+          'per_weekday': dict(grouped_data['per_weekday']),
+          'heatmap': {
+              day: {
+                  str(h): count for h, count in hours.items()
+              } for day, hours in grouped_data['heatmap'].items()
+          },
+          'total_count': total_count
+      }
 
     except Exception as e:
-        print(f"Error in getConversationStats for course {course_name}: {str(e)}")
-        self.sentry.capture_exception(e)
-        # Return empty data structure on error
-        return {
-            'per_day': {},
-            'per_hour': {str(hour): 0 for hour in range(24)},
-            'per_weekday': {day: 0 for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']},
-            'heatmap': {day: {str(hour): 0 for hour in range(24)} 
-                       for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']},
-            'total_count': 0
-        }
+      print(f"Error in getConversationStats for course {course_name}: {str(e)}")
+      self.sentry.capture_exception(e)
+      # Return empty data structure on error
+      return {
+          'per_day': {},
+          'per_hour': {
+              str(hour): 0 for hour in range(24)
+          },
+          'per_weekday': {
+              day: 0 for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+          },
+          'heatmap': {
+              day: {
+                  str(hour): 0 for hour in range(24)
+              } for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+          },
+          'total_count': 0
+      }
 
   def getProjectStats(self, project_name: str) -> ProjectStats:
     """
@@ -631,9 +627,9 @@ class RetrievalService:
         count and percentage of total usage
     """
     try:
-        return self.sqlDb.getModelUsageCounts(project_name)
-            
+      return self.sqlDb.getModelUsageCounts(project_name)
+
     except Exception as e:
-        print(f"Error fetching model usage counts for {project_name}: {str(e)}")
-        self.sentry.capture_exception(e)
-        return []
+      print(f"Error fetching model usage counts for {project_name}: {str(e)}")
+      self.sentry.capture_exception(e)
+      return []

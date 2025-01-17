@@ -1,6 +1,7 @@
 import os
 from typing import List
 
+import requests
 from injector import inject
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Qdrant
@@ -26,6 +27,11 @@ class VectorDatabase():
         timeout=20,  # default is 5 seconds. Getting timeout errors w/ document groups.
     )
 
+    self.vyriad_qdrant_client = QdrantClient(url=os.environ['VYRIAD_QDRANT_URL'],
+                                             port=int(os.environ['VYRIAD_QDRANT_PORT']),
+                                             https=True,
+                                             api_key=os.environ['VYRIAD_QDRANT_API_KEY'])
+
     self.vectorstore = Qdrant(client=self.qdrant_client,
                               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
                               embeddings=OpenAIEmbeddings(openai_api_key=os.environ['VLADS_OPENAI_KEY']))
@@ -46,6 +52,69 @@ class VectorDatabase():
         search_params=models.SearchParams(quantization=models.QuantizationSearchParams(rescore=False)))
     # print(f"Search results: {search_results}")
     return search_results
+
+  def vyriad_vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, top_n,
+                           disabled_doc_groups: List[str], public_doc_groups: List[dict]):
+    """
+    Search the vector database for a given query.
+    """
+    # top_n = 10
+    # Search the vector database
+    search_results = self.vyriad_qdrant_client.search(
+        collection_name='embedding',  # Pubmed embeddings
+        with_vectors=False,
+        query_vector=user_query_embedding,
+        limit=100,  # Return n closest points
+    )
+
+    # Post-process the Qdrant results (hydrate the vectors with the full text from SQL)
+    try:
+      # Get context IDs from search results
+      context_ids = [result.payload['context_id'] for result in search_results]
+
+      # Call API to get text for all context IDs in bulk
+      api_url = "https://pubmed-db-query.kastan.ai/getTextFromContextIDBulk"
+      response = requests.post(api_url, json={"ids": context_ids}, timeout=30)
+
+      if not response.ok:
+        print(f"Error in bulk API request: {response.status_code}")
+        return []
+
+      # Create mapping of context_id to text from response
+      context_texts = response.json()
+
+      # Update search results with texts from bulk response
+      updated_results = []
+      for result in search_results:
+        context_id = result.payload['context_id']
+        if context_id in context_texts:
+          result.payload['page_content'] = context_texts[context_id]['page_content']
+          result.payload['readable_filename'] = context_texts[context_id]['readable_filename']
+          result.payload['s3_path'] = str(result.payload['minio_path']).replace('pubmed/', '')  # remove bucket name
+          result.payload['course_name'] = course_name
+          updated_results.append(result)
+
+      # return updated_results
+
+      # ----- Do Prime KG retrieval -----
+
+      prime_kg_triplets = self.vyriad_qdrant_client.search(
+          collection_name='prime_kg_nomic',  # Pubmed embeddings
+          with_vectors=False,
+          query_vector=user_query_embedding,
+          limit=20,  # not so many KG triplets
+      )
+
+      for result in prime_kg_triplets:
+        result.payload['page_content'] = result.payload["triplet_string"]
+        result.payload['readable_filename'] = result.payload["triplet"]
+        result.payload['course_name'] = course_name
+
+      return updated_results + prime_kg_triplets
+
+    except Exception as e:
+      print(f"Error in _vyriad_special_case: {e}")
+      return []
 
   def _create_search_filter(self, course_name: str, doc_groups: List[str], admin_disabled_doc_groups: List[str],
                             public_doc_groups: List[dict]) -> models.Filter:

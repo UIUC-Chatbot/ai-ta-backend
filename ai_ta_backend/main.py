@@ -110,7 +110,6 @@ def getTopContexts(service: RetrievalService) -> Response:
   data = request.get_json()
   search_query: str = data.get('search_query', '')
   course_name: str = data.get('course_name', '')
-  token_limit: int = data.get('token_limit', 3000)
   doc_groups: List[str] = data.get('doc_groups', [])
 
   if search_query == '' or course_name == '':
@@ -121,7 +120,7 @@ def getTopContexts(service: RetrievalService) -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  found_documents = asyncio.run(service.getTopContexts(search_query, course_name, token_limit, doc_groups))
+  found_documents = asyncio.run(service.getTopContexts(search_query, course_name, doc_groups))
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
@@ -214,6 +213,7 @@ def updateDocumentMaps(service: NomicService, flaskExecutor: ExecutorInterface):
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/cleanUpConversationMaps', methods=['GET'])
 def cleanUpConversationMaps(service: NomicService, flaskExecutor: ExecutorInterface):
   print("Starting conversation map cleanup...")
@@ -223,6 +223,7 @@ def cleanUpConversationMaps(service: NomicService, flaskExecutor: ExecutorInterf
   response = jsonify({"outcome": "Task started"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
+
 
 @app.route('/cleanUpDocumentMaps', methods=['GET'])
 def cleanUpDocumentMaps(service: NomicService, flaskExecutor: ExecutorInterface):
@@ -625,37 +626,40 @@ def get_project_stats(service: RetrievalService) -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+
 @app.route('/getWeeklyTrends', methods=['GET'])
 def get_weekly_trends(service: RetrievalService) -> Response:
-    """
+  """
     Provides week-over-week percentage changes in key project metrics.
     """
-    project_name = request.args.get('project_name', default='', type=str)
+  project_name = request.args.get('project_name', default='', type=str)
 
-    if project_name == '':
-        abort(400, description="Missing required parameter: 'project_name' must be provided.")
+  if project_name == '':
+    abort(400, description="Missing required parameter: 'project_name' must be provided.")
 
-    weekly_trends = service.getWeeklyTrends(project_name)
+  weekly_trends = service.getWeeklyTrends(project_name)
 
-    response = jsonify(weekly_trends)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+  response = jsonify(weekly_trends)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 @app.route('/getModelUsageCounts', methods=['GET'])
 def get_model_usage_counts(service: RetrievalService) -> Response:
-    """
+  """
     Get counts of different models used in conversations.
     """
-    project_name = request.args.get('project_name', default='', type=str)
+  project_name = request.args.get('project_name', default='', type=str)
 
-    if project_name == '':
-        abort(400, description="Missing required parameter: 'project_name' must be provided.")
+  if project_name == '':
+    abort(400, description="Missing required parameter: 'project_name' must be provided.")
 
-    model_counts = service.getModelUsageCounts(project_name)
+  model_counts = service.getModelUsageCounts(project_name)
 
-    response = jsonify(model_counts)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+  response = jsonify(model_counts)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
