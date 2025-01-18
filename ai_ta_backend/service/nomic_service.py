@@ -6,7 +6,7 @@ import time
 import nomic
 import pandas as pd
 from injector import inject
-from nomic import atlas
+from nomic import AtlasDataset, atlas
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from ai_ta_backend.database.sql import SQLDatabase
