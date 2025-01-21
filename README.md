@@ -17,28 +17,28 @@ For commercial use of this project, you must obtain a separate commercial licens
 
 Failure to obtain a commercial license for commercial use is a violation of the terms of this project.
 
-## Docker Deployment
+## Self host with Docker
 
-### Supabase
-
-1. Duplicate `.env.example` from `supabase/docker/.env.example` and rename it to `.env`. (example: cp ./supabase/docker/.env.example ./supabase/docker/.env)
-2. Customize your env variables as needed in the supabase docker
-
-### Self-host docker
-
-1. Duplicate `.env.template` and rename it to `.env`. E.g. `cp .env.template .env`
-2. Customize your env variables. Your vector database can be either Qdrant and Pinecone. The SQL database can be any of SQLite, Postgres, and Supabase. The object storage can be Minio or AWS S3. 
-
-### Running simultaneously
-
-We've created an `init.sh` file to run both docker-compose files with run command. To do this, first initialize the `init.sh` with right permission.
+### 🎉 Get started with a single command
 
 ```bash
-chmod +x init.sh
-./init.sh #runs the script
+bash init.sh
 ```
+This will: 
+* Create a `.env` file. You can customize this later to change the default passwords.
+* Initialize all our databases (Redis, Minio, Qdrant, Postgres/Suapabse)
+* Start the backend service running on http://localhost:3012 To customize HTTP port used as the main entrypoint, set the `FLASK_PORT` variabel in your `.env`.
 
-To customize HTTP port used as the main entrypoint, set the `FLASK_PORT` variabel in your `.env`. It defaults to 8188.
+### Configuring Postgres (Supabase)
+
+It's strongly recommende to change your passwords away from the defaults. The Supabase .env file is separate from the rest of the code for seamless compatibility with Supabase's self hosted offering on github, and to maintain compatibility with their guides and general community information.
+The .env file is stored in the local path: `./supabase/docker/.env`
+
+### Configuring Database passwords
+
+Customize your env variables. The SQL database can be any of SQLite, Postgres, and Supabase. The object storage can be Minio or AWS S3. 
+
+
 
 Works on version: `Docker Compose version v2.27.1-desktop.1`
 
