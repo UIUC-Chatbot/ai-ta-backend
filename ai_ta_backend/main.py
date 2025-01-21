@@ -41,7 +41,9 @@ from ai_ta_backend.service.project_service import ProjectService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
+from ai_ta_backend.service.metadata_extraction_service import DocumentMetadataProcessor
 from ai_ta_backend.utils.pubmed_extraction import extractPubmedData
+
 
 app = Flask(__name__)
 CORS(app)
@@ -661,6 +663,19 @@ def get_model_usage_counts(service: RetrievalService) -> Response:
   return response
 
 
+@app.route('/generateMetadata', methods=['GET'])
+def generate_metadata(service: DocumentMetadataProcessor) -> Response:
+  """
+  Generate metadata for Cedar Bluff documents.
+  """
+  metadata_prompt = request.args.get('metadata_prompt', default='', type=str)
+  result = service.process_documents(input_prompt=metadata_prompt)
+
+  response = jsonify({"response": "success"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
@@ -674,7 +689,7 @@ def configure(binder: Binder) -> None:
   binder.bind(SQLDatabase, to=SQLDatabase, scope=SingletonScope)
   binder.bind(AWSStorage, to=AWSStorage, scope=SingletonScope)
   binder.bind(ExecutorInterface, to=FlaskExecutorAdapter(executor), scope=SingletonScope)
-
+  binder.bind(DocumentMetadataProcessor, to=DocumentMetadataProcessor, scope=SingletonScope)
 
 FlaskInjector(app=app, modules=[configure])
 
