@@ -1,0 +1,13 @@
+curl -X POST 'https://6f73644f-1650-4fd4-913a-10e78f34e3d6.app.beam.cloud' \
+-H 'Connection: keep-alive' \
+-H 'Content-Type: application/json' \
+-H 'Authorization: Bearer a4MbnBJm8jlUHzKu26OHZupz1E9XQOTG4LZSYGZG6vI3cheJ6xuzBTfj029XOLeCxGgrb11rlbcFG_jOXKvHVQ==' \
+-d '{
+  "course_name": "is507",
+  "s3_paths": ["path/to/file1", "path/to/file2"],
+  "url": "https://developer.mozilla.org/en-US/docs/Learn/Server-side/First_steps",
+  "base_url": "http://baseurl.com",
+  "readable_filename": "NEWexample_file",
+  "content": "Hiiiii. This is some web text content.",
+  "groups": ["group1", "group2"]
+}'

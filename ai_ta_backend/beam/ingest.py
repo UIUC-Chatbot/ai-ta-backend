@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import beam
 from beam import QueueDepthAutoscaler  # RequestLatencyAutoscaler,
+from beam import BotContext  # To obtain task_id 
 
 if beam.env.is_remote():
   # Only import these in the Cloud container, not when building the container.
@@ -170,117 +171,129 @@ def loader():
 
 # Triggers determine how your app is deployed
 # @app.rest_api(
-@beam.task_queue(name='ingest_task_queue',
+@beam.task_queue(name='ruixin-pr220_ingest_task_queue',
                  workers=4,
                  cpu=1,
                  memory=3_072,
                  max_pending_tasks=15_000,
-                 callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
+                #  callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
                  timeout=60 * 25,
                  retries=1,
                  secrets=ourSecrets,
                  on_start=loader,
                  image=image,
                  autoscaler=autoscaler)
+
 def ingest(context, **inputs: Dict[str | List[str], Any]):
-  qdrant_client, vectorstore, s3_client, supabase_client, posthog = context.on_start_value
+    qdrant_client, vectorstore, s3_client, supabase_client, posthog = context.on_start_value
+    task_id = context.task_id
+    course_name: List[str] | str = inputs.get('course_name', '')
+    s3_paths: List[str] | str = inputs.get('s3_paths', '')
+    url: List[str] | str | None = inputs.get('url', None)
+    base_url: List[str] | str | None = inputs.get('base_url', None)
+    readable_filename: List[str] | str = inputs.get('readable_filename', '')
+    content: str | List[str] | None = inputs.get('content', None)
+    doc_groups: List[str] | str = inputs.get('groups', [])
 
-  course_name: List[str] | str = inputs.get('course_name', '')
-  s3_paths: List[str] | str = inputs.get('s3_paths', '')
-  url: List[str] | str | None = inputs.get('url', None)
-  base_url: List[str] | str | None = inputs.get('base_url', None)
-  readable_filename: List[str] | str = inputs.get('readable_filename', '')
-  content: str | List[str] | None = inputs.get('content', None)  # defined if ingest type is webtext
-  doc_groups: List[str] | str = inputs.get('groups', [])
+    print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}")
 
-  print(
-      f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}"
-  )
+    ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
 
-  ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
+    # We must do the insertion into 'documents_in_progress' table outside the function at the frontend
 
-  # Insert into 'documents_in_progress' table
-  supabase_client.table('documents_in_progress').insert({
-      'course_name': course_name,
-      's3_path': s3_paths,
-      'base_url': base_url,
-      'url': url,
-      'readable_filename': readable_filename,
-  }).execute()
-      
-  def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
-    if content:
-      return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=groups)
-    elif readable_filename == '':
-      return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=groups)
-    else:
-      return ingester.bulk_ingest(course_name,
-                                  s3_paths,
-                                  readable_filename=readable_filename,
-                                  base_url=base_url,
-                                  url=url,
-                                  groups=groups)
+    def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
+        if content:
+            return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=groups)
+        elif readable_filename == '':
+            return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=groups)
+        else:
+            return ingester.bulk_ingest(course_name, s3_paths, readable_filename=readable_filename, base_url=base_url, url=url, groups=groups)
 
-  # First try
-  success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+    # First try
+    # Full Exception is unexpected, don't bother retrying
+    # If success_fail_dict has failures, then enter retry loop
+    success_fail_dict = {}
+    try:
+        success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+    except Exception as e:
+        # Don't bother retrying
+        print("Exception in main ingest", e)
+        # success_fail_dict = retry_ingest(supabase_client, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+        handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
+    
+    # Retry loop
+    if isinstance(success_fail_dict, str) or success_fail_dict.get('failure_ingest'):
+        try:
+            success_fail_dict = retry_ingest(supabase_client, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+        except Exception as e:
+            print("Exception in retry ingest", e)
+            handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
+            success_fail_dict = {}
+    # Remove both failed and success ingest from docs_in_progress table
+    supabase_client.table('documents_in_progress').delete().eq('beam_task_id', task_id).execute()
 
-  # retries
-  num_retires = 3
-  for retry_num in range(1, num_retires):
-    if isinstance(success_fail_dict, str):
-      print(f"STRING ERROR: {success_fail_dict = }")
-      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-      time.sleep(13 * retry_num)  # max is 65
-    elif success_fail_dict['failure_ingest']:
-      print(f"Ingest failure -- Retry attempt {retry_num}. File: {success_fail_dict}")
-      # s3_paths = success_fail_dict['failure_ingest'] # retry only failed paths.... what if this is a URL instead?
-      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-      time.sleep(13 * retry_num)  # max is 65
-    else:
-      break
 
-  # Final failure / success check
-  if success_fail_dict['failure_ingest']:
-    print(f"INGEST FAILURE -- About to send to supabase. success_fail_dict: {success_fail_dict}")
-    # Failure logging done in TaskCallback now, from frontend.
-    # document = {
-    #     "course_name":
-    #         course_name,
-    #     "s3_path":
-    #         s3_paths,
-    #     "readable_filename":
-    #         readable_filename,
-    #     "url":
-    #         url,
-    #     "base_url":
-    #         base_url,
-    #     "error":
-    #         success_fail_dict['failure_ingest']['error']
-    #         if isinstance(success_fail_dict['failure_ingest'], dict) else success_fail_dict['failure_ingest']
-    # }
-    # response = supabase_client.table('documents_failed').insert(document).execute()  # type: ignore
-    # print(f"Supabase ingest failure response: {response}")
-  else:
-    pass
+    if success_fail_dict.get('success_ingest'):
+      # Success ingest!
+      posthog.capture(
+          'distinct_id_of_the_user',
+          event='ingest_success',
+          properties={
+              'course_name': course_name,
+              's3_path': s3_paths,
+              's3_paths': s3_paths,
+              'url': url,
+              'base_url': base_url,
+              'readable_filename': readable_filename,
+              'content': content,
+              'doc_groups': doc_groups,
+          })
+        
+    
+    print(f"Final success_fail_dict: {success_fail_dict}")
+    sentry_sdk.flush(timeout=20)
+    return json.dumps(success_fail_dict)
 
-  # Success ingest!
-  posthog.capture(
-      'distinct_id_of_the_user',
-      event='ingest_success',
-      properties={
-          'course_name': course_name,
-          's3_path': s3_paths,
-          's3_paths': s3_paths,
-          'url': url,
-          'base_url': base_url,
-          'readable_filename': readable_filename,
-          'content': content,
-          'doc_groups': doc_groups,
-          # TODO: Tokens in entire document
-      })
-  print(f"Final success_fail_dict: {success_fail_dict}")
-  sentry_sdk.flush(timeout=20)
-  return json.dumps(success_fail_dict)
+def handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, error):
+    document = {
+        "course_name": course_name,
+        "s3_path": s3_paths,
+        "readable_filename": readable_filename,
+        "url": url,
+        "base_url": base_url,
+        "error": str(error)
+    }
+    supabase_client.table('documents_failed').insert(document).execute()
+
+    posthog.capture(
+                'distinct_id_of_the_user',
+                event='ingest_failure',
+                properties={
+                    'course_name':
+                        course_name,
+                    's3_path':
+                        s3_paths,
+                    'url':
+                        url,
+                    'base_url': base_url,
+                    'readable_filename': readable_filename,
+                    'error': str(error)
+                })
+
+def retry_ingest(supabase_client, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups):
+    num_retries = 3
+    for retry_num in range(1, num_retries):
+        try:
+            success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+            if isinstance(success_fail_dict, str) or success_fail_dict.get('failure_ingest'):
+                print(f"Retry attempt {retry_num}. File: {success_fail_dict}")
+                time.sleep(13 * retry_num)
+            else:
+                return success_fail_dict
+        except Exception as e:
+            print(f"Exception in ingest retry loop {retry_num}", e)
+            handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
+    return {}
 
 
 class Ingest():
@@ -423,6 +436,7 @@ class Ingest():
                              **kwargs):
     """Crawlee integration
     """
+    raise Exception("An error occurred in ingest_single_web_text")
     self.posthog.capture('distinct_id_of_the_user',
                          event='ingest_single_web_text_invoked',
                          properties={
