@@ -334,3 +334,6 @@ class SQLDatabase:
   def getProjectMapName(self, course_name, field_name):
     return self.supabase_client.table("projects").select(field_name).eq("course_name", course_name).execute()
   
+  def getCedarChunks(self):
+     return self.supabase_client.rpc("get_cedar_chunks", params={}).execute()
+  
