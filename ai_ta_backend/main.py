@@ -663,13 +663,14 @@ def get_model_usage_counts(service: RetrievalService) -> Response:
   return response
 
 
-@app.route('/generateMetadata', methods=['GET'])
+@app.route('/generateMetadata', methods=['POST'])
 def generate_metadata(service: DocumentMetadataProcessor) -> Response:
   """
   Generate metadata for Cedar Bluff documents.
   """
   print("In generateMetadata")
-  metadata_prompt = request.args.get('metadata_prompt', default='', type=str)
+  data = request.get_json()
+  metadata_prompt = data.get('metadata_prompt', default='', type=str)
   result = service.process_documents(input_prompt=metadata_prompt)
 
   response = jsonify({"response": "success"})
