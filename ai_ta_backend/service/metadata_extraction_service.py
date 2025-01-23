@@ -239,6 +239,8 @@ class DocumentMetadataProcessor:
                     Since information will be shared iteratively and your responses will be saved in existing metadata, feel free to restructure the output so that it is most useful to the user. 
                     This might be the case especially when there's lower level information that is not shared yet.
 
+                    User Request: {input_prompt}
+
                     Output Format:
                         {
                             "data": {
@@ -287,7 +289,9 @@ class DocumentMetadataProcessor:
                         - Don't summarize or modify values
                         - Preserve all specifications, details, attributes, and relationships
                         - Do not make up any information, only extract what is present in the document or the existing metadata
-                    """
+                """
+                prompt = prompt.format(input_prompt=input_prompt)
+
                 try:
                     result = await self.extractor.ainvoke(
                         {
