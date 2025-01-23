@@ -670,7 +670,7 @@ def generate_metadata(service: DocumentMetadataProcessor) -> Response:
   """
   print("In generateMetadata")
   data = request.get_json()
-  metadata_prompt = data.get('metadata_prompt', default='', type=str)
+  metadata_prompt = data.get('metadata_prompt', '')
   result = service.process_documents(input_prompt=metadata_prompt)
 
   response = jsonify({"response": "success"})

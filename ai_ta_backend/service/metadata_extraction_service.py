@@ -232,16 +232,9 @@ class DocumentMetadataProcessor:
             chunks = self.sql_db.getCedarChunks().data
             sorted_chunks = sorted(chunks, key=itemgetter('document_id'))
 
-            async def process_batch(batch, existing_metadata):
-                prompt = """You are an expert at analyzing documents and extracting structured metadata into clean, hierarchical formats.
-                    Your task is to extract and organize all information into a nested structure that preserves relationships and values. 
-                    Carefully structure the output to best respond to the user's request. 
-                    Since information will be shared iteratively and your responses will be saved in existing metadata, feel free to restructure the output so that it is most useful to the user. 
-                    This might be the case especially when there's lower level information that is not shared yet.
-
-                    User Request: {input_prompt}
-
-                    Output Format:
+            async def process_batch(batch, existing_metadata, user_prompt):
+                print(f"Processing batch...")
+                output_format = """
                         {
                             "data": {
                                 "<parent_entity>": {            # Primary/top-level entity identifier
@@ -251,8 +244,16 @@ class DocumentMetadataProcessor:
                                 }
                             }
                         }
+                """
+                prompt = """You are an expert at analyzing documents and extracting structured metadata into clean, hierarchical formats.
+                    Your task is to extract and organize all information into a nested structure that preserves relationships and values. 
+                    Carefully structure the output to best respond to the user's request. 
+                    Since information will be shared iteratively and your responses will be saved in existing metadata, feel free to restructure the output so that it is most useful to the user. 
+                    This might be the case especially when there's lower level information that is not shared yet.
 
-                        Important Instructions:
+                    User Request: {user_prompt}
+
+                    Important Instructions:
                         1. PARENT ENTITY IDENTIFICATION
                           - Identify the main top-level entities that serve as primary identifiers
                           - These group related information together at the highest level
@@ -289,10 +290,14 @@ class DocumentMetadataProcessor:
                         - Don't summarize or modify values
                         - Preserve all specifications, details, attributes, and relationships
                         - Do not make up any information, only extract what is present in the document or the existing metadata
+
+                    Output Format: 
                 """
-                prompt = prompt.format(input_prompt=input_prompt)
+                
 
                 try:
+                    prompt = prompt.format(user_prompt=user_prompt) + output_format # adding this way because including it in the main prompt gives formatting errors.
+                    print(f"Prompt: {prompt}")
                     result = await self.extractor.ainvoke(
                         {
                             "messages": [
@@ -360,7 +365,7 @@ class DocumentMetadataProcessor:
                             continue
 
                         # Run the async function in a new event loop
-                        metadata = asyncio.run(process_batch(batch, existing_metadata))
+                        metadata = asyncio.run(process_batch(batch, existing_metadata, input_prompt))
                         
                         if metadata:
                             existing_metadata = metadata.model_dump()
@@ -399,11 +404,12 @@ class DocumentMetadataProcessor:
                         result.append({"document_id": document_id, "error": "No metadata extracted."})
                     
                 except Exception as e:
-                    print("Error: ", e)
+                    print("Error in doc level metadata extraction: ", e)
+                    self.sql_db.updateCedarDocumentStatus(document_id, {"metadata_status": "failed", "last_error": str(e)}) 
                     result.append({"document_id": document_id, "error": str(e)})
                     continue
 
             return result
         except Exception as e:
-            print("Error: ", e)
+            print("Error: ", str(e))
             return []
