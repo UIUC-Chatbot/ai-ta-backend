@@ -52,6 +52,7 @@ langchain-openai
 trustcall
 langsmith 
 langchain-core
+langchain-community
 langgraph==0.1.2
 
 
