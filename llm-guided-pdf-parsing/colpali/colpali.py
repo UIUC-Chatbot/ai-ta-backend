@@ -11,7 +11,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BUCKET_NAME = 'pubmed2'
-FLASK_API_URL = 'http://localhost:5000/process_image'
+# FLASK_API_URL = 'http://localhost:5000/process_image'
+FLASK_API_URL = 'https://colpali.uiuc.chat/process_image'
 
 minio_client = Minio(
     os.environ['MINIO_API_ENDPOINT'],
@@ -76,43 +77,41 @@ with tqdm(total=1000, desc="Processing Files") as pbar:
 
         pdf_to_images(local_save_path, output_dir)
 
-        for image_name in os.listdir(output_dir):
-            if not image_name.endswith((".png", ".jpg", ".jpeg")):
-                continue
+        BATCH_SIZE = 2
+        image_list = [f for f in os.listdir(output_dir) if f.lower().endswith((".png",".jpg",".jpeg"))]
 
-            image_path = os.path.join(output_dir, image_name)
+        with tqdm(total=len(image_list), desc="Uploading Batches") as pbar:
+            for i in range(0, len(image_list), BATCH_SIZE):
+                batch = image_list[i : i + BATCH_SIZE]
+                files_to_send = []
+                for image_name in batch:
+                    path = os.path.join(output_dir, image_name)
+                    f = open(path, "rb")
+                    files_to_send.append(("file", (image_name, f, "image/png")))
 
-            try:
-                with open(image_path, 'rb') as f:
-                    files = {'file': (image_name, f)}
-                    response = requests.post(FLASK_API_URL, files=files)
-                
+                response = requests.post(FLASK_API_URL, files=files_to_send)
+
+                # Close the opened file objects
+                for _, (filename, fileobj, _) in files_to_send:
+                    fileobj.close()
+
                 if response.status_code == 200:
-                    image_embedding = response.json().get('embedding')
+                    embeddings = response.json().get("embeddings", [])
+                    for img_name, embedding in zip(batch, embeddings):
+                        point = models.PointStruct(
+                            id=point_id,
+                            vector=embedding,
+                            payload={"source": "batch upload", "file_name": img_name},
+                        )
+                        upsert_to_qdrant([point])
+                        point_id += 1
                 else:
-                    print(f"Error processing image {image_name}: {response.json().get('error')}")
-                    continue
+                    print("Error batch response:", response.json().get("error"))
 
-                multivector = image_embedding
-                point = models.PointStruct(
-                    id=point_id,
-                    vector=multivector,
-                    payload={
-                        "source": "minio bucket",
-                        "file_name": os.path.basename(image_path),
-                        "original_file": local_file_path,
-                    },
-                )
+                for image_name in batch:
+                    os.remove(os.path.join(output_dir, image_name))
 
-                upsert_to_qdrant([point])
-                print(f"Successfully inserted: {image_name}")
-                point_id += 1
-
-            except Exception as e:
-                print(f"Error uploading image {image_name} to Flask API: {e}")
-                continue
-
-            os.remove(image_path)
+                pbar.update(len(batch))
 
         processed_files += 1
         pbar.update(1)
