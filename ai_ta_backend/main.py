@@ -675,24 +675,14 @@ def generate_metadata(service: DocumentMetadataProcessor) -> Response:
         data = request.get_json()
         metadata_prompt = data.get('metadata_prompt', '')
         result = service.process_documents(input_prompt=metadata_prompt)
-        
-        # Generate CSV file
-        csv_path = service.download_metadata_csv()
-        
-        if not csv_path or not os.path.exists(csv_path):
-            return jsonify({"error": "Failed to generate CSV"}), 500
-            
-        # Return file for download
-        return send_file(
-            csv_path,
-            mimetype='text/csv',
-            as_attachment=True,
-            download_name='metadata.csv'
-        )
-        
+        response = jsonify(result)
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
     except Exception as e:
         print(f"Error generating metadata: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        response = jsonify({"error": str(e)})
+        response.status_code = 500
+        return response
 
 @app.route('/downloadMetadataCSV', methods=['GET'])
 def download_metadata_csv(service: DocumentMetadataProcessor) -> Response:
@@ -701,10 +691,25 @@ def download_metadata_csv(service: DocumentMetadataProcessor) -> Response:
   """
   print("In downloadMetadataCSV")
   result = service.download_metadata_csv()
+  # Generate CSV file
+  csv_path = service.download_metadata_csv()
+        
+  if not csv_path or not os.path.exists(csv_path):
+    response = jsonify({"error": "Failed to generate CSV"})
+    response.status_code = 500
+    return response
+            
+  # Return file for download
+  return send_file(
+    csv_path,
+    mimetype='text/csv',
+    as_attachment=True,
+    download_name='metadata.csv'
+  )
 
-  response = jsonify({"response": "success"})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+  # response = jsonify({"response": "success"})
+  # response.headers.add('Access-Control-Allow-Origin', '*')
+  # return response
 
 
 def configure(binder: Binder) -> None:

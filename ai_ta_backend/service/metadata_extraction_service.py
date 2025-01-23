@@ -444,7 +444,8 @@ class DocumentMetadataProcessor:
                 import pandas as pd
                 df = pd.DataFrame(final_metadata)
                 csv_file = "metadata.csv"
-                df.to_csv(csv_file, index=False, encoding='utf-8')
+                file_path = os.path.join(os.getcwd(), csv_file)
+                df.to_csv(file_path, index=False, encoding='utf-8')
                 return csv_file
 
             

@@ -51,7 +51,9 @@ ollama==0.2.1
 langchain-openai 
 trustcall
 langsmith 
-langchain-core 
+langchain-core==0.2.0
+langgraph==0.1.2
+
 
 # Not currently supporting coursera ingest
 # cs-dlp @ git+https://github.com/raffaem/cs-dlp.git@0.12.0b0 # previously called coursera-dl
