@@ -20,7 +20,7 @@ typing_extensions==4.8.0
 cryptography==42.0.7
 
 # Utils
-tiktoken==0.5.1
+tiktoken
 python-dotenv==1.0.1
 pydantic==2.8.2 # updated to resolve nomic errors
 flask-executor==1.0.0
