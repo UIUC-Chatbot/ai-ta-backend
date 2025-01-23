@@ -677,6 +677,18 @@ def generate_metadata(service: DocumentMetadataProcessor) -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/downloadMetadataCSV', methods=['GET'])
+def download_metadata_csv(service: DocumentMetadataProcessor) -> Response:
+  """
+  Download metadata CSV for Cedar Bluff documents.
+  """
+  print("In downloadMetadataCSV")
+  result = service.download_metadata_csv()
+
+  response = jsonify({"response": "success"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
 
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)

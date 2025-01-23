@@ -335,7 +335,10 @@ class SQLDatabase:
     return self.supabase_client.table("projects").select(field_name).eq("course_name", course_name).execute()
   
   def getCedarChunks(self):
-     return self.supabase_client.rpc("get_cedar_chunks", params={}).execute()
+    """
+    Fetches all cedar chunks which are ready for metadata extraction.
+    """
+    return self.supabase_client.rpc("get_cedar_chunks", params={}).execute()
   
   def insertCedarDocumentMetadata(self, data):
     return self.supabase_client.table("cedar_document_metadata").insert(data).execute()
@@ -345,4 +348,13 @@ class SQLDatabase:
   
   def updateCedarDocumentStatus(self, doc_id, data):
     return self.supabase_client.table("cedar_documents").update(data).eq("id", doc_id).execute()
+  
+  def getProcessedCedarDocuments(self):
+    """
+    Fetch all cedar documents which are ready for metadata download.
+    """
+    return self.supabase_client.table("cedar_documents").select("id, readable_filename").eq("metadata_status", "completed").execute()
+  
+  def getCedarDocumentMetadata(self, doc_id):
+    return self.supabase_client.table("cedar_document_metadata").select("*").eq("document_id", doc_id).execute()
   

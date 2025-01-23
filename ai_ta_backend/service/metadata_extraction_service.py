@@ -413,3 +413,46 @@ class DocumentMetadataProcessor:
         except Exception as e:
             print("Error: ", str(e))
             return []
+        
+    def download_metadata_csv(self):
+        """
+        This function downloads the metadata from the database and saves it as a CSV file.
+        """
+        try:
+            # fetch all processed docs
+            documents = self.sql_db.getProcessedCedarDocuments().data
+            results = []
+            final_metadata = []
+
+            for doc in documents:
+                metadata = self.sql_db.getCedarDocumentMetadata(doc['id']).data
+                if not metadata:
+                    continue
+
+                for row in metadata:
+                    final_metadata.append({ 
+                        "file_name": doc['readable_filename'],              
+                        "document_id": row['id'],
+                        "field_name": row['field_name'],
+                        "field_value": json.dumps(row['field_value']),
+                    })
+                    break
+                
+                print(f"Metadata: {final_metadata}")
+                break
+            
+            # metadata = self.sql_db.getCedarDocumentMetadata().data
+            # if metadata:
+            #     # Save metadata as CSV
+            #     csv_file = "metadata.csv"
+            #     with open(csv_file, "w") as f:
+            #         f.write("document_id,field_name,field_value,confidence_score,extraction_method\n")
+            #         for row in metadata:
+            #             f.write(
+            #                 f"{row['document_id']},\"{row['field_name']}\",\"{json.dumps(row['field_value'])}\",{row['confidence_score']},{row['extraction_method']}\n"
+            #             )
+            #     return csv_file
+            return None
+        except Exception as e:
+            print("Error: ", e)
+            return None
