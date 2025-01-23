@@ -668,6 +668,7 @@ def generate_metadata(service: DocumentMetadataProcessor) -> Response:
   """
   Generate metadata for Cedar Bluff documents.
   """
+  print("In generateMetadata")
   metadata_prompt = request.args.get('metadata_prompt', default='', type=str)
   result = service.process_documents(input_prompt=metadata_prompt)
 

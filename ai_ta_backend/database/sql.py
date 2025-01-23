@@ -337,3 +337,12 @@ class SQLDatabase:
   def getCedarChunks(self):
      return self.supabase_client.rpc("get_cedar_chunks", params={}).execute()
   
+  def insertCedarDocumentMetadata(self, data):
+    return self.supabase_client.table("cedar_document_metadata").insert(data).execute()
+  
+  def insertCedarRun(self, data):
+    return self.supabase_client.table("cedar_runs").insert(data).execute()
+  
+  def updateCedarDocumentStatus(self, doc_id, data):
+    return self.supabase_client.table("cedar_documents").update(data).eq("id", doc_id).execute()
+  
