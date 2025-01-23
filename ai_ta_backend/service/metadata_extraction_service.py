@@ -445,8 +445,9 @@ class DocumentMetadataProcessor:
                 df = pd.DataFrame(final_metadata)
                 csv_file = "metadata.csv"
                 file_path = os.path.join(os.getcwd(), csv_file)
+                print(f"File path: {file_path}")
                 df.to_csv(file_path, index=False, encoding='utf-8')
-                return csv_file
+                return [file_path, csv_file, os.getcwd()]
 
             
             # metadata = self.sql_db.getCedarDocumentMetadata().data

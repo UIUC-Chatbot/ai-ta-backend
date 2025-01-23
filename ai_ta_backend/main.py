@@ -690,22 +690,28 @@ def download_metadata_csv(service: DocumentMetadataProcessor) -> Response:
   Download metadata CSV for Cedar Bluff documents.
   """
   print("In downloadMetadataCSV")
-  result = service.download_metadata_csv()
   # Generate CSV file
   csv_path = service.download_metadata_csv()
-        
-  if not csv_path or not os.path.exists(csv_path):
+  print(f"CSV path: {csv_path}")
+  if not csv_path or not os.path.exists(csv_path[0]):
     response = jsonify({"error": "Failed to generate CSV"})
     response.status_code = 500
     return response
             
   # Return file for download
-  return send_file(
-    csv_path,
-    mimetype='text/csv',
-    as_attachment=True,
-    download_name='metadata.csv'
-  )
+  directory = os.path.dirname(csv_path[0])
+  response = make_response(
+    send_from_directory(directory=directory, path=csv_path[1], as_attachment=True))
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  response.headers["Content-Disposition"] = f"attachment; filename=metadata.csv"
+  os.remove(csv_path[0])
+  return response
+  # return send_file(
+  #   csv_path,
+  #   mimetype='text/csv',
+  #   as_attachment=True,
+  #   download_name='metadata.csv'
+  # )
 
   # response = jsonify({"response": "success"})
   # response.headers.add('Access-Control-Allow-Origin', '*')
