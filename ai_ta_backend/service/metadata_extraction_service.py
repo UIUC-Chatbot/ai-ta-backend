@@ -436,10 +436,17 @@ class DocumentMetadataProcessor:
                         "field_name": row['field_name'],
                         "field_value": json.dumps(row['field_value']),
                     })
-                    break
+                    
                 
-                print(f"Metadata: {final_metadata}")
-                break
+            print(f"Metadata: {len(final_metadata)}")
+            # Save metadata as CSV
+            if final_metadata:
+                import pandas as pd
+                df = pd.DataFrame(final_metadata)
+                csv_file = "metadata.csv"
+                df.to_csv(csv_file, index=False, encoding='utf-8')
+                return csv_file
+
             
             # metadata = self.sql_db.getCedarDocumentMetadata().data
             # if metadata:

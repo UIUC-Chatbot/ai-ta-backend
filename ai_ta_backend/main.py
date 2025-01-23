@@ -13,6 +13,7 @@ from flask import (
     make_response,
     request,
     send_from_directory,
+    send_file,
 )
 from flask_cors import CORS
 from flask_executor import Executor
@@ -665,17 +666,33 @@ def get_model_usage_counts(service: RetrievalService) -> Response:
 
 @app.route('/generateMetadata', methods=['POST'])
 def generate_metadata(service: DocumentMetadataProcessor) -> Response:
-  """
-  Generate metadata for Cedar Bluff documents.
-  """
-  print("In generateMetadata")
-  data = request.get_json()
-  metadata_prompt = data.get('metadata_prompt', '')
-  result = service.process_documents(input_prompt=metadata_prompt)
-
-  response = jsonify({"response": "success"})
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+    """
+    Generate metadata for Cedar Bluff documents and return CSV download.
+    """
+    print("In generateMetadata")
+    try:
+        # Process the metadata
+        data = request.get_json()
+        metadata_prompt = data.get('metadata_prompt', '')
+        result = service.process_documents(input_prompt=metadata_prompt)
+        
+        # Generate CSV file
+        csv_path = service.download_metadata_csv()
+        
+        if not csv_path or not os.path.exists(csv_path):
+            return jsonify({"error": "Failed to generate CSV"}), 500
+            
+        # Return file for download
+        return send_file(
+            csv_path,
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name='metadata.csv'
+        )
+        
+    except Exception as e:
+        print(f"Error generating metadata: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/downloadMetadataCSV', methods=['GET'])
 def download_metadata_csv(service: DocumentMetadataProcessor) -> Response:
