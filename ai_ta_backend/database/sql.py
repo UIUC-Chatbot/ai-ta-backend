@@ -334,11 +334,11 @@ class SQLDatabase:
   def getProjectMapName(self, course_name, field_name):
     return self.supabase_client.table("projects").select(field_name).eq("course_name", course_name).execute()
   
-  def getCedarChunks(self):
-    """
-    Fetches all cedar chunks which are ready for metadata extraction.
-    """
-    return self.supabase_client.rpc("get_cedar_chunks", params={}).execute()
+  # def getCedarChunks(self, document_ids: List[int]):
+  #   """
+  #   Fetches all cedar chunks which are ready for metadata extraction.
+  #   """
+  #   return self.supabase_client.rpc("get_cedar_chunks", params={"p_document_ids": document_ids}).execute()
   
   def insertCedarDocumentMetadata(self, data):
     return self.supabase_client.table("cedar_document_metadata").insert(data).execute()
@@ -358,3 +358,5 @@ class SQLDatabase:
   def getCedarDocumentMetadata(self, doc_id):
     return self.supabase_client.table("cedar_document_metadata").select("*").eq("document_id", doc_id).execute()
   
+  def getCedarChunks(self, doc_id: int):
+    return self.supabase_client.table("cedar_chunks").select("*").eq("document_id", doc_id).execute()

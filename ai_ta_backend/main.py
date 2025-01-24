@@ -665,7 +665,7 @@ def get_model_usage_counts(service: RetrievalService) -> Response:
 
 
 @app.route('/generateMetadata', methods=['POST'])
-def generate_metadata(service: DocumentMetadataProcessor) -> Response:
+def generate_metadata(service: DocumentMetadataProcessor, flaskExecutor: ExecutorInterface) -> Response:
     """
     Generate metadata for Cedar Bluff documents and return CSV download.
     """
@@ -674,8 +674,10 @@ def generate_metadata(service: DocumentMetadataProcessor) -> Response:
         # Process the metadata
         data = request.get_json()
         metadata_prompt = data.get('metadata_prompt', '')
-        result = service.process_documents(input_prompt=metadata_prompt)
-        response = jsonify(result)
+        document_ids = data.get('document_ids', [])
+        flaskExecutor.submit(service.process_documents(input_prompt=metadata_prompt, document_ids=document_ids))
+        
+        response = jsonify({"response": "Metadata generation started"})
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
     except Exception as e:
