@@ -26,19 +26,45 @@ A Python-based AI agent that interfaces with a Microsoft SQL Server database (WA
 - Access to WARM database
 - Kerberos authentication configured
 
-## Installation
+## Quick Installation
 
 1. Clone the repository
-2. Install required dependencies:
+2. Run the setup script:
 ```bash
-pip install -r requirements.txt
+bash
+chmod +x setup.sh
+./setup.sh
+```
+
+This will:
+- Create the conda environment
+- Install ODBC Driver
+- Install Kerberos
+- Create a template .env file
+
+3. Update the OPENAI_API_KEY in .env file
+
+## Manual Installation
+
+If you prefer to install components manually or the setup script fails, see [manual_installation.md](docs/manual_installation.md) for step-by-step instructions.
+
+## Usage
+
+1. Ensure your Kerberos ticket is valid and you have access to the PRI WARM database:
+```bash
+kinit {netid}@AD.UILLINOIS.EDU
+```
+2. Run the agent:
+```bash
+conda activate warm_ai_agent
+python -m warm_ai.main
 ```
 
 ## Configuration
 
 Create a `.env` file in the project root with the following variables:
 ```
-DB_DRIVER=ODBC Driver 18 for SQL Server
+DB_DRIVER="{ODBC Driver 18 for SQL Server}"  
 DB_SERVER=your_server_name
 DB_NAME=your_database_name
 DB_TRUSTED_CONNECTION=yes
@@ -56,7 +82,7 @@ kinit   {netid}@AD.UILLINOIS.EDU
 
 2. Run the agent:
 ```bash
-python WARM_ai_agent.py
+python -m warm_ai.main
 ```
 
 3. Enter your questions in natural language when prompted. Type 'quit' to exit.
@@ -349,3 +375,21 @@ The system uses:
 3. Submit a pull request
 
 For issues and enhancement requests, please use the GitHub Issues tracker.
+
+## Further Reading & Resources
+
+### UIUC Resources
+- [WARM Database Documentation](https://warm.isws.illinois.edu/warm/) - Official documentation for the WARM database
+- [UIUC VPN Setup Guide](https://cybersecurity.illinois.edu/change-to-campus-vpn-login-process-coming-march-12/) - Official VPN configuration guide
+- [Kerberos at UIUC](https://answers.uillinois.edu/illinois/page.php?id=47575) - UIUC Kerberos authentication guide
+
+### Technical Documentation
+- [OpenAI API Documentation](https://platform.openai.com/docs/) - OpenAI API reference
+- [LangChain Documentation](https://python.langchain.com/docs/get_started/introduction) - LangChain framework guide
+- [SQL Server on Linux](https://learn.microsoft.com/en-us/sql/linux/sql-server-linux-overview) - Microsoft's guide for SQL Server on Linux
+- [ODBC Driver Documentation](https://learn.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server) - Microsoft ODBC driver setup
+
+### Related Research
+- [Prairie Research Institute](https://prairie.illinois.edu/) - Home organization for the WARM database
+- [Illinois State Water Survey](https://www.isws.illinois.edu/) - Source of water and atmospheric data
+- [Water and Atmospheric Resources Monitoring Data](https://www.isws.illinois.edu/dat/) - WARM program data

@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Literal
-from ai_ta_backend.beam.WARM_ai_agent.warm_ai.models.types import AgentState, QueryIntent
+from ..models.types import AgentState, QueryIntent
 
 class StateManager:
     """Manages state transitions and validations for the SQL AI Agent."""

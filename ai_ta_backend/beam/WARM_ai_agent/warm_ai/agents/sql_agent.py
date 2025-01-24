@@ -11,13 +11,13 @@ from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
 
-from ai_ta_backend.beam.WARM_ai_agent.warm_ai.models.state_manager import StateManager
+from ..models.state_manager import StateManager
 
 # Local imports
-from ai_ta_backend.beam.WARM_ai_agent.warm_ai.models.types import AgentState, SQLResponse, QueryIntent
-from ai_ta_backend.beam.WARM_ai_agent.warm_ai.models.prompts import PromptTemplates
-from ai_ta_backend.beam.WARM_ai_agent.warm_ai.utils.location import LocationMapper
-from ai_ta_backend.beam.WARM_ai_agent.warm_ai.utils.sql import extract_sql_query
+from ..models.types import AgentState, SQLResponse, QueryIntent
+from ..models.prompts import PromptTemplates
+from ..utils.location import LocationMapper
+from ..utils.sql import extract_sql_query
 
 class SQLAIAgent:
     """
@@ -165,8 +165,9 @@ class SQLAIAgent:
         """Establish database connection and initialize LLM components."""
         try:
             connection_params = {
-                "driver": "ODBC Driver 18 for SQL Server",
+                "driver": "{ODBC Driver 18 for SQL Server}",
                 "TrustServerCertificate": "yes",
+                "Encrypt": "yes",  # Added for Ubuntu
                 "timeout": "60",
                 "connection_timeout": "60"
             }
