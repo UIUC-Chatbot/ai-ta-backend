@@ -360,3 +360,9 @@ class SQLDatabase:
   
   def getCedarChunks(self, doc_id: int):
     return self.supabase_client.table("cedar_chunks").select("*").eq("document_id", doc_id).execute()
+  
+  def getLastRunID(self):
+    return self.supabase_client.table("cedar_document_metadata").select("run_id").not_.is_("run_id", "null").order("run_id", desc=True).limit(1).execute()
+  
+  def getRunData(self, run_ids: str, limit: int = 100, offset: int = 0):
+    return self.supabase_client.rpc("get_run_data", params={"p_run_ids": run_ids, "p_limit": limit, "p_offset": offset}).execute()

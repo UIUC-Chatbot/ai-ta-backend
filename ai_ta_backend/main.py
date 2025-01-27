@@ -686,14 +686,17 @@ def generate_metadata(service: DocumentMetadataProcessor, flaskExecutor: Executo
         response.status_code = 500
         return response
 
-@app.route('/downloadMetadataCSV', methods=['GET'])
+@app.route('/downloadMetadataCSV', methods=['POST'])
 def download_metadata_csv(service: DocumentMetadataProcessor) -> Response:
   """
   Download metadata CSV for Cedar Bluff documents.
   """
   print("In downloadMetadataCSV")
+  data = request.get_json()
+  run_ids = data.get('run_ids', [])
+  
   # Generate CSV file
-  csv_path = service.download_metadata_csv()
+  csv_path = service.download_metadata_csv(run_ids=run_ids)
   print(f"CSV path: {csv_path}")
   if not csv_path or not os.path.exists(csv_path[0]):
     response = jsonify({"error": "Failed to generate CSV"})

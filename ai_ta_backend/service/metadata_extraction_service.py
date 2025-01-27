@@ -61,7 +61,7 @@ class DocumentMetadataProcessor:
             self.client, tools=[DocumentMetadata], tool_choice="DocumentMetadata"
         )
 
-    def process_documents(self, input_prompt: str, document_ids: List) -> List[Dict[str, Any]]:
+    def process_documents(self, input_prompt: str, document_ids: List) -> Dict[str, Any]:
         """
         This function generates metadata from the text chunks and table JSONs extracted from the PDFs.
         """
@@ -158,12 +158,16 @@ class DocumentMetadataProcessor:
                     return None
 
             # Process each document's chunks
-            result = []
+            curr_run_id = self.sql_db.getLastRunID().data[0]['run_id'] + 1
+            print(f"Current run ID: {curr_run_id}")
             
             for document_id in document_ids:
                 try:
                     # Fetch document chunks
                     doc_chunks = self.sql_db.getCedarChunks(document_id).data
+                    if not doc_chunks:
+                        print(f"No chunks found for document ID: {document_id}")
+                        continue
                     
                     print(f"Processing document ID: {document_id}")
                     
@@ -206,25 +210,16 @@ class DocumentMetadataProcessor:
                         if metadata:
                             existing_metadata = metadata.model_dump()
                             print(f"Length of metadata: {len(metadata.data)}")
-                    print("Batch processing complete!")
+                    
+                    print(f"Document ID {document_id} processed!")
 
                     # one doc run complete at this point
-                    # need to save the metadata to runs table and update the status in document table
-                    if existing_metadata:
-                        cedar_run_row = {
-                            "document_id": document_id,
-                            "metadata": existing_metadata,
-                        }
-                        response = self.sql_db.insertCedarRun(cedar_run_row)
-                        run_id = response.data[0]["id"]
-                        print("Run ID: ", run_id)
-                        
+                    if existing_metadata:                        
                         # update document status as completed
                         self.sql_db.updateCedarDocumentStatus(document_id, {"metadata_status": "completed"})
                     else:
                         # update document status as failed 
                         self.sql_db.updateCedarDocumentStatus(document_id, {"metadata_status": "failed", "last_error": "No metadata extracted."}) 
-                        result.append({"document_id": document_id, "error": "No metadata extracted."})
                         continue
                     
                     # save metadata fields to document metadata table
@@ -233,38 +228,47 @@ class DocumentMetadataProcessor:
                         
                         doc_metadata_row = {
                             "document_id": document_id,
-                            "run_id": run_id, 
+                            "run_id": curr_run_id, 
                             "field_name": parent_entity,
                             "field_value": entity_data,
                             "confidence_score": 90,
                             "extraction_method": "gpt-4o",
                         }
                         self.sql_db.insertCedarDocumentMetadata(doc_metadata_row)
-                    print("Document metadata saved!")
+                    print(f"Document ID {document_id}: metadata saved!")
                     
                 except Exception as e:
                     print("Error in doc level metadata extraction: ", e)
                     self.sql_db.updateCedarDocumentStatus(document_id, {"metadata_status": "failed", "last_error": str(e)}) 
-                    result.append({"document_id": document_id, "error": str(e)})
                     continue
 
-            return result
+            return {"run_id": curr_run_id}
         except Exception as e:
             print("Error: ", str(e))
-            return []
+            return {"error": str(e)}
         
-    def download_metadata_csv(self):
+    def download_metadata_csv(self, run_ids: List[int]) -> List[str]:
         """
         This function downloads the metadata from the database and saves it as a CSV file.
         """
         try:
             # fetch all processed docs
-            documents = self.sql_db.getProcessedCedarDocuments().data
-            results = []
+            limit = 100
+            offset = 0
+            runs_ids_str = ",".join(map(str, run_ids))
+            print(f"Run IDs: {runs_ids_str}")
+            metadata = []
+            while True: 
+                data = self.sql_db.getRunData(runs_ids_str, limit, offset).data
+                if not data:
+                    break
+                metadata.extend(data)
+                print(f"Metadata: {len(metadata)}")
+                offset += limit
+            
             final_metadata = []
-
-            for doc in documents:
-                metadata = self.sql_db.getCedarDocumentMetadata(doc['id']).data
+            for run_id in run_ids:
+                metadata = self.sql_db.getCedarDocumentMetadata(doc_id).data
                 if not metadata:
                     continue
 
@@ -289,17 +293,7 @@ class DocumentMetadataProcessor:
                 return [file_path, csv_file, os.getcwd()]
 
             
-            # metadata = self.sql_db.getCedarDocumentMetadata().data
-            # if metadata:
-            #     # Save metadata as CSV
-            #     csv_file = "metadata.csv"
-            #     with open(csv_file, "w") as f:
-            #         f.write("document_id,field_name,field_value,confidence_score,extraction_method\n")
-            #         for row in metadata:
-            #             f.write(
-            #                 f"{row['document_id']},\"{row['field_name']}\",\"{json.dumps(row['field_value'])}\",{row['confidence_score']},{row['extraction_method']}\n"
-            #             )
-            #     return csv_file
+            
             return None
         except Exception as e:
             print("Error: ", e)
