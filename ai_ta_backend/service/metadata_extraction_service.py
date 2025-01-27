@@ -61,12 +61,16 @@ class DocumentMetadataProcessor:
             self.client, tools=[DocumentMetadata], tool_choice="DocumentMetadata"
         )
 
-    def process_documents(self, input_prompt: str, document_ids: List) -> Dict[str, Any]:
+    def process_documents(self, input_prompt: str, document_ids: List):
         """
         This function generates metadata from the text chunks and table JSONs extracted from the PDFs.
         """
         print("Input prompt: ", input_prompt)
         try:
+            curr_run_id = self.sql_db.getLastRunID().data[0]['run_id'] + 1
+            print(f"Current run ID: {curr_run_id}")
+            yield {"run_id": curr_run_id, "status": "started"}
+            
             async def process_batch(batch, existing_metadata, user_prompt):
                 print(f"Processing batch...")
                 output_format = """
@@ -157,10 +161,8 @@ class DocumentMetadataProcessor:
                     print("Error processing batch:", e)
                     return None
 
-            # Process each document's chunks
-            curr_run_id = self.sql_db.getLastRunID().data[0]['run_id'] + 1
-            print(f"Current run ID: {curr_run_id}")
-            
+            # Process each document's chunks   
+            print(f"Total documents: {len(document_ids)}")        
             for document_id in document_ids:
                 try:
                     # Fetch document chunks
@@ -242,10 +244,10 @@ class DocumentMetadataProcessor:
                     self.sql_db.updateCedarDocumentStatus(document_id, {"metadata_status": "failed", "last_error": str(e)}) 
                     continue
 
-            return {"run_id": curr_run_id}
+            yield {"run_id": curr_run_id, "status": "completed"}
         except Exception as e:
             print("Error: ", str(e))
-            return {"error": str(e)}
+            yield {"run_id": curr_run_id, "status": "failed", "error": str(e)}
         
     def download_metadata_csv(self, run_ids: List[int]) -> List[str]:
         """

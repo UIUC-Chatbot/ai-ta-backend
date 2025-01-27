@@ -671,15 +671,29 @@ def generate_metadata(service: DocumentMetadataProcessor, flaskExecutor: Executo
     """
     print("In generateMetadata")
     try:
-        # Process the metadata
         data = request.get_json()
         metadata_prompt = data.get('metadata_prompt', '')
         document_ids = data.get('document_ids', [])
-        flaskExecutor.submit(service.process_documents(input_prompt=metadata_prompt, document_ids=document_ids))
         
-        response = jsonify({"response": "Metadata generation started"})
+        # Get initial run_id
+        generator = service.process_documents(input_prompt=metadata_prompt, document_ids=document_ids)
+        initial_response = next(generator)
+        run_id = initial_response['run_id']
+        
+        # Continue processing in background
+        def continue_processing():
+            try:
+                for _ in generator:  # Consume the rest of the generator
+                    pass
+            except Exception as e:
+                print(f"Background processing error: {str(e)}")
+                
+        flaskExecutor.submit(continue_processing)
+        
+        response = jsonify({"run_id": run_id})
         response.headers.add('Access-Control-Allow-Origin', '*')
         return response
+        
     except Exception as e:
         print(f"Error generating metadata: {str(e)}")
         response = jsonify({"error": str(e)})
