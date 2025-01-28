@@ -186,7 +186,6 @@ def loader():
 
 def ingest(context, **inputs: Dict[str | List[str], Any]):
     qdrant_client, vectorstore, s3_client, supabase_client, posthog = context.on_start_value
-    task_id = context.task_id
     course_name: List[str] | str = inputs.get('course_name', '')
     s3_paths: List[str] | str = inputs.get('s3_paths', '')
     url: List[str] | str | None = inputs.get('url', None)
@@ -198,8 +197,6 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
     print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}")
 
     ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
-
-    # We must do the insertion into 'documents_in_progress' table outside the function at the frontend
 
     def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
         if content:
@@ -218,23 +215,41 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
     except Exception as e:
         # Don't bother retrying
         print("Exception in main ingest", e)
-        # success_fail_dict = retry_ingest(supabase_client, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+        success_fail_dict = {'failure_ingest': str(e)}
         handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
     
-    # Retry loop
-    if isinstance(success_fail_dict, str) or success_fail_dict.get('failure_ingest'):
-        try:
-            success_fail_dict = retry_ingest(supabase_client, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-        except Exception as e:
-            print("Exception in retry ingest", e)
-            handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
-            success_fail_dict = {}
-    # Remove both failed and success ingest from docs_in_progress table
-    supabase_client.table('documents_in_progress').delete().eq('beam_task_id', task_id).execute()
+    # Catch failed ingest that is not unexpected exception
+    if isinstance(success_fail_dict, str):
+        success_fail_dict = {'failure_ingest': success_fail_dict}
+    
+    # Retry failed ingests (but not unexpected exceptions)
+    if success_fail_dict.get('failure_ingest'):
+        success_fail_dict = retry_ingest(supabase_client, posthog, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+        if isinstance(success_fail_dict, str):
+          success_fail_dict = {'failure_ingest': success_fail_dict}
+        if success_fail_dict.get('failure_ingest'):
+          ingest_error = str(success_fail_dict['failure_ingest'])
+          handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, ingest_error)
 
-
+    # Cleanup: Remove from docs_in_progress table
+    try:
+        if base_url:
+            print('Removing URL-based document from in_progress')
+            supabase_client.table('documents_in_progress').delete()\
+                .eq('url', url)\
+                .eq('base_url', base_url)\
+                .execute()
+        else:
+            supabase_client.table('documents_in_progress').delete()\
+                .eq('course_name', course_name)\
+                .eq('s3_path', s3_paths)\
+                .eq('readable_filename', readable_filename)\
+                .execute()
+    except Exception as e:
+        print(f"Error cleaning up documents_in_progress: {e}")
+        sentry_sdk.capture_exception(e)
+        
     if success_fail_dict.get('success_ingest'):
-      # Success ingest!
       posthog.capture(
           'distinct_id_of_the_user',
           event='ingest_success',
@@ -280,21 +295,26 @@ def handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, reada
                     'error': str(error)
                 })
 
-def retry_ingest(supabase_client, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups):
+def retry_ingest(supabase_client, posthog, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups):
     num_retries = 3
+    last_error = None
+
     for retry_num in range(1, num_retries):
         try:
             success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
             if isinstance(success_fail_dict, str) or success_fail_dict.get('failure_ingest'):
                 print(f"Retry attempt {retry_num}. File: {success_fail_dict}")
+                last_error = success_fail_dict
                 time.sleep(13 * retry_num)
             else:
                 return success_fail_dict
         except Exception as e:
             print(f"Exception in ingest retry loop {retry_num}", e)
+            last_error = {'failure_ingest': str(e)}
             handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
-    return {}
+            time.sleep(13 * retry_num)
 
+    return last_error or {'failure_ingest': 'All retries failed'}
 
 class Ingest():
 
@@ -307,11 +327,11 @@ class Ingest():
 
   def bulk_ingest(self, course_name: str, s3_paths: Union[str, List[str]],
                   **kwargs) -> Dict[str, None | str | Dict[str, str]]:
-    """
+    """ 
     Bulk ingest a list of s3 paths into the vectorstore, and also into the supabase database.
     -> Dict[str, str | Dict[str, str]]
     """
-
+    print('s3 path from bulk ingest', s3_paths)
     def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
       # RUN INGEST METHOD
@@ -436,7 +456,6 @@ class Ingest():
                              **kwargs):
     """Crawlee integration
     """
-    raise Exception("An error occurred in ingest_single_web_text")
     self.posthog.capture('distinct_id_of_the_user',
                          event='ingest_single_web_text_invoked',
                          properties={
@@ -468,7 +487,6 @@ class Ingest():
                                'url': url,
                                'title': readable_filename
                            })
-
       success_or_failure['success_ingest'] = url
       return success_or_failure
     except Exception as e:

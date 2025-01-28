@@ -1,11 +1,11 @@
-curl -X POST 'https://6f73644f-1650-4fd4-913a-10e78f34e3d6.app.beam.cloud' \
+curl -X POST 'https://ruixin-pr220-ingest-task-queue-f241b0c-v16.app.beam.cloud' \
 -H 'Connection: keep-alive' \
 -H 'Content-Type: application/json' \
 -H 'Authorization: Bearer a4MbnBJm8jlUHzKu26OHZupz1E9XQOTG4LZSYGZG6vI3cheJ6xuzBTfj029XOLeCxGgrb11rlbcFG_jOXKvHVQ==' \
 -d '{
-  "course_name": "is507",
-  "s3_paths": ["path/to/file1", "path/to/file2"],
-  "url": "https://developer.mozilla.org/en-US/docs/Learn/Server-side/First_steps",
+   "course_name": "is507",
+  "s3_paths": ''courses/is507/system-description-athene.pdf',
+  "url": "",
   "base_url": "http://baseurl.com",
   "readable_filename": "NEWexample_file",
   "content": "Hiiiii. This is some web text content.",
