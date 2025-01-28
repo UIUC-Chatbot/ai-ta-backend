@@ -54,9 +54,11 @@ sudo apt-get update && sudo apt-get install -y infisical
 
 ## Frontend Setup
 
+Frontend repo: [https://github.com/CAII-NCSA/uiuc-chat-frontend](https://github.com/CAII-NCSA/uiuc-chat-frontend)
+
 ```bash
 # clone the repo somewhere good
-git clone git@github.com:KastanDay/ai-ta-frontend.git
+git clone git@github.com:CAII-NCSA/uiuc-chat-frontend.git
 ```
 
 ### (1/2) Install dev dependencies
@@ -134,6 +136,8 @@ INF Injecting 32 Infisical secrets into your application process
 ***
 
 ## Backend Setup
+
+Backend repo: [https://github.com/UIUC-Chatbot/ai-ta-backend](https://github.com/UIUC-Chatbot/ai-ta-backend)
 
 ```bash
 # clone the repo somewhere good
