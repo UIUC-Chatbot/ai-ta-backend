@@ -161,6 +161,8 @@ class DocumentMetadataProcessor:
       print(f"Total documents: {len(document_ids)}")
       for document_id in document_ids:
         try:
+          # insert run status as started
+          self.sql_db.insertCedarRun({"run_id": curr_run_id, "document_id": document_id, "run_status": "in_progress"})
           # Fetch document chunks
           doc_chunks = self.sql_db.getCedarChunks(document_id).data
           if not doc_chunks:
@@ -200,13 +202,14 @@ class DocumentMetadataProcessor:
           # one doc run complete at this point
           if existing_metadata:
             # update document status as completed
-            self.sql_db.updateCedarDocumentStatus(document_id, {"metadata_status": "completed"})
+            self.sql_db.updateCedarRunStatus(doc_id=document_id, run_id=curr_run_id,  data={"run_status": "completed"})
           else:
             # update document status as failed
-            self.sql_db.updateCedarDocumentStatus(
-                document_id,
-                {
-                    "metadata_status": "failed",
+            self.sql_db.updateCedarRunStatus(
+                doc_id=document_id,
+                run_id=curr_run_id,
+                data={
+                    "run_status": "failed",
                     "last_error": "No metadata extracted.",
                 },
             )
@@ -229,7 +232,7 @@ class DocumentMetadataProcessor:
 
         except Exception as e:
           print("Error in doc level metadata extraction: ", e)
-          self.sql_db.updateCedarDocumentStatus(document_id, {"metadata_status": "failed", "last_error": str(e)})
+          self.sql_db.updateCedarRunStatus(doc_id=document_id, run_id=curr_run_id,  data={"run_status": "failed", "last_error": str(e)})
           continue
 
       yield {"run_id": curr_run_id, "status": "completed"}
@@ -240,7 +243,7 @@ class DocumentMetadataProcessor:
   def download_metadata_csv(self, run_ids: List[int]) -> List[str]:
     """
         This function downloads the metadata from the database and saves it as a CSV file.
-        """
+    """
     try:
       # fetch all processed docs
       limit = 100
@@ -253,7 +256,6 @@ class DocumentMetadataProcessor:
         if not data:
           break
         metadata.extend(data)
-        print(f"Metadata: {len(metadata)}")
         offset += limit
 
       final_metadata = []
@@ -270,12 +272,9 @@ class DocumentMetadataProcessor:
       print(f"Final metadata: {len(final_metadata)}")
       # Save metadata as CSV
       if len(final_metadata)>0:
-        print("Saving metadata as CSV...")
         df = pd.DataFrame(final_metadata)
-        print(df.head())
         csv_file = "metadata.csv"
         file_path = os.path.join(os.getcwd(), csv_file)
-        print(f"File path: {file_path}")
         df.to_csv(file_path, index=False, encoding="utf-8")
         return [file_path, csv_file, os.getcwd()]
 

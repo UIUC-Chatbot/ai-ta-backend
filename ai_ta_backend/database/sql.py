@@ -347,9 +347,6 @@ class SQLDatabase:
   def insertCedarRun(self, data):
     return self.supabase_client.table("cedar_runs").insert(data).execute()
 
-  def updateCedarDocumentStatus(self, doc_id, data):
-    return self.supabase_client.table("cedar_documents").update(data).eq("id", doc_id).execute()
-
   def getProcessedCedarDocuments(self):
     """
     Fetch all cedar documents which are ready for metadata download.
@@ -380,3 +377,6 @@ class SQLDatabase:
     """
     ids_str = ','.join(map(str, document_ids))
     return self.supabase_client.rpc('get_cedar_document_statuses', params={'p_document_ids': document_ids}).execute()
+  
+  def updateCedarRunStatus(self, doc_id, run_id, data):
+    return self.supabase_client.table("cedar_runs").update(data).eq("document_id", doc_id).eq("run_id", run_id).execute()
