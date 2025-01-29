@@ -361,7 +361,7 @@ class SQLDatabase:
     return self.supabase_client.table("cedar_chunks").select("*").eq("document_id", doc_id).execute()
 
   def getLastRunID(self):
-    return self.supabase_client.table("cedar_document_metadata").select("run_id").not_.is_("run_id", "null").order(
+    return self.supabase_client.table("cedar_runs").select("run_id").not_.is_("run_id", "null").order(
         "run_id", desc=True).limit(1).execute()
 
   def getRunData(self, run_ids: str, limit: int = 100, offset: int = 0):
