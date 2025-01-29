@@ -683,7 +683,8 @@ def export_conversations_custom(service: ExportService):
                bcc_receipients=bcc_recipients)
     response = Response(status=200)
   except Exception as e:
-    response = Response(status=500, status=f"An unexpected error occurred: {e}")
+    response = Response(status=500)
+    response.data = f"An unexpected error occurred: {e}".encode()
 
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
