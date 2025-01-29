@@ -5,6 +5,7 @@ Metadata extraction service for Cedar Bluff documents.
 import asyncio
 import json
 import os
+import requests
 from datetime import datetime, timezone
 from itertools import groupby
 from operator import itemgetter
@@ -14,7 +15,13 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 from trustcall import create_extractor
 
+import base64
+import hashlib
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+
 from ai_ta_backend.database.sql import SQLDatabase
+
 
 # from utils.logging_config import setup_detailed_logging
 
@@ -54,12 +61,60 @@ class DocumentMetadata(BaseModel):
 
 class DocumentMetadataProcessor:
 
-  def __init__(self, engine=None):
-    # self.logger = logger
-    # self.engine = engine
+  def __init__(self):
     self.sql_db = SQLDatabase()
-    self.client = ChatOpenAI(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o", temperature=0)
+    
+    # fetch OpenAI API key from frontend
+    url = os.getenv("FRONTEND_MODELS_URL")
+    headers = {
+      'Content-Type': 'application/json'
+    }
+    payload = json.dumps({"projectName": "cedar-bluff"})
+    api_response = requests.post(url=url, headers=headers, data=payload).json()
+    encoded_openai_key = api_response["OpenAI"]["apiKey"]
+
+    signing_key = os.getenv("NEXT_PUBLIC_SIGNING_KEY")
+    openai_key = self.decrypt(encrypted_text=encoded_openai_key, key=signing_key)
+    
+    self.client = ChatOpenAI(api_key=openai_key, model="gpt-4o", temperature=0)
     self.extractor = create_extractor(self.client, tools=[DocumentMetadata], tool_choice="DocumentMetadata")
+
+  def decrypt(self, encrypted_text: str, key: str) -> str:
+    if not encrypted_text or not key:
+        raise ValueError("Encrypted text or key is missing")
+
+    parts = encrypted_text.split(".")
+    if len(parts) != 3:
+        raise ValueError("Invalid encrypted text format")
+    
+    version, encrypted_base64, iv_base64 = parts
+    
+    if version != "v1":
+        raise ValueError(f"Unsupported encryption version: {version}")
+
+    # Convert base64-encoded data back to bytes
+    encrypted_bytes = base64.b64decode(encrypted_base64)
+    iv = base64.b64decode(iv_base64)
+
+    # Extract authentication tag (last 16 bytes of encrypted data)
+    if len(encrypted_bytes) < 16:
+        raise ValueError("Invalid encrypted data: Too short to contain tag")
+    
+    ciphertext, tag = encrypted_bytes[:-16], encrypted_bytes[-16:]
+
+    # Hash the key using SHA-256
+    key_hash = hashlib.sha256(key.encode()).digest()
+
+    # Setup AES-GCM decryption with IV and authentication tag
+    cipher = Cipher(algorithms.AES(key_hash), modes.GCM(iv, tag), backend=default_backend())
+    decryptor = cipher.decryptor()
+
+    try:
+        decrypted_bytes = decryptor.update(ciphertext) + decryptor.finalize()
+        return decrypted_bytes.decode()
+    except Exception as e:
+        raise ValueError("Failed to decrypt data: " + str(e))
+
 
   def process_documents(self, input_prompt: str, document_ids: List):
     """
@@ -210,7 +265,7 @@ class DocumentMetadataProcessor:
                 run_id=curr_run_id,
                 data={
                     "run_status": "failed",
-                    "last_error": "No metadata extracted.",
+                    "last_error": "No metadata extracted from the document",
                 },
             )
             continue
