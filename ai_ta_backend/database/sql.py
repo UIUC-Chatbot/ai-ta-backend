@@ -371,12 +371,6 @@ class SQLDatabase:
         "p_offset": offset
     }).execute()
 
-  def getCedarDocumentStatuses(self, document_ids: List[int]):
-    """
-    Get status of documents for metadata generation.
-    """
-    ids_str = ','.join(map(str, document_ids))
-    return self.supabase_client.rpc('get_cedar_document_statuses', params={'p_document_ids': document_ids}).execute()
-  
   def updateCedarRunStatus(self, doc_id, run_id, data):
-    return self.supabase_client.table("cedar_runs").update(data).eq("document_id", doc_id).eq("run_id", run_id).execute()
+    return self.supabase_client.table("cedar_runs").update(data).eq("document_id", doc_id).eq("run_id",
+                                                                                              run_id).execute()

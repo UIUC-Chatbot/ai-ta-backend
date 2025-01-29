@@ -725,31 +725,6 @@ def download_metadata_csv(service: DocumentMetadataProcessor) -> Response:
   return response
 
 
-@app.route('/getDocumentStatuses', methods=['POST'])
-def get_document_statuses(sql_db: SQLDatabase) -> Response:
-  """
-  Get status of documents for metadata generation.
-  """
-  data = request.get_json()
-  document_ids = data.get('document_ids', [])
-
-  if not document_ids:
-    abort(400, description="Missing required parameter: 'document_ids' must be provided.")
-
-  try:
-    # Get document statuses from database
-    statuses = sql_db.getCedarDocumentStatuses(document_ids)
-
-    response = jsonify(statuses.data)
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
-  except Exception as e:
-    print(f"Error getting document statuses: {str(e)}")
-    response = jsonify({"error": str(e)})
-    response.status_code = 500
-    return response
-
-
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
