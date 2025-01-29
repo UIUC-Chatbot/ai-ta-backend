@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from itertools import groupby
 from operator import itemgetter
 from typing import Any, Dict, List
-
+import pandas as pd
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 from trustcall import create_extractor
@@ -63,8 +63,8 @@ class DocumentMetadataProcessor:
 
   def process_documents(self, input_prompt: str, document_ids: List):
     """
-        This function generates metadata from the text chunks and table JSONs extracted from the PDFs.
-        """
+    This function generates metadata from the text chunks and table JSONs extracted from the PDFs.
+    """
     print("Input prompt: ", input_prompt)
     try:
       curr_run_id = self.sql_db.getLastRunID().data[0]["run_id"] + 1
@@ -257,32 +257,29 @@ class DocumentMetadataProcessor:
         offset += limit
 
       final_metadata = []
-      for run_id in run_ids:
-        metadata = self.sql_db.getCedarDocumentMetadata(doc_id).data
-        if not metadata:
-          continue
+      for doc in metadata:
+        
+        final_metadata.append({
+            "run_id": doc["run_id"],
+            "document_id": doc["document_id"],
+            "readable_filename": doc["readable_filename"],
+            "field_name": doc["field_name"],
+            "field_value": json.dumps(doc["field_value"]),
+        })
 
-        for row in metadata:
-          final_metadata.append({
-              "file_name": doc["readable_filename"],
-              "document_id": row["id"],
-              "field_name": row["field_name"],
-              "field_value": json.dumps(row["field_value"]),
-          })
-
-      print(f"Metadata: {len(final_metadata)}")
+      print(f"Final metadata: {len(final_metadata)}")
       # Save metadata as CSV
-      if final_metadata:
-        import pandas as pd
-
+      if len(final_metadata)>0:
+        print("Saving metadata as CSV...")
         df = pd.DataFrame(final_metadata)
+        print(df.head())
         csv_file = "metadata.csv"
         file_path = os.path.join(os.getcwd(), csv_file)
         print(f"File path: {file_path}")
         df.to_csv(file_path, index=False, encoding="utf-8")
         return [file_path, csv_file, os.getcwd()]
 
-      return None
+      return []
     except Exception as e:
       print("Error: ", e)
-      return None
+      return []
