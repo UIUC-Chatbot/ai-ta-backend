@@ -224,12 +224,10 @@ def ingest(context, **inputs: Dict[str | List[str], Any]):
     
     # Retry failed ingests (but not unexpected exceptions)
     if success_fail_dict.get('failure_ingest'):
-        success_fail_dict = retry_ingest(supabase_client, posthog, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-        if isinstance(success_fail_dict, str):
-          success_fail_dict = {'failure_ingest': success_fail_dict}
-        if success_fail_dict.get('failure_ingest'):
-          ingest_error = str(success_fail_dict['failure_ingest'])
-          handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, ingest_error)
+      success_fail_dict = retry_ingest(supabase_client, posthog, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+      if isinstance(success_fail_dict, str) or success_fail_dict.get('failure_ingest'):
+        error = str(success_fail_dict if isinstance(success_fail_dict, str) else success_fail_dict['failure_ingest'])
+        handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, error)
 
     # Cleanup: Remove from docs_in_progress table
     try:
@@ -278,7 +276,19 @@ def handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, reada
         "base_url": base_url,
         "error": str(error)
     }
-    supabase_client.table('documents_failed').insert(document).execute()
+    # Check if document already exists
+    existing = supabase_client.table('documents_failed')\
+        .select('*')\
+        .eq('course_name', course_name)\
+        .eq('s3_path', s3_paths)\
+        .eq('readable_filename', readable_filename)\
+        .eq('url', url)\
+        .eq('base_url', base_url)\
+        .execute()
+    
+    # Only insert if no matching document exists
+    if not existing.data:
+        supabase_client.table('documents_failed').insert(document).execute()
 
     posthog.capture(
                 'distinct_id_of_the_user',
