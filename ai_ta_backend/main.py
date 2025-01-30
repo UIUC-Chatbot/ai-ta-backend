@@ -663,12 +663,12 @@ def get_model_usage_counts(service: RetrievalService) -> Response:
 
 
 @app.route('/send-transactional-email', methods=['POST'])
-def export_conversations_custom(service: ExportService):
-  to_recipients: str = request.args.getlist('to_recipients_list')
-  bcc_recipients: str = request.args.getlist('bcc_recipients_list')
-  sender: str = request.args.get('sender', default='', type=str)
-  subject: str = request.args.get('subject', default='', type=str)
-  body_text: str = request.args.get('body_text', default='', type=str)
+def send_transactional_email(service: ExportService):
+  to_recipients: str = request.json.get('to_recipients_list', [])
+  bcc_recipients: str = request.json.get('bcc_recipients_list', [])
+  sender: str = request.json.get('sender', '')
+  subject: str = request.json.get('subject', '')
+  body_text: str = request.json.get('body_text', '')
 
   if sender == '' or to_recipients == [] or body_text == '':
     # proper web error "400 Bad request"
