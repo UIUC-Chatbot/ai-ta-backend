@@ -3,25 +3,24 @@ Metadata extraction service for Cedar Bluff documents.
 """
 
 import asyncio
+import base64
+import hashlib
 import json
 import os
-import requests
 from datetime import datetime, timezone
 from itertools import groupby
 from operator import itemgetter
 from typing import Any, Dict, List
+
 import pandas as pd
+import requests
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 from trustcall import create_extractor
 
-import base64
-import hashlib
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
-
 from ai_ta_backend.database.sql import SQLDatabase
-
 
 # from utils.logging_config import setup_detailed_logging
 
@@ -63,34 +62,32 @@ class DocumentMetadataProcessor:
 
   def __init__(self):
     self.sql_db = SQLDatabase()
-    
+
     # fetch OpenAI API key from frontend
     url = os.getenv("FRONTEND_MODELS_URL")
-    headers = {
-      'Content-Type': 'application/json'
-    }
+    headers = {'Content-Type': 'application/json'}
     payload = json.dumps({"projectName": "cedar-bluff"})
     api_response = requests.post(url=url, headers=headers, data=payload).json()
     encoded_openai_key = api_response["OpenAI"]["apiKey"]
 
     signing_key = os.getenv("NEXT_PUBLIC_SIGNING_KEY")
     openai_key = self.decrypt(encrypted_text=encoded_openai_key, key=signing_key)
-    
+
     self.client = ChatOpenAI(api_key=openai_key, model="gpt-4o", temperature=0)
     self.extractor = create_extractor(self.client, tools=[DocumentMetadata], tool_choice="DocumentMetadata")
 
   def decrypt(self, encrypted_text: str, key: str) -> str:
     if not encrypted_text or not key:
-        raise ValueError("Encrypted text or key is missing")
+      raise ValueError("Encrypted text or key is missing")
 
     parts = encrypted_text.split(".")
     if len(parts) != 3:
-        raise ValueError("Invalid encrypted text format")
-    
+      raise ValueError("Invalid encrypted text format")
+
     version, encrypted_base64, iv_base64 = parts
-    
+
     if version != "v1":
-        raise ValueError(f"Unsupported encryption version: {version}")
+      raise ValueError(f"Unsupported encryption version: {version}")
 
     # Convert base64-encoded data back to bytes
     encrypted_bytes = base64.b64decode(encrypted_base64)
@@ -98,8 +95,8 @@ class DocumentMetadataProcessor:
 
     # Extract authentication tag (last 16 bytes of encrypted data)
     if len(encrypted_bytes) < 16:
-        raise ValueError("Invalid encrypted data: Too short to contain tag")
-    
+      raise ValueError("Invalid encrypted data: Too short to contain tag")
+
     ciphertext, tag = encrypted_bytes[:-16], encrypted_bytes[-16:]
 
     # Hash the key using SHA-256
@@ -110,11 +107,10 @@ class DocumentMetadataProcessor:
     decryptor = cipher.decryptor()
 
     try:
-        decrypted_bytes = decryptor.update(ciphertext) + decryptor.finalize()
-        return decrypted_bytes.decode()
+      decrypted_bytes = decryptor.update(ciphertext) + decryptor.finalize()
+      return decrypted_bytes.decode()
     except Exception as e:
-        raise ValueError("Failed to decrypt data: " + str(e))
-
+      raise ValueError("Failed to decrypt data: " + str(e))
 
   def process_documents(self, input_prompt: str, document_ids: List):
     """
@@ -235,6 +231,7 @@ class DocumentMetadataProcessor:
           content_texts = [chunk["content"] for chunk in content_chunks]
           batch_size = 10
           existing_metadata = None
+          has_successful_batch = False
 
           chunk_batches = [[(json.dumps(chunk["table_data"]) if chunk["table_data"] else chunk["table_html"])]
                            for chunk in table_chunks
@@ -252,42 +249,42 @@ class DocumentMetadataProcessor:
               existing_metadata = metadata.model_dump()
               print(f"Length of metadata: {len(metadata.data)}")
 
-          print(f"Document ID {document_id} processed!")
+              # Save metadata for this batch
+              for parent_entity, entity_data in metadata.data.items():
+                print(f"Parent entity: {parent_entity}")
+                doc_metadata_row = {
+                    "document_id": document_id,
+                    "run_id": curr_run_id,
+                    "field_name": parent_entity,
+                    "field_value": entity_data,
+                    "confidence_score": 90,
+                    "extraction_method": "gpt-4o",
+                }
+                self.sql_db.insertCedarDocumentMetadata(doc_metadata_row)
+              has_successful_batch = True
+              print(f"Document ID {document_id}, Batch {batch_idx + 1}: metadata saved!")
 
-          # one doc run complete at this point
-          if existing_metadata:
-            # update document status as completed
-            self.sql_db.updateCedarRunStatus(doc_id=document_id, run_id=curr_run_id,  data={"run_status": "completed"})
+          # Update document status based on overall success
+          if has_successful_batch:
+            self.sql_db.updateCedarRunStatus(doc_id=document_id, run_id=curr_run_id, data={"run_status": "completed"})
           else:
-            # update document status as failed
             self.sql_db.updateCedarRunStatus(
                 doc_id=document_id,
                 run_id=curr_run_id,
                 data={
                     "run_status": "failed",
-                    "last_error": "No metadata extracted from the document",
+                    "last_error": "No metadata extracted from any batch in the document",
                 },
             )
-            continue
-
-          # save metadata fields to document metadata table
-          for parent_entity, entity_data in metadata.data.items():  # type: ignore
-            print(f"Parent entity: {parent_entity}")
-
-            doc_metadata_row = {
-                "document_id": document_id,
-                "run_id": curr_run_id,
-                "field_name": parent_entity,
-                "field_value": entity_data,
-                "confidence_score": 90,
-                "extraction_method": "gpt-4o",
-            }
-            self.sql_db.insertCedarDocumentMetadata(doc_metadata_row)
-          print(f"Document ID {document_id}: metadata saved!")
 
         except Exception as e:
           print("Error in doc level metadata extraction: ", e)
-          self.sql_db.updateCedarRunStatus(doc_id=document_id, run_id=curr_run_id,  data={"run_status": "failed", "last_error": str(e)})
+          self.sql_db.updateCedarRunStatus(doc_id=document_id,
+                                           run_id=curr_run_id,
+                                           data={
+                                               "run_status": "failed",
+                                               "last_error": str(e)
+                                           })
           continue
 
       yield {"run_id": curr_run_id, "status": "completed"}
@@ -315,7 +312,7 @@ class DocumentMetadataProcessor:
 
       final_metadata = []
       for doc in metadata:
-        
+
         final_metadata.append({
             "run_id": doc["run_id"],
             "document_id": doc["document_id"],
@@ -326,7 +323,7 @@ class DocumentMetadataProcessor:
 
       print(f"Final metadata: {len(final_metadata)}")
       # Save metadata as CSV
-      if len(final_metadata)>0:
+      if len(final_metadata) > 0:
         df = pd.DataFrame(final_metadata)
         csv_file = "metadata.csv"
         file_path = os.path.join(os.getcwd(), csv_file)
