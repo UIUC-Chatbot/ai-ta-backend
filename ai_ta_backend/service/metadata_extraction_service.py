@@ -116,7 +116,6 @@ class DocumentMetadataProcessor:
     """
     This function generates metadata from the text chunks and table JSONs extracted from the PDFs.
     """
-    print("Input prompt: ", input_prompt)
     try:
       curr_run_id = self.sql_db.getLastRunID().data[0]["run_id"] + 1
       print(f"Current run ID: {curr_run_id}")
@@ -213,7 +212,7 @@ class DocumentMetadataProcessor:
       for document_id in document_ids:
         try:
           # insert run status as started
-          self.sql_db.insertCedarRun({"run_id": curr_run_id, "document_id": document_id, "run_status": "in_progress"})
+          self.sql_db.insertCedarRun({"run_id": curr_run_id, "document_id": document_id, "run_status": "in_progress", "prompt": input_prompt})
           # Fetch document chunks
           doc_chunks = self.sql_db.getCedarChunks(document_id).data
           if not doc_chunks:
