@@ -5,6 +5,7 @@ import time
 
 import nomic
 import pandas as pd
+import numpy as np
 from injector import inject
 from nomic import AtlasDataset, atlas
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -116,7 +117,7 @@ class NomicService():
             map_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
                               f"Conversation Map for {course_name}".replace("_", "-")).replace(" ", "-").lower()
 
-            result = self.append_to_map(metadata=metadata, map_name=map_name)
+            result = self.append_to_map(embeddings=[], metadata=metadata, map_name=map_name)
 
             if result == "success":
               last_uploaded_id = int(final_df['id'].iloc[-1])
@@ -212,10 +213,10 @@ class NomicService():
               print(f"\nProcessing batch #{batch_number}")
 
               final_df = pd.concat(combined_dfs, ignore_index=True)
-              metadata = self.data_prep_for_doc_map(final_df)
+              embeddings, metadata = self.data_prep_for_doc_map(final_df)
 
               # Upload to map
-              result = self.append_to_map(metadata=metadata, map_name=project_name)
+              result = self.append_to_map(embeddings=embeddings, metadata=metadata, map_name=project_name)
 
               if result == "success":
                 last_id = int(final_df['id'].iloc[-1])
@@ -324,9 +325,9 @@ class NomicService():
             print("in first batch")
             index_name = f"{course_name}_convo_index"
             map_title = f"{NOMIC_MAP_NAME_PREFIX}{course_name}"
-            result = self.create_map(metadata, map_title, index_name, index_field="first_query")
+            result = self.create_map(embeddings=[], metadata=metadata, map_name=map_title, index_name=index_name, index_field="first_query")
           else:
-            result = self.append_to_map(metadata=metadata, map_name=project_name)
+            result = self.append_to_map(embeddings=[], metadata=metadata, map_name=project_name)
 
           if result == "success":
             project = AtlasDataset(project_name)
@@ -417,15 +418,15 @@ class NomicService():
 
         if should_process:
           final_df = pd.concat(combined_dfs, ignore_index=True)
-          metadata = self.data_prep_for_doc_map(final_df)
+          embeddings, metadata = self.data_prep_for_doc_map(final_df)
 
           # Create or append to map
           index_name = f"{course_name}_doc_index"
           if first_batch:
             map_title = f"{DOCUMENT_MAP_PREFIX}{course_name}"
-            result = self.create_map(metadata, map_title, index_name, index_field="text")
+            result = self.create_map(embeddings, metadata, map_title, index_name, index_field="text")
           else:
-            result = self.append_to_map(metadata=metadata, map_name=project_name)
+            result = self.append_to_map(embeddings=embeddings, metadata=metadata, map_name=project_name)
 
           if result == "success":
             project = AtlasDataset(project_name)
@@ -608,7 +609,7 @@ class NomicService():
       self.sentry.capture_exception(e)
       return f"Error in creating index: {e}"
 
-  def create_map(self, metadata, map_name, index_name, index_field):
+  def create_map(self, embeddings, metadata, map_name, index_name, index_field):
     """
     Creates a Nomic map with topic modeling and duplicate detection.
     
@@ -625,19 +626,16 @@ class NomicService():
 
     try:
       project = AtlasDataset(
-          map_name,
-          unique_id_field="id",
+            map_name,
+            unique_id_field="id",
       )
-      project.add_data(data=metadata)
-      # project = atlas.map_data(data=metadata,
-      #                          identifier=map_name,
-      #                          id_field="id",
-      #                          topic_model=True,
-      #                          duplicate_detection=True,
-      #                          indexed_field=index_field)
-
-      # project.create_index(name=index_name, indexed_field=index_field, topic_model=True, duplicate_detection=True)
-
+      if not embeddings:
+        # convo map does not require embeddings
+        project.add_data(data=metadata)
+      else:
+        # document map requires embeddings
+        project.add_data(embeddings=embeddings,
+                                data=metadata)
       return "success"
 
     except Exception as e:
@@ -645,7 +643,7 @@ class NomicService():
       return f"Error in creating map: {e}"
 
   @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=10, max=600))
-  def append_to_map(self, metadata, map_name):
+  def append_to_map(self, embeddings, metadata, map_name):
     """
     Appends new data to an existing Nomic map.
     
@@ -660,23 +658,17 @@ class NomicService():
       print(f"Appending to map: {map_name}")
       project = AtlasDataset(map_name)
 
-      # if not project.is_accepting_data:
-      #   print("Project is currently indexing. Try again later.")
-      #   return "Project busy"
-
       start_time = time.monotonic()
-      while time.monotonic() - start_time < 600:
+      while time.monotonic() - start_time < 120:
         if project.is_accepting_data:
-          project.add_data(data=metadata)
-          print(f"Data appended to map: {map_name}")
+          if not embeddings:  # convo map does not require embeddings
+            project.add_data(data=metadata)
+          else: # document map requires embeddings
+            project.add_data(embeddings=embeddings, data=metadata)
+          
           return "success"
         print("Project is currently indexing. Waiting for 5 seconds...")
-        time.sleep(5)
-
-      # with project.wait_for_dataset_lock():
-      #   project.add_data(data=metadata)
-      #   print(f"Data appended to map: {map_name}")
-      #   return "success"
+        time.sleep(10)
 
       return "Project busy"
 
@@ -733,7 +725,7 @@ class NomicService():
       self.sentry.capture_exception(e)
       return pd.DataFrame()
 
-  def data_prep_for_doc_map(self, df: pd.DataFrame) -> pd.DataFrame:
+  def data_prep_for_doc_map(self, df: pd.DataFrame) -> list:
     """
     Prepares document metadata for Nomic map upload.
     
@@ -745,6 +737,7 @@ class NomicService():
     """
     try:
       metadata = []
+      embeddings = []
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
       for _, row in df.iterrows():
@@ -762,8 +755,11 @@ class NomicService():
               "modified_at": current_time,
               "text": context['text']
           })
-
-      return pd.DataFrame(metadata)
+          embeddings.append(context['embedding'])
+      
+      embeddings = np.array(embeddings)
+      print(f"Shape of embeddings: {embeddings.shape}")
+      return [embeddings, pd.DataFrame(metadata)]
 
     except Exception as e:
       print(f"Error in document data preparation: {e}")
