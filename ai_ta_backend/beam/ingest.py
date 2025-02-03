@@ -345,7 +345,6 @@ class Ingest():
     def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
       # RUN INGEST METHOD
-      raise("Kastan raised an error.")
       ret = ingest_method(s3_path, *args, **kwargs)
       if ret == "Success":
         success_status['success_ingest'] = str(s3_path)
