@@ -19,7 +19,7 @@ def main():
         # f"Trusted_Connection={os.getenv('DB_TRUSTED_CONNECTION')};"
         f"TrustServerCertificate={os.getenv('DB_TRUST_SERVER_CERT')};"
     )
-
+    print("connection_str", connection_str)
     print("Initializing agent with connection string...")
     agent = SQLAIAgent(connection_str, os.getenv('OPENAI_API_KEY'))
     print("Connecting to database...")

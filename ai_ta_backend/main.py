@@ -5,6 +5,7 @@ import time
 from typing import List
 
 from dotenv import load_dotenv
+from ai_ta_backend.beam.WARM_ai_agent.warm_ai.agents.sql_agent import SQLAIAgent
 from flask import (
     Flask,
     Response,
@@ -637,6 +638,40 @@ def get_model_usage_counts(service: RetrievalService) -> Response:
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+@app.route('/api/chat-api/warm-ai', methods=['POST'])
+def warm_ai_endpoint(service: RetrievalService, posthog_service: PosthogService):
+    """
+    WARM AI endpoint for natural language to SQL queries
+    """
+    try:
+        data = request.get_json()
+        
+        # Load environment variables if needed
+        load_dotenv()
+        
+        # Build connection string from environment variables
+        connection_str = (
+            f"Driver={os.getenv('DB_DRIVER')};"
+            f"Server={os.getenv('DB_SERVER')};"
+            f"Database={os.getenv('DB_NAME')};"
+            f"Authentication=ActiveDirectoryIntegrated;"
+            "Encrypt=yes;"
+            f"TrustServerCertificate={os.getenv('DB_TRUST_SERVER_CERT')};"
+        )
+        
+        openai_key = os.getenv('OPENAI_API_KEY')
+                 
+        # Initialize agent and process query
+        agent = SQLAIAgent(connection_str, openai_key)
+        agent.connect()
+        results = agent.query(data.get('query', ''))
+            
+        response = jsonify({"response": results})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
+    finally:
+      print("done")
+        
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
