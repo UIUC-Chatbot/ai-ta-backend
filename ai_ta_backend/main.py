@@ -659,7 +659,7 @@ def warm_ai_endpoint(service: RetrievalService, posthog_service: PosthogService)
             f"TrustServerCertificate={os.getenv('DB_TRUST_SERVER_CERT')};"
         )
         
-        openai_key = os.getenv('OPENAI_API_KEY')
+        openai_key = os.getenv('VIKRAM_OPENAI_API_KEY')
                  
         # Initialize agent and process query
         agent = SQLAIAgent(connection_str, openai_key)

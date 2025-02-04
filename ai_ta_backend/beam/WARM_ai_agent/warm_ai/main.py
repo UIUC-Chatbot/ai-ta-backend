@@ -21,7 +21,7 @@ def main():
     )
     print("connection_str", connection_str)
     print("Initializing agent with connection string...")
-    agent = SQLAIAgent(connection_str, os.getenv('OPENAI_API_KEY'))
+    agent = SQLAIAgent(connection_str, os.getenv('VIKRAM_OPENAI_API_KEY'))
     print("Connecting to database...")
     agent.connect()
 
@@ -53,9 +53,9 @@ def main():
                             print(row)
 
             # Allow user to verify and continue
-            verify = input("\nWould you like to ask another question? (y/n): ")
-            if verify.lower() not in ['y', 'yes']:
-                break
+            # verify = input("\nWould you like to ask another question? (y/n): ")
+            # if verify.lower() not in ['y', 'yes']:
+            #     break
 
 if __name__ == "__main__":
     main()
