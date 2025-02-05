@@ -640,7 +640,7 @@ def configure(binder: Binder) -> None:
   binder.bind(ProcessPoolExecutorInterface, to=ProcessPoolExecutorAdapter, scope=SingletonScope)
   logging.info("Configured all services and adapters", binder._bindings)
 
-  # TODO: Initialize the databases 
+  # Initialize the databases - this runs at every app startup: be robust to re-running.
 
   # Qdrant
   # Initialize Qdrant collection if it doesn't exist
