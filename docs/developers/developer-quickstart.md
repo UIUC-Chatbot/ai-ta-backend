@@ -169,12 +169,12 @@ Also make sure to install Infiscal in your local machine as mentioned above
 
 <pre><code># navigate to the root of the github
 cd path/to/ai-ta-backend
-<strong>
-</strong><strong>infisical login
+<strong>infisical login
 </strong># ⭐️ --> select "Self Hosting"
 # ⭐️ --> enter "https://env.ncsa.ai"
 # ⭐️ click the login link
 # ⭐️ likely enter your main computer password
+
 </code></pre>
 
 ### Last step: start dev server!
@@ -185,6 +185,12 @@ infisical run --env=dev -- flask --app ai_ta_backend.main:app --debug run --port
 ```
 
 Now you can write new endpoints in `ai-ta-backend/main.py` and call them using [Postman](https://www.postman.com/).&#x20;
+
+### Environment Variables&#x20;
+
+If it's running on localhost, the env vars come from **Infisical**, our shared secrets manager. You can add new env vars at [env.ncsa.ai](https://env.ncsa.ai).&#x20;
+
+If it's in production, or any cloud service, the env vars are stored directly in that cloud service. Those include Vercel, Railway, Beam.cloud and more. You can edit env vars in those services, just be careful.
 
 
 
