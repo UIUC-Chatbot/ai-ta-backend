@@ -45,9 +45,21 @@ Everything runs in Docker. Vercel is the one exception, but we also have a docke
 
 Using N8N for a user-friendly GUI to define custom tools. This way, any user can give their chatbot custom tools that will be automatically invoked when appropriate, as decided by the LLM.
 
-More coming soon (May-June 2024).
+## What happens when you hit send?&#x20;
 
-## Self-hostable version (coming July 2024)
+1. User submits prompt
+   1. Determine if tools should be invoked, if so execute them and store the outputs.
+2. Embed user prompt with LLM embedding model
+3. Retrieve most related documents from vector DB
+4. Robust prompt engineering to:
+   1. add as many documents as possible to the context window,
+   2. retain as much of the conversation history as possible
+   3. include tool outputs and images
+   4. include our user-configurable prompt engineering features (tutor mode, document references)
+5. Send final prompt-engineered message to the final LLM, stream result.
+   1. During streaming, replace LLM citations with proper links (using state machine). e.g. \[doc 1, page 3] is replaced with [https://s3.link-to-document.pdf?page=3](https://s3.link-to-document.pdf/?page=3)
+
+## Self-hostable version (coming Q1 2025)
 
 Simplify to a single Docker-compose script.
 
