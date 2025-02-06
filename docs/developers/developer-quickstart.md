@@ -20,14 +20,14 @@ description: Thanks for contributing to UIUC.chat ❤️
 * Self-hosted: Qdrant, Ollama.
 * Task management via [our Github Projects board](https://github.com/orgs/UIUC-Chatbot/projects/2).
 
-## Set up Infiscal
+## Set up Infiscal for Environment Variables
 
 {% hint style="warning" %}
 You must setup an account before continuing, for our secrets service [Infisical](https://infisical.com/docs/documentation/getting-started/introduction).\
 Confirm you can login here: [https://env.ncsa.ai/](https://env.ncsa.ai/)
 {% endhint %}
 
-Instead of sharing .env files manually, we use Infiscal as a central password manager for devs. We use its CLI and web interface.
+Instead of sharing `.env` files manually, we use Infiscal as a central password manager for devs. We use its CLI and web interface.
 
 See the [CLI install docs](https://infisical.com/docs/cli/overview) for Linux/Windows instructions. Or the [CLI usage docs](https://infisical.com/docs/cli/usage).
 
@@ -51,6 +51,12 @@ sudo apt-get update && sudo apt-get install -y infisical
 ```
 {% endtab %}
 {% endtabs %}
+
+### Where are my `.env` variables?
+
+If it's running on `localhost`, the env vars come from **Infisical**, our shared secrets manager. You can add new env vars at [env.ncsa.ai](https://env.ncsa.ai).&#x20;
+
+If it's in production, or any cloud service, the env vars are stored directly in that cloud service. Those include Vercel, Railway, Beam.cloud and more. You can edit env vars in those services, just be careful.
 
 ## Frontend Setup
 
@@ -185,12 +191,6 @@ infisical run --env=dev -- flask --app ai_ta_backend.main:app --debug run --port
 ```
 
 Now you can write new endpoints in `ai-ta-backend/main.py` and call them using [Postman](https://www.postman.com/).&#x20;
-
-### Environment Variables&#x20;
-
-If it's running on localhost, the env vars come from **Infisical**, our shared secrets manager. You can add new env vars at [env.ncsa.ai](https://env.ncsa.ai).&#x20;
-
-If it's in production, or any cloud service, the env vars are stored directly in that cloud service. Those include Vercel, Railway, Beam.cloud and more. You can edit env vars in those services, just be careful.
 
 
 
