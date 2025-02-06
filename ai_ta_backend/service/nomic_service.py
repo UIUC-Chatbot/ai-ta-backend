@@ -322,7 +322,8 @@ class NomicService():
             print("in first batch")
             index_name = f"{course_name}_convo_index"
             map_title = f"{NOMIC_MAP_NAME_PREFIX}{course_name}"
-            result = self.create_map(embeddings=[], metadata, map_title, index_name, index_field="first_query")
+            result = self.create_map(embeddings=[], metadata=metadata, map_name=map_title, index_name=
+                                     index_name, index_field="first_query")
           else:
             result = self.append_to_map(embeddings=[],metadata=metadata, map_name=project_name)
 
