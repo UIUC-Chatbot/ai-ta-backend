@@ -15,7 +15,7 @@ layout:
 
 # Quick start
 
-{% hint style="info" %}
+{% hint style="success" %}
 UIUC.chat is the easiest way to _**train your own LLM**_ and _**share it like a google doc**_.
 {% endhint %}
 
