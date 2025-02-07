@@ -13,6 +13,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 from ai_ta_backend.database.sql import SQLDatabase
 from ai_ta_backend.service.sentry_service import SentryService
 
+from ollama import Client
+
 
 class NomicService():
 
@@ -20,6 +22,7 @@ class NomicService():
   def __init__(self, sentry: SentryService, sql: SQLDatabase):
     # nomic.login(os.environ['NOMIC_API_KEY'])
     nomic.cli.login(os.environ['NOMIC_API_KEY'])
+    self.ollama_client = Client(host=os.environ['OLLAMA_SERVER_URL'])
     self.sentry = sentry
     self.sql = sql
 
@@ -108,13 +111,13 @@ class NomicService():
 
           if combined_dfs:
             final_df = pd.concat(combined_dfs, ignore_index=True)
-            metadata = self.data_prep_for_convo_map(final_df)
+            embeddings, metadata = self.data_prep_for_convo_map(final_df)
 
             print("Appending data to existing map...")
             map_name = re.sub(r'[^a-zA-Z0-9\s-]', '',
                               f"Conversation Map for {course_name}".replace("_", "-")).replace(" ", "-").lower()
 
-            result = self.append_to_map(embeddings=[], metadata=metadata, map_name=map_name)
+            result = self.append_to_map(embeddings=embeddings, metadata=metadata, map_name=map_name)
 
             if result == "success":
               last_uploaded_id = int(final_df['id'].iloc[-1])
@@ -317,17 +320,17 @@ class NomicService():
           print("Processing batch...")
           final_df = pd.concat(combined_dfs, ignore_index=True)
           print(f"length of final_df: {len(final_df)}")
-          metadata = self.data_prep_for_convo_map(final_df)
+          embeddings, metadata = self.data_prep_for_convo_map(final_df)
 
           # Create or append to map
           if first_batch:
             print("in first batch")
             index_name = f"{course_name}_convo_index"
             map_title = f"{NOMIC_MAP_NAME_PREFIX}{course_name}"
-            result = self.create_map(embeddings=[], metadata=metadata, map_name=map_title, index_name=
+            result = self.create_map(embeddings=embeddings, metadata=metadata, map_name=map_title, index_name=
                                      index_name, index_field="first_query")
           else:
-            result = self.append_to_map(embeddings=[],metadata=metadata, map_name=project_name)
+            result = self.append_to_map(embeddings=embeddings,metadata=metadata, map_name=project_name)
 
           if result == "success":
             project = AtlasDataset(project_name)
@@ -691,6 +694,7 @@ class NomicService():
 
     try:
       metadata = []
+      raw_text = []
       current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
       for _, row in df.iterrows():
@@ -718,10 +722,16 @@ class NomicService():
             "created_at": created_at,
             "modified_at": current_time
         })
+        raw_text.append(first_message)
+      
+      # generate embeddings using ollama
+      embeddings = self.ollama_client.embed(model='nomic-embed-text:v1.5', input=raw_text)
+      embeddings = np.array(embeddings)
+      print("Shape of embeddings: ", embeddings.shape)
 
       result = pd.DataFrame(metadata)
       print(f"Metadata shape: {result.shape}")
-      return result
+      return [embeddings, result]
 
     except Exception as e:
       print(f"Error in data preparation: {e}")
