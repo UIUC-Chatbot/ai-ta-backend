@@ -376,7 +376,7 @@ class NomicService():
     BATCH_SIZE = 100
     UPLOAD_THRESHOLD = 500
     MIN_DOCUMENTS = 20
-
+    # TechServicesProject_DEMO
     try:
       # Check if document map already exists
       project_name = DOCUMENT_MAP_PREFIX + course_name
@@ -595,8 +595,8 @@ class NomicService():
 
       project = AtlasDataset(project_name)
 
-      current_day = datetime.datetime.now().day
-      index_name = f"{project_name}_index_{current_day}"
+      #current_day = datetime.datetime.now().day
+      index_name = f"{project_name}_index_{datetime.datetime.now().strftime('%Y-%m-%d')}"
 
       project.create_index(name=index_name, indexed_field=index_field, topic_model=True, duplicate_detection=True)
 
@@ -614,6 +614,7 @@ class NomicService():
     Creates a Nomic map with topic modeling and duplicate detection.
     
     Args:
+        embeddings (np.ndarray): Document embeddings if available
         metadata (pd.DataFrame): Metadata for the map
         map_name (str): Name of the map to create
         index_name (str): Name of the index to create
@@ -625,28 +626,24 @@ class NomicService():
     print(f"Creating map: {map_name}")
 
     try:
-      project = AtlasDataset(
-          map_name,
-          unique_id_field="id",
-      )
-      if embeddings:
-        project.add_data(data=metadata, embeddings=embeddings)
-      else:
-        project.add_data(data=metadata)
-      # project = atlas.map_data(data=metadata,
-      #                          identifier=map_name,
-      #                          id_field="id",
-      #                          topic_model=True,
-      #                          duplicate_detection=True,
-      #                          indexed_field=index_field)
+        project = AtlasDataset(
+            map_name,
+            unique_id_field="id",
+        )
+        
+        # Check if embeddings is a non-empty numpy array
+        if isinstance(embeddings, np.ndarray) and embeddings.size > 0:
+            print("size > 0")
+            project.add_data(data=metadata, embeddings=embeddings)
+        else:
+            print("else")
+            project.add_data(data=metadata)
 
-      # project.create_index(name=index_name, indexed_field=index_field, topic_model=True, duplicate_detection=True)
-
-      return "success"
+        return "success"
 
     except Exception as e:
-      print(e)
-      return f"Error in creating map: {e}"
+        print(e)
+        return f"Error in creating map: {e}"
 
   @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=10, max=600))
   def append_to_map(self, embeddings, metadata, map_name):
@@ -698,7 +695,7 @@ class NomicService():
 
       for _, row in df.iterrows():
         created_at = datetime.datetime.strptime(row['created_at'],
-                                                "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
+                                                "%Y-%m-%dT%H:%M:%S.%f%z")
         messages = row['convo']['messages']
         first_message = messages[0]['content']
         if isinstance(first_message, list):
@@ -748,7 +745,7 @@ class NomicService():
 
       for _, row in df.iterrows():
         created_at = datetime.datetime.strptime(row['created_at'],
-                                                "%Y-%m-%dT%H:%M:%S.%f%z").strftime("%Y-%m-%d %H:%M:%S")
+                                                "%Y-%m-%dT%H:%M:%S.%f%z")
 
         for idx, context in enumerate(row['contexts'], 1):
           metadata.append({
