@@ -130,6 +130,7 @@ class NomicService():
 
         print(f"Successfully processed all conversations for {course_name}")
         print(f"------------------------------------------------------------------------")
+        time.sleep(10)
 
       print("Finished updating all conversation maps.")
       return "success"
@@ -244,6 +245,7 @@ class NomicService():
           print(f"\nSuccessfully processed all documents for {course_name}")
           print(f"Total batches processed: {batch_number}")
           print(f"------------------------------------------------------------------------")
+          time.sleep(10)
 
         except Exception as e:
           print(f"Error in updating document map for {course_name}: {e}")
