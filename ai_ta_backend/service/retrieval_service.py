@@ -70,7 +70,8 @@ class RetrievalService:
   async def getTopContexts(self,
                            search_query: str,
                            course_name: str,
-                           doc_groups: List[str] | None = None) -> Union[List[Dict], str]:
+                           doc_groups: List[str] | None = None,
+                           top_n: int = 100) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
         /GET arguments
@@ -131,7 +132,8 @@ class RetrievalService:
                                                       doc_groups=doc_groups,
                                                       user_query_embedding=user_query_embedding,
                                                       disabled_doc_groups=disabled_doc_groups,
-                                                      public_doc_groups=public_doc_groups)
+                                                      public_doc_groups=public_doc_groups,
+                                                      top_n=top_n)
 
       time_to_retrieve_docs = time.monotonic() - start_time_vector_search
 
@@ -365,8 +367,14 @@ class RetrievalService:
       print(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
       self.sentry.capture_exception(e)
 
-  def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, disabled_doc_groups,
-                    public_doc_groups):
+  def vector_search(self,
+                    search_query,
+                    course_name,
+                    doc_groups: List[str],
+                    user_query_embedding,
+                    disabled_doc_groups,
+                    public_doc_groups,
+                    top_n: int = 60):
     """
     Search the vector database for a given query, course name, and document groups.
     """
@@ -378,9 +386,6 @@ class RetrievalService:
 
     if public_doc_groups is None:
       public_doc_groups = []
-
-    # Max number of search results to return
-    top_n = 60
 
     # Capture the search invoked event to PostHog
     self._capture_search_invoked_event(search_query, course_name, doc_groups)
