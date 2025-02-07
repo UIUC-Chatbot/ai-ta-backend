@@ -374,7 +374,7 @@ class RetrievalService:
                     user_query_embedding,
                     disabled_doc_groups,
                     public_doc_groups,
-                    top_n: int = 60):
+                    top_n: int = 100):
     """
     Search the vector database for a given query, course name, and document groups.
     """

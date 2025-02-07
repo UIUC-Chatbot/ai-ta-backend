@@ -112,7 +112,7 @@ def getTopContexts(service: RetrievalService) -> Response:
   search_query: str = data.get('search_query', '')
   course_name: str = data.get('course_name', '')
   doc_groups: List[str] = data.get('doc_groups', [])
-  top_n: List[str] = data.get('top_n', [])
+  top_n: int = data.get('top_n', 100)
 
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
