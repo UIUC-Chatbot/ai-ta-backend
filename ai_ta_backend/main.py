@@ -41,6 +41,7 @@ from ai_ta_backend.service.project_service import ProjectService
 from ai_ta_backend.service.retrieval_service import RetrievalService
 from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
+from ai_ta_backend.utils.email.send_transactional_email import send_email
 from ai_ta_backend.utils.pubmed_extraction import extractPubmedData
 
 app = Flask(__name__)
@@ -657,6 +658,34 @@ def get_model_usage_counts(service: RetrievalService) -> Response:
   model_counts = service.getModelUsageCounts(project_name)
 
   response = jsonify(model_counts)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/send-transactional-email', methods=['POST'])
+def send_transactional_email(service: ExportService):
+  to_recipients: str = request.json.get('to_recipients_list', [])
+  bcc_recipients: str = request.json.get('bcc_recipients_list', [])
+  sender: str = request.json.get('sender', '')
+  subject: str = request.json.get('subject', '')
+  body_text: str = request.json.get('body_text', '')
+
+  if sender == '' or to_recipients == [] or body_text == '':
+    # proper web error "400 Bad request"
+    abort(400,
+          description=f"Missing required parameter: 'sender' and 'to_recipients' and 'body_text' must be provided.")
+
+  try:
+    send_email(subject=subject,
+               body_text=body_text,
+               sender=sender,
+               receipients=to_recipients,
+               bcc_receipients=bcc_recipients)
+    response = Response(status=200)
+  except Exception as e:
+    response = Response(status=500)
+    response.data = f"An unexpected error occurred: {e}".encode()
+
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
