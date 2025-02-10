@@ -4,3 +4,6 @@
 [submodule "ic_crawlee"]
 	path = ic_crawlee
 	url = https://github.com/UIUC-Chatbot/crawlee.git
+[submodule "ai-ta-frontend"]
+	path = ai-ta-frontend
+	url = https://github.com/CAII-NCSA/uiuc-chat-frontend.git
