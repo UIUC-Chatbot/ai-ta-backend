@@ -496,7 +496,7 @@ class RetrievalService:
             "course_name ": doc.metadata["course_name"],
             # OPTIONAL
             "s3_path": doc.metadata.get("s3_path"),
-            "pagenumber": doc.metadata.get("pagenumber_or_timestamp"),  # Handles both old and new schema
+            "pagenumber": doc.metadata.get("pagenumber"),  # Handles both old and new schema
             "url": doc.metadata.get("url"),
             "base_url": doc.metadata.get("base_url"),
             "doc_groups": doc.metadata.get("doc_groups"),
