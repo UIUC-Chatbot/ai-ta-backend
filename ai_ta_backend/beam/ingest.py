@@ -171,12 +171,12 @@ def loader():
 
 # Triggers determine how your app is deployed
 # @app.rest_api(
-@beam.task_queue(name='ruixin-pr220_ingest_task_queue',
+@beam.task_queue(name='ingest_task_queue',
                  workers=4,
                  cpu=1,
                  memory=3_072,
                  max_pending_tasks=15_000,
-                #  callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
+                # DEPRICATED, not needed -- callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
                  timeout=60 * 25,
                  retries=1,
                  secrets=ourSecrets,
