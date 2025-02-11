@@ -4,6 +4,8 @@ from typing import Dict, TypedDict, List, Union
 from injector import inject
 
 import supabase
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 
 class ProjectStats(TypedDict):
     total_messages: int
@@ -101,6 +103,7 @@ class SQLDatabase:
       return self.supabase_client.table("llm-convo-monitor").select("*").eq("course_name", course_name).gte(
           'id', first_id).lte('id', last_id).order('id', desc=False).limit(limit).execute()
 
+  #@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=10, max=600))
   def getDocsForIdsGte(self, course_name: str, first_id: int, fields: str = "*", limit: int = 100):
     return self.supabase_client.table("documents").select(fields).eq("course_name", course_name).gte(
         'id', first_id).order('id', desc=False).limit(limit).execute()
