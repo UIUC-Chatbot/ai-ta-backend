@@ -1108,8 +1108,13 @@ class Ingest():
     ), f'must have equal number of text strings and metadata dicts. len(texts) is {len(texts)}. len(metadatas) is {len(metadatas)}'
 
     try:
+      chunk_size = 2_000
+      if metadatas[0].get('course_name') == 'GROWMARK-Crop-Protection-Guide':
+        # Special case for this project, try to embed entire PDF page as 1 chunk (better at tables)
+        chunk_size = 6_000
+
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-          chunk_size=2000,
+          chunk_size=chunk_size,
           chunk_overlap=150,
           separators=[
               "\n\n", "\n", ". ", " ", ""
