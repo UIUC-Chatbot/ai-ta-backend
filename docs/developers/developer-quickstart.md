@@ -7,18 +7,20 @@ description: Thanks for contributing to UIUC.chat ❤️
 ## Start here
 
 * [ ] Send me (kvday2@illinois.edu) an email and request to be added to:
-  * GitHub Organization, <mark style="color:yellow;">include your GitHub username</mark>.
-  * Secrets manager, <mark style="color:yellow;">include your preferred email address</mark>.
+  * [GitHub Organization](https://github.com/UIUC-Chatbot) & [Frontend repo](https://github.com/CAII-NCSA/uiuc-chat-frontend), <mark style="color:yellow;">include your GitHub username</mark>.
+  * [Secrets manager](https://env.ncsa.ai/), <mark style="color:yellow;">include your preferred email address</mark>.
   * Supabase dashboard, <mark style="color:yellow;">include your GitHub's email address</mark>.
 
-👉 Skip to [Frontend](developer-quickstart.md#frontend-setup) or [Backend](developer-quickstart.md#backend-setup) setup instructions.
+<details>
 
-### Key accounts
+<summary>Background info on Key accounts</summary>
 
 * Google: `caiincsa@gmail.com`
 * Managed services: Vercel, Railway, Beam, Supabase, S3, Posthog, Sentry.
 * Self-hosted: Qdrant, Ollama.
 * Task management via [our Github Projects board](https://github.com/orgs/UIUC-Chatbot/projects/2).
+
+</details>
 
 ## Set up Infiscal for Environment Variables
 
