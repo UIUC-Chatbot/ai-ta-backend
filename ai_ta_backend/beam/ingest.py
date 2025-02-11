@@ -1109,7 +1109,7 @@ class Ingest():
 
     try:
       text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
-          chunk_size=1000,
+          chunk_size=2000,
           chunk_overlap=150,
           separators=[
               "\n\n", "\n", ". ", " ", ""
