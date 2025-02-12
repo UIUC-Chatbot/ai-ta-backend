@@ -1,5 +1,4 @@
 ---
-description: Train your own LLM.
 layout:
   title:
     visible: true
@@ -18,6 +17,8 @@ layout:
 {% hint style="success" %}
 UIUC.chat is the easiest way to _**train your own LLM**_ and _**share it like a google doc**_.
 {% endhint %}
+
+Upload your documents (or use our built-in web crawler) then chat with your docs. Ask them questions, use it like search, ask it to review or improve your grant proposals, and lots more. It’s great at QA over an unlimited number of docs (some projects have millions of documents).
 
 {% embed url="https://www.youtube.com/watch?v=IIMCrIoz7LM" %}
 Short and sweet introduction to UIUC.chat
