@@ -6,14 +6,16 @@ A Flask application hosting endpoints for AI TA backend.
 
 ## License
 
-This project is available under the [CC BY-NC 4.0 License](https://creativecommons.org/licenses/by-nc/4.0/) which restricts commercial use.
+This project is available under [our Research Use Only license fully defined here](https://github.com/UIUC-Chatbot/self-hostable-ai-ta-backend/blob/main/ResearchUseONLYLicense-UIUC.CHAT.pdf). This license is similar in spirit to the [CC BY-NC 4.0 License](https://creativecommons.org/licenses/by-nc/4.0/) which restricts commercial use.
+
+It's free to use for non-commercial use, like research. Any and all commercial use requires a commercial license, see below.
 
 [![CC BY-NC 4.0 License Image](https://github.com/user-attachments/assets/21f4d62f-6a34-4e73-aae3-3129f81b8140)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 
 ### Commercial Use
 
-For commercial use of this project, you must obtain a separate commercial license. Please contact [kvday2@illinois.edu](mailto:kvday2@illinois.edu) and [kindrtnk@illinois.edu](mailto:kindrtnk@illinois.edu) to inquire about commercial licensing terms.
+For commercial use of this project, you must obtain a separate commercial license. Please contact [otm@illinois.edu](mailto:otm@illinois.edu) and [ai@ncsa.illinois.edu](mailto:ai@ncsa.illinois.edu) to inquire about commercial licensing terms.
 
 Failure to obtain a commercial license for commercial use is a violation of the terms of this project.
 
@@ -22,7 +24,7 @@ Failure to obtain a commercial license for commercial use is a violation of the 
 ### 🎉 Get started with a single command
 
 ```bash
-bash init.sh
+sudo bash init.sh
 ```
 This will: 
 * Create a `.env` file. You can customize this later to change the default passwords.
