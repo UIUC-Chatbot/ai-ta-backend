@@ -24,11 +24,11 @@ if [ ! -f ./supabase/docker/.env ]; then
 fi
 
 if [ ! -f ./ai-ta-frontend/.env ]; then
-  cp ./ai-ta-frontend/.env.template ./ai-ta-frontend/.env
+  cp .env-frontend.template ./ai-ta-frontend/.env
 fi
 
 if [ ! -f .env ]; then
-  cp .env.template .env
+  cp .env-backend.template .env
 fi
 
 set -e
