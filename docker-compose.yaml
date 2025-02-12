@@ -1,4 +1,11 @@
 services:
+  ai-ta-frontend:
+    build: ./ai-ta-frontend
+    container_name: ai-ta-frontend
+    networks:
+      - uiuc-chat-network
+    ports:
+      - "3000:3001"
   redis:
     image: redis:7.2
     restart: unless-stopped
