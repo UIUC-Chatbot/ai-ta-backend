@@ -409,10 +409,15 @@ class RetrievalService:
     # Perform the vector search
     start_time_vector_search = time.monotonic()
 
-    # SPECIAL CASE FOR VYRIAD
+    # ----------------------------
+    # SPECIAL CASE FOR VYRIAD, CROPWIZARD
+    # ----------------------------
     if course_name == "vyriad":
       search_results = self.vdb.vyriad_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
                                                      disabled_doc_groups, public_doc_groups)
+    elif course_name == "cropwizard":
+      search_results = self.vdb.cropwizard_vector_search(search_query, course_name, doc_groups, user_query_embedding,
+                                                         top_n, disabled_doc_groups, public_doc_groups)
     else:
       search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
                                               disabled_doc_groups, public_doc_groups)
