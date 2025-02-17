@@ -44,9 +44,9 @@ def webscrape_documents(project_name: str):
         domain = urlparse(base_url).netloc
         print(f"Domains: {domain}")
         payload["params"]["match"] = "http?(s)://" + domain + "/**"
-        payload["params"]["documentGroups"] = [base_urls[base_url]]
+        payload["params"]["documentGroups"] = base_urls[base_url]
         print("Payload: ", payload)
-
+        break
         # response = requests.post(webcrawl_url, json=payload)
         # print("Response from crawl: ", response.json())
 

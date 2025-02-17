@@ -1451,15 +1451,26 @@ class Ingest():
         # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
         # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training  ...
         try:
-          self.qdrant_client.delete(
-              collection_name=os.environ['QDRANT_COLLECTION_NAME'],
-              points_selector=models.Filter(must=[
-                  models.FieldCondition(
-                      key="s3_path",
-                      match=models.MatchValue(value=s3_path),
-                  ),
-              ]),
-          )
+          if course_name == 'cropwizard-1.5':
+            self.cropwizard_qdrant_client.delete(
+                collection_name='cropwizard',
+                points_selector=models.Filter(must=[
+                    models.FieldCondition(
+                        key="s3_path",
+                        match=models.MatchValue(value=s3_path),
+                    ),
+                ]),
+            )
+          else:
+            self.qdrant_client.delete(
+                collection_name=os.environ['QDRANT_COLLECTION_NAME'],
+                points_selector=models.Filter(must=[
+                    models.FieldCondition(
+                        key="s3_path",
+                        match=models.MatchValue(value=s3_path),
+                    ),
+                ]),
+            )
         except Exception as e:
           if "timed out" in str(e):
             # Timed out is fine. Still deletes.
