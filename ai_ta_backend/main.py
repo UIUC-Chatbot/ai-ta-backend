@@ -638,6 +638,15 @@ def get_model_usage_counts(service: RetrievalService) -> Response:
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+"""
+Example CURL request (for local testing):
+
+curl -X POST \
+  http://localhost:8000/api/chat-api/warm-ai \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "what is the temperature in champaign?"}'
+"""
+
 @app.route('/api/chat-api/warm-ai', methods=['POST'])
 def warm_ai_endpoint(service: RetrievalService, posthog_service: PosthogService):
     """
