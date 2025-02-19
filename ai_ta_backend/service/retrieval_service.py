@@ -318,22 +318,27 @@ class RetrievalService:
         # Construct detailed email body with alert info
         alert_details = []
         for alert in triggered:
-          alert_details.append(f"Category: {alert['category']}")
-          alert_details.append(f"Trigger phrase: {alert['trigger']}")
+          alert_details.append(f"{alert['category']}")
+          alert_details.append(f"* Trigger phrase: {alert['trigger']}\n")
 
         alert_body = "\n".join([
-            "LLM Monitor Alert Details:", "------------------------", f"Message analyzed: {message_content}", "",
-            "Alerts triggered:", "\n".join(alert_details)
+            "LLM Monitor Alert",
+            "Alerts triggered:",
+            "\n".join(alert_details),
+            "Details:",
+            "------------------------",
+            f"Message analyzed:\n{json.dumps(message_content, indent=2)}",
+            "",
         ])
 
         print("LLM Monitor Alert Triggered! ", alert_body)
 
-        send_email(
-            subject=f"LLM Monitor Alert - {', '.join(f'{a[\"category\"]} ({a[\"trigger\"]})' for a in triggered)}",
-            body_text=alert_body,
-            sender="hi@uiuc.chat",
-            recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
-            bcc_recipients=[])
+        send_email(subject="LLM Monitor Alert - {}".format(", ".join(
+            f"{a['category']} ({a['trigger']})" for a in triggered)),
+                   body_text=alert_body,
+                   sender="hi@uiuc.chat",
+                   recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
+                   bcc_recipients=[])
 
       return "Success"
 
