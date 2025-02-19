@@ -211,9 +211,11 @@ class RetrievalService:
     for message in messages:
 
       try:
-        message = message['content']['text']
+        message = message['content'][0]['text']
       except:
         message = message['content']
+
+      print("Message after parsing: ", message)
 
       analysis_result = client.chat(
           model='qwen2.5:14b-instruct-fp16',
@@ -312,24 +314,28 @@ class RetrievalService:
 
             triggered.append({'category': category, 'trigger': trigger})
 
-    # Construct detailed email body with alert info
-    alert_details = []
-    for alert in triggered:
-      alert_details.append(f"Category: {alert['category']}")
-      alert_details.append(f"Trigger phrase: {alert['trigger']}")
+      # Only send email if alerts were triggered
+      if triggered:
+        # Construct detailed email body with alert info
+        alert_details = []
+        for alert in triggered:
+          alert_details.append(f"Category: {alert['category']}")
+          alert_details.append(f"Trigger phrase: {alert['trigger']}")
 
-    alert_body = "\n".join([
-        "LLM Monitor Alert Details:", "------------------------", f"Message analyzed: {messages[-1]}", "",
-        "Alerts triggered:", "\n".join(alert_details)
-    ])
+        alert_body = "\n".join([
+            "LLM Monitor Alert Details:", "------------------------", f"Message analyzed: {messages[-1]}", "",
+            "Alerts triggered:", "\n".join(alert_details)
+        ])
 
-    send_email(subject="LLM Monitor Alert",
-               body_text=alert_body,
-               sender="hi@uiuc.chat",
-               recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
-               bcc_recipients=[])
+        print("LLM Monitor Alert Triggered! ", alert_body)
 
-    raise NotImplementedError("Method deprecated for performance reasons. Hope to bring back soon.")
+        send_email(subject="LLM Monitor Alert",
+                   body_text=alert_body,
+                   sender="hi@uiuc.chat",
+                   recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
+                   bcc_recipients=[])
+
+      return "Success"
 
   def delete_data(self, course_name: str, s3_path: str, source_url: str):
     """Delete file from S3, Qdrant, and Supabase."""
