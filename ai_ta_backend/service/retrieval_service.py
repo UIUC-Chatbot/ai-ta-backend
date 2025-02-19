@@ -211,9 +211,9 @@ class RetrievalService:
     for message in messages:
 
       try:
-        message = message.content.text
+        message = message['content']['text']
       except:
-        message = message.content
+        message = message['content']
 
       analysis_result = client.chat(
           model='qwen2.5:14b-instruct-fp16',
