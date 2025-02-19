@@ -202,6 +202,8 @@ class RetrievalService:
     Will store categories in DB, send email if an alert is triggered.
     """
     # initialize the Ollama client
+    import json
+
     from ollama import Client as OllamaClient
 
     from ai_ta_backend.utils.email.send_transactional_email import send_email
