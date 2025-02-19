@@ -706,8 +706,8 @@ def send_transactional_email(service: ExportService):
     send_email(subject=subject,
                body_text=body_text,
                sender=sender,
-               receipients=to_recipients,
-               bcc_receipients=bcc_recipients)
+               recipients=to_recipients,
+               bcc_recipients=bcc_recipients)
     response = Response(status=200)
   except Exception as e:
     response = Response(status=500)
