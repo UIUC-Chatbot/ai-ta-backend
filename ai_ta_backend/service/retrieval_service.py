@@ -215,8 +215,6 @@ class RetrievalService:
       except:
         message = message['content']
 
-      print("Message after parsing: ", message)
-
       analysis_result = client.chat(
           model='qwen2.5:14b-instruct-fp16',
           messages=[{
