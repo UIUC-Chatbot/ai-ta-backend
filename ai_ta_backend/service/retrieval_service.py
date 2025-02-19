@@ -326,7 +326,7 @@ class RetrievalService:
     send_email(subject="LLM Monitor Alert",
                body_text=alert_body,
                sender="hi@uiuc.chat",
-               recipients=["kvday2@illinois.edu", "Heather's email here "],
+               recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
                bcc_recipients=[])
 
     raise NotImplementedError("Method deprecated for performance reasons. Hope to bring back soon.")
