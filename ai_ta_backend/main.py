@@ -131,7 +131,7 @@ def getTopContexts(service: RetrievalService) -> Response:
 
 @app.route('/llm-monitor-message', methods=['POST'])
 def llm_monitor_message(service: RetrievalService) -> Response:
-  """Get most relevant contexts for a given search query.
+  """
   
   """
   start_time = time.monotonic()

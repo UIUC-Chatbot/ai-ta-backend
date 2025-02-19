@@ -209,6 +209,12 @@ class RetrievalService:
 
     # analyze message using Ollama
     for message in messages:
+
+      try:
+        message = message.content.text
+      except:
+        message = message.content
+
       analysis_result = client.chat(
           model='qwen2.5:14b-instruct-fp16',
           messages=[{
