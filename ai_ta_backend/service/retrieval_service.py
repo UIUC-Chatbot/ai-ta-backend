@@ -205,15 +205,16 @@ class RetrievalService:
     from ollama import Client as OllamaClient
 
     from ai_ta_backend.utils.email.send_transactional_email import send_email
+
     client = OllamaClient(os.environ['OLLAMA_SERVER_URL'])
 
     # analyze message using Ollama
     for message in messages:
-
       try:
-        message = message['content'][0]['text']
+        message_content = message['content'][0]['text'] if isinstance(message.get('content'),
+                                                                      list) else message['content']
       except:
-        message = message['content']
+        message_content = message['content']
 
       analysis_result = client.chat(
           model='qwen2.5:14b-instruct-fp16',
@@ -224,7 +225,7 @@ class RetrievalService:
                   '''Analyze each message for multiple categories simultaneously. A message can and should trigger multiple categories if it meets multiple criteria. Use the provided tools to flag any and all applicable categories based on their descriptions.'''
           }, {
               'role': 'user',
-              'content': message
+              'content': message_content
           }],
           tools=[
               {
@@ -321,17 +322,18 @@ class RetrievalService:
           alert_details.append(f"Trigger phrase: {alert['trigger']}")
 
         alert_body = "\n".join([
-            "LLM Monitor Alert Details:", "------------------------", f"Message analyzed: {messages[-1]}", "",
+            "LLM Monitor Alert Details:", "------------------------", f"Message analyzed: {message_content}", "",
             "Alerts triggered:", "\n".join(alert_details)
         ])
 
         print("LLM Monitor Alert Triggered! ", alert_body)
 
-        send_email(subject="LLM Monitor Alert",
-                   body_text=alert_body,
-                   sender="hi@uiuc.chat",
-                   recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
-                   bcc_recipients=[])
+        send_email(
+            subject=f"LLM Monitor Alert - {', '.join(f'{a[\"category\"]} ({a[\"trigger\"]})' for a in triggered)}",
+            body_text=alert_body,
+            sender="hi@uiuc.chat",
+            recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
+            bcc_recipients=[])
 
       return "Success"
 
