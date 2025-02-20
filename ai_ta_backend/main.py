@@ -43,6 +43,7 @@ from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
 from ai_ta_backend.utils.email.send_transactional_email import send_email
 from ai_ta_backend.utils.pubmed_extraction import extractPubmedData
+from ai_ta_backend.utils.rerun_webcrawl_for_project import webscrape_documents
 
 app = Flask(__name__)
 CORS(app)
@@ -713,6 +714,20 @@ def send_transactional_email(service: ExportService):
     response = Response(status=500)
     response.data = f"An unexpected error occurred: {e}".encode()
 
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
+@app.route('/updateProjectDocuments', methods=['GET'])
+def updateProjectDocuments(flaskExecutor: ExecutorInterface) -> Response:
+  project_name = request.args.get('project_name', default='', type=str)
+
+  if project_name == '':
+    abort(400, description="Missing required parameter: 'project_name' must be provided.")
+
+  result = flaskExecutor.submit(webscrape_documents, project_name)
+
+  response = jsonify({"message": "success"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 

@@ -362,7 +362,7 @@ class RetrievalService:
         self.delete_from_s3(bucket_name, s3_path)
 
       # Delete from Qdrant
-      self.delete_from_qdrant(identifier_key, identifier_value)
+      self.delete_from_qdrant(identifier_key, identifier_value, course_name)
 
       # Delete from Nomic and Supabase
       self.delete_from_nomic_and_supabase(course_name, identifier_key, identifier_value)
@@ -383,10 +383,14 @@ class RetrievalService:
       print("Error in deleting file from s3:", e)
       self.sentry.capture_exception(e)
 
-  def delete_from_qdrant(self, identifier_key: str, identifier_value: str):
+  def delete_from_qdrant(self, identifier_key: str, identifier_value: str, course_name: str):
     try:
       print("Deleting from Qdrant")
-      response = self.vdb.delete_data(os.environ['QDRANT_COLLECTION_NAME'], identifier_key, identifier_value)
+      if course_name == 'cropwizard-1.5':
+        # delete from cw db
+        response = self.vdb.delete_data_cropwizard(identifier_key, identifier_value)
+      else:
+        response = self.vdb.delete_data(os.environ['QDRANT_COLLECTION_NAME'], identifier_key, identifier_value)
       print(f"Qdrant response: {response}")
     except Exception as e:
       if "timed out" in str(e):
@@ -542,10 +546,15 @@ class RetrievalService:
     # Perform the vector search
     start_time_vector_search = time.monotonic()
 
-    # SPECIAL CASE FOR VYRIAD
+    # ----------------------------
+    # SPECIAL CASE FOR VYRIAD, CROPWIZARD
+    # ----------------------------
     if course_name == "vyriad":
       search_results = self.vdb.vyriad_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
                                                      disabled_doc_groups, public_doc_groups)
+    elif course_name == "cropwizard":
+      search_results = self.vdb.cropwizard_vector_search(search_query, course_name, doc_groups, user_query_embedding,
+                                                         top_n, disabled_doc_groups, public_doc_groups)
     elif course_name == "pubmed":
       search_results = self.vdb.pubmed_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
                                                      disabled_doc_groups, public_doc_groups)
