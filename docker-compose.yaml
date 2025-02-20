@@ -135,17 +135,6 @@ services:
       - redis
 
   keycloak:
-    # build: 
-    #   context: ./keycloak-docker
-    #   args:
-    #     - KC_HEALTH_ENABLED=true
-    #     - KC_METRICS_ENABLED=false
-    #     - KC_FEATURES=token-exchange
-    #     - KC_DB=postgres
-    #     - KC_HTTP_ENABLED=true
-    #     - PROXY_ADDRESS_FORWARDING=true
-    #     - QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY=true
-    #     - KC_DB_POOL_MIN_SIZE=0
     image: quay.io/keycloak/keycloak:26.1
     container_name: keycloak
     restart: unless-stopped

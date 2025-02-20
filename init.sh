@@ -40,7 +40,7 @@ if [ "$wipe_data" = true ]; then
 else
   docker compose -f ./supabase/docker/docker-compose.yml down
 fi
-sudo docker compose -f ./supabase/docker/docker-compose.yml -f ./docker-compose.override.yml up -d --build
+sudo docker compose -f ./supabase/docker/docker-compose.yml up -d --build
 
 # Wait for Supabase DB to be ready before starting Keycloak
 echo "Waiting for Supabase DB to be ready..."
