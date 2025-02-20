@@ -1,4 +1,3 @@
-import json
 import os
 from concurrent.futures import as_completed
 from urllib.parse import urlparse
@@ -67,7 +66,6 @@ def webscrape_documents(project_name: str):
         print(f"Skipping URL: {base_url}")
         continue
 
-      domain = urlparse(base_url).netloc
       payload["params"]["documentGroups"] = base_urls[base_url]
       print("Payload: ", payload)
 
