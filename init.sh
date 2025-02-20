@@ -31,8 +31,6 @@ if [ ! -f .env ]; then
   cp .env-backend.template .env
 fi
 
-# Create Keycloak directory if it doesn't exist
-mkdir -p keycloak-docker
 
 set -e
 # Start the Supabase Docker Compose

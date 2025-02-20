@@ -5,7 +5,10 @@ services:
     networks:
       - uiuc-chat-network
     ports:
-      - "3000:3001"
+      - "3000:3000"
+    expose:
+      - 3000
+
   redis:
     image: redis:7.2
     restart: unless-stopped
@@ -132,17 +135,18 @@ services:
       - redis
 
   keycloak:
-    build: 
-      context: ./keycloak-docker
-      args:
-        - KC_HEALTH_ENABLED=true
-        - KC_METRICS_ENABLED=false
-        - KC_FEATURES=token-exchange
-        - KC_DB=postgres
-        - KC_HTTP_ENABLED=true
-        - PROXY_ADDRESS_FORWARDING=true
-        - QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY=true
-        - KC_DB_POOL_MIN_SIZE=0
+    # build: 
+    #   context: ./keycloak-docker
+    #   args:
+    #     - KC_HEALTH_ENABLED=true
+    #     - KC_METRICS_ENABLED=false
+    #     - KC_FEATURES=token-exchange
+    #     - KC_DB=postgres
+    #     - KC_HTTP_ENABLED=true
+    #     - PROXY_ADDRESS_FORWARDING=true
+    #     - QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY=true
+    #     - KC_DB_POOL_MIN_SIZE=0
+    image: quay.io/keycloak/keycloak:26.1
     container_name: keycloak
     restart: unless-stopped
     environment:
@@ -161,7 +165,7 @@ services:
       - KC_HOSTNAME_STRICT_HTTPS=false
       - KC_DEV=true
       - KC_DB=postgres
-      - KC_DB_SCHEMA=public
+      - KC_DB_SCHEMA=keycloak
       - KC_DB_URL_HOST=supabase-db
       - KC_DB_URL_PORT=5432
       - KC_DB_URL_DATABASE=postgres
@@ -172,6 +176,8 @@ services:
     networks:
       - uiuc-chat-network
       - supabase_default
+    expose:
+      - 8080
     command: 
       - start-dev 
       - --db=postgres 

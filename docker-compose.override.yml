@@ -1,4 +1,0 @@
-services:
-  db:
-    volumes:
-      - ./db/migrations:/docker-entrypoint-initdb.d/migrations
