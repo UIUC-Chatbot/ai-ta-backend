@@ -5,7 +5,10 @@ services:
     networks:
       - uiuc-chat-network
     ports:
-      - "3000:3001"
+      - "3000:3000"
+    expose:
+      - 3000
+
   redis:
     image: redis:7.2
     restart: unless-stopped
