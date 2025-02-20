@@ -8,13 +8,11 @@
         "install": {
           "cmds": [
             "curl -LsSf https://astral.sh/uv/install.sh | sh",
-            "python -m venv --copies /opt/venv",
-            ". /opt/venv/bin/activate",
             "uv pip install --system -r requirements.txt"
           ]
         },
         "setup": {
-          "nixPkgs": ["python310", "gcc"]
+          "nixPkgs": ["gcc"]
         }
       }
     }
