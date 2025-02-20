@@ -229,7 +229,7 @@ class RetrievalService:
         self.delete_from_s3(bucket_name, s3_path)
 
       # Delete from Qdrant
-      self.delete_from_qdrant(identifier_key, identifier_value)
+      self.delete_from_qdrant(identifier_key, identifier_value, course_name)
 
       # Delete from Nomic and Supabase
       self.delete_from_nomic_and_supabase(course_name, identifier_key, identifier_value)
@@ -250,10 +250,14 @@ class RetrievalService:
       print("Error in deleting file from s3:", e)
       self.sentry.capture_exception(e)
 
-  def delete_from_qdrant(self, identifier_key: str, identifier_value: str):
+  def delete_from_qdrant(self, identifier_key: str, identifier_value: str, course_name: str):
     try:
       print("Deleting from Qdrant")
-      response = self.vdb.delete_data(os.environ['QDRANT_COLLECTION_NAME'], identifier_key, identifier_value)
+      if course_name == 'cropwizard-1.5':
+        # delete from cw db
+        response = self.vdb.delete_data_cropwizard(identifier_key, identifier_value)
+      else:
+        response = self.vdb.delete_data(os.environ['QDRANT_COLLECTION_NAME'], identifier_key, identifier_value)
       print(f"Qdrant response: {response}")
     except Exception as e:
       if "timed out" in str(e):

@@ -197,3 +197,17 @@ class VectorDatabase():
             ),
         ]),
     )
+
+  def delete_data_cropwizard(self, key: str, value: str):
+    """
+    Delete data from the vector database.
+    """
+    return self.cropwizard_qdrant_client.delete(
+        collection_name='cropwizard',
+        points_selector=models.Filter(must=[
+            models.FieldCondition(
+                key=key,
+                match=models.MatchValue(value=value),
+            ),
+        ]),
+    )
