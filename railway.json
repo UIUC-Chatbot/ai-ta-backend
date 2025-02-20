@@ -6,13 +6,10 @@
     "nixpacksPlan": {
       "phases": {
         "install": {
-          "cmds": [
-            "curl -LsSf https://astral.sh/uv/install.sh | sh",
-            "uv pip install --system -r requirements.txt"
-          ]
+          "cmds": ["uv pip install --system -r requirements.txt"]
         },
         "setup": {
-          "nixPkgs": ["gcc"]
+          "nixPkgs": ["gcc", "uv"]
         }
       }
     }
