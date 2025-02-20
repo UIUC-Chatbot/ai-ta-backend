@@ -42,6 +42,12 @@ def webscrape_documents(project_name: str):
     count = 0
     batch_size = 10
 
+    processed_file_name = f"processed_urls_{''.join(e if e.isalnum() else '_' for e in project_name.lower())}.txt"
+    if not os.path.exists(processed_file_name):
+        open(processed_file_name, 'w').close()
+
+    print(f"Processed file name: {processed_file_name}")
+
     with ThreadPoolExecutorAdapter(max_workers=batch_size) as executor:
         for base_url in base_urls:
             document_groups = base_urls[base_url]
@@ -50,21 +56,19 @@ def webscrape_documents(project_name: str):
                 continue
 
             # Read the file process_urls.txt and skip all the URLs mentioned there
-            with open('process_urls.txt', 'r') as file:
-                skip_urls = set(line.strip() for line in file)
+            with open(processed_file_name, 'r') as file:
+                skip_urls = set(line.strip() for line in file)            
+            
 
             if base_url in skip_urls:
                 print(f"Skipping URL: {base_url}")
                 continue
-
+            
             domain = urlparse(base_url).netloc
             payload["params"]["documentGroups"] = base_urls[base_url]
             print("Payload: ", payload)
 
-            if not os.path.exists('process_urls.txt'):
-                open('process_urls.txt', 'w').close()
-
-            with open('process_urls.txt', 'a') as file:
+            with open(processed_file_name, 'a') as file:
                 file.write(base_url + '\n')
 
             tasks.append(executor.submit(send_request, webcrawl_url, payload.copy()))
@@ -75,10 +79,15 @@ def webscrape_documents(project_name: str):
                     response = future.result()
                     print("Response from crawl: ", response)
                 tasks = []
+                #return "Webscrape done."
 
         # Process remaining tasks
         for future in as_completed(tasks):
             response = future.result()
             print("Response from crawl: ", response)
+
+    # if os.path.exists(processed_file_name):
+    #     os.remove(processed_file_name)
+    #     print(f"Removed file: {processed_file_name}")
 
     return "Webscrape done."
