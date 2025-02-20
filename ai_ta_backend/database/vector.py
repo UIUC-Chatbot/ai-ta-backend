@@ -190,6 +190,7 @@ class VectorDatabase():
     """
     return self.qdrant_client.delete(
         collection_name=collection_name,
+        wait=True,
         points_selector=models.Filter(must=[
             models.FieldCondition(
                 key=key,
@@ -204,6 +205,7 @@ class VectorDatabase():
     """
     return self.cropwizard_qdrant_client.delete(
         collection_name='cropwizard',
+        wait=True,
         points_selector=models.Filter(must=[
             models.FieldCondition(
                 key=key,
