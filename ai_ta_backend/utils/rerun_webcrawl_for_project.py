@@ -1,6 +1,5 @@
 import os
 from concurrent.futures import as_completed
-from urllib.parse import urlparse
 
 import requests
 from dotenv import load_dotenv
