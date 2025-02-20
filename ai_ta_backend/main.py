@@ -718,15 +718,15 @@ def send_transactional_email(service: ExportService):
   return response
 
 @app.route('/updateProjectDocuments', methods=['GET'])
-def updateProjectDocuments() -> Response:
+def updateProjectDocuments(flaskExecutor: ExecutorInterface) -> Response:
   project_name = request.args.get('project_name', default='', type=str)
 
   if project_name == '':
       abort(400, description="Missing required parameter: 'project_name' must be provided.")
 
-  result = webscrape_documents(project_name)
+  result = flaskExecutor.submit(webscrape_documents, project_name)
 
-  response = jsonify(result)
+  response = jsonify({"message": "success"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 

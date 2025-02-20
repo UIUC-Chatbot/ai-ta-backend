@@ -119,6 +119,7 @@ ourSecrets = [
     "POSTHOG_API_KEY",
     "CROPWIZARD_QDRANT_URL",
     "CROPWIZARD_QDRANT_API_KEY",
+    "CROPWIZARD_OPENAI_KEY",
     # "AZURE_OPENAI_KEY",
     # "AZURE_OPENAI_ENGINE",
     # "AZURE_OPENAI_KEY",
@@ -1205,6 +1206,7 @@ class Ingest():
 
       openai_embeddings_key = os.getenv('VLADS_OPENAI_KEY')
       if metadatas[0].get('course_name') == 'cropwizard-1.5':
+        print("Using Cropwizard OpenAI key")
         openai_embeddings_key = os.getenv('CROPWIZARD_OPENAI_KEY')
 
       print("Starting to call embeddings API")
@@ -1240,6 +1242,7 @@ class Ingest():
         # SPECIAL CASE FOR CROPWIZARD INGEST
         # ----------------------------
         if metadatas[0].get('course_name') == 'cropwizard-1.5':
+          print("Uploading to cropwizard collection...")
           self.cropwizard_qdrant_client.upsert(
               collection_name='cropwizard',
               points=vectors,
@@ -1452,6 +1455,7 @@ class Ingest():
         # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training  ...
         try:
           if course_name == 'cropwizard-1.5':
+            print("Deleting from cropwizard collection...")
             self.cropwizard_qdrant_client.delete(
                 collection_name='cropwizard',
                 points_selector=models.Filter(must=[
