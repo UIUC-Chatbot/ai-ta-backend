@@ -158,8 +158,10 @@ services:
       - KC_DB_URL_HOST=supabase-db
       - KC_DB_URL_PORT=5432
       - KC_DB_URL_DATABASE=postgres
+      - KC_HEALTH_ENABLED=true
       - QUARKUS_DATASOURCE_JDBC_DRIVER=org.postgresql.Driver
       - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://supabase-db:5432/postgres
+      - QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY=true
     ports:
       - "8080:8080"
     networks:
