@@ -170,7 +170,7 @@ services:
     expose:
       - 8080
     command: 
-      - start-dev 
+      - start 
       - --db=postgres 
       - --db-url=jdbc:postgresql://supabase-db:5432/postgres
       - --db-username=${POSTGRES_USER}
