@@ -45,6 +45,7 @@ from ai_ta_backend.service.sentry_service import SentryService
 from ai_ta_backend.service.workflow_service import WorkflowService
 from ai_ta_backend.utils.email.send_transactional_email import send_email
 from ai_ta_backend.utils.pubmed_extraction import extractPubmedData
+from ai_ta_backend.utils.rerun_webcrawl_for_project import webscrape_documents
 
 app = Flask(__name__)
 CORS(app)
@@ -114,6 +115,7 @@ def getTopContexts(service: RetrievalService) -> Response:
   search_query: str = data.get('search_query', '')
   course_name: str = data.get('course_name', '')
   doc_groups: List[str] = data.get('doc_groups', [])
+  top_n: int = data.get('top_n', 100)
 
   if search_query == '' or course_name == '':
     # proper web error "400 Bad request"
@@ -123,10 +125,36 @@ def getTopContexts(service: RetrievalService) -> Response:
         f"Missing one or more required parameters: 'search_query' and 'course_name' must be provided. Search query: `{search_query}`, Course name: `{course_name}`"
     )
 
-  found_documents = asyncio.run(service.getTopContexts(search_query, course_name, doc_groups))
+  found_documents = asyncio.run(service.getTopContexts(search_query, course_name, doc_groups, top_n))
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
+  return response
+
+
+@app.route('/llm-monitor-message', methods=['POST'])
+def llm_monitor_message(service: RetrievalService) -> Response:
+  """
+  
+  """
+  start_time = time.monotonic()
+  data = request.get_json()
+  messages: List[str] = data.get('messages', [])
+  course_name: str = data.get('course_name', '')
+
+  if course_name == '' or messages == []:
+    # proper web error "400 Bad request"
+    abort(
+        400,
+        description=
+        f"Missing one or more required parameters: 'course_name' and 'messages' must be provided. Course name: `{course_name}`"
+    )
+
+  found_documents = service.llm_monitor_message(messages, course_name)
+  response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
+
   return response
 
 
@@ -221,7 +249,7 @@ def updateDocumentMaps(service: NomicService, flaskExecutor: ExecutorInterface):
 def cleanUpConversationMaps(service: NomicService, flaskExecutor: ExecutorInterface):
   print("Starting conversation map cleanup...")
 
-  response = flaskExecutor.submit(service.clean_up_conversation_maps)
+  #response = flaskExecutor.submit(service.clean_up_conversation_maps)
 
   response = jsonify({"outcome": "Task started"})
   response.headers.add('Access-Control-Allow-Origin', '*')
@@ -232,9 +260,9 @@ def cleanUpConversationMaps(service: NomicService, flaskExecutor: ExecutorInterf
 def cleanUpDocumentMaps(service: NomicService, flaskExecutor: ExecutorInterface):
   print("Starting document map cleanup...")
 
-  response = flaskExecutor.submit(service.clean_up_document_maps)
+  #response = flaskExecutor.submit(service.clean_up_document_maps)
 
-  response = jsonify({"outcome": "Task started"})
+  response = jsonify({"outcome": "Document Map cleanup temporarily disabled"})
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
@@ -681,8 +709,8 @@ def send_transactional_email(service: ExportService):
     send_email(subject=subject,
                body_text=body_text,
                sender=sender,
-               receipients=to_recipients,
-               bcc_receipients=bcc_recipients)
+               recipients=to_recipients,
+               bcc_recipients=bcc_recipients)
     response = Response(status=200)
   except Exception as e:
     response = Response(status=500)
@@ -751,6 +779,20 @@ def download_metadata_csv(service: DocumentMetadataProcessor) -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   response.headers["Content-Disposition"] = f"attachment; filename={csv_path[1]}"
   os.remove(csv_path[0])
+  return response
+
+
+@app.route('/updateProjectDocuments', methods=['GET'])
+def updateProjectDocuments(flaskExecutor: ExecutorInterface) -> Response:
+  project_name = request.args.get('project_name', default='', type=str)
+
+  if project_name == '':
+    abort(400, description="Missing required parameter: 'project_name' must be provided.")
+
+  result = flaskExecutor.submit(webscrape_documents, project_name)
+
+  response = jsonify({"message": "success"})
+  response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
 

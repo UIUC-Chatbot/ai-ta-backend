@@ -70,7 +70,8 @@ class RetrievalService:
   async def getTopContexts(self,
                            search_query: str,
                            course_name: str,
-                           doc_groups: List[str] | None = None) -> Union[List[Dict], str]:
+                           doc_groups: List[str] | None = None,
+                           top_n: int = 100) -> Union[List[Dict], str]:
     """Here's a summary of the work.
 
         /GET arguments
@@ -105,6 +106,8 @@ class RetrievalService:
 
       if course_name == "vyriad":
         embedding_client = self.nomic_embeddings
+      elif course_name == "pubmed":
+        embedding_client = self.nomic_embeddings
       else:
         embedding_client = self.embeddings
 
@@ -131,7 +134,8 @@ class RetrievalService:
                                                       doc_groups=doc_groups,
                                                       user_query_embedding=user_query_embedding,
                                                       disabled_doc_groups=disabled_doc_groups,
-                                                      public_doc_groups=public_doc_groups)
+                                                      public_doc_groups=public_doc_groups,
+                                                      top_n=top_n)
 
       time_to_retrieve_docs = time.monotonic() - start_time_vector_search
 
@@ -193,6 +197,153 @@ class RetrievalService:
 
     return distinct_dicts
 
+  def llm_monitor_message(self, messages: List[str], course_name: str) -> List[Dict]:
+    """
+    Will store categories in DB, send email if an alert is triggered.
+    """
+    # initialize the Ollama client
+    import json
+
+    from ollama import Client as OllamaClient
+
+    from ai_ta_backend.utils.email.send_transactional_email import send_email
+
+    client = OllamaClient(os.environ['OLLAMA_SERVER_URL'])
+
+    # analyze message using Ollama
+    for message in messages:
+      try:
+        message_content = message['content'][0]['text'] if isinstance(message.get('content'),
+                                                                      list) else message['content']
+      except:
+        message_content = message['content']
+
+      analysis_result = client.chat(
+          model='qwen2.5:14b-instruct-fp16',
+          messages=[{
+              'role':
+                  'system',
+              'content':
+                  '''Analyze each message for multiple categories simultaneously. A message can and should trigger multiple categories if it meets multiple criteria. Use the provided tools to flag any and all applicable categories based on their descriptions.'''
+          }, {
+              'role': 'user',
+              'content': message_content
+          }],
+          tools=[
+              {
+                  'type': 'function',
+                  'function': {
+                      'name':
+                          'categorize_as_NSFW',
+                      'description':
+                          'Flag content containing explicit threats of harm, violence, sexual content, hate speech, discriminatory language, or other inappropriate material that would be unsafe for work or general audiences.',
+                      'parameters': {
+                          'type': 'object',
+                          'properties': {
+                              'keyword_that_triggers_NSFW_tag': {
+                                  'type': 'string',
+                                  'description': 'The specific word or phrase that indicates prohibited content',
+                              },
+                          },
+                          'required': ['keyword_that_triggers_NSFW_tag'],
+                      },
+                  },
+              },
+              {
+                  'type': 'function',
+                  'function': {
+                      'name':
+                          'categorize_as_anger',
+                      'description':
+                          'Identify content expressing clear anger through aggressive language, hostile tone, multiple exclamation marks, ALL CAPS YELLING, or explicitly angry statements.',
+                      'parameters': {
+                          'type': 'object',
+                          'properties': {
+                              'keyword_that_triggers_anger_tag': {
+                                  'type':
+                                      'string',
+                                  'description':
+                                      'The exact word, phrase, or punctuation that shows anger or aggression',
+                              },
+                          },
+                          'required': ['keyword_that_triggers_anger_tag'],
+                      },
+                  },
+              },
+              {
+                  'type': 'function',
+                  'function': {
+                      'name':
+                          'categorize_as_incorrect',
+                      'description':
+                          'Flag content where the user indicates that the chatbot provided wrong, incorrect, or false information. This includes statements about inaccuracies, mistakes, or errors in the bot\'s responses.',
+                      'parameters': {
+                          'type': 'object',
+                          'properties': {
+                              'keyword_that_triggers_incorrect_tag': {
+                                  'type':
+                                      'string',
+                                  'description':
+                                      'The specific phrase that indicates the bot was incorrect (e.g. "that\'s wrong", "incorrect", "that\'s not true")',
+                              },
+                          },
+                          'required': ['keyword_that_triggers_incorrect_tag'],
+                      },
+                  },
+              },
+              {
+                  'type': 'function',
+                  'function': {
+                      'name':
+                          'categorize_as_good',
+                      'description':
+                          'Classify content as appropriate and constructive if it contains normal questions, feedback, discussion, or requests without triggering any of the above categories.',
+                  },
+              },
+          ],
+      )
+
+      # extract the triggered categories
+      triggered = []
+      if 'tool_calls' in analysis_result.get('message', {}):
+        for tool_call in analysis_result['message']['tool_calls']:
+          category = tool_call.function.name.replace('categorize_as_', '')
+
+          if category in ['NSFW', 'anger', 'incorrect']:
+            trigger_key = f'keyword_that_triggers_{category}_tag'
+            trigger = tool_call.function.arguments.get(trigger_key, 'No trigger specified')
+
+            triggered.append({'category': category, 'trigger': trigger})
+
+      # Only send email if alerts were triggered
+      if triggered:
+        # Construct detailed email body with alert info
+        alert_details = []
+        for alert in triggered:
+          alert_details.append(f"{alert['category']}")
+          alert_details.append(f"* Trigger phrase: {alert['trigger']}\n")
+
+        alert_body = "\n".join([
+            "LLM Monitor Alert",
+            "Alerts triggered:",
+            "\n".join(alert_details),
+            "Details:",
+            "------------------------",
+            f"Message analyzed:\n{json.dumps(message_content, indent=2)}",
+            "",
+        ])
+
+        print("LLM Monitor Alert Triggered! ", alert_body)
+
+        send_email(subject="LLM Monitor Alert - {}".format(", ".join(
+            f"{a['category']} ({a['trigger']})" for a in triggered)),
+                   body_text=alert_body,
+                   sender="hi@uiuc.chat",
+                   recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
+                   bcc_recipients=[])
+
+      return "Success"
+
   def delete_data(self, course_name: str, s3_path: str, source_url: str):
     """Delete file from S3, Qdrant, and Supabase."""
     print(f"Deleting data for course {course_name}")
@@ -211,7 +362,7 @@ class RetrievalService:
         self.delete_from_s3(bucket_name, s3_path)
 
       # Delete from Qdrant
-      self.delete_from_qdrant(identifier_key, identifier_value)
+      self.delete_from_qdrant(identifier_key, identifier_value, course_name)
 
       # Delete from Nomic and Supabase
       self.delete_from_nomic_and_supabase(course_name, identifier_key, identifier_value)
@@ -232,10 +383,14 @@ class RetrievalService:
       print("Error in deleting file from s3:", e)
       self.sentry.capture_exception(e)
 
-  def delete_from_qdrant(self, identifier_key: str, identifier_value: str):
+  def delete_from_qdrant(self, identifier_key: str, identifier_value: str, course_name: str):
     try:
       print("Deleting from Qdrant")
-      response = self.vdb.delete_data(os.environ['QDRANT_COLLECTION_NAME'], identifier_key, identifier_value)
+      if course_name == 'cropwizard-1.5':
+        # delete from cw db
+        response = self.vdb.delete_data_cropwizard(identifier_key, identifier_value)
+      else:
+        response = self.vdb.delete_data(os.environ['QDRANT_COLLECTION_NAME'], identifier_key, identifier_value)
       print(f"Qdrant response: {response}")
     except Exception as e:
       if "timed out" in str(e):
@@ -365,8 +520,14 @@ class RetrievalService:
       print(f"Supabase Error in delete. {identifier_key}: {identifier_value}", e)
       self.sentry.capture_exception(e)
 
-  def vector_search(self, search_query, course_name, doc_groups: List[str], user_query_embedding, disabled_doc_groups,
-                    public_doc_groups):
+  def vector_search(self,
+                    search_query,
+                    course_name,
+                    doc_groups: List[str],
+                    user_query_embedding,
+                    disabled_doc_groups,
+                    public_doc_groups,
+                    top_n: int = 100):
     """
     Search the vector database for a given query, course name, and document groups.
     """
@@ -379,18 +540,23 @@ class RetrievalService:
     if public_doc_groups is None:
       public_doc_groups = []
 
-    # Max number of search results to return
-    top_n = 60
-
     # Capture the search invoked event to PostHog
     self._capture_search_invoked_event(search_query, course_name, doc_groups)
 
     # Perform the vector search
     start_time_vector_search = time.monotonic()
 
-    # SPECIAL CASE FOR VYRIAD
+    # ----------------------------
+    # SPECIAL CASE FOR VYRIAD, CROPWIZARD
+    # ----------------------------
     if course_name == "vyriad":
       search_results = self.vdb.vyriad_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
+                                                     disabled_doc_groups, public_doc_groups)
+    elif course_name == "cropwizard":
+      search_results = self.vdb.cropwizard_vector_search(search_query, course_name, doc_groups, user_query_embedding,
+                                                         top_n, disabled_doc_groups, public_doc_groups)
+    elif course_name == "pubmed":
+      search_results = self.vdb.pubmed_vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
                                                      disabled_doc_groups, public_doc_groups)
     else:
       search_results = self.vdb.vector_search(search_query, course_name, doc_groups, user_query_embedding, top_n,
@@ -491,7 +657,7 @@ class RetrievalService:
             "course_name ": doc.metadata["course_name"],
             # OPTIONAL
             "s3_path": doc.metadata.get("s3_path"),
-            "pagenumber": doc.metadata.get("pagenumber_or_timestamp"),  # Handles both old and new schema
+            "pagenumber": doc.metadata.get("pagenumber"),  # Handles both old and new schema
             "url": doc.metadata.get("url"),
             "base_url": doc.metadata.get("base_url"),
             "doc_groups": doc.metadata.get("doc_groups"),
