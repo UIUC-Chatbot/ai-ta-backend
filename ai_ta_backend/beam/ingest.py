@@ -6,12 +6,13 @@ Use CAII gmail to auth.
 from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import beam
+from beam import BotContext  # To obtain task_id
 from beam import QueueDepthAutoscaler  # RequestLatencyAutoscaler,
-from beam import BotContext  # To obtain task_id 
 
 if beam.env.is_remote():
   # Only import these in the Cloud container, not when building the container.
   import asyncio
+  import gc
   import inspect
   import json
   import logging
@@ -23,6 +24,7 @@ if beam.env.is_remote():
   import time
   import traceback
   import uuid
+  from datetime import datetime
   from pathlib import Path
   from tempfile import NamedTemporaryFile
 
@@ -32,6 +34,7 @@ if beam.env.is_remote():
   import fitz
   import openai
   import pdfplumber
+  import psutil
   import pytesseract
   import sentry_sdk
   import supabase
@@ -58,15 +61,16 @@ if beam.env.is_remote():
   from qdrant_client.models import PointStruct
   from requests.exceptions import Timeout
   from supabase.client import ClientOptions
+  from unstructured.partition.pdf import partition_pdf
 
-  sentry_sdk.init(
-      dsn=os.getenv("SENTRY_DSN"),
-      # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
-      traces_sample_rate=1.0,
-      # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
-      # We recommend adjusting this value in production.
-      profiles_sample_rate=1.0,
-      enable_tracing=True)
+sentry_sdk.init(
+    dsn=os.getenv("SENTRY_DSN"),
+    # Set traces_sample_rate to 1.0 to capture 100% of transactions for performance monitoring.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100% of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+    enable_tracing=True)
 
 requirements = [
     "openai<1.0",
@@ -93,13 +97,21 @@ requirements = [
     "beautifulsoup4==4.12.2",
     "sentry-sdk==1.39.1",
     "pdfplumber==0.11.0",  # PDF OCR, better performance than Fitz/PyMuPDF in my Gies PDF testing.
+    "psutil==5.9.8",  # For memory monitoring
+    "paddleocr==2.7.0",  # For improved OCR
+    "paddlepaddle==2.5.2",  # Required by paddleocr
 ]
 
-image = (beam.Image(
-    python_version="python3.10",
-    commands=(["apt-get update && apt-get install -y ffmpeg tesseract-ocr"]),
-    python_packages=requirements,
-))
+image = (
+    beam.Image(
+        python_version="python3.10",
+        commands=([
+            "apt-get update && apt-get install -y ffmpeg tesseract-ocr",
+            # Additional system dependencies for unstructured
+            "apt-get install -y libmagic1 poppler-utils tesseract-ocr libreoffice pandoc"
+        ]),
+        python_packages=requirements,
+    ))
 
 # autoscaler = RequestLatencyAutoscaler(desired_latency=30, max_replicas=2)
 autoscaler = QueueDepthAutoscaler(tasks_per_container=300, max_containers=3)
@@ -171,160 +183,166 @@ def loader():
 
 # Triggers determine how your app is deployed
 # @app.rest_api(
-@beam.task_queue(name='ingest_task_queue',
-                 workers=4,
-                 cpu=1,
-                 memory=3_072,
-                 max_pending_tasks=15_000,
-                # DEPRICATED, not needed -- callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
-                 timeout=60 * 25,
-                 retries=1,
-                 secrets=ourSecrets,
-                 on_start=loader,
-                 image=image,
-                 autoscaler=autoscaler)
-
+@beam.task_queue(
+    name='ingest_task_queue',
+    workers=4,
+    cpu=1,
+    memory=3_072,
+    max_pending_tasks=15_000,
+    # DEPRICATED, not needed -- callback_url='https://uiuc.chat/api/UIUC-api/ingestTaskCallback',
+    timeout=60 * 25,
+    retries=1,
+    secrets=ourSecrets,
+    on_start=loader,
+    image=image,
+    autoscaler=autoscaler)
 def ingest(context, **inputs: Dict[str | List[str], Any]):
-    qdrant_client, vectorstore, s3_client, supabase_client, posthog = context.on_start_value
-    course_name: List[str] | str = inputs.get('course_name', '')
-    s3_paths: List[str] | str = inputs.get('s3_paths', '')
-    url: List[str] | str | None = inputs.get('url', None)
-    base_url: List[str] | str | None = inputs.get('base_url', None)
-    readable_filename: List[str] | str = inputs.get('readable_filename', '')
-    content: str | List[str] | None = inputs.get('content', None)
-    doc_groups: List[str] | str = inputs.get('groups', [])
+  qdrant_client, vectorstore, s3_client, supabase_client, posthog = context.on_start_value
+  course_name: List[str] | str = inputs.get('course_name', '')
+  s3_paths: List[str] | str = inputs.get('s3_paths', '')
+  url: List[str] | str | None = inputs.get('url', None)
+  base_url: List[str] | str | None = inputs.get('base_url', None)
+  readable_filename: List[str] | str = inputs.get('readable_filename', '')
+  content: str | List[str] | None = inputs.get('content', None)
+  doc_groups: List[str] | str = inputs.get('groups', [])
 
-    print(f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}")
+  print(
+      f"In top of /ingest route. course: {course_name}, s3paths: {s3_paths}, readable_filename: {readable_filename}, base_url: {base_url}, url: {url}, content: {content}, doc_groups: {doc_groups}"
+  )
 
-    ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
+  ingester = Ingest(qdrant_client, vectorstore, s3_client, supabase_client, posthog)
 
-    def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
-        if content:
-            return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=groups)
-        elif readable_filename == '':
-            return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=groups)
-        else:
-            return ingester.bulk_ingest(course_name, s3_paths, readable_filename=readable_filename, base_url=base_url, url=url, groups=groups)
+  def run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, groups):
+    if content:
+      return ingester.ingest_single_web_text(course_name, base_url, url, content, readable_filename, groups=groups)
+    elif readable_filename == '':
+      return ingester.bulk_ingest(course_name, s3_paths, base_url=base_url, url=url, groups=groups)
+    else:
+      return ingester.bulk_ingest(course_name,
+                                  s3_paths,
+                                  readable_filename=readable_filename,
+                                  base_url=base_url,
+                                  url=url,
+                                  groups=groups)
 
-    # First try
-    # Full Exception is unexpected, don't bother retrying
-    # If success_fail_dict has failures, then enter retry loop
-    success_fail_dict = {}
-    try:
-        success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-    except Exception as e:
-        # Don't bother retrying
-        print("Exception in main ingest", e)
-        success_fail_dict = {'failure_ingest': str(e)}
-        handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
-    
-    # Catch failed ingest that is not unexpected exception
-    if isinstance(success_fail_dict, str):
-        success_fail_dict = {'failure_ingest': success_fail_dict}
-    
-    # Retry failed ingests (but not unexpected exceptions)
-    if success_fail_dict.get('failure_ingest'):
-      success_fail_dict = retry_ingest(supabase_client, posthog, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-      if isinstance(success_fail_dict, str) or success_fail_dict.get('failure_ingest'):
-        error = str(success_fail_dict if isinstance(success_fail_dict, str) else success_fail_dict['failure_ingest'])
-        handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, error)
+  # First try
+  # Full Exception is unexpected, don't bother retrying
+  # If success_fail_dict has failures, then enter retry loop
+  success_fail_dict = {}
+  try:
+    success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+  except Exception as e:
+    # Don't bother retrying
+    print("Exception in main ingest", e)
+    success_fail_dict = {'failure_ingest': str(e)}
+    handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
 
-    # Cleanup: Remove from docs_in_progress table
-    try:
-        if base_url:
-            print('Removing URL-based document from in_progress')
-            supabase_client.table('documents_in_progress').delete()\
-                .eq('url', url)\
-                .eq('base_url', base_url)\
-                .execute()
-        else:
-            supabase_client.table('documents_in_progress').delete()\
-                .eq('course_name', course_name)\
-                .eq('s3_path', s3_paths)\
-                .eq('readable_filename', readable_filename)\
-                .execute()
-    except Exception as e:
-        print(f"Error cleaning up documents_in_progress: {e}")
-        sentry_sdk.capture_exception(e)
-        
-    if success_fail_dict.get('success_ingest'):
-      posthog.capture(
-          'distinct_id_of_the_user',
-          event='ingest_success',
-          properties={
-              'course_name': course_name,
-              's3_path': s3_paths,
-              's3_paths': s3_paths,
-              'url': url,
-              'base_url': base_url,
-              'readable_filename': readable_filename,
-              'content': content,
-              'doc_groups': doc_groups,
-          })
-        
-    
-    print(f"Final success_fail_dict: {success_fail_dict}")
-    sentry_sdk.flush(timeout=20)
-    return json.dumps(success_fail_dict)
+  # Catch failed ingest that is not unexpected exception
+  if isinstance(success_fail_dict, str):
+    success_fail_dict = {'failure_ingest': success_fail_dict}
+
+  # Retry failed ingests (but not unexpected exceptions)
+  if success_fail_dict.get('failure_ingest'):
+    success_fail_dict = retry_ingest(supabase_client, posthog, run_ingest, course_name, s3_paths, base_url, url,
+                                     readable_filename, content, doc_groups)
+    if isinstance(success_fail_dict, str) or success_fail_dict.get('failure_ingest'):
+      error = str(success_fail_dict if isinstance(success_fail_dict, str) else success_fail_dict['failure_ingest'])
+      handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, error)
+
+  # Cleanup: Remove from docs_in_progress table
+  try:
+    if base_url:
+      print('Removing URL-based document from in_progress')
+      supabase_client.table('documents_in_progress').delete()\
+          .eq('url', url)\
+          .eq('base_url', base_url)\
+          .execute()
+    else:
+      supabase_client.table('documents_in_progress').delete()\
+          .eq('course_name', course_name)\
+          .eq('s3_path', s3_paths)\
+          .eq('readable_filename', readable_filename)\
+          .execute()
+  except Exception as e:
+    print(f"Error cleaning up documents_in_progress: {e}")
+    sentry_sdk.capture_exception(e)
+
+  if success_fail_dict.get('success_ingest'):
+    posthog.capture('distinct_id_of_the_user',
+                    event='ingest_success',
+                    properties={
+                        'course_name': course_name,
+                        's3_path': s3_paths,
+                        's3_paths': s3_paths,
+                        'url': url,
+                        'base_url': base_url,
+                        'readable_filename': readable_filename,
+                        'content': content,
+                        'doc_groups': doc_groups,
+                    })
+
+  print(f"Final success_fail_dict: {success_fail_dict}")
+  sentry_sdk.flush(timeout=20)
+  return json.dumps(success_fail_dict)
+
 
 def handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, error):
-    document = {
-        "course_name": course_name,
-        "s3_path": s3_paths,
-        "readable_filename": readable_filename,
-        "url": url,
-        "base_url": base_url,
-        "error": str(error)
-    }
-    # Check if document already exists
-    existing = supabase_client.table('documents_failed')\
-        .select('*')\
-        .eq('course_name', course_name)\
-        .eq('s3_path', s3_paths)\
-        .eq('readable_filename', readable_filename)\
-        .eq('url', url)\
-        .eq('base_url', base_url)\
-        .execute()
-    
-    # Only insert if no matching document exists
-    if not existing.data:
-        supabase_client.table('documents_failed').insert(document).execute()
+  document = {
+      "course_name": course_name,
+      "s3_path": s3_paths,
+      "readable_filename": readable_filename,
+      "url": url,
+      "base_url": base_url,
+      "error": str(error)
+  }
+  # Check if document already exists
+  existing = supabase_client.table('documents_failed')\
+      .select('*')\
+      .eq('course_name', course_name)\
+      .eq('s3_path', s3_paths)\
+      .eq('readable_filename', readable_filename)\
+      .eq('url', url)\
+      .eq('base_url', base_url)\
+      .execute()
 
-    posthog.capture(
-                'distinct_id_of_the_user',
-                event='ingest_failure',
-                properties={
-                    'course_name':
-                        course_name,
-                    's3_path':
-                        s3_paths,
-                    'url':
-                        url,
-                    'base_url': base_url,
-                    'readable_filename': readable_filename,
-                    'error': str(error)
-                })
+  # Only insert if no matching document exists
+  if not existing.data:
+    supabase_client.table('documents_failed').insert(document).execute()
 
-def retry_ingest(supabase_client, posthog, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content, doc_groups):
-    num_retries = 3
-    last_error = None
+  posthog.capture('distinct_id_of_the_user',
+                  event='ingest_failure',
+                  properties={
+                      'course_name': course_name,
+                      's3_path': s3_paths,
+                      'url': url,
+                      'base_url': base_url,
+                      'readable_filename': readable_filename,
+                      'error': str(error)
+                  })
 
-    for retry_num in range(1, num_retries):
-        try:
-            success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
-            if isinstance(success_fail_dict, str) or success_fail_dict.get('failure_ingest'):
-                print(f"Retry attempt {retry_num}. File: {success_fail_dict}")
-                last_error = success_fail_dict
-                time.sleep(13 * retry_num)
-            else:
-                return success_fail_dict
-        except Exception as e:
-            print(f"Exception in ingest retry loop {retry_num}", e)
-            last_error = {'failure_ingest': str(e)}
-            handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
-            time.sleep(13 * retry_num)
 
-    return last_error or {'failure_ingest': 'All retries failed'}
+def retry_ingest(supabase_client, posthog, run_ingest, course_name, s3_paths, base_url, url, readable_filename, content,
+                 doc_groups):
+  num_retries = 3
+  last_error = None
+
+  for retry_num in range(1, num_retries):
+    try:
+      success_fail_dict = run_ingest(course_name, s3_paths, base_url, url, readable_filename, content, doc_groups)
+      if isinstance(success_fail_dict, str) or success_fail_dict.get('failure_ingest'):
+        print(f"Retry attempt {retry_num}. File: {success_fail_dict}")
+        last_error = success_fail_dict
+        time.sleep(13 * retry_num)
+      else:
+        return success_fail_dict
+    except Exception as e:
+      print(f"Exception in ingest retry loop {retry_num}", e)
+      last_error = {'failure_ingest': str(e)}
+      handle_ingest_failure(supabase_client, posthog, course_name, s3_paths, readable_filename, url, base_url, e)
+      time.sleep(13 * retry_num)
+
+  return last_error or {'failure_ingest': 'All retries failed'}
+
 
 class Ingest():
 
@@ -335,6 +353,55 @@ class Ingest():
     self.supabase_client = supabase_client
     self.posthog = posthog
 
+  def _insert_cedar_document(self,
+                             course_name: str,
+                             s3_path: str,
+                             readable_filename: str,
+                             url: str = None,
+                             base_url: str = None) -> int:
+    """Insert document into cedar_documents table and return the document id."""
+    try:
+      result = self.supabase_client.table('cedar_documents').insert({
+          "course_name": course_name,
+          "s3_path": s3_path,
+          "readable_filename": readable_filename,
+          "url": url,
+          "base_url": base_url,
+          "created_at": datetime.now().isoformat()
+      }).execute()
+
+      if result.data and len(result.data) > 0:
+        return result.data[0]['id']
+      raise Exception("Failed to insert document - no id returned")
+    except Exception as e:
+      print(f"Error inserting cedar document: {e}")
+      sentry_sdk.capture_exception(e)
+      raise
+
+  def _insert_cedar_chunks(self, document_id: int, chunks: List[Dict[str, Any]]):
+    """Insert chunks into cedar_chunks table."""
+    try:
+      chunk_records = []
+      for i, chunk in enumerate(chunks):
+        record = {
+            "document_id": document_id,
+            "chunk_number": i,
+            "chunk_type": chunk.get('type', 'text'),
+            "content": chunk.get('text', ''),
+            "table_html": chunk.get('table_html', None),
+            "chunk_metadata": chunk.get('metadata', {}),
+            "orig_elements": chunk.get('orig_elements', None),
+            "created_at": datetime.now().isoformat()
+        }
+        chunk_records.append(record)
+
+      result = self.supabase_client.table('cedar_chunks').insert(chunk_records).execute()
+      return result
+    except Exception as e:
+      print(f"Error inserting cedar chunks: {e}")
+      sentry_sdk.capture_exception(e)
+      raise
+
   def bulk_ingest(self, course_name: str, s3_paths: Union[str, List[str]],
                   **kwargs) -> Dict[str, None | str | Dict[str, str]]:
     """ 
@@ -342,6 +409,7 @@ class Ingest():
     -> Dict[str, str | Dict[str, str]]
     """
     print('s3 path from bulk ingest', s3_paths)
+
     def _ingest_single(ingest_method: Callable, s3_path, *args, **kwargs):
       """Handle running an arbitrary ingest function for an individual file."""
       # RUN INGEST METHOD
@@ -882,76 +950,148 @@ class Ingest():
 
   def _ingest_single_pdf(self, s3_path: str, course_name: str, **kwargs):
     """
-    Both OCR the PDF. And grab the first image as a PNG.
-      LangChain `Documents` have .metadata and .page_content attributes.
-    Be sure to use TemporaryFile() to avoid memory leaks!
+    Process a PDF file using unstructured library with advanced features:
+    - Extract text with layout preservation
+    - Extract and save tables
+    - Extract and save images
+    - OCR when needed
+    - Store in new cedar_documents and cedar_chunks tables
     """
     print("IN PDF ingest: s3_path: ", s3_path, "and kwargs:", kwargs)
 
     try:
-      with NamedTemporaryFile() as pdf_tmpfile:
-        # download from S3 into pdf_tmpfile
+      # First create the document record
+      doc_id = self._insert_cedar_document(course_name=course_name,
+                                           s3_path=s3_path,
+                                           readable_filename=kwargs.get('readable_filename',
+                                                                        Path(s3_path).name[37:]),
+                                           url=kwargs.get('url', ''),
+                                           base_url=kwargs.get('base_url', ''))
+
+      with NamedTemporaryFile(suffix='.pdf') as pdf_tmpfile:
+        # Download from S3 into pdf_tmpfile
         self.s3_client.download_fileobj(Bucket=os.getenv('S3_BUCKET_NAME'), Key=s3_path, Fileobj=pdf_tmpfile)
-        ### READ OCR of PDF
-        try:
-          doc = fitz.open(pdf_tmpfile.name)  # type: ignore
-        except fitz.fitz.EmptyFileError as e:
-          print(f"Empty PDF file: {s3_path}")
-          return "Failed ingest: Could not detect ANY text in the PDF. OCR did not help. PDF appears empty of text."
 
-        # improve quality of the image
-        zoom_x = 2.0  # horizontal zoom
-        zoom_y = 2.0  # vertical zoom
-        mat = fitz.Matrix(zoom_x, zoom_y)  # zoom factor 2 in each dimension
+        # Create temporary directory for extracted images
+        with NamedTemporaryFile(suffix='.png') as image_dir:
+          image_output_dir = Path(image_dir.name).parent / "extracted_images"
+          image_output_dir.mkdir(exist_ok=True)
 
-        pdf_pages_no_OCR: List[Dict] = []
-        for i, page in enumerate(doc):  # type: ignore
+          # Set environment variables for better extraction
+          os.environ["EXTRACT_IMAGE_BLOCK_CROP_HORIZONTAL_PAD"] = "20"
+          os.environ["EXTRACT_IMAGE_BLOCK_CROP_VERTICAL_PAD"] = "120"
+          os.environ["OCR_AGENT"] = "unstructured.partition.utils.ocr_models.paddle_ocr.OCRAgentPaddle"
 
-          # UPLOAD FIRST PAGE IMAGE to S3
-          if i == 0:
-            with NamedTemporaryFile(suffix=".png") as first_page_png:
-              pix = page.get_pixmap(matrix=mat)
-              pix.save(first_page_png)  # store image as a PNG
+          try:
+            # Extract content with unstructured
+            elements = partition_pdf(filename=pdf_tmpfile.name,
+                                     mode="elements",
+                                     strategy="hi_res",
+                                     hi_res_model_name="yolox",
+                                     infer_table_structure=True,
+                                     extract_images_in_pdf=True,
+                                     extract_image_block_types=["Image", "Table"],
+                                     extract_image_block_to_payload=True,
+                                     extract_image_block_output_dir=str(image_output_dir),
+                                     include_metadata=True,
+                                     include_original_elements=True)
 
-              s3_upload_path = str(Path(s3_path)).rsplit('.pdf')[0] + "-pg1-thumb.png"
-              first_page_png.seek(0)  # Seek the file pointer back to the beginning
-              with open(first_page_png.name, 'rb') as f:
-                print("Uploading image png to S3")
-                self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_upload_path)
+            if not elements:
+              raise ValueError("No elements extracted from PDF")
 
-          # Extract text
-          text = page.get_text().encode("utf8").decode("utf8", errors='ignore')  # get plain text (is in UTF-8)
-          pdf_pages_no_OCR.append(dict(text=text, page_number=i, readable_filename=Path(s3_path).name[37:]))
+            # Process elements into chunks
+            chunks = []
+            for element in elements:
+              chunk = {
+                  'type': element.type,
+                  'text': element.text if hasattr(element, 'text') else '',
+                  'metadata': {
+                      'coordinates': element.coordinates if hasattr(element, 'coordinates') else None,
+                      'filename': element.filename if hasattr(element, 'filename') else None,
+                      'filetype': element.filetype if hasattr(element, 'filetype') else None,
+                      'page_number': element.metadata.page_number if hasattr(element, 'metadata') else None
+                  }
+              }
 
-        metadatas: List[Dict[str, Any]] = [
-            {
-                'course_name': course_name,
-                's3_path': s3_path,
-                'pagenumber': page['page_number'] + 1,  # +1 for human indexing
-                'timestamp': '',
-                'readable_filename': kwargs.get('readable_filename', page['readable_filename']),
-                'url': kwargs.get('url', ''),
-                'base_url': kwargs.get('base_url', ''),
-            } for page in pdf_pages_no_OCR
-        ]
-        pdf_texts = [page['text'] for page in pdf_pages_no_OCR]
+              # Handle tables
+              if hasattr(element, 'table_html'):
+                chunk['table_html'] = element.table_html
 
-        # count the total number of words in the pdf_texts. If it's less than 100, we'll OCR the PDF
-        has_words = any(text.strip() for text in pdf_texts)
-        if has_words:
-          success_or_failure = self.split_and_upload(texts=pdf_texts, metadatas=metadatas, **kwargs)
-        else:
-          print("⚠️ PDF IS EMPTY -- OCR-ing the PDF.")
-          success_or_failure = self._ocr_pdf(s3_path=s3_path, course_name=course_name, **kwargs)
+              chunks.append(chunk)
 
-        return success_or_failure
+            # Upload extracted images to S3 and add as chunks
+            image_paths = list(image_output_dir.glob('**/*.[jJ][pP][gG]'))
+            for img_path in image_paths:
+              s3_img_path = f"{Path(s3_path).parent}/images/{img_path.name}"
+              with open(img_path, 'rb') as f:
+                self.s3_client.upload_fileobj(f, os.getenv('S3_BUCKET_NAME'), s3_img_path)
+
+              # Add image reference to chunks
+              chunks.append({
+                  'type': 'Image',
+                  'text': f"Image extracted from PDF: {img_path.name}",
+                  'metadata': {
+                      's3_path': s3_img_path,
+                      'original_name': img_path.name,
+                      'page_number': chunks[-1]['metadata']['page_number']
+                                     if chunks else 1  # Use last chunk's page number or default to 1
+                  }
+              })
+
+            # Insert chunks into cedar_chunks table
+            self._insert_cedar_chunks(doc_id, chunks)
+
+            # Create embeddings and upload to Qdrant for ALL chunks
+            # Convert each chunk into a searchable text representation
+            texts = []
+            metadatas = []
+
+            for chunk_id, chunk in enumerate(chunks):
+              # Create searchable text based on chunk type
+              if chunk['type'] == 'Table':
+                search_text = f"Table from PDF: {chunk.get('table_html', '')}"
+              elif chunk['type'] == 'Image':
+                search_text = f"Image in PDF: {chunk['text']}"
+              else:
+                search_text = chunk['text']
+
+              if search_text.strip():  # Only include non-empty chunks
+                texts.append(search_text)
+                metadatas.append({
+                    'course_name': course_name,
+                    's3_path': s3_path,
+                    'chunk_id': chunk_id,
+                    'document_id': doc_id,
+                    'chunk_type': chunk['type'],
+                    'page_number': chunk['metadata'].get('page_number', ''),
+                    'readable_filename': kwargs.get('readable_filename',
+                                                    Path(s3_path).name[37:]),
+                    'url': kwargs.get('url', ''),
+                    'base_url': kwargs.get('base_url', '')
+                })
+
+            if texts:  # Only call split_and_upload if we have texts to process
+              self.split_and_upload(texts=texts, metadatas=metadatas, **kwargs)
+
+            return "Success"
+
+          except Exception as e:
+            # Update document with error
+            self.supabase_client.table('cedar_documents').update({"last_error": str(e)}).eq('id', doc_id).execute()
+            raise e
+
+          finally:
+            # Cleanup
+            if image_output_dir.exists():
+              import shutil
+              shutil.rmtree(image_output_dir)
+
     except Exception as e:
-      err = f"❌❌ Error in PDF ingest (no OCR): `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
-      )  # type: ignore
+      err = f"❌❌ Error in PDF ingest: `{inspect.currentframe().f_code.co_name}`: {e}\nTraceback:\n", traceback.format_exc(
+      )
       print(err)
       sentry_sdk.capture_exception(e)
       return err
-    return "Success"
 
   def _ocr_pdf(self, s3_path: str, course_name: str, **kwargs):
     self.posthog.capture('distinct_id_of_the_user',
@@ -1419,7 +1559,7 @@ class Ingest():
           sentry_sdk.capture_exception(e)
         # Delete from Qdrant
         # docs for nested keys: https://qdrant.tech/documentation/concepts/filtering/#nested-key
-        # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students’ Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training  ...
+        # Qdrant "points" look like this: Record(id='000295ca-bd28-ac4a-6f8d-c245f7377f90', payload={'metadata': {'course_name': 'zotero-extreme', 'pagenumber_or_timestamp': 15, 'readable_filename': 'Dunlosky et al. - 2013 - Improving Students' Learning With Effective Learni.pdf', 's3_path': 'courses/zotero-extreme/Dunlosky et al. - 2013 - Improving Students' Learning With Effective Learni.pdf'}, 'page_content': '18  \nDunlosky et al.\n3.3 Effects in representative educational contexts. Sev-\neral of the large summarization-training studies have been \nconducted in regular classrooms, indicating the feasibility of \ndoing so. For example, the study by A. King (1992) took place \nin the context of a remedial study-skills course for undergrad-\nuates, and the study by Rinehart et al. (1986) took place in \nsixth-grade classrooms, with the instruction led by students \nregular teachers. In these and other cases, students benefited \nfrom the classroom training. We suspect it may actually be \nmore feasible to conduct these kinds of training  ...
         try:
           self.qdrant_client.delete(
               collection_name=os.environ['QDRANT_COLLECTION_NAME'],
