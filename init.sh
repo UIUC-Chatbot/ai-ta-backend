@@ -31,6 +31,7 @@ if [ ! -f .env ]; then
   cp .env-backend.template .env
 fi
 
+
 set -e
 # Start the Supabase Docker Compose
 echo "Starting Supabase services..."
@@ -39,13 +40,17 @@ if [ "$wipe_data" = true ]; then
 else
   docker compose -f ./supabase/docker/docker-compose.yml down
 fi
-sudo docker compose -f ./supabase/docker/docker-compose.yml -f ./docker-compose.override.yml up -d --build
+sudo docker compose -f ./supabase/docker/docker-compose.yml up -d --build
 
-# Wait for the database to be ready
-# echo "Waiting for the database to be ready..."
-# until docker exec supabase-db pg_isready -U postgres; do
-#   sleep 1
-# done
+# Wait for Supabase DB to be ready before starting Keycloak
+echo "Waiting for Supabase DB to be ready..."
+until docker exec supabase-db pg_isready -U postgres; do
+  sleep 1
+done
+
+# Create Keycloak schema if it doesn't exist
+echo "Creating Keycloak schema if it doesn't exist..."
+docker exec supabase-db psql -U postgres -d postgres -c "CREATE SCHEMA IF NOT EXISTS keycloak;"
 
 # Start the parent Docker Compose
 chmod -R 777 ./supabase
@@ -55,7 +60,8 @@ if [ "$wipe_data" = true ]; then
 else
   docker compose -f ./docker-compose.yaml down
 fi
-# Note: you may need to give docker with sufficient permissions to run this command (eg: sudo chmod -r 777 .)
+
+# Start all services
 sudo docker compose -f ./docker-compose.yaml up -d --build
 
 echo "All services are up!"
