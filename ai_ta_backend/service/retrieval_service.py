@@ -210,6 +210,8 @@ class RetrievalService:
 
     client = OllamaClient(os.environ['OLLAMA_SERVER_URL'])
 
+    self.seen_messages = set()
+
     # analyze message using Ollama
     for message in messages:
       try:
@@ -217,6 +219,17 @@ class RetrievalService:
                                                                       list) else message['content']
       except:
         message_content = message['content']
+
+        # use a unique identifier for each message to check if it was already seen
+        conversation_id = message.get('conversation_id', '')
+        
+        message_hash = hash(str(message_content))
+        message_key = (conversation_id, message_hash)
+        
+        if message_key in self.seen_messages:
+            continue
+            
+        self.seen_messages.add(message_key)
 
       analysis_result = client.chat(
           model='qwen2.5:14b-instruct-fp16',
