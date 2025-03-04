@@ -156,6 +156,22 @@ def llm_monitor_message(service: RetrievalService) -> Response:
   return response
 
 
+@app.route('/daily-usage-report', methods=['GET'])
+def daily_usage_report(service: RetrievalService) -> Response:
+  """
+  Get the daily usage report of all the messages sent in the last 24 hours.
+  """
+  start_time = time.monotonic()
+
+  found_documents = service.generate_daily_usage_report()
+
+  response = jsonify(found_documents)
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  print(f"⏰ Runtime of getDailyUsageReport in main.py: {(time.monotonic() - start_time):.2f} seconds")
+
+  return response
+
+
 @app.route('/getAll', methods=['GET'])
 def getAll(service: RetrievalService) -> Response:
   """Get all course materials based on the course_name
