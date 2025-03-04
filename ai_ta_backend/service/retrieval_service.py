@@ -197,6 +197,35 @@ class RetrievalService:
 
     return distinct_dicts
 
+  def generate_daily_usage_report(self) -> List[Dict]:
+    """
+    Generate a daily usage report of all the messages sent in the last 24 hours.
+    """
+    # initialize the Ollama client
+    import json
+
+    from ollama import Client as OllamaClient
+
+    from ai_ta_backend.utils.email.send_transactional_email import send_email
+
+    client = OllamaClient(os.environ['OLLAMA_SERVER_URL'])
+
+    # get all conversations from the last 24 hours
+    conversations = self.sqlDb.getConversationsFromLast24Hours().data
+    print("CONVERSATIONS: ", len(conversations))
+
+    for conversation in conversations:
+      convo = conversation['convo']
+      for message in convo['messages']:
+        print(message['role'], "\n", message['content'])
+      break
+
+    # TODO: analyze the messages
+    # TODO: store results in DB
+    # TODO: send email w/ results
+
+    return "Success"
+
   def llm_monitor_message(self, messages: List[str], course_name: str) -> List[Dict]:
     """
     Will store categories in DB, send email if an alert is triggered.
