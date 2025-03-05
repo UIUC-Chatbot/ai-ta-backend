@@ -237,7 +237,11 @@ class RetrievalService:
               'role':
                   'system',
               'content':
-                  '''Analyze each message for multiple categories simultaneously. A message can and should trigger multiple categories if it meets multiple criteria. Use the provided tools to flag any and all applicable categories based on their descriptions.'''
+                  '''You are analyzing messages from users interacting with an educational AI assistant. This assistant helps students and educators with questions related to homework questions and learning materials.
+                  
+                  Your task is to categorize these messages to help maintain appropriate usage and improve the system. Each message should be evaluated across multiple categories of concern (NSFW content, anger, factual corrections), and you can flag multiple categories when appropriate.
+
+                  These categorizations help our team understand user interactions, address concerns, and continuously improve the provided educational experience.'''
           }, {
               'role': 'user',
               'content': message_content
@@ -249,7 +253,7 @@ class RetrievalService:
                       'name':
                           'categorize_as_NSFW',
                       'description':
-                          'Flag content containing explicit threats of harm, violence, sexual content, hate speech, discriminatory language, or other inappropriate material that would be unsafe for work or general audiences.',
+                          'Flag content involving any user interaction that includes illegal activity, violence, sexual content, hate speech, or discriminatory language inappropriate for education.',
                       'parameters': {
                           'type': 'object',
                           'properties': {
@@ -268,7 +272,9 @@ class RetrievalService:
                       'name':
                           'categorize_as_anger',
                       'description':
-                          'Identify content expressing clear anger through aggressive language, hostile tone, multiple exclamation marks, ALL CAPS YELLING, or explicitly angry statements.',
+                          '''Identify content expressing clear anger through aggressive language, hostile tone, multiple exclamation marks, ALL CAPS YELLING, or explicitly angry statements aimed toward the AI system or its responses. 
+                          
+                          ONLY flag messages where the user is explicitly directing anger, frustration, or hostility TOWARD THE AI ASSISTANT ITSELF.''',
                       'parameters': {
                           'type': 'object',
                           'properties': {
@@ -289,7 +295,24 @@ class RetrievalService:
                       'name':
                           'categorize_as_incorrect',
                       'description':
-                          'Flag content where the user indicates that the chatbot provided wrong, incorrect, or false information. This includes statements about inaccuracies, mistakes, or errors in the bot\'s responses.',
+                          '''This category is SPECIFICALLY for when the user indicates that the AI SYSTEM provided factually wrong information.
+                          
+                          We use this category to identify when our AI makes factual errors so we can improve its knowledge.
+                          
+                          Words like "wrong", "incorrect", "error", "mistake" can be misleading. The critical factor is WHO made the error. Some examples are:
+                          
+                          SHOULD BE FLAGGED (AI made errors):
+                          "You are wrong"
+                          "Your answer contains incorrect information"
+                          "That is not right"
+                          "The information you gave is wrong"
+
+                          SHOULD NOT BE FLAGGED (user asking about their own errors):
+                          "What's wrong with my code?"
+                          "Why is my answer incorrect?"
+                          "Can you explain the error in my essay?"
+                          "Help me fix the mistakes in my assignment"
+                          "What's wrong with this formula?"''',
                       'parameters': {
                           'type': 'object',
                           'properties': {
@@ -297,7 +320,7 @@ class RetrievalService:
                                   'type':
                                       'string',
                                   'description':
-                                      'The specific phrase that indicates the bot was incorrect (e.g. "that\'s wrong", "incorrect", "that\'s not true")',
+                                      'The specific phrase that indicates the bot was incorrect',
                               },
                           },
                           'required': ['keyword_that_triggers_incorrect_tag'],
