@@ -40,13 +40,26 @@ if [ "$wipe_data" = true ]; then
 else
   docker compose -f ./supabase/docker/docker-compose.yml down
 fi
-sudo docker compose -f ./supabase/docker/docker-compose.yml up -d --build
+sudo docker compose -f ./supabase/docker/docker-compose.yml -f ./docker-compose.override.yml up -d --build
 
 # Wait for Supabase DB to be ready before starting Keycloak
 echo "Waiting for Supabase DB to be ready..."
 until docker exec supabase-db pg_isready -U postgres; do
-  sleep 1
+  echo "Database not yet ready - waiting..."
+  sleep 2
 done
+
+until docker exec supabase-db psql -U postgres -c "SELECT 1" >/dev/null 2>&1; do
+  echo "Testing database connection - waiting..."
+  sleep 2
+done
+
+# Create required schemas for Realtime service
+echo "Creating required schemas for Realtime..."
+docker exec supabase-db psql -U postgres -d postgres -c "CREATE SCHEMA IF NOT EXISTS realtime;"
+docker exec supabase-db psql -U postgres -d postgres -c "CREATE SCHEMA IF NOT EXISTS _realtime;"
+docker exec supabase-db psql -U postgres -d postgres -c "GRANT USAGE ON SCHEMA realtime TO supabase_admin, postgres, authenticator;"
+docker exec supabase-db psql -U postgres -d postgres -c "GRANT USAGE ON SCHEMA _realtime TO supabase_admin, postgres, authenticator;"
 
 # Create Keycloak schema if it doesn't exist
 echo "Creating Keycloak schema if it doesn't exist..."

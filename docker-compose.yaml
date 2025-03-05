@@ -5,7 +5,7 @@ services:
     networks:
       - uiuc-chat-network
     ports:
-      - "3000:3000"
+      - 3000:3000
     expose:
       - 3000
 
@@ -121,7 +121,7 @@ services:
 
   crawlee:
     build: ./ic_crawlee
-    container_name: crawlee
+    container_name: ic_crawlee
     networks:
       - uiuc-chat-network
     volumes:
