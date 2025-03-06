@@ -530,19 +530,21 @@ def switch_workflow(service: WorkflowService) -> Response:
 
 @app.route('/getConversationStats', methods=['GET'])
 def get_conversation_stats(service: RetrievalService) -> Response:
-  """
-  Retrieves statistical metrics about conversations for a specific course.
-  """
-  course_name = request.args.get('course_name', default='', type=str)
+    """
+    Retrieves statistical metrics about conversations for a specific course.
+    """
+    course_name = request.args.get('course_name', default='', type=str)
+    from_date = request.args.get('from_date', default='', type=str)
+    to_date = request.args.get('to_date', default='', type=str)
 
-  if course_name == '':
-    abort(400, description="Missing required parameter: 'course_name' must be provided.")
+    if course_name == '':
+        abort(400, description="Missing required parameter: 'course_name' must be provided.")
 
-  conversation_stats = service.getConversationStats(course_name)
+    conversation_stats = service.getConversationStats(course_name, from_date, to_date)
 
-  response = jsonify(conversation_stats)
-  response.headers.add('Access-Control-Allow-Origin', '*')
-  return response
+    response = jsonify(conversation_stats)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 
 @app.route('/run_flow', methods=['POST'])

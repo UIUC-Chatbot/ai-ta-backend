@@ -187,12 +187,20 @@ class SQLDatabase:
   def getPreAssignedAPIKeys(self, email: str):
     return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails", '["' + email + '"]').execute()
   
-  def getConversationsCreatedAtByCourse(self, course_name: str):
+  def getConversationsCreatedAtByCourse(self, course_name: str, from_date: str = '', to_date: str = ''):
     try:
-        count_response = self.supabase_client.table("llm-convo-monitor")\
+        query = self.supabase_client.table("llm-convo-monitor")\
             .select("created_at", count="exact")\
-            .eq("course_name", course_name)\
-            .execute()
+            .eq("course_name", course_name)
+        
+        if from_date and to_date:
+            query = query.gte('created_at', from_date).lte('created_at', to_date)
+        elif from_date:
+            query = query.gte('created_at', from_date)
+        elif to_date:
+            query = query.lte('created_at', to_date)
+            
+        count_response = query.execute()
         
         total_count = count_response.count if hasattr(count_response, 'count') else 0
         
@@ -208,11 +216,18 @@ class SQLDatabase:
             end = min(start + batch_size - 1, total_count - 1)
 
             try:
-                response = self.supabase_client.table("llm-convo-monitor")\
+                batch_query = self.supabase_client.table("llm-convo-monitor")\
                     .select("created_at")\
-                    .eq("course_name", course_name)\
-                    .range(start, end)\
-                    .execute()
+                    .eq("course_name", course_name)
+                
+                if from_date and to_date:
+                    batch_query = batch_query.gte('created_at', from_date).lte('created_at', to_date)
+                elif from_date:
+                    batch_query = batch_query.gte('created_at', from_date)
+                elif to_date:
+                    batch_query = batch_query.lte('created_at', to_date)
+                
+                response = batch_query.range(start, end).execute()
 
                 if not response or not hasattr(response, 'data') or not response.data:
                     print(f"No data returned for range {start} to {end}.")
@@ -260,7 +275,6 @@ class SQLDatabase:
             if stats["total_conversations"] > 0:
                 stats["avg_messages_per_conversation"] = float(round(stats["total_messages"] / stats["total_conversations"], 2))
                 
-        # Convert stats to proper types before creating ProjectStats
         stats_typed = {
             "total_messages": int(stats["total_messages"]),
             "total_conversations": int(stats["total_conversations"]),
