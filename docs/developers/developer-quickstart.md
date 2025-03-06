@@ -156,6 +156,8 @@ git clone git@github.com:UIUC-Chatbot/ai-ta-backend.git
 
 Use a python virtual environment, here I'll use `conda`.
 
+* [Fast and easy conda install](https://www.anaconda.com/docs/getting-started/anaconda/install#macos-linux-installation) (via CLI is easiest), if you don't have it yet.
+
 Use <mark style="color:yellow;">python 3.10</mark>.
 
 ```bash

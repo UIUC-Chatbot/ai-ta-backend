@@ -13,6 +13,10 @@
 * [Duplication in Ingested Documents](features/duplication-in-ingested-documents.md)
 * [CropWizard Document License Information](features/cropwizard-document-license-information.md)
 
+***
+
+* [CropWizard](cropwizard.md)
+
 ## API
 
 * [API Keys](api/api-keys.md)
