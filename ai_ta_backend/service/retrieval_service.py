@@ -197,7 +197,7 @@ class RetrievalService:
 
     return distinct_dicts
 
-  def llm_monitor_message(self, messages: List[str], course_name: str) -> List[Dict]:
+  def llm_monitor_message(self, messages: List[str], course_name: str, conversation_id: str) -> List[Dict]:
     """
     Will store categories in DB, send email if an alert is triggered.
     """
@@ -222,13 +222,13 @@ class RetrievalService:
 
         # use a unique identifier for each message to check if it was already seen
         conversation_id = message.get('conversation_id', '')
-        
+
         message_hash = hash(str(message_content))
         message_key = (conversation_id, message_hash)
-        
+
         if message_key in self.seen_messages:
-            continue
-            
+          continue
+
         self.seen_messages.add(message_key)
 
       analysis_result = client.chat(
@@ -317,10 +317,8 @@ class RetrievalService:
                           'type': 'object',
                           'properties': {
                               'keyword_that_triggers_incorrect_tag': {
-                                  'type':
-                                      'string',
-                                  'description':
-                                      'The specific phrase that indicates the bot was incorrect',
+                                  'type': 'string',
+                                  'description': 'The specific phrase that indicates the bot was incorrect',
                               },
                           },
                           'required': ['keyword_that_triggers_incorrect_tag'],
