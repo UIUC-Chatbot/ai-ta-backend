@@ -76,6 +76,18 @@ Example: _Give me a detailed explanation of hairy vetch as a cover crop. Explain
 
 For detailed information about the Pest Detection tool, check out the [Pest Detection Tool page](https://app.gitbook.com/o/SfApyd80yHo8lLe0r7PA/s/vdrzNTxffjmyrhd2NKsD/~/changes/87/cropwizard/pest-detection-tool).
 
+### Example Questions
+
+> What are the best practices for crop rotation in corn production?
+>
+> How can I manage pests in my soybean field?
+>
+> What are the nutrient requirements for wheat during the growing season?
+>
+> How do I improve soil fertility with cover crops?
+>
+> What irrigation techniques work best in drought-prone areas?
+
 ### Funding and acknowledgements
 
 CropWizard is a research project launched as part of the **AIFARMS,** national AI Institute for agriculture. AIFARMS is funded by USDA NIFA under award number 2020-67021-32799.
