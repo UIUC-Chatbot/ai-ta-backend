@@ -78,7 +78,7 @@ services:
       retries: 3
 
   flask-app:
-    build: . # Directory with Dockerfile for Flask app
+    build: ./uiuc-chat-backend # Directory with Dockerfile for Flask app
     # image: kastanday/ai-ta-backend:gunicorn
     restart: unless-stopped
     container_name: flask-app
@@ -94,7 +94,7 @@ services:
       - redis
       - minio
     env_file:
-      - .env
+      - ./uiuc-chat-backend/.env
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://flask-app:8000" ]
       interval: 30s

@@ -38,7 +38,7 @@ if [ ! -f ./uiuc-chat-frontend/.env ]; then
 fi
 
 if [ ! -f .env ]; then
-  cp .env-backend.template .env
+  cp .env-backend.template ./uiuc-chat-backend/.env
 fi
 
 

@@ -7,3 +7,6 @@
 [submodule "uiuc-chat-frontend"]
 	path = uiuc-chat-frontend
 	url = https://github.com/CAII-NCSA/uiuc-chat-frontend.git
+[submodule "uiuc-chat-backend"]
+	path = uiuc-chat-backend
+	url = https://github.com/UIUC-Chatbot/ai-ta-backend.git
