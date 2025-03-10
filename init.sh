@@ -12,35 +12,22 @@ for arg in "$@"; do
   esac
 done
 
-# Initialize submodules without recursive updates
-echo "Initializing submodules..."
-git submodule init
+# Simple approach: force using HTTPS for all submodules
+echo "Updating submodules using HTTPS..."
+# Configure Git to use HTTPS instead of SSH just for this script
+git config --global url."https://github.com/".insteadOf git@github.com:
 
-# Special handling for supabase with sparse checkout from the beginning
-echo "Setting up sparse checkout for supabase/docker..."
+# Initialize supabase first with depth 1 (faster, we only need part of it)
 git submodule update --init --depth 1 supabase
+# Set up sparse checkout for supabase
 cd supabase && \
 git sparse-checkout init --cone && \
 git sparse-checkout set docker && \
 cd ..
 
-# Update all other submodules to their latest commits
-echo "Updating other submodules to their latest commits..."
-git config --global alias.updatesubmodule '!f(){ git fetch origin && git checkout -q $(git rev-parse --abbrev-ref HEAD) && git reset --hard origin/$(git rev-parse --abbrev-ref HEAD) && git submodule update --recursive; }; f'
-
-# Update each non-supabase submodule individually
-for submodule in $(git config --file .gitmodules --get-regexp path | grep -v supabase | awk '{ print $2 }'); do
-  echo "Updating $submodule to its latest commit..."
-  if [ -d "$submodule" ]; then
-    (cd "$submodule" && git updatesubmodule && echo "Updated $(git config --get remote.origin.url) to the latest commit")
-  else
-    git submodule update --init --recursive "$submodule"
-    (cd "$submodule" && echo "Initialized $(git config --get remote.origin.url)")
-  fi
-done
-
-# Remove temporary alias
-git config --global --unset alias.updatesubmodule
+# Now initialize and update remaining submodules
+echo "Initializing and updating other submodules..."
+git submodule update --init --remote --recursive
 
 if [ ! -f ./supabase/docker/.env ]; then
   cp ./supabase/docker/.env.example ./supabase/docker/.env
