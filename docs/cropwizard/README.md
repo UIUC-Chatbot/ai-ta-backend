@@ -36,10 +36,10 @@ Cropwizard is a cutting-edge AI farming assistant that answers your agronomy que
 
     Depending on the question, CropWizard displays one or more of the following steps before printing the response. Click on the arrow to reveal the information in each step.
 
-    * _Optimized search query_: If the question is the second or later in the chat session, the combined search query including the past questions and answers and the latest question are "optimized" by an LLM to reduce token count without losing content.
-    * _Retrieved documents_: CropWizard prints out how many relevant document chunks in the KB were included with the user prompt. This step is always displayed
-    * _Routing to tools_: The chat engine used in CropWizard searches for  one or more computational tools that may be relevant to the user prompt and lists them, if any (and invokes them in random order or in parallel). See the section on **Tools Questions** below for details.
-    * _Tool outputs_: If any tools are invoked, their output is displayed. These outputs are combined with the retrieved knowledge chunks, input prompt, and any input images, in prompting the LLM for the final response.
+    * _**Optimized search query**_**:** If the question is the second or later in the chat session, the combined search query including the past questions and answers and the latest question are "optimized" by an LLM to reduce token count without losing content.
+    * _**Retrieved documents**_**:** CropWizard prints out how many relevant document chunks in the KB were included with the user prompt. This step is always displayed
+    * _**Routing to tools**_**:** The chat engine used in CropWizard searches for  one or more computational tools that may be relevant to the user prompt and lists them, if any (and invokes them in random order or in parallel). See the section on **Tools Questions** below for details.
+    * _**Tool outputs**_**:** If any tools are invoked, their output is displayed. These outputs are combined with the retrieved knowledge chunks, input prompt, and any input images, in prompting the LLM for the final response.
 
 ### **CropWizard as a Research Assistant**
 
@@ -72,6 +72,8 @@ Example: _Give me a detailed explanation of hairy vetch as a cover crop. Explain
   * _**Tool inputs**_: If the image contains possible pests, the Pest Detection tool is invoked, and the input image(s) to the tool are displayed.
   * _**Tool outputs**_: If the image contains possible pests, the Pest Detection tool is invoked, and the output image(s) from this tool are displayed.
   * _**Final Response:**_ Final response is generated encapsulating information from user prompt, image description, retrieved documents and tool outputs
+
+For detailed information about the Pest Detection tool, check out the [Pest Detection Tool page](https://app.gitbook.com/o/SfApyd80yHo8lLe0r7PA/s/vdrzNTxffjmyrhd2NKsD/~/changes/87/cropwizard/pest-detection-tool).
 
 ### Funding and acknowledgements
 
