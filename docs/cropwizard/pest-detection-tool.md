@@ -1,3 +1,7 @@
+---
+description: Detailed information about the Pest Detection tool
+---
+
 # Pest Detection Tool
 
 Introducing the powerful new **LeAF Pest Detection Model**, now integrated into CropWizard to enhance your pest management capabilities! This tool leverages custom-trained computer vision models to accurately identify a vast range of agricultural pests directly from images. Built on a convolutional neural network (CNN) architecture, specifically a refined YOLOv8x model, LeAF has been trained on a massive dataset of over 1 million pest images, encompassing 3,580 different agricultural pest classes. This extensive training ensures high accuracy and reliability, allowing it to recognize even subtle differences between pest species.
