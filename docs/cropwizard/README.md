@@ -4,7 +4,8 @@ description: Quickstart on how to get the most out of Cropwizard.
 
 # CropWizard
 
-**Overview:**\
+### **Overview:**
+
 Cropwizard is a cutting-edge AI farming assistant that answers your agronomy questions with expert precision. Trained on Extension resources from US universities, it acts as your virtual agronomist.
 
 ### **Getting Started and Customizing User Settings**
