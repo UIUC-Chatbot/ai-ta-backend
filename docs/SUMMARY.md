@@ -15,7 +15,8 @@
 
 ***
 
-* [CropWizard](cropwizard.md)
+* [CropWizard](cropwizard/README.md)
+  * [CropWizard Documents](cropwizard/cropwizard-documents.md)
 
 ## API
 
