@@ -1,5 +1,8 @@
 # Self Hostable UIUC.chat
 
+# 🚨 ALMOST 🚨 ready for prime time! Please give us until march 17th to make the onboarding experience awesome.
+This is a pre-release. Not everything works yet. We're almost done, then it'll be a super smooth 1-click setup.
+
 ## License
 
 This project is available under [our Research Use Only license fully defined here](https://github.com/UIUC-Chatbot/self-hostable-ai-ta-backend/blob/main/ResearchUseONLYLicense-UIUC.CHAT.pdf). This license is similar in spirit to the [CC BY-NC 4.0 License](https://creativecommons.org/licenses/by-nc/4.0/) which restricts commercial use.
