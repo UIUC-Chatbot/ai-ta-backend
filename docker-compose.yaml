@@ -1,7 +1,7 @@
 services:
-  ai-ta-frontend:
-    build: ./ai-ta-frontend
-    container_name: ai-ta-frontend
+  uiuc-chat-frontend:
+    build: ./uiuc-chat-frontend
+    container_name: uiuc-chat-frontend
     networks:
       - uiuc-chat-network
     ports:
@@ -171,15 +171,15 @@ services:
       - supabase_default
     expose:
       - 8080
-    command: 
-      - start 
-      - --db=postgres 
+    command:
+      - start
+      - --db=postgres
       - --db-url=jdbc:postgresql://supabase-db:5432/postgres
       - --db-username=${POSTGRES_USER}
       - --db-password=${POSTGRES_PASSWORD}
       - --spi-theme-login-default=keywind
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/auth/health/ready"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/auth/health/ready" ]
       interval: 30s
       timeout: 10s
       retries: 3
