@@ -16,7 +16,7 @@ ENV PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 RUN pip install uv
 
 # Copy the requirements file first to leverage Docker cache
-COPY ai_ta_backend/requirements.txt .
+COPY requirements.txt .
 
 # Install any needed packages specified in requirements.txt
 RUN uv pip install -r requirements.txt --system
