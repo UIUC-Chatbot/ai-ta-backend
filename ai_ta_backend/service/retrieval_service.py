@@ -27,6 +27,7 @@ from ai_ta_backend.database.sql import (
     WeeklyMetric,
 )
 from ai_ta_backend.database.vector import VectorDatabase
+from ai_ta_backend.database.graph import GraphDatabase
 from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapter
 
 # from ai_ta_backend.service.nomic_service import NomicService
@@ -40,10 +41,11 @@ class RetrievalService:
   """
 
   @inject
-  def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, posthog: PosthogService,
+  def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, graphDb: GraphDatabase, posthog: PosthogService,
                sentry: SentryService, thread_pool_executor: ThreadPoolExecutorAdapter):
     self.vdb = vdb
     self.sqlDb = sqlDb
+    self.graphDb = graphDb
     self.aws = aws
     self.sentry = sentry
     self.posthog = posthog
@@ -59,15 +61,9 @@ class RetrievalService:
         # openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
 
-    self.nomic_embeddings = OllamaEmbeddings(base_url=os.environ['OLLAMA_SERVER_URL'], model='nomic-embed-text:v1.5')
-    self.neo4j_graph = Neo4jGraph(
-      url=os.environ['NEO4J_URI'],
-      username=os.environ['NEO4J_USERNAME'],
-      password=os.environ['NEO4J_PASSWORD'],
-      database=os.environ['NEO4J_DATABASE'],
-      refresh_schema=True,
-      enhanced_schema=True,
-    )
+    self.nomic_embeddings = OllamaEmbeddings(base_url=os.environ['OLLAMA_SERVER_URL'], model='nomic-embed-text:v1.5')   
+    
+    
     # self.llm = AzureChatOpenAI(
     #     temperature=0,
     #     deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
@@ -76,6 +72,7 @@ class RetrievalService:
     #     openai_api_version=os.environ["OPENAI_API_VERSION"],
     #     openai_api_type=os.environ['OPENAI_API_TYPE'],
     # )
+
 
   async def getTopContexts(self,
                            search_query: str,
@@ -835,12 +832,16 @@ class RetrievalService:
     """
     Get knowledge graph contexts for a user query and course name.
     """
-    chain = GraphCypherQAChain.from_llm(
-      ChatOpenAI(temperature=0), graph=self.neo4j_graph, verbose=True, allow_dangerous_requests=True
-    )
+    try:
+      response = self.graphDb.chain.invoke({"query": user_query})
+      print(response)
+      return response
+    except Exception as e:
+      error_msg = f"Error in knowledge graph query for '{user_query}': {str(e)}"
+      print(error_msg)
+      self.sentry.capture_exception(e)
+      return {"result": "An error occurred while processing your knowledge graph query."}
 
-    response = chain.invoke({"query": user_query})
-    return response
-
+  
       
       
