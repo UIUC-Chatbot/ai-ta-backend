@@ -1,8 +1,35 @@
 # CropWizard Documents
 
-The CropWizard document database consists of publications, blogs, newsletters, and articles from extension websites belonging to over 55 US land grant universities.&#x20;
+The CropWizard document database consists of over 400K publications, blogs, newsletters, and articles from extension websites belonging to over 55 US land grant universities.&#x20;
 
-The database consists of over 400K documents belonging to the below extension units.&#x20;
+The database contains the below file types -&#x20;
+
+| File Type          | Document Count |
+| ------------------ | -------------- |
+| PDF (.pdf)         | 73668          |
+| Word (.docx, .doc) | 67             |
+| HTML (.html)       | 20211          |
+| Other (webpages)   | 226971         |
+
+The database covers the below range of topics -&#x20;
+
+| Technical Area                 | Specific Topics                                                                                                                                                                                                                                                                                                                               |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Agriculture                    | Livestock, Crop deficiency, Genetic Breeding, Plant stress, Plant genetics, Soil science, Crop yield and cover, Agricultural economics, Watershed management, Animal nutrition, Rangeland management, Aquaculture, Soybean production, Organic crops, Tobacco farming, Peanut, Soybean production, Crop yield and cover, Fertilizer emissions |
+| Plant Science                  | Genetic Editing, Plant ecology, Soil remediation, Soil management, Organic Farming, Soil fertilizer, Plant diseases, Insects, Weed control, Pesticide applications, Pest management, Fruits, Tree care                                                                                                                                        |
+| Environmental Science          |  Microbial ecology, Marine Ecology, Bioenergy production, Fertilizer emissions, Environmental policy, Renewable energy, Wildlife conservation, Environmental education                                                                                                                                                                        |
+| Food Science                   | Food Antioxidants, Food safety, Canning, Cooking, Pesticide safety                                                                                                                                                                                                                                                                            |
+| Animal Science                 | Livestock, Animal nutrition                                                                                                                                                                                                                                                                                                                   |
+| Ecology                        | Microbial infections, Plant ecology, Microbial ecology, Marine Ecology                                                                                                                                                                                                                                                                        |
+| Technology and Tools           | Remote sensing, Tractor, Plumbing systems                                                                                                                                                                                                                                                                                                     |
+| Economics and Policy           | Local economy, Government finance                                                                                                                                                                                                                                                                                                             |
+| Forestry and Land Management   | Forestry, Wildfire management, Lawn care, Lawn management, Tree care                                                                                                                                                                                                                                                                          |
+| Energy                         | Biofuels, Bioenergy production                                                                                                                                                                                                                                                                                                                |
+| Pest Control                   | Pest management, Pesticide applications, Pesticide safety                                                                                                                                                                                                                                                                                     |
+| Horticulture and Lawn Care     | Gardening, Lawn care, Lawn management, Weed control                                                                                                                                                                                                                                                                                           |
+| Selected Health Science Topics | Cognitive Behavior, Entomology, Cancer genomics, Genetic Breeding, Microbial infections, Soil science                                                                                                                                                                                                                                         |
+
+List of land grant universities -&#x20;
 
 | State          | University Name                    | Document Count |
 | -------------- | ---------------------------------- | -------------- |
@@ -63,36 +90,7 @@ The database consists of over 400K documents belonging to the below extension un
 | Wisconsin      | University of Wisconsin            | 2060           |
 | Wyoming        | University of Wyoming              | 650            |
 
-The database contains the below file types.&#x20;
 
-| File Type          | Document Count |
-| ------------------ | -------------- |
-| PDF (.pdf)         | 73668          |
-| Word (.docx, .doc) | 67             |
-| HTML (.html)       | 20211          |
-| Other (webpages)   | 226971         |
-
-The database covers the below range of topics.
-
-| Broader Topic                | Specific Topics                                                                                                                                                                                                                                                                        |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Agriculture                  | Livestock, Crop deficiency, Genetic Breeding, Plant stress, Plant genetics, Soil science, Crop yield and cover, Agricultural economics, Watershed management, Animal nutrition, Rangeland management, Aquaculture, Farming, Soybean production, Organic crops, Tobacco farming, Peanut |
-| Plant Science                | Genetic Editing, Plant ecology, Soil remediation, Soil management, Organic Farming, Soil fertilizer, Plant diseases, Insects, Weed control, Pesticide applications, Pest management, Fruits, Tree care                                                                                 |
-| Environmental Science        | Marine Ecology, Microbial ecology, Bioenergy production, Fertilizer emissions, Environmental policy, Renewable energy, Wildlife conservation, Environmental education                                                                                                                  |
-| Food Science                 | Food Antioxidants, Food safety, Canning, Cooking, Pesticide safety                                                                                                                                                                                                                     |
-| Animal Science               | Livestock, Animal nutrition                                                                                                                                                                                                                                                            |
-| Ecology                      | Microbial infections, Plant ecology, Microbial ecology                                                                                                                                                                                                                                 |
-| Technology and Tools         | Remote sensing, Tractor, Plumbing systems                                                                                                                                                                                                                                              |
-| Economics and Policy         | Local economy, Government finance                                                                                                                                                                                                                                                      |
-| Forestry and Land Management | Forestry, Wildfire management, Lawn care, Lawn management, Tree care                                                                                                                                                                                                                   |
-| Energy                       | Biofuels, Bioenergy production                                                                                                                                                                                                                                                         |
-| Pest Control                 | Pest management, Pesticide applications, Pesticide safety                                                                                                                                                                                                                              |
-| Horticulture                 | Gardening, Lawn care, Lawn management, Weed control                                                                                                                                                                                                                                    |
-| Crop Production              | Soybean production, Crop yield and cover, Fertilizer emissions                                                                                                                                                                                                                         |
-| Science                      | Cognitive Behavior, Entomology, Cancer genomics, Genetic Breeding, Microbial infections, Soil science                                                                                                                                                                                  |
-| Waste Management             | Composting                                                                                                                                                                                                                                                                             |
-| Weather and Climate          | Weather                                                                                                                                                                                                                                                                                |
-| Sports                       | Shooting Sports                                                                                                                                                                                                                                                                        |
 
 
 
