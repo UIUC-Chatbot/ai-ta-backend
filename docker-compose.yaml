@@ -83,7 +83,7 @@ services:
     restart: unless-stopped
     container_name: flask-app
     ports:
-      - "${FLASK_PORT}:8000"
+      - "${FLASK_PORT}:8001"
     volumes:
       - ./db:/usr/src/app/db # Mount local directory to store SQLite database
     networks:
@@ -96,7 +96,7 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://flask-app:8000" ]
+      test: [ "CMD", "curl", "-f", "http://flask-app:8001" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -128,9 +128,10 @@ services:
       - ./data:/data
     ports:
       - "3345:3000"
+    env_file:
+      - .env
     environment:
-      - INGEST_URL=http://flask-app:8000/ingest
-      - uiuc-chat-network
+      - INGEST_URL=http://flask-app:8001/ingest
     depends_on:
       - redis
 
