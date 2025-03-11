@@ -12,6 +12,9 @@ from dateutil import parser
 from injector import inject
 from langchain.embeddings.ollama import OllamaEmbeddings
 
+from langchain_neo4j import GraphCypherQAChain, Neo4jGraph
+from langchain_openai import ChatOpenAI
+
 # from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
@@ -24,6 +27,7 @@ from ai_ta_backend.database.sql import (
     WeeklyMetric,
 )
 from ai_ta_backend.database.vector import VectorDatabase
+from ai_ta_backend.database.graph import GraphDatabase
 from ai_ta_backend.executors.thread_pool_executor import ThreadPoolExecutorAdapter
 
 # from ai_ta_backend.service.nomic_service import NomicService
@@ -37,10 +41,11 @@ class RetrievalService:
   """
 
   @inject
-  def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, posthog: PosthogService,
+  def __init__(self, vdb: VectorDatabase, sqlDb: SQLDatabase, aws: AWSStorage, graphDb: GraphDatabase, posthog: PosthogService,
                sentry: SentryService, thread_pool_executor: ThreadPoolExecutorAdapter):
     self.vdb = vdb
     self.sqlDb = sqlDb
+    self.graphDb = graphDb
     self.aws = aws
     self.sentry = sentry
     self.posthog = posthog
@@ -56,8 +61,9 @@ class RetrievalService:
         # openai_api_version=os.environ["OPENAI_API_VERSION"],
     )
 
-    self.nomic_embeddings = OllamaEmbeddings(base_url=os.environ['OLLAMA_SERVER_URL'], model='nomic-embed-text:v1.5')
-
+    self.nomic_embeddings = OllamaEmbeddings(base_url=os.environ['OLLAMA_SERVER_URL'], model='nomic-embed-text:v1.5')   
+    
+    
     # self.llm = AzureChatOpenAI(
     #     temperature=0,
     #     deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
@@ -66,6 +72,7 @@ class RetrievalService:
     #     openai_api_version=os.environ["OPENAI_API_VERSION"],
     #     openai_api_type=os.environ['OPENAI_API_TYPE'],
     # )
+
 
   async def getTopContexts(self,
                            search_query: str,
@@ -820,3 +827,129 @@ class RetrievalService:
       print(f"Error fetching model usage counts for {project_name}: {str(e)}")
       self.sentry.capture_exception(e)
       return []
+    
+  def getKnowledgeGraphContexts(self, user_query: str, course_name: str) -> Dict:
+    """
+    Get knowledge graph contexts for a user query and course name.
+    
+    Args:
+        user_query (str): The user's query
+        course_name (str): The course name
+        
+    Returns:
+        Dict: Response from the knowledge graph chain
+    """
+    try:
+        start_time = time.monotonic()
+        
+        # For specific types of queries, we can add custom instructions
+        if "side effect" in user_query.lower() or "adverse" in user_query.lower():
+            additional_instructions = """
+            For queries about side effects or adverse reactions:
+            1. Focus on HAS_SIDE_EFFECT or CAUSES relationships
+            2. Include severity information if available
+            3. Group side effects by system (e.g., cardiovascular, neurological)
+            """
+            print("in side effect")
+            custom_chain = self.graphDb.create_chain_with_custom_prompt(additional_instructions)
+            response = custom_chain.invoke({"query": user_query})
+        elif "interaction" in user_query.lower():
+            additional_instructions = """
+            For drug interaction queries:
+            1. Focus on INTERACTS_WITH relationships
+            2. Include interaction severity if available
+            3. Explain the mechanism of interaction if present in the data
+            """
+            print("in interaction")
+            custom_chain = self.graphDb.create_chain_with_custom_prompt(additional_instructions)
+            response = custom_chain.invoke({"query": user_query})
+        else:
+            # Use the default chain for most queries
+            print("in else")
+            response = self.graphDb.chain.invoke({"query": user_query})
+        
+        execution_time = time.monotonic() - start_time
+        print(f"Knowledge graph query completed in {execution_time:.2f} seconds for query: {user_query}")
+
+        print("FINAL RESPONSE: ", response)
+        
+        return response
+    except Exception as e:
+        error_msg = f"Error in knowledge graph query for '{user_query}': {str(e)}"
+        print(error_msg)
+        self.sentry.capture_exception(e)
+        return {"result": "An error occurred while processing your knowledge graph query."}
+
+  def _create_detailed_clinical_kg_chain(self):
+    """Create a GraphCypherQAChain with a detailed clinical KG system prompt."""
+    # Get schema info from graphDb
+    schema_info = self.graphDb.schema_info
+    
+    system_prompt = f"""
+    You are a clinical knowledge graph expert assistant that helps healthcare professionals query a medical knowledge graph.
+    
+    SCHEMA INFORMATION:
+    {schema_info}
+    
+    COMMON NODE TYPES IN THIS KNOWLEDGE GRAPH:
+    - Disease: Represents medical conditions and disorders
+    - Drug: Represents pharmaceutical compounds and medications
+    - Symptom: Represents clinical manifestations of diseases
+    - Gene: Represents genetic entities related to diseases
+    - Protein: Represents proteins that may be targets for drugs
+    - Pathway: Represents biological pathways involved in disease mechanisms
+    - Food: Represents food items and their nutritional properties
+    
+    
+    COMMON RELATIONSHIP TYPES:
+    - TREATS: Connects drugs to diseases they treat
+    - CAUSES: Connects entities to effects they produce
+    - HAS_SYMPTOM: Connects diseases to their symptoms
+    - INTERACTS_WITH: Connects drugs that have interactions
+    - EXPRESSED_IN: Connects genes/proteins to anatomical locations
+    - PART_OF: Connects entities to larger systems they belong to
+    - ASSOCIATED_WITH: General association between entities
+    - FOUND_IN: Connects functional region to proteins
+    - BELONGS_TO_PROTEIN: Connects proteins to peptides
+    
+    GUIDELINES FOR GENERATING CYPHER QUERIES:
+    1. Always use the correct node labels and relationship types from the schema
+    2. For clinical entities, use the most specific node type available
+    3. Use appropriate WHERE clauses with case-insensitive matching:
+       - For exact matches: WHERE toLower(n.name) = toLower("term")
+       - For partial matches: WHERE toLower(n.name) CONTAINS toLower("term")
+    4. For complex queries, use multiple MATCH clauses rather than long path patterns
+    5. Include LIMIT clauses (typically 5-15 results) for readability
+    6. For property access, use the correct property names from the schema
+    7. When appropriate, use aggregation functions (count, collect, etc.)
+    8. For path finding, consider using shortest path algorithms
+    9. Return the most clinically relevant properties in the RETURN clause
+    10. For temporal queries, use appropriate date/time functions
+    
+    RESPONSE FORMAT:
+    1. First, explain the Cypher query you're generating and why it addresses the user's question
+    2. Present the results in a clear, structured format (tables or lists)
+    3. Provide a clinical interpretation of the results, highlighting key findings
+    4. If relevant, suggest follow-up queries the user might be interested in
+    5. If the results are empty, suggest modifications to the query that might yield results
+    
+    CLINICAL ACCURACY:
+    1. Ensure all medical information is evidence-based and accurate
+    2. Clearly distinguish between established medical facts and exploratory findings
+    3. Use precise medical terminology appropriate for healthcare professionals
+    4. Acknowledge limitations in the data or knowledge graph when relevant
+    
+    Remember that you're helping healthcare professionals make clinical decisions, so accuracy and precision are paramount.
+    """
+    
+    return GraphCypherQAChain.from_llm(
+        ChatOpenAI(temperature=0, model="gpt-4o"),
+        graph=self.graphDb.graph,
+        verbose=False,
+        allow_dangerous_requests=True,
+        system_message=system_prompt,
+    )
+
+  
+      
+      
