@@ -12,6 +12,9 @@ from dateutil import parser
 from injector import inject
 from langchain.embeddings.ollama import OllamaEmbeddings
 
+from langchain_neo4j import GraphCypherQAChain, Neo4jGraph
+from langchain_openai import ChatOpenAI
+
 # from langchain.chat_models import AzureChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.schema import Document
@@ -57,7 +60,14 @@ class RetrievalService:
     )
 
     self.nomic_embeddings = OllamaEmbeddings(base_url=os.environ['OLLAMA_SERVER_URL'], model='nomic-embed-text:v1.5')
-
+    self.neo4j_graph = Neo4jGraph(
+      url=os.environ['NEO4J_URI'],
+      username=os.environ['NEO4J_USERNAME'],
+      password=os.environ['NEO4J_PASSWORD'],
+      database=os.environ['NEO4J_DATABASE'],
+      refresh_schema=True,
+      enhanced_schema=True,
+    )
     # self.llm = AzureChatOpenAI(
     #     temperature=0,
     #     deployment_name=os.environ["AZURE_OPENAI_ENGINE"],
@@ -820,3 +830,17 @@ class RetrievalService:
       print(f"Error fetching model usage counts for {project_name}: {str(e)}")
       self.sentry.capture_exception(e)
       return []
+    
+  def getKnowledgeGraphContexts(self, user_query: str, course_name: str) -> Dict:
+    """
+    Get knowledge graph contexts for a user query and course name.
+    """
+    chain = GraphCypherQAChain.from_llm(
+      ChatOpenAI(temperature=0), graph=self.neo4j_graph, verbose=True, allow_dangerous_requests=True
+    )
+
+    response = chain.invoke({"query": user_query})
+    return response
+
+      
+      

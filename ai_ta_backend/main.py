@@ -732,6 +732,25 @@ def updateProjectDocuments(flaskExecutor: ExecutorInterface) -> Response:
   response.headers.add('Access-Control-Allow-Origin', '*')
   return response
 
+@app.route('/getKnowledgeGraphContexts', methods=['GET'])
+def graphRetrieval(service: RetrievalService) -> Response:
+  user_query = request.args.get('user_query', default='', type=str)
+
+  if user_query == '':
+    abort(400, description="Missing required parameter: 'user_query' must be provided.")
+
+  try:
+    # Assuming course_name is optional, passing empty string as default
+    results = service.getKnowledgeGraphContexts(user_query, course_name="")
+    response = jsonify(results)
+  except Exception as e:
+    response = Response(status=500)
+    response.data = f"An unexpected error occurred: {e}".encode()
+
+  response.headers.add('Access-Control-Allow-Origin', '*')
+  return response
+
+
 
 def configure(binder: Binder) -> None:
   binder.bind(ThreadPoolExecutorInterface, to=ThreadPoolExecutorAdapter(max_workers=10), scope=SingletonScope)
