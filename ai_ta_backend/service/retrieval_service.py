@@ -211,8 +211,14 @@ class RetrievalService:
 
     client = OllamaClient(os.environ['OLLAMA_SERVER_URL'])
 
+    messages = self.sqlDb.getMessagesFromConvoID(conversation_id)
+
     # analyze message using Ollama
     for message in messages:
+      if message['llm-monitor-tags']:
+        # Don't analyze messages that have already been flagged
+        continue
+
       try:
         message_content = message['content'][0]['text'] if isinstance(message.get('content'),
                                                                       list) else message['content']
@@ -336,7 +342,7 @@ class RetrievalService:
         for tool_call in analysis_result['message']['tool_calls']:
           category = tool_call.function.name.replace('categorize_as_', '')
 
-          if category in ['NSFW', 'anger', 'incorrect']:
+          if category in ['NSFW', 'anger', 'incorrect', 'good']:
             trigger_key = f'keyword_that_triggers_{category}_tag'
             trigger = tool_call.function.arguments.get(trigger_key, 'No trigger specified')
 
@@ -373,6 +379,14 @@ class RetrievalService:
                    sender="hi@uiuc.chat",
                    recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
                    bcc_recipients=[])
+
+        # Update the message with the triggered categories
+        triggered['has_been_analyzed'] = True
+        self.sqlDb.updateMessageFromLlmMonitor(conversation_id, triggered)
+      else:
+        # No alerts triggered, but still record that it's been analyzed
+        triggered['has_been_analyzed'] = True
+        self.sqlDb.updateMessageFromLlmMonitor(conversation_id, triggered)
 
       return "Success"
 
