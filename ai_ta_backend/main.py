@@ -131,7 +131,7 @@ def getTopContexts(service: RetrievalService) -> Response:
 
 
 @app.route('/llm-monitor-message', methods=['POST'])
-def llm_monitor_message(service: RetrievalService) -> Response:
+def llm_monitor_message_main(service: RetrievalService, flaskExecutor: ExecutorInterface) -> Response:
   """
   Analyze a message from a conversation and store the results in the database.
   """
@@ -149,10 +149,10 @@ def llm_monitor_message(service: RetrievalService) -> Response:
           description=
           f"Missing one or more required parameters: 'course_name' must be provided. Course name: `{course_name}`")
 
-  found_documents = service.llm_monitor_message(course_name, conversation_id, user_email, model_name)
-  response = jsonify(found_documents)
+  flaskExecutor.submit(service.llm_monitor_message, course_name, conversation_id, user_email, model_name)
+  response = jsonify({"outcome": "Task started"})
   response.headers.add('Access-Control-Allow-Origin', '*')
-  print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
+  print(f"⏰ Runtime of /llm-monitor-message in main.py: {(time.monotonic() - start_time):.2f} seconds")
 
   return response
 
