@@ -210,7 +210,7 @@ class RetrievalService:
 
     client = OllamaClient(os.environ['OLLAMA_SERVER_URL'])
 
-    messages = self.sqlDb.getMessagesFromConvoID(conversation_id)
+    messages = self.sqlDb.getMessagesFromConvoID(conversation_id).data
 
     # analyze message using Ollama
     for message in messages:
@@ -218,11 +218,7 @@ class RetrievalService:
         # Don't analyze messages that have already been flagged
         continue
 
-      try:
-        message_content = message['content'][0]['text'] if isinstance(message.get('content'),
-                                                                      list) else message['content']
-      except:
-        message_content = message['content']
+      message_content = message['content_text']
 
       if message['role']:
         message_content = "Message from " + message['role'] + ":\n" + message_content
@@ -380,12 +376,14 @@ class RetrievalService:
                    bcc_recipients=[])
 
         # Update the message with the triggered categories
-        triggered['has_been_analyzed'] = True
-        self.sqlDb.updateMessageFromLlmMonitor(conversation_id, triggered)
+        llm_monitor_tags = {"has_been_analyzed": True, "tags": triggered}
+        self.sqlDb.updateMessageFromLlmMonitor(conversation_id, llm_monitor_tags)
       else:
         # No alerts triggered, but still record that it's been analyzed
-        triggered['has_been_analyzed'] = True
-        self.sqlDb.updateMessageFromLlmMonitor(conversation_id, triggered)
+        llm_monitor_tags = {
+            "has_been_analyzed": True,
+        }
+        self.sqlDb.updateMessageFromLlmMonitor(conversation_id, llm_monitor_tags)
 
       return "Success"
 
