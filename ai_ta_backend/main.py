@@ -140,6 +140,8 @@ def llm_monitor_message(service: RetrievalService) -> Response:
   messages: List[str] = data.get('messages', [])
   course_name: str = data.get('course_name', None)
   conversation_id: str = data.get('conversation_id', None)
+  user_email: str = data.get('user_email', None)
+  model_name: str = data.get('model_name', None)
 
   if course_name == '' or messages == []:
     # proper web error "400 Bad request"
@@ -149,7 +151,7 @@ def llm_monitor_message(service: RetrievalService) -> Response:
         f"Missing one or more required parameters: 'course_name' and 'messages' must be provided. Course name: `{course_name}`"
     )
 
-  found_documents = service.llm_monitor_message(messages, course_name, conversation_id)
+  found_documents = service.llm_monitor_message(messages, course_name, conversation_id, user_email, model_name)
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")

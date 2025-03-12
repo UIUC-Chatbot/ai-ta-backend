@@ -197,7 +197,8 @@ class RetrievalService:
 
     return distinct_dicts
 
-  def llm_monitor_message(self, messages: List[str], course_name: str, conversation_id: str) -> List[Dict]:
+  def llm_monitor_message(self, messages: List[str], course_name: str, conversation_id: str, user_email: str,
+                          model_name: str) -> List[Dict]:
     """
     Will store categories in DB, send email if an alert is triggered.
     """
