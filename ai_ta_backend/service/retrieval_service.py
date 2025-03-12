@@ -219,6 +219,9 @@ class RetrievalService:
       except:
         message_content = message['content']
 
+      if message['role']:
+        message_content = "Message from " + message['role'] + ":\n" + message_content
+
       analysis_result = client.chat(
           model='qwen2.5:14b-instruct-fp16',
           messages=[{
@@ -228,6 +231,8 @@ class RetrievalService:
                   '''You are analyzing messages from users interacting with an educational AI assistant. This assistant helps students and educators with questions related to homework questions and learning materials.
                   
                   Your task is to categorize these messages to help maintain appropriate usage and improve the system. Each message should be evaluated across multiple categories of concern (NSFW content, anger, factual corrections), and you can flag multiple categories when appropriate.
+
+                  Keep in mind when you're reviewing a `user` message, it's from a student. If you're reviewing an `assistant` message, it's from the AI assistant.
 
                   These categorizations help our team understand user interactions, address concerns, and continuously improve the provided educational experience.'''
           }, {
@@ -261,8 +266,8 @@ class RetrievalService:
                           'categorize_as_anger',
                       'description':
                           '''Identify content expressing clear anger through aggressive language, hostile tone, multiple exclamation marks, ALL CAPS YELLING, or explicitly angry statements aimed toward the AI system or its responses. 
-                          
-                          ONLY flag messages where the user is explicitly directing anger, frustration, or hostility TOWARD THE AI ASSISTANT ITSELF.''',
+                          ONLY flag messages where the user is explicitly directing anger, frustration, or hostility TOWARD THE AI ASSISTANT ITSELF.
+                          Be careful not to flag messages about programming that may have keywords like "error", "incorrect", "wrong", etc.''',
                       'parameters': {
                           'type': 'object',
                           'properties': {
@@ -347,6 +352,11 @@ class RetrievalService:
 
         alert_body = "\n".join([
             "LLM Monitor Alert",
+            "------------------------",
+            f"Course Name: {course_name}",
+            f"User Email: {user_email}",
+            f"Model Name: {model_name}",
+            "------------------------",
             "Alerts triggered:",
             "\n".join(alert_details),
             "Details:",
