@@ -347,6 +347,11 @@ class RetrievalService:
 
         alert_body = "\n".join([
             "LLM Monitor Alert",
+            "------------------------",
+            f"Course Name: {course_name}",
+            f"User Email: {user_email}",
+            f"Model Name: {model_name}",
+            "------------------------",
             "Alerts triggered:",
             "\n".join(alert_details),
             "Details:",
