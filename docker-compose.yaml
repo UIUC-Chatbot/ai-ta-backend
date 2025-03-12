@@ -5,7 +5,7 @@ services:
     networks:
       - uiuc-chat-network
     ports:
-      - 3000:3000
+      - 3015:3000
     expose:
       - 3000
 
@@ -152,7 +152,6 @@ services:
       - KC_HTTP_RELATIVE_PATH=/auth
       - KC_HTTP_ENABLED=true
       - PROXY_ADDRESS_FORWARDING=true
-      - KC_HOSTNAME_STRICT_HTTPS=false
       - KC_DEV=true
       - KC_DB=postgres
       - KC_DB_SCHEMA=keycloak
@@ -165,20 +164,23 @@ services:
       - QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY=true
     volumes:
       - ./keycloak-theme/keywind:/opt/keycloak/themes/keywind
+      - ./keycloak/realms/realm-export.json:/opt/keycloak/data/import/realm-export.json
+      - ./keycloak/realms/master_realm_export.json:/opt/keycloak/data/import/master_realm_export.json
     ports:
-      - "8080:8080"
+      - "7080:8080"
     networks:
       - uiuc-chat-network
       - supabase_default
     expose:
       - 8080
     command:
-      - start
+      - start-dev
       - --db=postgres
       - --db-url=jdbc:postgresql://supabase-db:5432/postgres
       - --db-username=${POSTGRES_USER}
       - --db-password=${POSTGRES_PASSWORD}
       - --spi-theme-login-default=keywind
+      - --import-realm
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/auth/health/ready" ]
       interval: 30s
