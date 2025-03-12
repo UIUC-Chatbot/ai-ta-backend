@@ -133,25 +133,23 @@ def getTopContexts(service: RetrievalService) -> Response:
 @app.route('/llm-monitor-message', methods=['POST'])
 def llm_monitor_message(service: RetrievalService) -> Response:
   """
-  
+  Analyze a message from a conversation and store the results in the database.
   """
   start_time = time.monotonic()
   data = request.get_json()
-  messages: List[str] = data.get('messages', [])
+  # messages: List[str] = data.get('messages', [])
   course_name: str = data.get('course_name', None)
   conversation_id: str = data.get('conversation_id', None)
   user_email: str = data.get('user_email', None)
   model_name: str = data.get('model_name', None)
 
-  if course_name == '' or messages == []:
+  if course_name == '':
     # proper web error "400 Bad request"
-    abort(
-        400,
-        description=
-        f"Missing one or more required parameters: 'course_name' and 'messages' must be provided. Course name: `{course_name}`"
-    )
+    abort(400,
+          description=
+          f"Missing one or more required parameters: 'course_name' must be provided. Course name: `{course_name}`")
 
-  found_documents = service.llm_monitor_message(messages, course_name, conversation_id, user_email, model_name)
+  found_documents = service.llm_monitor_message(course_name, conversation_id, user_email, model_name)
   response = jsonify(found_documents)
   response.headers.add('Access-Control-Allow-Origin', '*')
   print(f"⏰ Runtime of getTopContexts in main.py: {(time.monotonic() - start_time):.2f} seconds")
