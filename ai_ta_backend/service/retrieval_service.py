@@ -319,15 +319,15 @@ class RetrievalService:
                       },
                   },
               },
-              {
-                  'type': 'function',
-                  'function': {
-                      'name':
-                          'categorize_as_good',
-                      'description':
-                          'Classify content as appropriate and constructive if it contains normal questions, feedback, discussion, or requests without triggering any of the above categories.',
-                  },
-              },
+              # {
+              #     'type': 'function',
+              #     'function': {
+              #         'name':
+              #             'categorize_as_good',
+              #         'description':
+              #             'Classify content as appropriate and constructive if it contains normal questions, feedback, discussion, or requests without triggering any of the above categories.',
+              #     },
+              # },
           ],
       )
 
@@ -337,7 +337,7 @@ class RetrievalService:
         for tool_call in analysis_result['message']['tool_calls']:
           category = tool_call.function.name.replace('categorize_as_', '')
 
-          if category in ['NSFW', 'anger', 'incorrect', 'good']:
+          if category in ['NSFW', 'anger', 'incorrect']:
             trigger_key = f'keyword_that_triggers_{category}_tag'
             trigger = tool_call.function.arguments.get(trigger_key, 'No trigger specified')
 
