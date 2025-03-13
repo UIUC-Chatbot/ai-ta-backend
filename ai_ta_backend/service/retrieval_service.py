@@ -197,7 +197,7 @@ class RetrievalService:
 
     return distinct_dicts
 
-  def llm_monitor_message(self, messages: List[str], course_name: str) -> List[Dict]:
+  def llm_monitor_message(self, course_name: str, conversation_id: str, user_email: str, model_name: str) -> List[Dict]:
     """
     Will store categories in DB, send email if an alert is triggered.
     """
@@ -208,23 +208,39 @@ class RetrievalService:
 
     from ai_ta_backend.utils.email.send_transactional_email import send_email
 
+    # client = OllamaClient(host=os.environ['GPU_RIG_OLLAMA_SERVER_URL'])
     client = OllamaClient(os.environ['OLLAMA_SERVER_URL'])
+
+    messages = self.sqlDb.getMessagesFromConvoID(conversation_id).data
 
     # analyze message using Ollama
     for message in messages:
-      try:
-        message_content = message['content'][0]['text'] if isinstance(message.get('content'),
-                                                                      list) else message['content']
-      except:
-        message_content = message['content']
+      if message['llm-monitor-tags']:
+        # Don't analyze messages that have already been flagged
+        continue
+
+      message_content = message['content_text']
+
+      if message['role']:
+        message_content = "Message from " + message['role'] + ":\n" + message_content
+
+      monitor_llm_ollama_model = 'qwen2.5:14b-instruct-fp16'
+      # monitor_llm_ollama_model = 'qwen2.5:32b'
 
       analysis_result = client.chat(
-          model='qwen2.5:14b-instruct-fp16',
+          model=monitor_llm_ollama_model,
+          options={"num_ctx": 20_000},
           messages=[{
               'role':
                   'system',
               'content':
-                  '''Analyze each message for multiple categories simultaneously. A message can and should trigger multiple categories if it meets multiple criteria. Use the provided tools to flag any and all applicable categories based on their descriptions.'''
+                  '''You are analyzing messages from users interacting with an educational AI assistant. This assistant helps students and educators with questions related to homework questions and learning materials.
+
+Your task is to categorize these messages to help maintain appropriate usage and improve the system. Each message should be evaluated across multiple categories of concern (NSFW content, anger, factual corrections), and you can flag multiple categories when appropriate.
+
+Keep in mind when you're reviewing a `user` message, it's from a student. If you're reviewing an `assistant` message, it's from the AI assistant.
+
+These categorizations help our team understand user interactions, address concerns, and continuously improve the provided educational experience.'''
           }, {
               'role': 'user',
               'content': message_content
@@ -236,7 +252,7 @@ class RetrievalService:
                       'name':
                           'categorize_as_NSFW',
                       'description':
-                          'Flag content containing explicit threats of harm, violence, sexual content, hate speech, discriminatory language, or other inappropriate material that would be unsafe for work or general audiences.',
+                          'Flag content involving any user interaction that includes illegal activity, violence, sexual content, hate speech, or discriminatory language inappropriate for education.',
                       'parameters': {
                           'type': 'object',
                           'properties': {
@@ -255,7 +271,9 @@ class RetrievalService:
                       'name':
                           'categorize_as_anger',
                       'description':
-                          'Identify content expressing clear anger through aggressive language, hostile tone, multiple exclamation marks, ALL CAPS YELLING, or explicitly angry statements.',
+                          '''Identify content expressing clear anger through aggressive language, hostile tone, multiple exclamation marks, ALL CAPS YELLING, or explicitly angry statements aimed toward the AI system or its responses. 
+ONLY flag messages where the user is explicitly directing anger, frustration, or hostility TOWARD THE AI ASSISTANT ITSELF.
+Be careful not to flag messages about programming that may have keywords like "error", "incorrect", "wrong", etc.''',
                       'parameters': {
                           'type': 'object',
                           'properties': {
@@ -276,30 +294,45 @@ class RetrievalService:
                       'name':
                           'categorize_as_incorrect',
                       'description':
-                          'Flag content where the user indicates that the chatbot provided wrong, incorrect, or false information. This includes statements about inaccuracies, mistakes, or errors in the bot\'s responses.',
+                          '''This category is SPECIFICALLY for when the user indicates that the AI SYSTEM provided factually wrong information.
+
+We use this category to identify when our AI makes factual errors so we can improve its knowledge.
+
+Words like "wrong", "incorrect", "error", "mistake" can be misleading. The critical factor is WHO made the error. Some examples are:
+
+SHOULD BE FLAGGED (AI made errors):
+"You are wrong"
+"Your answer contains incorrect information"
+"That is not right"
+"The information you gave is wrong"
+
+SHOULD NOT BE FLAGGED (user asking about their own errors):
+"What's wrong with my code?"
+"Why is my answer incorrect?"
+"Can you explain the error in my essay?"
+"Help me fix the mistakes in my assignment"
+"What's wrong with this formula?"''',
                       'parameters': {
                           'type': 'object',
                           'properties': {
                               'keyword_that_triggers_incorrect_tag': {
-                                  'type':
-                                      'string',
-                                  'description':
-                                      'The specific phrase that indicates the bot was incorrect (e.g. "that\'s wrong", "incorrect", "that\'s not true")',
+                                  'type': 'string',
+                                  'description': 'The specific phrase that indicates the bot was incorrect',
                               },
                           },
                           'required': ['keyword_that_triggers_incorrect_tag'],
                       },
                   },
               },
-              {
-                  'type': 'function',
-                  'function': {
-                      'name':
-                          'categorize_as_good',
-                      'description':
-                          'Classify content as appropriate and constructive if it contains normal questions, feedback, discussion, or requests without triggering any of the above categories.',
-                  },
-              },
+              # {
+              #     'type': 'function',
+              #     'function': {
+              #         'name':
+              #             'categorize_as_good',
+              #         'description':
+              #             'Classify content as appropriate and constructive if it contains normal questions, feedback, discussion, or requests without triggering any of the above categories.',
+              #     },
+              # },
           ],
       )
 
@@ -325,6 +358,13 @@ class RetrievalService:
 
         alert_body = "\n".join([
             "LLM Monitor Alert",
+            "------------------------",
+            f"Course Name: {course_name}",
+            f"User Email: {user_email}",
+            f"Conversation Model Name: {model_name}",
+            f"LLM Monitor Model Name: {monitor_llm_ollama_model}",
+            f"Convo ID: {conversation_id}",
+            "------------------------",
             "Alerts triggered:",
             "\n".join(alert_details),
             "Details:",
@@ -341,6 +381,21 @@ class RetrievalService:
                    sender="hi@uiuc.chat",
                    recipients=["kvday2@illinois.edu", "hbroome@illinois.edu", "rohan13@illinois.edu"],
                    bcc_recipients=[])
+
+        # Update the message with the triggered categories
+        llm_monitor_tags = {
+            "has_been_analyzed": True,
+            "monitor_llm_ollama_model": monitor_llm_ollama_model,
+            "tags": triggered,
+        }
+        self.sqlDb.updateMessageFromLlmMonitor(conversation_id, llm_monitor_tags)
+      else:
+        # No alerts triggered, but still record that it's been analyzed
+        llm_monitor_tags = {
+            "has_been_analyzed": True,
+            "monitor_llm_ollama_model": monitor_llm_ollama_model,
+        }
+        self.sqlDb.updateMessageFromLlmMonitor(conversation_id, llm_monitor_tags)
 
       return "Success"
 
