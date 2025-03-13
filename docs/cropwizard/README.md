@@ -6,11 +6,21 @@ description: Quickstart on how to get the most out of Cropwizard.
 
 CropWizard is a cutting-edge AI agronomy assistant that answers agricultural questions with expert precision. It consults over 450,000 selected online publications, including Extension resources from US land-grant universities and a growing set of open-access research publications. It can be used as:
 
-* **a "virtual agronomist":** to obtain farming advice
-* **a research assistant:** to find the most relevant online publications for a topic of interest,
+* **a "virtual agronomist":** to obtain farming advice;
+* **a research assistant:** to find the most relevant online publications for a topic of interest;
 * **a search engine:** to look up basic information about agriculture.
 
-### **Getting Started and Customizing User Settings**
+### **Getting Started**&#x20;
+
+Enter a text question in the chat bar at the bottom of the Chat page and you should receive a text response in a few seconds.  See "[_Text Questions and Responses_](./#text-questions-and-references)_"_, below, for more information.
+
+Alternatively, you can upload one or more images and type in a question about those. See "[Image Questions](./#image-questions)" below for more information about multimodal questions answering.
+
+You can also get answers to questions that require predefined computational tools. These tools have been registered with CropWizard and are invoked automatically when relevant. See "_Tool Questions_" below for more information about tools.
+
+The tools functionality can be used to analyze your data, including spreadsheets (CSV) and databases (SQL). This functionality is preliminary — contact us if you are interested in that.
+
+### **Customizing User Settings**
 
 &#x20;**1. Account:** (Optional) Click on “Login” at the top right to log in to your account (or to create one).
 
