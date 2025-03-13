@@ -208,6 +208,7 @@ class RetrievalService:
 
     from ai_ta_backend.utils.email.send_transactional_email import send_email
 
+    # client = OllamaClient(host=os.environ['GPU_RIG_OLLAMA_SERVER_URL'])
     client = OllamaClient(os.environ['OLLAMA_SERVER_URL'])
 
     messages = self.sqlDb.getMessagesFromConvoID(conversation_id).data
@@ -223,19 +224,23 @@ class RetrievalService:
       if message['role']:
         message_content = "Message from " + message['role'] + ":\n" + message_content
 
+      monitor_llm_ollama_model = 'qwen2.5:14b-instruct-fp16'
+      # monitor_llm_ollama_model = 'qwen2.5:32b'
+
       analysis_result = client.chat(
-          model='qwen2.5:14b-instruct-fp16',
+          model=monitor_llm_ollama_model,
+          options={"num_ctx": 20_000},
           messages=[{
               'role':
                   'system',
               'content':
                   '''You are analyzing messages from users interacting with an educational AI assistant. This assistant helps students and educators with questions related to homework questions and learning materials.
-                  
-                  Your task is to categorize these messages to help maintain appropriate usage and improve the system. Each message should be evaluated across multiple categories of concern (NSFW content, anger, factual corrections), and you can flag multiple categories when appropriate.
 
-                  Keep in mind when you're reviewing a `user` message, it's from a student. If you're reviewing an `assistant` message, it's from the AI assistant.
+Your task is to categorize these messages to help maintain appropriate usage and improve the system. Each message should be evaluated across multiple categories of concern (NSFW content, anger, factual corrections), and you can flag multiple categories when appropriate.
 
-                  These categorizations help our team understand user interactions, address concerns, and continuously improve the provided educational experience.'''
+Keep in mind when you're reviewing a `user` message, it's from a student. If you're reviewing an `assistant` message, it's from the AI assistant.
+
+These categorizations help our team understand user interactions, address concerns, and continuously improve the provided educational experience.'''
           }, {
               'role': 'user',
               'content': message_content
@@ -267,8 +272,8 @@ class RetrievalService:
                           'categorize_as_anger',
                       'description':
                           '''Identify content expressing clear anger through aggressive language, hostile tone, multiple exclamation marks, ALL CAPS YELLING, or explicitly angry statements aimed toward the AI system or its responses. 
-                          ONLY flag messages where the user is explicitly directing anger, frustration, or hostility TOWARD THE AI ASSISTANT ITSELF.
-                          Be careful not to flag messages about programming that may have keywords like "error", "incorrect", "wrong", etc.''',
+ONLY flag messages where the user is explicitly directing anger, frustration, or hostility TOWARD THE AI ASSISTANT ITSELF.
+Be careful not to flag messages about programming that may have keywords like "error", "incorrect", "wrong", etc.''',
                       'parameters': {
                           'type': 'object',
                           'properties': {
@@ -290,23 +295,23 @@ class RetrievalService:
                           'categorize_as_incorrect',
                       'description':
                           '''This category is SPECIFICALLY for when the user indicates that the AI SYSTEM provided factually wrong information.
-                          
-                          We use this category to identify when our AI makes factual errors so we can improve its knowledge.
-                          
-                          Words like "wrong", "incorrect", "error", "mistake" can be misleading. The critical factor is WHO made the error. Some examples are:
-                          
-                          SHOULD BE FLAGGED (AI made errors):
-                          "You are wrong"
-                          "Your answer contains incorrect information"
-                          "That is not right"
-                          "The information you gave is wrong"
 
-                          SHOULD NOT BE FLAGGED (user asking about their own errors):
-                          "What's wrong with my code?"
-                          "Why is my answer incorrect?"
-                          "Can you explain the error in my essay?"
-                          "Help me fix the mistakes in my assignment"
-                          "What's wrong with this formula?"''',
+We use this category to identify when our AI makes factual errors so we can improve its knowledge.
+
+Words like "wrong", "incorrect", "error", "mistake" can be misleading. The critical factor is WHO made the error. Some examples are:
+
+SHOULD BE FLAGGED (AI made errors):
+"You are wrong"
+"Your answer contains incorrect information"
+"That is not right"
+"The information you gave is wrong"
+
+SHOULD NOT BE FLAGGED (user asking about their own errors):
+"What's wrong with my code?"
+"Why is my answer incorrect?"
+"Can you explain the error in my essay?"
+"Help me fix the mistakes in my assignment"
+"What's wrong with this formula?"''',
                       'parameters': {
                           'type': 'object',
                           'properties': {
@@ -356,7 +361,9 @@ class RetrievalService:
             "------------------------",
             f"Course Name: {course_name}",
             f"User Email: {user_email}",
-            f"Model Name: {model_name}",
+            f"Conversation Model Name: {model_name}",
+            f"LLM Monitor Model Name: {monitor_llm_ollama_model}",
+            f"Convo ID: {conversation_id}",
             "------------------------",
             "Alerts triggered:",
             "\n".join(alert_details),
@@ -376,12 +383,17 @@ class RetrievalService:
                    bcc_recipients=[])
 
         # Update the message with the triggered categories
-        llm_monitor_tags = {"has_been_analyzed": True, "tags": triggered}
+        llm_monitor_tags = {
+            "has_been_analyzed": True,
+            "monitor_llm_ollama_model": monitor_llm_ollama_model,
+            "tags": triggered,
+        }
         self.sqlDb.updateMessageFromLlmMonitor(conversation_id, llm_monitor_tags)
       else:
         # No alerts triggered, but still record that it's been analyzed
         llm_monitor_tags = {
             "has_been_analyzed": True,
+            "monitor_llm_ollama_model": monitor_llm_ollama_model,
         }
         self.sqlDb.updateMessageFromLlmMonitor(conversation_id, llm_monitor_tags)
 
