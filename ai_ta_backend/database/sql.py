@@ -35,6 +35,10 @@ class SQLDatabase:
     # Create a Supabase client
     self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
+    self.sentry_sdk.init(
+        dsn=os.environ['SENTRY_DSN'],
+        enable_tracing=True,
+    )
 
   def getAllMaterialsForCourse(self, course_name: str):
     return self.supabase_client.table(
@@ -189,67 +193,73 @@ class SQLDatabase:
     return self.supabase_client.table("projects").insert(project_info).execute()
 
   def getPreAssignedAPIKeys(self, email: str):
-    return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails", '["' + email + '"]').execute()
-  
+    return self.supabase_client.table("pre_authorized_api_keys").select("*").contains("emails",
+                                                                                      '["' + email + '"]').execute()
+
   def getConversationsCreatedAtByCourse(self, course_name: str, from_date: str = '', to_date: str = ''):
     try:
-        query = self.supabase_client.table("llm-convo-monitor")\
-            .select("created_at", count="exact")\
-            .eq("course_name", course_name)
-        
-        if from_date and to_date:
-            query = query.gte('created_at', from_date).lte('created_at', to_date)
-        elif from_date:
-            query = query.gte('created_at', from_date)
-        elif to_date:
-            query = query.lte('created_at', to_date)
-            
-        count_response = query.execute()
-        
-        total_count = count_response.count if hasattr(count_response, 'count') else 0
-        
-        if total_count <= 0:
-            print(f"No conversations found for course: {course_name}")
-            return [], 0
+      query = self.supabase_client.table("llm-convo-monitor")\
+          .select("created_at", count="exact")\
+          .eq("course_name", course_name)
 
-        all_data = []
-        batch_size = 1000
-        start = 0
+      if from_date and to_date:
+        query = query.gte('created_at', from_date).lte('created_at', to_date)
+      elif from_date:
+        query = query.gte('created_at', from_date)
+      elif to_date:
+        query = query.lte('created_at', to_date)
 
-        while start < total_count:
-            end = min(start + batch_size - 1, total_count - 1)
+      count_response = query.execute()
 
-            try:
-                batch_query = self.supabase_client.table("llm-convo-monitor")\
-                    .select("created_at")\
-                    .eq("course_name", course_name)
-                
-                if from_date and to_date:
-                    batch_query = batch_query.gte('created_at', from_date).lte('created_at', to_date)
-                elif from_date:
-                    batch_query = batch_query.gte('created_at', from_date)
-                elif to_date:
-                    batch_query = batch_query.lte('created_at', to_date)
-                
-                response = batch_query.range(start, end).execute()
+      total_count = count_response.count if hasattr(count_response, 'count') else 0
 
-                if not response or not hasattr(response, 'data') or not response.data:
-                    print(f"No data returned for range {start} to {end}.")
-                    break
+      if total_count <= 0:
+        print(f"No conversations found for course: {course_name}")
+        return [], 0
 
-                all_data.extend(response.data)
-                start += batch_size
+      all_data = []
+      batch_size = 1000
+      start = 0
 
-            except Exception as batch_error:
-                print(f"Error fetching batch {start}-{end}: {str(batch_error)}")
-                continue
+      while start < total_count:
+        end = min(start + batch_size - 1, total_count - 1)
 
-        if not all_data:
-            print(f"No conversation data could be retrieved for course: {course_name}")
-            return [], 0
+        try:
+          batch_query = self.supabase_client.table("llm-convo-monitor")\
+              .select("created_at")\
+              .eq("course_name", course_name)
 
-        return all_data, len(all_data)
-    
+          if from_date and to_date:
+            batch_query = batch_query.gte('created_at', from_date).lte('created_at', to_date)
+          elif from_date:
+            batch_query = batch_query.gte('created_at', from_date)
+          elif to_date:
+            batch_query = batch_query.lte('created_at', to_date)
+
+          response = batch_query.range(start, end).execute()
+
+          if not response or not hasattr(response, 'data') or not response.data:
+            print(f"No data returned for range {start} to {end}.")
+            break
+
+          all_data.extend(response.data)
+          start += batch_size
+
+        except Exception as batch_error:
+          self.sentry_sdk.capture_exception(batch_error)
+          print(f"Error fetching batch {start}-{end}: {str(batch_error)}")
+          continue
+
+      if not all_data:
+        print(f"No conversation data could be retrieved for course: {course_name}")
+        return [], 0
+
+      return all_data, len(all_data)
+
+    except Exception as e:
+      print(f"Error in getConversationsCreatedAtByCourse for {course_name}: {str(e)}")
+      self.sentry_sdk.capture_exception(e)
+      return [], 0
 
   def getConversationsCreatedAtByCourse(self, course_name: str):
     try:
@@ -286,6 +296,7 @@ class SQLDatabase:
           start += batch_size
 
         except Exception as batch_error:
+          self.sentry_sdk.capture_exception(batch_error)
           print(f"Error fetching batch {start}-{end}: {str(batch_error)}")
           continue
 
@@ -296,45 +307,48 @@ class SQLDatabase:
       return all_data, len(all_data)
 
     except Exception as e:
+      self.sentry_sdk.capture_exception(e)
       print(f"Error in getConversationsCreatedAtByCourse for {course_name}: {str(e)}")
       return [], 0
 
   def getProjectStats(self, project_name: str) -> ProjectStats:
     try:
-        response = self.supabase_client.table("project_stats").select("total_messages, total_conversations, unique_users")\
-                    .eq("project_name", project_name).execute()
-        
-        stats: Dict[str, int | float] = {
-            "total_messages": 0,
-            "total_conversations": 0,
-            "unique_users": 0,
-            "avg_conversations_per_user": 0.0,
-            "avg_messages_per_user": 0.0,
-            "avg_messages_per_conversation": 0.0
-        }
-        
-        if response and hasattr(response, 'data') and response.data:
-            base_stats = response.data[0]
-            stats.update(base_stats)
-            
-            if stats["unique_users"] > 0:
-                stats["avg_conversations_per_user"] = float(round(stats["total_conversations"] / stats["unique_users"], 2))
-                stats["avg_messages_per_user"] = float(round(stats["total_messages"] / stats["unique_users"], 2))
-            
-            if stats["total_conversations"] > 0:
-                stats["avg_messages_per_conversation"] = float(round(stats["total_messages"] / stats["total_conversations"], 2))
-                
-        stats_typed = {
-            "total_messages": int(stats["total_messages"]),
-            "total_conversations": int(stats["total_conversations"]),
-            "unique_users": int(stats["unique_users"]),
-            "avg_conversations_per_user": float(stats["avg_conversations_per_user"]),
-            "avg_messages_per_user": float(stats["avg_messages_per_user"]),
-            "avg_messages_per_conversation": float(stats["avg_messages_per_conversation"])
-        }
-        return ProjectStats(**stats_typed)
+      response = self.supabase_client.table("project_stats").select("total_messages, total_conversations, unique_users")\
+                  .eq("project_name", project_name).execute()
+
+      stats: Dict[str, int | float] = {
+          "total_messages": 0,
+          "total_conversations": 0,
+          "unique_users": 0,
+          "avg_conversations_per_user": 0.0,
+          "avg_messages_per_user": 0.0,
+          "avg_messages_per_conversation": 0.0
+      }
+
+      if response and hasattr(response, 'data') and response.data:
+        base_stats = response.data[0]
+        stats.update(base_stats)
+
+        if stats["unique_users"] > 0:
+          stats["avg_conversations_per_user"] = float(round(stats["total_conversations"] / stats["unique_users"], 2))
+          stats["avg_messages_per_user"] = float(round(stats["total_messages"] / stats["unique_users"], 2))
+
+        if stats["total_conversations"] > 0:
+          stats["avg_messages_per_conversation"] = float(
+              round(stats["total_messages"] / stats["total_conversations"], 2))
+
+      stats_typed = {
+          "total_messages": int(stats["total_messages"]),
+          "total_conversations": int(stats["total_conversations"]),
+          "unique_users": int(stats["unique_users"]),
+          "avg_conversations_per_user": float(stats["avg_conversations_per_user"]),
+          "avg_messages_per_user": float(stats["avg_messages_per_user"]),
+          "avg_messages_per_conversation": float(stats["avg_messages_per_conversation"])
+      }
+      return ProjectStats(**stats_typed)
     except Exception as e:
       print(f"Error fetching project stats for {project_name}: {str(e)}")
+      self.sentry_sdk.capture_exception(e)
       return ProjectStats(total_messages=0,
                           total_conversations=0,
                           unique_users=0,
