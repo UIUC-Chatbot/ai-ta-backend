@@ -1,6 +1,7 @@
 import os
 from typing import Dict, List, TypedDict, Union
 
+import sentry_sdk
 import supabase
 from injector import inject
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -35,7 +36,8 @@ class SQLDatabase:
     # Create a Supabase client
     self.supabase_client = supabase.create_client(  # type: ignore
         supabase_url=os.environ['SUPABASE_URL'], supabase_key=os.environ['SUPABASE_API_KEY'])
-    self.sentry_sdk.init(
+
+    sentry_sdk.init(
         dsn=os.environ['SENTRY_DSN'],
         enable_tracing=True,
     )
@@ -246,7 +248,7 @@ class SQLDatabase:
           start += batch_size
 
         except Exception as batch_error:
-          self.sentry_sdk.capture_exception(batch_error)
+          sentry_sdk.capture_exception(batch_error)
           print(f"Error fetching batch {start}-{end}: {str(batch_error)}")
           continue
 
@@ -258,57 +260,7 @@ class SQLDatabase:
 
     except Exception as e:
       print(f"Error in getConversationsCreatedAtByCourse for {course_name}: {str(e)}")
-      self.sentry_sdk.capture_exception(e)
-      return [], 0
-
-  def getConversationsCreatedAtByCourse(self, course_name: str):
-    try:
-      count_response = self.supabase_client.table("llm-convo-monitor")\
-          .select("created_at", count="exact")\
-          .eq("course_name", course_name)\
-          .execute()
-
-      total_count = count_response.count if hasattr(count_response, 'count') else 0
-
-      if total_count <= 0:
-        print(f"No conversations found for course: {course_name}")
-        return [], 0
-
-      all_data = []
-      batch_size = 1000
-      start = 0
-
-      while start < total_count:
-        end = min(start + batch_size - 1, total_count - 1)
-
-        try:
-          response = self.supabase_client.table("llm-convo-monitor")\
-              .select("created_at")\
-              .eq("course_name", course_name)\
-              .range(start, end)\
-              .execute()
-
-          if not response or not hasattr(response, 'data') or not response.data:
-            print(f"No data returned for range {start} to {end}.")
-            break
-
-          all_data.extend(response.data)
-          start += batch_size
-
-        except Exception as batch_error:
-          self.sentry_sdk.capture_exception(batch_error)
-          print(f"Error fetching batch {start}-{end}: {str(batch_error)}")
-          continue
-
-      if not all_data:
-        print(f"No conversation data could be retrieved for course: {course_name}")
-        return [], 0
-
-      return all_data, len(all_data)
-
-    except Exception as e:
-      self.sentry_sdk.capture_exception(e)
-      print(f"Error in getConversationsCreatedAtByCourse for {course_name}: {str(e)}")
+      sentry_sdk.capture_exception(e)
       return [], 0
 
   def getProjectStats(self, project_name: str) -> ProjectStats:
@@ -348,7 +300,7 @@ class SQLDatabase:
       return ProjectStats(**stats_typed)
     except Exception as e:
       print(f"Error fetching project stats for {project_name}: {str(e)}")
-      self.sentry_sdk.capture_exception(e)
+      sentry_sdk.capture_exception(e)
       return ProjectStats(total_messages=0,
                           total_conversations=0,
                           unique_users=0,
